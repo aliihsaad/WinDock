@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0d12">
+<title>WinDock</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div id="pair" class="pair" hidden>
+  <form id="pair-form" class="pair__card">
+    <h1 class="pair__title">WinDock</h1>
+    <p class="pair__hint">Enter the 4-digit PIN shown on your PC.</p>
+    <input id="pin" class="pair__pin" inputmode="numeric" pattern="[0-9]*" maxlength="4"
+           autocomplete="one-time-code" aria-label="PIN" required>
+    <p id="pair-error" class="pair__error" role="alert"></p>
+    <button class="pair__go" type="submit">Connect</button>
+  </form>
+</div>
+
+<main id="app" class="app" hidden>
+  <header class="bar">
+    <span class="bar__host" id="host-name">—</span>
+    <span class="bar__state" id="conn" data-state="off">offline</span>
+  </header>
+  <div id="nowplaying" class="nowplaying"></div>
+  <section id="dock" class="dock" aria-label="Dock"></section>
+  <footer class="foot">
+    <button id="add" class="foot__btn" type="button">Add</button>
+    <button id="edit" class="foot__btn" type="button" aria-pressed="false">Edit</button>
+    <button id="refresh" class="foot__btn" type="button">Refresh</button>
+  </footer>
+</main>
+
+<dialog id="picker" class="picker">
+  <div class="picker__tabs" role="tablist">
+    <button id="tab-apps" class="picker__tab is-active" type="button" role="tab"
+            aria-selected="true">Apps</button>
+    <button id="tab-controls" class="picker__tab" type="button" role="tab"
+            aria-selected="false">Controls</button>
+    <button id="picker-close" class="picker__close" type="button">Close</button>
+  </div>
+  <div class="picker__head">
+    <input id="filter" class="picker__filter" placeholder="Search apps…" aria-label="Search apps">
+  </div>
+  <ul id="picker-list" class="picker__list"></ul>
+  <ul id="control-list" class="picker__list" hidden></ul>
+</dialog>
+
+<script type="module" src="/app.js"></script>
+</body>
+</html>

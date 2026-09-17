@@ -1,0 +1,9 @@
+[
+  {"name":"Firefox","target":"C:\\Program Files\\Mozilla Firefox\\firefox.exe","args":"","icon":"C:\\Program Files\\Mozilla Firefox\\firefox.exe,0","source":"startmenu"},
+  {"name":"Visual Studio Code","target":"C:\\Users\\ali\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe","args":"","icon":"","source":"startmenu"},
+  {"name":"Notepad","target":"C:\\Windows\\System32\\notepad.exe","args":"","icon":"","source":"startmenu"},
+  {"name":"firefox-dup","target":"C:\\Program Files\\Mozilla Firefox\\firefox.exe","args":"-private","icon":"","source":"registry"},
+  {"name":"Broken No Target","target":"","args":"","icon":"","source":"startmenu"},
+  {"name":"Readme","target":"C:\\Program Files\\Thing\\readme.txt","args":"","icon":"","source":"startmenu"},
+  {"name":"","target":"C:\\Program Files\\Thing\\thing.exe","args":"","icon":"","source":"startmenu"}
+]

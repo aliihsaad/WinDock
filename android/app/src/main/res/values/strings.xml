@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">WinDock</string>
+    <string name="searching">Looking for your PC…</string>
+    <string name="not_found">No WinDock host found on this network.\nMake sure the PC app is running and both devices are on the same Wi-Fi.</string>
+</resources>

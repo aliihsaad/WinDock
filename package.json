@@ -1,0 +1,18 @@
+{
+  "name": "windock",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Remote app dock and control surface for a Windows PC, driven from a phone on the same LAN.",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test/run.mjs",
+    "gates": "node ~/.claude/skills/unlazy/scripts/gate-check.mjs GATES.md"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "ws": "^8.21.1"
+  }
+}

@@ -1,0 +1,15 @@
+node_modules/
+*.log
+
+# unlazy pipeline + hook state
+.unlazy/
+.unlazy-hook-state.json
+.claude/settings.local.json
+
+# .NET build output
+bin/
+obj/
+*.user
+
+# local host config
+config.json
