@@ -96,7 +96,7 @@ async function loadDownloads() {
     const response = await fetch('./downloads.json', { cache: 'no-store' });
     if (!response.ok) throw new Error('Download manifest unavailable');
     const manifest = await response.json();
-    document.querySelector('#release-version').textContent = manifest.version || 'Preview';
+    document.querySelector('#release-version').textContent = manifest.version || 'Latest';
     if (!manifest.available) {
       downloadStatus.textContent = manifest.message || 'Downloads are being prepared. Please check back soon.';
       document.querySelector('#download-windows > span').textContent = 'Windows download coming soon';

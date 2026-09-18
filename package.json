@@ -2,6 +2,7 @@
   "name": "windock",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "description": "Remote app dock and control surface for a Windows PC, driven from a phone on the same LAN.",
   "scripts": {

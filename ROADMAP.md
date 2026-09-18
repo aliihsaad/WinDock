@@ -136,13 +136,12 @@ launch/icon/activation arguments, and malformed identifiers.
 
 ## Later polish
 
-The product website is built for local review in `website/`: responsive ivory-and-sage
-design, an interactive preview of the actual app UI, setup/FAQ, and working Windows installer and
-Android APK downloads with checksums. `npm run package:downloads` prepares the
-files and `npm run website` serves the page at http://127.0.0.1:4173. The user
-requested local review first; nothing is pushed or published. The GitHub
-repository is currently private with no releases, so public hosting and a
-public download destination still need to be decided before launch.
+The product website is live at [windock.vercel.app](https://windock.vercel.app):
+responsive ivory-and-sage design, the actual app UI as an isolated interactive
+demo, setup/FAQ, and direct Windows installer and Android APK downloads with
+checksums. The GitHub repository is public and release `v0.1.0-preview.1`
+contains both GitHub-built downloads. Pushes to `main` deploy the website on
+Vercel. `npm run website` still serves local review at http://127.0.0.1:4173.
 
 The Windows tray and executable now use the mint/blue WinDock four-tile mark,
 embedded at nine sizes from 16 to 256px (2026-09-18). The updated tray build and
@@ -154,10 +153,32 @@ The Windows installer now provides optional sign-in startup, Start menu/desktop
 shortcuts, and uninstall support. A local install/launch/reinstall/uninstall test
 passed and preserved the user's dock. `.github/workflows/build-release.yml`
 prepares GitHub builds and optional draft releases with direct EXE/APK links.
-The workflow still needs its first GitHub run after the local changes are pushed.
+The first [GitHub run](https://github.com/aliihsaad/WinDock/actions/runs/35344001331)
+passed Windows build, installer install/launch/upgrade/uninstall, and Android
+build, unit tests, lint, and signature checks on 2026-09-18.
 
 Still outside v1: macros, remote keyboard/trackpad, monitoring widgets and
 multi-host control.
+
+## Planned: iOS companion
+
+The website and README announce iOS as **coming soon**, with no release date.
+No iOS build or App Store listing exists yet. This is a feasible companion for
+the Windows host, not a port of the Windows native helper to the iPhone.
+
+- Reuse the shared HTML/CSS/JavaScript dock in a landscape `WKWebView`.
+- Start with manual PC address entry and PIN pairing, restrict navigation to
+  the chosen PC origin, and verify cookies/WebSocket reconnection on an iPhone.
+- Configure local HTTP transport deliberately. Native discovery needs the
+  appropriate local-network usage description; porting UDP broadcast also
+  requires assessing Apple's multicast entitlement. Manual entry avoids
+  making discovery entitlement approval a first-build dependency.
+- Build/sign with Xcode, test gestures, safe areas, foreground/background
+  reconnection and landscape behavior on physical iPhones, then prepare distribution.
+
+Feasibility references: Apple's [WKWebView documentation](https://developer.apple.com/documentation/webkit/wkwebview),
+[local-network privacy requirements](https://developer.apple.com/documentation/technotes/tn3179-understanding-local-network-privacy),
+and [local networking transport setting](https://developer.apple.com/documentation/bundleresources/information-property-list/nsapptransportsecurity/nsallowslocalnetworking).
 
 ## Repeatable Windows commands
 
