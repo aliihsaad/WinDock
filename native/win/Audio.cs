@@ -14,7 +14,17 @@ internal static class Audio
     {
         if (level < 0f) level = 0f;
         if (level > 1f) level = 1f;
+        return WithEndpoint(endpoint => endpoint.SetMasterVolumeLevelScalar(level, IntPtr.Zero) == 0);
+    }
 
+    public static float? GetMasterVolume()
+    {
+        float level = 0;
+        return WithEndpoint(endpoint => endpoint.GetMasterVolumeLevelScalar(out level) == 0) ? level : null;
+    }
+
+    private static bool WithEndpoint(Func<IAudioEndpointVolume, bool> action)
+    {
         IMMDeviceEnumerator? enumerator = null;
         IMMDevice? device = null;
         IAudioEndpointVolume? endpoint = null;
@@ -29,7 +39,7 @@ internal static class Audio
             if (device.Activate(ref iid, 23, IntPtr.Zero, out var raw) != 0 || raw is null) return false;
 
             endpoint = (IAudioEndpointVolume)raw;
-            return endpoint.SetMasterVolumeLevelScalar(level, Guid.Empty) == 0;
+            return action(endpoint);
         }
         catch (COMException)
         {
@@ -50,15 +60,15 @@ internal static class Audio
      InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     private interface IMMDeviceEnumerator
     {
-        int NotImpl1();
-        int GetDefaultAudioEndpoint(int dataFlow, int role, out IMMDevice? endpoint);
+        [PreserveSig] int NotImpl1();
+        [PreserveSig] int GetDefaultAudioEndpoint(int dataFlow, int role, out IMMDevice? endpoint);
     }
 
     [ComImport, Guid("D666063F-1587-4E43-81F1-B948E807363F"),
      InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     private interface IMMDevice
     {
-        int Activate(ref Guid iid, int clsCtx, IntPtr activationParams,
+        [PreserveSig] int Activate(ref Guid iid, int clsCtx, IntPtr activationParams,
                      [MarshalAs(UnmanagedType.IUnknown)] out object? iface);
     }
 
@@ -66,12 +76,12 @@ internal static class Audio
      InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     private interface IAudioEndpointVolume
     {
-        int NotImpl1();
-        int NotImpl2();
-        int GetChannelCount(out int count);
-        int SetMasterVolumeLevel(float levelDb, Guid eventContext);
-        int SetMasterVolumeLevelScalar(float level, Guid eventContext);
-        int GetMasterVolumeLevel(out float levelDb);
-        int GetMasterVolumeLevelScalar(out float level);
+        [PreserveSig] int NotImpl1();
+        [PreserveSig] int NotImpl2();
+        [PreserveSig] int GetChannelCount(out int count);
+        [PreserveSig] int SetMasterVolumeLevel(float levelDb, IntPtr eventContext);
+        [PreserveSig] int SetMasterVolumeLevelScalar(float level, IntPtr eventContext);
+        [PreserveSig] int GetMasterVolumeLevel(out float levelDb);
+        [PreserveSig] int GetMasterVolumeLevelScalar(out float level);
     }
 }

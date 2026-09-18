@@ -5,6 +5,8 @@ import { createChecker } from "./lib/assert.mjs";
 import {
   parseInstalled,
   appIdFromTarget,
+  appIdFromLaunch,
+  packagedAppId,
   createWindowsProvider,
   INVENTORY_PS,
   POWERSHELL,
@@ -86,4 +88,29 @@ t.equal(captured.file, POWERSHELL, "provider invokes powershell.exe");
 t.deepEqual(captured.args, [...PS_FLAGS, INVENTORY_PS], "provider passes the constant inventory script");
 t.ok(captured.args.includes("-NoProfile"), "inventory runs with -NoProfile");
 
+const profiles = parseInstalled(JSON.stringify([
+  { name: "Browser", target: "C:\\Apps\\browser.exe", args: "" },
+  { name: "Work", target: "C:\\Apps\\browser.exe", args: '--profile "Work Space"' },
+  { name: "Personal", target: "C:\\Apps\\browser.exe", args: '--profile "Personal"' },
+  { name: "Work copy", target: "C:\\Apps\\browser.exe", args: '--profile "Work Space"' },
+]));
+t.equal(profiles.length, 3, "different shortcut arguments survive; equivalent shortcuts collapse");
+t.equal(new Set(profiles.map(a => a.id)).size, 3, "argument variants have distinct stable IDs");
+t.equal(appIdFromLaunch("C:\\Apps\\browser.exe"), appIdFromTarget("C:\\Apps\\browser.exe"), "argument-free IDs remain compatible");
+t.equal(appIdFromLaunch("C:\\Apps\\browser.exe", " --private "), appIdFromLaunch("c:/apps/browser.exe", "--private"), "shortcut IDs normalize outer whitespace and path case");
+
+const packaged = parseInstalled(read("packaged-installed.json"));
+t.deepEqual(packaged.map(a => a.name), ["ChatGPT", "ChatGPT Classic", "Claude"], "packaged desktop apps survive inventory filtering");
+t.ok(packaged.every(a => a.source === "packaged"), "packaged apps retain their activation type");
+t.equal(packagedAppId(packaged[0].target), "OpenAI.Codex_2p2nqsd0c76g0!App", "activation ID is preserved case-exactly");
+const merged = parseInstalled(JSON.stringify([
+  ...JSON.parse(read("installed.json")), ...JSON.parse(read("packaged-installed.json")),
+  { name: "Claude", target: "SHELL:APPSFOLDER\\Claude_pzs8sxrjxfjjc!Claude", source: "packaged", args: "--ignored" },
+]));
+t.equal(merged.length, 6, "classic and packaged inventory merge without duplicates");
+t.equal(merged.find(a => a.name === "Claude").args, "", "packaged activation cannot acquire shortcut arguments");
+for (const bad of ["shell:AppsFolder\\", "shell:AppsFolder\\App_pub!App & calc", "shell:AppsFolder\\App_pub!App\n", "shell:AppsFolder\\App_pub!../App", "shell:other.exe", "shell:AppsFolder\\" + "x".repeat(129)]) {
+  t.equal(packagedAppId(bad), null, "malformed namespace item is not an app identity");
+}
+t.equal(parseInstalled(JSON.stringify([{ name: "Bad", target: "shell:other.exe" }])).length, 0, "arbitrary Shell commands never enter the inventory");
 t.done("inventory verification passed");

@@ -14,21 +14,18 @@ object ServerUrl {
     private const val PREFS = "windock"
     private const val KEY = "endpoint"
 
-    fun isValid(url: String?): Boolean {
-        if (url.isNullOrBlank()) return false
-        return (url.startsWith("http://") || url.startsWith("https://")) && url.length <= 200
-    }
+    fun isValid(url: String?): Boolean = EndpointPolicy.normalize(url) != null
 
     fun load(context: Context): String? =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .getString(KEY, null)
-            ?.takeIf { isValid(it) }
+            ?.let { EndpointPolicy.normalize(it) }
 
     fun save(context: Context, url: String) {
-        if (!isValid(url)) return
+        val endpoint = EndpointPolicy.normalize(url) ?: return
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit()
-            .putString(KEY, url)
+            .putString(KEY, endpoint)
             .apply()
     }
 }

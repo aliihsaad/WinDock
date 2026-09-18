@@ -61,4 +61,7 @@ t.equal((await provider.listRunningApps()).length, 2, "provider returns parsed r
 t.equal(captured.file, POWERSHELL, "provider invokes powershell.exe");
 t.deepEqual(captured.args, [...PS_FLAGS, RUNNING_PS], "provider passes the constant running script");
 
+const storeApp = parseRunning(JSON.stringify([{ Id: 100, Handle: 1234, ProcessName: "Claude", Path: "C:\\Program Files\\WindowsApps\\Claude_2.0\\Claude.exe", AppUserModelId: "Claude_pzs8sxrjxfjjc!Claude" }]));
+t.equal(storeApp[0].id, appIdFromTarget("shell:AppsFolder\\Claude_pzs8sxrjxfjjc!Claude"), "packaged running identity matches catalog identity across executable updates");
+t.equal(storeApp[0].activationId, "Claude_pzs8sxrjxfjjc!Claude", "packaged focus retains Windows activation identity");
 t.done("running verification passed");

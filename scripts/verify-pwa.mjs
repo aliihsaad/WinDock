@@ -85,7 +85,7 @@ t.equal(
   "escapeHtml neutralises angle brackets and quotes",
 );
 const hostile = renderTile({ kind: "app", id: XSS, label: XSS, running: false });
-t.ok(!hostile.includes("<img"), "a hostile app name cannot inject an element");
+t.equal((hostile.match(/<img /g) || []).length, 1, "a hostile app name cannot inject a second image beyond the trusted icon");
 t.ok(!hostile.includes('onerror="'), "a hostile app name cannot inject an event handler");
 t.ok(hostile.includes("&lt;img"), "the hostile name is present but escaped");
 // Positive control: the escaper must be doing work, not returning a constant.

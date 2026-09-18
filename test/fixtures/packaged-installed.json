@@ -1,0 +1,5 @@
+[
+  {"name":"Claude","target":"shell:AppsFolder\\Claude_pzs8sxrjxfjjc!Claude","source":"packaged"},
+  {"name":"ChatGPT","target":"shell:AppsFolder\\OpenAI.Codex_2p2nqsd0c76g0!App","source":"packaged"},
+  {"name":"ChatGPT Classic","target":"shell:AppsFolder\\OpenAI.ChatGPT-Desktop_2p2nqsd0c76g0!ChatGPT","source":"packaged"}
+]

@@ -10,21 +10,35 @@
 
 import { createSocket } from "node:dgram";
 import { networkInterfaces } from "node:os";
+import { isIPv4 } from "node:net";
 
 export const DISCOVERY_PORT = 41234;
 export const PROBE = "windock:discover:v1";
 export const REPLY_PREFIX = "windock:here:v1:";
 export const MAX_PROBE_BYTES = 64;
 
-/** First non-internal IPv4 address, which is the one a phone can reach. */
-export function primaryAddress(interfaces = networkInterfaces()) {
-  for (const list of Object.values(interfaces || {})) {
+/** Prefer a physical LAN adapter over VPNs and VM/container networks. */
+export function primaryAddress(interfaces = networkInterfaces(), preferred = "") {
+  const candidates = [];
+  for (const [name, list] of Object.entries(interfaces || {})) {
     for (const entry of list || []) {
       const family = entry.family === 4 || entry.family === "IPv4";
-      if (family && !entry.internal && entry.address) return entry.address;
+      if (!family || entry.internal || !isIPv4(entry.address || "")) continue;
+      const [a, b] = entry.address.split(".").map(Number);
+      if (a === 127 || a === 0 || a >= 224 || (a === 169 && b === 254)) continue;
+      const virtual = /tailscale|zerotier|wireguard|vpn|^tun\d*|^tap\d*|vethernet|hyper-v|vmware|virtualbox|vbox|docker|^br-|^virbr|^veth/i.test(name);
+      const privateIp = a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168);
+      candidates.push({ address: entry.address, score: (virtual ? 0 : 10) + (privateIp ? 2 : 0) });
     }
   }
-  return null;
+  if (preferred) {
+    if (!isIPv4(preferred) || !candidates.some((entry) => entry.address === preferred)) {
+      throw new Error("WINDOCK_HOST must be an IPv4 address assigned to this computer");
+    }
+    return preferred;
+  }
+  candidates.sort((a, b) => b.score - a.score);
+  return candidates[0]?.address || null;
 }
 
 /**

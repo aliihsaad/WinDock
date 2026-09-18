@@ -7,12 +7,14 @@
  */
 
 import { createServer } from "node:http";
+import { hostname } from "node:os";
 import { readFile } from "node:fs/promises";
 import { extname, join, normalize, resolve, sep } from "node:path";
 import { createProvider } from "./src/platform/index.js";
 import { validateControl, isDestructiveVerb, CONTROL_VERBS } from "./src/platform/contract.js";
 import { createConfigStore } from "./src/config.js";
 import { createSyncHub } from "./src/sync.js";
+import { createIconCache, FALLBACK_ICON } from "./src/icons.js";
 import { startDiscovery, primaryAddress, DISCOVERY_PORT } from "./src/discovery.js";
 import {
   newPin,
@@ -55,15 +57,25 @@ function sendJson(res, status, body, headers = {}) {
 async function readJsonBody(req) {
   let size = 0;
   const chunks = [];
-  for await (const chunk of req) {
-    size += chunk.length;
-    if (size > BODY_MAX_BYTES) {
-      const err = new Error("body too large");
-      err.status = 413;
-      throw err;
-    }
-    chunks.push(chunk);
-  }
+  // Reject immediately at the cap, but keep draining without retaining bytes.
+  // Throwing inside an async iterator destroys/pauses the request socket and
+  // can reset the response or the next request on a keep-alive connection.
+  await new Promise((resolve, reject) => {
+    req.on("data", (chunk) => {
+      if (size > BODY_MAX_BYTES) return;
+      size += chunk.length;
+      if (size > BODY_MAX_BYTES) {
+        chunks.length = 0;
+        const err = new Error("body too large");
+        err.status = 413;
+        reject(err);
+      } else {
+        chunks.push(chunk);
+      }
+    });
+    req.once("end", resolve);
+    req.once("error", reject);
+  });
   if (size === 0) return {};
   try {
     const parsed = JSON.parse(Buffer.concat(chunks).toString("utf8"));
@@ -112,6 +124,19 @@ export async function createApp({
   trustLoopback = true,
 } = {}) {
   const state = { pin };
+  const appIcon = createIconCache(provider);
+  let inventoryPromise;
+  let inventoryTime = 0;
+  function installedApps() {
+    if (!inventoryPromise || Date.now() - inventoryTime > 60_000) {
+      inventoryTime = Date.now();
+      inventoryPromise = provider.listInstalledApps().catch((error) => {
+        inventoryPromise = null;
+        throw error;
+      });
+    }
+    return inventoryPromise;
+  }
 
   async function dockState() {
     const [config, running] = await Promise.all([
@@ -122,6 +147,7 @@ export async function createApp({
     return {
       platform: provider.id,
       platformName: provider.displayName,
+      hostName: hostname(),
       tiles: config.tiles.map((tile) =>
         tile.kind === "app" ? { ...tile, running: runningIds.has(tile.id) } : tile,
       ),
@@ -193,7 +219,21 @@ export async function createApp({
       }
 
       if (path === "/api/apps/installed" && req.method === "GET") {
-        return sendJson(res, 200, { apps: await provider.listInstalledApps() });
+        return sendJson(res, 200, { apps: await installedApps() });
+      }
+
+      if (path === "/api/apps/icon" && req.method === "GET") {
+        const app = (await installedApps()).find((item) => item.id === url.searchParams.get("id"));
+        if (!app) return sendJson(res, 404, { error: "unknown app" });
+        const png = await appIcon(app);
+        const body = png || FALLBACK_ICON;
+        res.writeHead(200, {
+          "content-type": png ? "image/png" : "image/svg+xml",
+          "content-length": body.length,
+          "cache-control": "private, max-age=3600",
+          "x-content-type-options": "nosniff",
+        });
+        return res.end(body);
       }
 
       if (path === "/api/tiles" && req.method === "GET") {
@@ -209,7 +249,7 @@ export async function createApp({
 
       if (path === "/api/apps/launch" && req.method === "POST") {
         const body = await readJsonBody(req);
-        const apps = await provider.listInstalledApps();
+        const apps = await installedApps();
         const app = apps.find((a) => a.id === body.id);
         if (!app) return sendJson(res, 404, { error: "unknown app" });
         await provider.launchApp(app);
@@ -247,6 +287,17 @@ export async function createApp({
         return sendJson(res, 200, { nowPlaying: await provider.nowPlaying().catch(() => null) });
       }
 
+      if (path === "/api/capture" && req.method === "GET") {
+        return sendJson(res, 200, provider.capture?.status() || { available: false, phase: "idle" });
+      }
+      const captureActions = { "/api/capture/screenshot": "screenshot", "/api/capture/start": "start", "/api/capture/stop": "stop" };
+      if (Object.hasOwn(captureActions, path) && req.method === "POST") {
+        const body = await readJsonBody(req);
+        if (Object.keys(body).length) return sendJson(res, 400, { error: "capture actions take no options" });
+        if (!provider.capture) return sendJson(res, 501, { error: "Screen capture is available on Windows." });
+        return sendJson(res, 200, await provider.capture[captureActions[path]]());
+      }
+
       if (path === "/api/stats" && req.method === "GET") {
         return sendJson(res, 200, await provider.systemStats().catch(() => ({})));
       }
@@ -271,13 +322,19 @@ export async function createApp({
     getState: dockState,
   });
 
+  server.on("close", () => { provider.capture?.dispose().catch(() => {}); });
   return { server, hub, provider, configStore, dockState, state, sessions, lockout };
 }
 
-export async function start({ port = Number(process.env.PORT) || DEFAULT_PORT } = {}) {
+export async function start({ port = Number(process.env.PORT) || DEFAULT_PORT, host = process.env.WINDOCK_HOST || "" } = {}) {
+  const address = primaryAddress(undefined, host);
   const app = await createApp();
-  await new Promise((r) => app.server.listen(port, r));
-  const address = primaryAddress();
+  await new Promise((resolve, reject) => {
+    app.server.once("error", reject);
+    app.server.listen(port, () => { app.server.off("error", reject); resolve(); });
+  });
+
+  port = app.server.address().port;
   const endpoint = address ? `http://${address}:${port}` : `http://localhost:${port}`;
   const discovery = startDiscovery({ endpoint, port: DISCOVERY_PORT });
   return { ...app, endpoint, discovery, port };

@@ -67,6 +67,24 @@ for (const bad of [{ pid: 0 }, { pid: -1 }, { pid: 1.5 }, { pid: "4812; rm -rf /
 t.equal(rec.calls.length, 0, "no exec is issued for any rejected input");
 
 // ---- Linux provider argv ----
+const packagedTarget = "shell:AppsFolder\\OpenAI.Codex_2p2nqsd0c76g0!App";
+const packagedCalls = recorder();
+const packagedProvider = createWindowsProvider({ exec: packagedCalls.exec, helperPath: HELPER });
+await packagedProvider.launchApp({ target: packagedTarget, args: "ignored" });
+t.deepEqual(packagedCalls.calls[0].args, ["launch-packaged", "OpenAI.Codex_2p2nqsd0c76g0!App"], "packaged launch uses one validated activation ID without shortcut arguments");
+await packagedProvider.appIcon({ target: packagedTarget });
+t.deepEqual(packagedCalls.calls[1].args, ["icon-packaged", "OpenAI.Codex_2p2nqsd0c76g0!App"], "packaged icon extraction uses the Shell app identity");
+await packagedProvider.focusApp({ pid: 12, activationId: "OpenAI.Codex_2p2nqsd0c76g0!App" });
+t.deepEqual(packagedCalls.calls[2].args, ["launch-packaged", "OpenAI.Codex_2p2nqsd0c76g0!App"], "running packaged apps are reactivated by Windows");
+for (const bad of ["shell:AppsFolder\\Bad_id!App & calc", "shell:AppsFolder\\Bad_id!App\n", "shell:other.exe"]) {
+  await t.rejects(() => packagedProvider.launchApp({ target: bad }), "invalid Shell targets cannot reach native activation");
+}
+t.equal(packagedCalls.calls.length, 3, "invalid packaged launches execute nothing");
+
+const shortcutArgs = '--profile "Work Space" --url "https://example.test/?a=1&b=2"';
+await win.launchApp({ target: "C:\\Apps\\browser.exe", args: shortcutArgs });
+t.deepEqual(rec.calls[0].args, ["launch", "C:\\Apps\\browser.exe", shortcutArgs], "shortcut quoting and ampersands reach the helper as one opaque argument string");
+
 const lrec = recorder();
 const lin = createLinuxProvider({ exec: lrec.exec });
 await lin.launchApp({ target: "/usr/bin/firefox", argv: ["/usr/bin/firefox", "--new-window"] });

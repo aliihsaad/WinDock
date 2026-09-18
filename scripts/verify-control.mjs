@@ -78,6 +78,28 @@ await t.rejects(() => win.control("nope", null), "windows control rejects an unk
 await t.rejects(() => win.control("volume-set", 999), "windows control rejects an out-of-range value");
 t.equal(winCalls.length, 1, "no exec is issued for rejected control input");
 
+// Brightness firmware receives requests one at a time, and one failure must
+// neither leak helper details nor poison the queue for the next press.
+const brightnessCalls = [];
+const releases = [];
+const brightnessWin = createWindowsProvider({ helperPath: HELPER, exec: (file, args) => {
+  brightnessCalls.push(args);
+  return new Promise((resolve, reject) => releases.push({ resolve, reject }));
+} });
+const firstBrightness = brightnessWin.control("brightness-set", 25).catch(error => error);
+const nextBrightness = brightnessWin.control("brightness-set", 50);
+await Promise.resolve();
+t.equal(brightnessCalls.length, 1, "brightness does not issue overlapping native commands");
+releases[0].reject(new Error("private helper path / native failure"));
+const brightnessError = await firstBrightness;
+t.equal(brightnessError.status, 503, "brightness hardware failure has a useful HTTP status");
+t.ok(brightnessError.message.includes("DDC/CI"), "brightness failure explains monitor support");
+t.ok(!brightnessError.message.includes("private helper"), "native diagnostics stay out of user-facing errors");
+t.equal(brightnessCalls.length, 2, "brightness queue continues after a rejected command");
+t.deepEqual(brightnessCalls[1], ["control", "brightness-set", "50"], "queued brightness retains its requested value");
+releases[1].resolve({ stdout: "" });
+t.equal((await nextBrightness).ok, true, "the next brightness request can succeed");
+
 const linCalls = [];
 const lin = createLinuxProvider({
   exec: async (file, args) => {

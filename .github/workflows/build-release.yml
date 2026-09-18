@@ -1,0 +1,114 @@
+name: Build WinDock downloads
+
+on:
+  workflow_dispatch:
+    inputs:
+      draft_release:
+        description: Create a draft GitHub release after all builds pass
+        type: boolean
+        default: false
+      release_tag:
+        description: New release tag (used only when creating a draft)
+        type: string
+        default: v0.1.0-preview.1
+  push:
+    branches: [main]
+    paths:
+      - 'native/**'
+      - 'src/**'
+      - 'public/**'
+      - 'android/**'
+      - 'scripts/**'
+      - 'server.js'
+      - 'package*.json'
+      - '.github/workflows/build-release.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '8.0.x'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm test
+      - name: Build bundled Windows app
+        shell: pwsh
+        run: ./scripts/build-windows.ps1
+      - name: Install verified installer compiler
+        shell: pwsh
+        run: ./scripts/install-inno.ps1
+      - name: Build setup program
+        shell: pwsh
+        run: ./scripts/build-installer.ps1
+      - name: Test install, launch, upgrade, and uninstall
+        shell: pwsh
+        run: ./scripts/test-installer.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: artifacts/installer/WinDockSetup.exe
+          if-no-files-found: error
+
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Prepare Android SDK
+        run: '"$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-34" "build-tools;34.0.0"'
+      - name: Build and check Android preview
+        working-directory: android
+        run: bash ./gradlew assembleDebug testDebugUnitTest lintDebug --no-daemon --console=plain
+      - name: Verify APK and give it a stable download name
+        run: |
+          "$ANDROID_HOME/build-tools/34.0.0/apksigner" verify --verbose android/app/build/outputs/apk/debug/app-debug.apk
+          mkdir -p artifacts
+          cp android/app/build/outputs/apk/debug/app-debug.apk artifacts/WinDock-android-debug.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-preview
+          path: artifacts/WinDock-android-debug.apk
+          if-no-files-found: error
+
+  draft-release:
+    if: github.event_name == 'workflow_dispatch' && inputs.draft_release
+    needs: [windows, android]
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-installer
+          path: artifacts/installer
+      - uses: actions/download-artifact@v4
+        with:
+          name: android-preview
+          path: artifacts
+      - name: Prepare direct links and draft release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          RELEASE_REPO: ${{ github.repository }}
+          RELEASE_SHA: ${{ github.sha }}
+        run: |
+          if ($env:RELEASE_TAG -notmatch '^v\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?$') { throw 'Invalid release tag' }
+          ./scripts/package-downloads.ps1 -DownloadBase "https://github.com/$env:RELEASE_REPO/releases/download/$env:RELEASE_TAG"
+          gh release create $env:RELEASE_TAG artifacts/website-downloads/WinDockSetup.exe artifacts/website-downloads/WinDock-android-debug.apk artifacts/website-downloads/SHA256SUMS.txt artifacts/website-downloads/downloads.json --repo $env:RELEASE_REPO --target $env:RELEASE_SHA --draft --prerelease --title "WinDock $env:RELEASE_TAG" --notes-file native/installer/RELEASE-NOTES.md
+          if ($LASTEXITCODE -ne 0) { throw 'Draft release creation failed' }

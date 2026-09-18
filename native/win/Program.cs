@@ -5,7 +5,7 @@
 // fixed switch and never concatenates user input into a command.
 //
 // Verbs:
-//   launch <absolutePath>        start a process
+//   launch <absolutePath> [args] start a process with the shortcut's argument string
 //   focus  <pid>                 bring a process's main window to the foreground
 //   close  <pid>                 ask the main window to close
 //   control <verb> [value]       volume / media / brightness / power
@@ -34,10 +34,16 @@ internal static class Program
             return args[0] switch
             {
                 "launch" => Launch(args),
+                "launch-packaged" => LaunchPackaged(args),
+                "icon-packaged" => PackagedIcon(args),
                 "focus" => Focus(args),
                 "close" => Close(args),
                 "control" => Control(args),
                 "nowplaying" => NowPlaying(),
+                "volume" => ReadVolume(),
+                "brightness" => ReadBrightness(args),
+                "capture" => ScreenCapture.Run(args),
+                "icon" => ReadIcon(args),
                 _ => Usage($"unknown verb: {args[0]}"),
             };
         }
@@ -58,7 +64,7 @@ internal static class Program
 
     private static int Launch(string[] args)
     {
-        if (args.Length != 2) return Usage("usage: launch <path>");
+        if (args.Length is < 2 or > 3) return Usage("usage: launch <path> [arguments]");
         var target = args[1];
         if (string.IsNullOrWhiteSpace(target)) return Usage("launch: empty target");
 
@@ -68,6 +74,7 @@ internal static class Program
         var psi = new ProcessStartInfo
         {
             FileName = target,
+            Arguments = args.Length == 3 ? args[2] : string.Empty,
             UseShellExecute = true,
             WorkingDirectory = Path.GetDirectoryName(target) ?? string.Empty,
         };
@@ -76,6 +83,20 @@ internal static class Program
     }
 
     // ---- window activation ----------------------------------------------
+
+    private static int LaunchPackaged(string[] args)
+    {
+        if (args.Length != 2 || !PackagedApp.IsValid(args[1])) return Usage("launch-packaged: invalid app identifier");
+        PackagedApp.Launch(args[1]);
+        return 0;
+    }
+
+    private static int PackagedIcon(string[] args)
+    {
+        if (args.Length != 2 || !PackagedApp.IsValid(args[1])) return Usage("icon-packaged: invalid app identifier");
+        Console.Out.Write(JsonSerializer.Serialize(new { png = PackagedApp.Icon(args[1]) }));
+        return 0;
+    }
 
     private const int SW_RESTORE = 9;
 
@@ -260,6 +281,29 @@ internal static class Program
     {
         var session = MediaSession.Current();
         Console.Out.Write(JsonSerializer.Serialize(session ?? new { }));
+        return 0;
+    }
+
+    // Read-only diagnostic, also used to restore volume during native checks.
+    private static int ReadVolume()
+    {
+        var level = Audio.GetMasterVolume();
+        Console.Out.Write(JsonSerializer.Serialize(new { volume = level }));
+        return level is null ? 2 : 0;
+    }
+
+    private static int ReadBrightness(string[] args)
+    {
+        if (args.Length != 1) return Usage("usage: brightness");
+        var displays = Brightness.Read();
+        Console.Out.Write(JsonSerializer.Serialize(new { displays }));
+        return displays.Count > 0 ? 0 : 2;
+    }
+
+    private static int ReadIcon(string[] args)
+    {
+        if (args.Length != 3) return Usage("usage: icon <target> <icon-location>");
+        Console.Out.Write(JsonSerializer.Serialize(new { png = AppIcon.Extract(args[1], args[2]) }));
         return 0;
     }
 }

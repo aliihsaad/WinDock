@@ -3,52 +3,136 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0b0d12">
+<meta name="theme-color" content="#101719">
+<meta name="color-scheme" content="dark">
 <title>WinDock</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
+<div id="wallpaper" class="wallpaper" aria-hidden="true"><span></span><span></span><span></span></div>
+<div id="rotate" class="rotate">
+  <div class="rotate__device" data-icon="monitor"></div><h1>A wider point of view.</h1>
+  <p>Turn your phone sideways to use WinDock.</p><span class="eyebrow">YOUR DESKTOP, WITHIN REACH</span>
+</div>
 <div id="pair" class="pair" hidden>
+  <div class="pair__intro"><div class="brand"><span data-icon="grid"></span>WinDock<span class="brand__dot"></span></div><h1>Your PC.<br><em>Within reach.</em></h1><p>Your favorites. Your controls. A space of your own.</p></div>
   <form id="pair-form" class="pair__card">
-    <h1 class="pair__title">WinDock</h1>
-    <p class="pair__hint">Enter the 4-digit PIN shown on your PC.</p>
-    <input id="pin" class="pair__pin" inputmode="numeric" pattern="[0-9]*" maxlength="4"
-           autocomplete="one-time-code" aria-label="PIN" required>
+    <p class="eyebrow">MAKE THE CONNECTION</p><h2>Hello, desktop.</h2>
+    <p class="pair__hint">Enter the PIN from your PC’s WinDock tray<br>→ Show connection info.</p>
+    <input id="pin" class="pair__pin" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="····" autocomplete="one-time-code" aria-label="PIN" required>
     <p id="pair-error" class="pair__error" role="alert"></p>
-    <button class="pair__go" type="submit">Connect</button>
+    <button class="button button--primary pair__go" type="submit">Connect to your PC <span data-icon="arrow"></span></button>
+    <p class="pair__note">Both devices need to be on the same network.</p>
   </form>
 </div>
 
 <main id="app" class="app" hidden>
   <header class="bar">
-    <span class="bar__host" id="host-name">—</span>
-    <span class="bar__state" id="conn" data-state="off">offline</span>
+    <div class="brand"><span data-icon="grid"></span>WinDock<span class="brand__dot"></span></div>
+    <span class="bar__divider"></span><span id="host-name" class="bar__host">Your PC</span>
+    <span id="conn" class="bar__state" data-state="off" role="status">Connecting</span>
+    <button id="edit" class="button button--small" type="button" aria-label="Edit dock" aria-pressed="false"><span data-icon="edit"></span><span>Edit</span></button>
+    <button id="settings-open" class="icon-button" type="button" aria-label="Open settings"><span data-icon="sliders"></span></button>
   </header>
-  <div id="nowplaying" class="nowplaying"></div>
-  <section id="dock" class="dock" aria-label="Dock"></section>
-  <footer class="foot">
-    <button id="add" class="foot__btn" type="button">Add</button>
-    <button id="edit" class="foot__btn" type="button" aria-pressed="false">Edit</button>
-    <button id="refresh" class="foot__btn" type="button">Refresh</button>
+  <div class="workspace">
+    <div class="dock-heading"><div><span class="eyebrow">YOUR EVERYDAY, ONE TAP AWAY</span><h1 id="dock-title">Make yourself at home.</h1></div><p id="edit-hint">Hold an icon to arrange your space</p></div>
+    <section id="dock" class="dock" aria-label="Dock"></section>
+    <div id="page-dots" class="page-dots" aria-label="Dock pages"></div>
+  </div>
+  <footer id="gesture-area" class="foot">
+    <button id="add" class="foot__button" type="button"><span data-icon="plus"></span><span>App library</span></button>
+    <div id="nowplaying" class="nowplaying"></div>
+    <button id="controls-open" class="foot__button" type="button"><span data-icon="sliders"></span><span>Controls</span></button>
+    <button id="swipe-settings" class="swipe-hint" type="button" aria-label="Open drawer">Swipe up for drawer<span></span></button>
   </footer>
 </main>
 
-<dialog id="picker" class="picker">
-  <div class="picker__tabs" role="tablist">
-    <button id="tab-apps" class="picker__tab is-active" type="button" role="tab"
-            aria-selected="true">Apps</button>
-    <button id="tab-controls" class="picker__tab" type="button" role="tab"
-            aria-selected="false">Controls</button>
-    <button id="picker-close" class="picker__close" type="button">Close</button>
+<button id="drawer-open" class="drawer-trigger" type="button" aria-label="Open drawer" hidden><span></span></button>
+<button id="edit-done" class="edit-done icon-button" type="button" aria-label="Done editing" hidden><span data-icon="check"></span></button>
+
+<dialog id="drawer" class="glass-drawer" aria-label="WinDock drawer">
+  <button id="drawer-close" class="drawer-grip" type="button" aria-label="Close drawer"><span></span></button>
+  <div class="drawer-actions">
+    <button id="drawer-apps" type="button"><span data-icon="plus"></span><span>Apps</span></button>
+    <button id="drawer-controls" type="button"><span data-icon="sliders"></span><span>Controls</span></button>
+    <button id="drawer-capture" type="button"><span data-icon="camera"></span><span>Capture</span></button>
+    <button id="drawer-settings" type="button"><span data-icon="sun"></span><span>Appearance</span></button>
+    <button id="drawer-edit" type="button"><span data-icon="edit"></span><span>Arrange</span></button>
+    <button id="drawer-fullscreen" type="button"><span data-icon="monitor"></span><span>Fullscreen</span></button>
   </div>
-  <div class="picker__head">
-    <input id="filter" class="picker__filter" placeholder="Search apps…" aria-label="Search apps">
-  </div>
-  <ul id="picker-list" class="picker__list"></ul>
-  <ul id="control-list" class="picker__list" hidden></ul>
+  <div class="drawer-connection"><span id="drawer-host">Your PC</span><span id="drawer-conn" data-state="off">Connecting</span></div>
 </dialog>
 
+<button id="recording-stop" class="recording-stop" type="button" aria-label="Stop screen recording" hidden><span class="recording-dot"></span><span id="recording-time">00:00</span><strong>Stop</strong></button>
+<dialog id="capture" class="sheet capture-sheet" aria-labelledby="capture-title">
+  <div class="sheet-handle"></div>
+  <div class="sheet__heading"><div><h2 id="capture-title">Capture your screen</h2><p class="capture-subtitle">Main monitor · Saved on your PC</p></div><button class="icon-button" type="button" data-close="capture" aria-label="Close capture"><span data-icon="close"></span></button></div>
+  <div class="capture-actions">
+    <button id="capture-screenshot" type="button"><span data-icon="camera"></span><strong>Screenshot</strong><small>PNG · Full resolution</small></button>
+    <button id="capture-record" type="button"><span id="capture-record-icon" data-icon="record"></span><strong id="capture-record-label">Start recording</strong><small id="capture-record-detail">MP4 · Video only</small></button>
+  </div>
+  <p id="capture-status" class="capture-status" role="status">Screenshots → Pictures / WinDock. Recordings → Videos / WinDock.</p>
+  <p id="capture-file" class="capture-file" hidden></p>
+  <p class="capture-tip">Recordings stop after 60 minutes. You can also stop from the Windows tray.</p>
+</dialog>
+
+<dialog id="picker" class="sheet picker" aria-labelledby="picker-title">
+  <div class="sheet-handle"></div>
+  <div class="sheet__heading"><div><p class="eyebrow">MAKE ROOM FOR YOUR FAVORITES</p><h2 id="picker-title">Add to your dock</h2></div><button id="picker-close" class="icon-button" type="button" aria-label="Close app library"><span data-icon="close"></span></button></div>
+  <div class="picker__tools"><div class="picker__tabs" role="tablist" aria-label="Tile type">
+    <button id="tab-apps" class="picker__tab is-active" type="button" role="tab" aria-selected="true" aria-controls="picker-list">Apps</button>
+    <button id="tab-controls" class="picker__tab" type="button" role="tab" aria-selected="false" aria-controls="control-list" tabindex="-1">Controls</button>
+  </div><label id="picker-search" class="search-box"><span data-icon="search"></span><input id="filter" placeholder="Find an app…" aria-label="Search apps" autocomplete="off"></label></div>
+  <p id="picker-status" class="picker__status" role="status">Loading your apps…</p>
+  <ul id="picker-list" class="picker__list" role="tabpanel" aria-labelledby="tab-apps"></ul>
+  <ul id="control-list" class="picker__list" role="tabpanel" aria-labelledby="tab-controls" hidden></ul>
+</dialog>
+
+<dialog id="settings" class="sheet settings" aria-labelledby="settings-title">
+  <div class="sheet-handle"></div>
+  <div class="sheet__heading"><div><h2 id="settings-title">Your space</h2></div><button class="icon-button" type="button" data-close="settings" aria-label="Close settings"><span data-icon="close"></span></button></div>
+  <div class="settings__grid">
+    <section class="settings__card"><h3>Layout</h3><p id="layout-summary">4 icons · 2 × 2</p>
+      <div class="layout-choices" role="group" aria-label="Icons per page">
+        <button type="button" data-per-page="4" aria-pressed="true"><span class="mini-grid" style="--mini-columns:2"><i></i><i></i><i></i><i></i></span><span>4 icons</span></button>
+        <button type="button" data-per-page="6" aria-pressed="false"><span class="mini-grid" style="--mini-columns:3"><i></i><i></i><i></i><i></i><i></i><i></i></span><span>6 icons</span></button>
+        <button type="button" data-per-page="8" aria-pressed="false"><span class="mini-grid" style="--mini-columns:4"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span>8 icons</span></button>
+      </div>
+      <label class="setting-row">Immersive mode<input id="immersive" class="switch" type="checkbox" role="switch" checked></label>
+      <label class="setting-row">App names<input id="show-labels" class="switch" type="checkbox" role="switch"></label>
+      <p class="settings__tip">Hold to arrange. Swipe up for the drawer.</p>
+    </section>
+    <section class="settings__card"><h3>Background</h3>
+      <div class="background-choices" role="group" aria-label="Background">
+        <button type="button" data-background="aurora" aria-pressed="true"><span class="swatch swatch--aurora"></span><span>Aurora</span></button>
+        <button type="button" data-background="dusk" aria-pressed="false"><span class="swatch swatch--dusk"></span><span>Dusk</span></button>
+        <button type="button" data-background="ember" aria-pressed="false"><span class="swatch swatch--ember"></span><span>Ember</span></button>
+        <button type="button" data-background="midnight" aria-pressed="false"><span class="swatch swatch--midnight"></span><span>Midnight</span></button>
+      </div>
+      <label class="setting-row" for="glass-theme">Glass style<select id="glass-theme"><option value="glass">Clear</option><option value="frost">Frosted</option><option value="smoke">Smoked</option></select></label>
+      <div class="settings__utilities"><button id="fullscreen" class="button" type="button"><span data-icon="monitor"></span>Fullscreen</button><button id="refresh" class="button" type="button"><span data-icon="refresh"></span>Refresh</button></div>
+    </section>
+  </div>
+</dialog>
+
+<dialog id="controls" class="sheet" aria-labelledby="controls-title">
+  <div class="sheet-handle"></div>
+  <div class="sheet__heading"><div><p class="eyebrow">THE LITTLE ADJUSTMENTS</p><h2 id="controls-title">Take control</h2></div><button class="icon-button" type="button" data-close="controls" aria-label="Close controls"><span data-icon="close"></span></button></div>
+  <div id="controls-grid" class="controls-grid"></div>
+</dialog>
+
+<dialog id="tile-options" class="options" aria-labelledby="tile-options-title">
+  <span id="tile-options-icon" class="options__icon"></span><h2 id="tile-options-title">App options</h2><p>Make a little room. Keep it in reach.</p>
+  <div class="options__actions"><button id="tile-earlier" type="button"><span data-icon="left"></span>Move earlier</button><button id="tile-later" type="button"><span data-icon="right"></span>Move later</button><button id="tile-remove" class="danger-text" type="button"><span data-icon="trash"></span>Remove from dock</button></div>
+  <button class="button options__done" type="button" data-close="tile-options">Done</button>
+</dialog>
+
+<dialog id="confirm" class="confirm" aria-labelledby="confirm-title" aria-describedby="confirm-description">
+  <span class="confirm__icon" data-icon="power"></span><h2 id="confirm-title">Continue?</h2><p id="confirm-description"></p>
+  <div class="confirm__actions"><button id="confirm-cancel" class="button" type="button" autofocus>Cancel</button><button id="confirm-go" class="button button--danger" type="button">Continue</button></div>
+</dialog>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 <script type="module" src="/app.js"></script>
 </body>
 </html>

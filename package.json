@@ -6,8 +6,16 @@
   "description": "Remote app dock and control surface for a Windows PC, driven from a phone on the same LAN.",
   "scripts": {
     "start": "node server.js",
+    "website": "node scripts/website-server.mjs",
+    "build:website-demo": "node scripts/build-website-demo.mjs",
+    "package:downloads": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/package-downloads.ps1",
+    "build:windows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/build-windows.ps1",
+    "build:installer": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/build-installer.ps1",
+    "test:installer": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/test-installer.ps1",
+    "build:android": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/build-android.ps1",
+    "test:windows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/test-windows.ps1",
     "test": "node test/run.mjs",
-    "gates": "node ~/.claude/skills/unlazy/scripts/gate-check.mjs GATES.md"
+    "gates": "node scripts/gates.mjs --status"
   },
   "engines": {
     "node": ">=20"

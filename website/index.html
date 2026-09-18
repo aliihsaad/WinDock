@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f5f0">
+  <meta name="description" content="Give your PC a place on your desk. WinDock turns your Android phone into a beautiful, personal dock for your Windows apps and controls.">
+  <meta property="og:title" content="WinDock — Your PC. Within reach.">
+  <meta property="og:description" content="Your favorite apps, a touch away. A personal Windows dock on your Android phone.">
+  <meta property="og:type" content="website">
+  <title>WinDock — Your PC. Within reach.</title>
+  <link rel="icon" href="./assets/windock.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="header wrap">
+    <a class="brand" href="#" aria-label="WinDock home"><span class="brand-icon"><img src="./assets/windock.svg" width="25" height="25" alt=""></span>WinDock<span class="brand-beta">PREVIEW</span></a>
+    <nav aria-label="Main navigation">
+      <a href="#experience">Try it</a><a href="#setup">The setup</a><a href="#faq">Good to know</a><a class="nav-download" href="#download">Get WinDock <span aria-hidden="true">↗</span></a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="hero wrap" aria-labelledby="hero-title">
+      <div class="hero-emblem" aria-hidden="true"><div class="emblem-key"><img src="./assets/windock.svg" width="106" height="106" alt="" draggable="false"></div><span class="emblem-shadow"></span></div>
+      <p class="eyebrow hero-eyebrow">AN OLD PHONE. A NEW DESK COMPANION.</p>
+      <h1 id="hero-title">Your PC.<br><span>Within reach.</span></h1>
+      <p class="hero-description">Your favorite Windows apps, on the phone beside you.<br class="desktop-break"> Tap to launch. Swipe to make it yours. Get back to your thing.</p>
+      <div class="hero-actions"><a class="button button-primary" href="#download">Get WinDock <span data-symbol="download"></span></a><a class="text-link" href="#experience">Try it right here <span aria-hidden="true">↘</span></a></div>
+      <p class="hero-note">Windows + Android <span>·</span> On your Wi-Fi <span>·</span> No account needed</p>
+
+      <div class="preview-heading"><span class="eyebrow">01 / A LITTLE HANDS-ON TIME</span><span class="margin-note">Yes, you can actually use it. <span aria-hidden="true">↴</span></span></div>
+      <div class="demo-stage" id="experience">
+        <div class="stage-glow" aria-hidden="true"></div>
+        <div class="device" aria-label="Interactive WinDock preview">
+          <div class="device-button device-button-one" aria-hidden="true"></div><div class="device-button device-button-two" aria-hidden="true"></div>
+          <div class="device-screen" id="demo-screen">
+            <iframe id="demo-frame" class="demo-frame" title="WinDock interactive app preview" src="./demo/index.html" sandbox="allow-scripts allow-same-origin" allow="fullscreen"></iframe>
+            <div class="device-camera" aria-hidden="true"></div>
+          </div>
+        </div>
+        <div class="demo-toolbar">
+          <div class="demo-shortcuts"><button class="preview-label preview-open" id="preview-drawer"><span class="live-dot"></span> Open drawer ↗</button><button class="preview-open" id="preview-capture">Try capture ↗</button></div>
+          <div class="density-control" aria-label="Icons per preview page"><span>Icons per page</span><div class="segmented"><button data-density-choice="4" aria-pressed="false">4</button><button data-density-choice="6" aria-pressed="true">6</button><button data-density-choice="8" aria-pressed="false">8</button></div></div>
+        </div>
+        <p class="demo-note">The real interface, with sample apps. Screenshots and recordings here are simulated.</p>
+      </div>
+      <div class="gesture-strip"><span><span data-symbol="touch"></span> Hold to make it yours</span><span><span data-symbol="swipe"></span> Swipe through your spaces</span><span><span data-symbol="up"></span> Swipe up for more</span></div>
+    </section>
+
+    <section class="features wrap section" aria-labelledby="features-title">
+      <div class="section-intro"><p class="eyebrow">02 / LESS REACHING. MORE DOING.</p><h2 id="features-title">Small screen.<br><span>Very good<br>company.</span></h2><p>That phone sitting in a drawer still has a lot to give. Put it next to your keyboard. Give your everyday apps a place of their own.</p><p class="handwritten">A second life looks good on it.</p></div>
+      <div class="feature-list">
+        <article><span class="feature-number">01</span><div><h3>Your apps. Right there.</h3><p>Chrome, Spotify, your code editor. Pin the Windows apps you use, with their real icons. One tap opens them on your PC.</p></div><span data-symbol="arrow"></span></article>
+        <article><span class="feature-number">02</span><div><h3>A space that feels like you.</h3><p>Four big icons, or room for eight. Your background, your layout. Hold to rearrange. Swipe over for a fresh page.</p></div><span data-symbol="grid"></span></article>
+        <article><span class="feature-number">03</span><div><h3>Keep your rhythm.</h3><p>Turn the volume down. Skip that song. Pause for a minute. The little controls you reach for, without leaving your work.</p></div><span data-symbol="volume"></span></article>
+        <article><span class="feature-number">04</span><div><h3>Keep that moment.</h3><p>Take a screenshot or record your main monitor from the drawer. PNG images and silent MP4 videos, saved straight to your PC.</p></div><span data-symbol="camera"></span></article>
+      </div>
+    </section>
+
+    <figure class="desk-scene wrap">
+      <img src="./assets/windock-desktop.png" alt="A Windows desktop with a landscape phone beside the keyboard, showing six large app icons in WinDock." width="1672" height="941" loading="lazy" decoding="async">
+      <figcaption><span>A little screen. Right where you need it.</span><span class="scene-disclosure">AI-generated product illustration</span></figcaption>
+    </figure>
+
+    <section class="local-section wrap" aria-labelledby="local-title"><div class="connection-art" aria-hidden="true"><span data-symbol="monitor"></span><span class="connection-line"><i></i><i></i><i></i></span><span data-symbol="phone"></span></div><div><p class="eyebrow">A DIRECT CONNECTION</p><h2 id="local-title">Your desk. Your network.<br><span>That’s the whole circle.</span></h2><p>Your phone talks directly to your PC over your local network.<br class="desktop-break"> Pair with a PIN. No account to create. No cloud in between.</p></div><span class="local-tag"><span class="live-dot"></span> LOCAL BY DESIGN</span></section>
+
+    <section class="setup wrap section" id="setup" aria-labelledby="setup-title">
+      <div class="section-heading"><div><p class="eyebrow">03 / FROM DOWNLOAD TO DESK</p><h2 id="setup-title">A little setup.<br><span>A lot of everyday.</span></h2></div><p>A Windows PC. An Android phone.<br>One shared network. You’re all set.</p></div>
+      <ol class="steps">
+        <li><div class="step-top"><span class="step-number">01</span><span data-symbol="monitor"></span></div><h3>Start with your PC.</h3><p>Open <strong>WinDockSetup.exe</strong>. The installer takes care of the files and adds WinDock to your Start menu.</p><a href="#download">Get the Windows app <span aria-hidden="true">↗</span></a></li>
+        <li><div class="step-top"><span class="step-number">02</span><span data-symbol="phone"></span></div><h3>Bring your phone.</h3><p>Install the Android APK. Keep both devices on the same network, then open WinDock and find your PC.</p><a href="#download">Get the Android app <span aria-hidden="true">↗</span></a></li>
+        <li><div class="step-top"><span class="step-number">03</span><span data-symbol="grid"></span></div><h3>Make yourself at home.</h3><p>Enter the PIN from <strong>Show connection info</strong> in the PC tray menu. Turn your phone sideways, swipe up, and pin your favorites.</p><a href="#faq">Need a hand? <span aria-hidden="true">↗</span></a></li>
+      </ol>
+    </section>
+
+    <section class="download-section" id="download" aria-labelledby="download-title">
+      <div class="wrap"><div class="download-heading"><p class="eyebrow">04 / MAKE SOME ROOM</p><h2 id="download-title">Your desk called.<br><span>It wants WinDock.</span></h2><p>One companion for your PC. One new job for your phone.</p><span class="release-pill"><span class="live-dot"></span> EARLY PREVIEW <span>·</span> <span id="release-version">0.1.0</span></span></div>
+      <div class="download-grid">
+        <article class="download-card"><div class="download-platform"><span data-symbol="windows"></span><span class="platform-badge">THE PC COMPANION</span></div><h3>WinDock for Windows</h3><p>Your quiet companion in the system tray.<br>The whole dock starts here.</p><a class="button button-primary download-button" id="download-windows" href="#download-status" aria-disabled="true"><span>Preparing Windows download</span><span data-symbol="download"></span></a><p class="download-meta" id="windows-meta">Windows 10 / 11 · x64 · Setup EXE</p><details class="install-details"><summary>How to install <span aria-hidden="true">+</span></summary><div><p>Open <strong>WinDockSetup.exe</strong> and follow the installer. WinDock appears in your Start menu and Windows system tray. Everything it needs is included. Starting with Windows is optional.</p><p>This preview is unsigned. Windows may show a publisher warning. Only run a copy you trust. If prompted for network access, allow it on your private home network.</p></div></details></article>
+        <article class="download-card"><div class="download-platform"><span data-symbol="android"></span><span class="platform-badge">THE TOUCH EXPERIENCE</span></div><h3>WinDock for Android</h3><p>One phone. A whole new workspace.<br>Made for a sideways point of view.</p><a class="button button-secondary download-button" id="download-android" href="#download-status" aria-disabled="true"><span>Preparing Android download</span><span data-symbol="download"></span></a><p class="download-meta" id="android-meta">Android 7.0+ · Debug APK</p><details class="install-details"><summary>How to install <span aria-hidden="true">+</span></summary><div><p>Download the APK on your Android phone and open it. Android may ask you to allow installation from your browser or file manager.</p><p>This is a debug-signed test build, distributed directly rather than through Google Play. Launch it, connect to your PC, and enter the pairing PIN.</p></div></details></article>
+      </div><p class="download-status" id="download-status" role="status">Checking available downloads…</p><p class="preview-disclosure">This is an early preview. Some Windows focus behavior and hardware controls are still being refined.</p><a class="checksum-link" id="checksum-link" hidden>SHA-256 checksums <span aria-hidden="true">↗</span></a>
+      </div>
+    </section>
+
+    <section class="faq wrap section" id="faq" aria-labelledby="faq-title"><div><p class="eyebrow">05 / GOOD TO KNOW</p><h2 id="faq-title">A few things<br><span>before you go.</span></h2></div><div class="faq-list">
+      <details><summary>Do I need both apps?<span aria-hidden="true">+</span></summary><p>The Windows companion runs on your PC. On your phone, use the Android app for the fullscreen experience, or open the address shown by the Windows tray in a browser. Both connect to the same dock.</p></details>
+      <details><summary>Does it work away from home?<span aria-hidden="true">+</span></summary><p>WinDock is made for your local network. Keep your phone and PC on the same trusted network. It doesn’t include an internet remote-access service.</p></details>
+      <details><summary>Can I use an older Android phone?<span aria-hidden="true">+</span></summary><p>The test app supports Android 7.0 and newer. Update Android System WebView if the interface has trouble loading, then turn the phone sideways for the dock.</p></details>
+      <details><summary>My phone can’t find my PC. What next?<span aria-hidden="true">+</span></summary><p>Check that WinDock is running in the Windows tray and both devices are on the same network. Open <strong>Show connection info</strong> and enter that address manually on the phone. Guest Wi-Fi and firewall settings can prevent devices from seeing each other.</p></details>
+      <details><summary>How do I add apps and more pages?<span aria-hidden="true">+</span></summary><p>Swipe up and open <strong>Apps</strong> to pin your favorites. New pages appear as you add more than your chosen four, six, or eight icons. Hold to rearrange, and drag an icon to the edge to move it between pages.</p></details>
+      <details><summary>Is this the finished version?<span aria-hidden="true">+</span></summary><p>Not yet. These are early preview builds: an unsigned Windows installer and a debug-signed Android APK. Core launch, pairing, and layout features are available; Windows focus behavior and some device-specific controls are still being tested.</p></details>
+    </div></section>
+  </main>
+  <footer class="footer wrap">
+    <div class="footer-wordmark" aria-hidden="true">WinDock<span>✳</span></div>
+    <div class="footer-bottom">
+      <a class="brand" href="#"><span class="brand-icon"><img src="./assets/windock.svg" width="25" height="25" alt=""></span>Back to the top <span aria-hidden="true">↑</span></a>
+      <p>A little screen. A space of your own.</p>
+      <div class="footer-links">
+        <a class="footer-project" href="https://github.com/aliihsaad/WinDock" target="_blank" rel="noopener noreferrer"><span data-symbol="github"></span>Project on GitHub <span aria-hidden="true">↗</span></a>
+        <span class="creator-credit">Made by <a class="creator-name" href="https://github.com/aliihsaad" target="_blank" rel="noopener noreferrer" aria-label="Ali on GitHub"><span data-symbol="github"></span>Ali</a></span>
+      </div>
+    </div>
+  </footer>
+  <noscript><p class="noscript">JavaScript enables the interactive preview and download availability. See the <a href="./downloads.json">download manifest</a> for available files.</p></noscript>
+</body>
+</html>

@@ -12,6 +12,11 @@
     <SelfContained>false</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\WinDock.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\WinDock.ico" LogicalName="WinDock.Tray.WinDock.ico" />
+  </ItemGroup>
 
 </Project>

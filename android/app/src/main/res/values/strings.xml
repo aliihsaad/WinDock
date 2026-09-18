@@ -2,5 +2,12 @@
 <resources>
     <string name="app_name">WinDock</string>
     <string name="searching">Looking for your PC…</string>
-    <string name="not_found">No WinDock host found on this network.\nMake sure the PC app is running and both devices are on the same Wi-Fi.</string>
+    <string name="not_found">Keep WinDock running on your PC and connect both devices to the same network.\nTry again, or enter the address shown in the PC tray.</string>
+    <string name="connecting">Opening your dock…</string>
+    <string name="connection_lost">Could not reach your PC. Check the connection and try again.</string>
+    <string name="choose_pc">Connect to your PC, or search for another one.</string>
+    <string name="address_hint">PC address · 192.168.1.40:8620</string>
+    <string name="invalid_address">Enter the local IPv4 address shown in the WinDock tray.</string>
+    <string name="retry">Find my PC</string>
+    <string name="connect">Connect</string>
 </resources>

@@ -1,8 +1,7 @@
 /**
  * G17: the Android wrapper agrees with the host discovery and API contract.
  *
- * The APK cannot be built here (no Android SDK, no JDK), so this gate does the
- * thing a build would NOT catch anyway: it proves the Kotlin constants and the
+ * Alongside the Android build and JVM tests, this gate proves the Kotlin constants and the
  * JavaScript host describe the same protocol. Drift between them is the failure
  * that would compile perfectly and then simply never find the PC.
  */
@@ -56,13 +55,7 @@ t.equal(
 );
 t.equal(parseReply(answer), "http://192.168.1.40:8620", "the host can parse its own reply");
 
-// The Kotlin parser must accept the host's reply and reject junk. Reimplement
-// its documented rule and check it against the real host output.
-const kotlinParse = (msg) =>
-  msg.startsWith(kotlinPrefix) ? msg.slice(kotlinPrefix.length).trim() || null : null;
-t.equal(kotlinParse(answer), "http://192.168.1.40:8620", "the Kotlin rule parses the host reply");
-t.equal(kotlinParse("garbage"), null, "the Kotlin rule rejects unrelated traffic");
-t.equal(kotlinParse(kotlinPrefix), null, "the Kotlin rule rejects an empty endpoint");
+// EndpointPolicyTest executes the real Kotlin parser, including unsafe replies.
 // Negative control: a deliberately wrong prefix must fail, proving the checks
 // above are not passing vacuously.
 t.equal(
@@ -81,9 +74,8 @@ for (const route of routes) {
 }
 // /health is the only unauthenticated route, so a reachability probe must use it.
 t.ok(routes.includes("/health"), "the app probes /health, the only public route");
-// The Kotlin source escapes its quotes, so match the escaped literal.
 t.ok(
-  main.includes('\\"app\\":\\"windock\\"'),
+  main.includes('optString("app") == "windock"'),
   "the app verifies the host identity, not just a 200",
 );
 
@@ -97,11 +89,12 @@ t.ok(manifest.includes("MainActivity"), "manifest registers the main activity");
 t.ok(manifest.includes("android.intent.category.LAUNCHER"), "the app has a launcher entry");
 t.ok(manifest.includes('android:allowBackup="false"'), "backups are disabled so the session cookie is not exported");
 
-// Cleartext is needed for a LAN host, but must not be blanket-enabled.
+// Android domain rules cannot match IP ranges. The app grants transport
+// permission and enforces numeric LAN hosts + same-origin requests in Kotlin.
 const netcfg = read("app/src/main/res/xml/network_security_config.xml");
 t.ok(netcfg.includes('cleartextTrafficPermitted="true"'), "cleartext is permitted for the LAN");
-t.ok(netcfg.includes('<base-config cleartextTrafficPermitted="false"'), "cleartext is denied by default elsewhere");
-t.ok(netcfg.includes("192.168"), "private ranges are named explicitly");
+t.ok(!netcfg.includes("<domain"), "network policy does not mistake IP literals for subnets");
+t.ok(main.includes("EndpointPolicy.allowsRequest"), "WebView requests are scoped to the selected origin");
 
 // ---- the native layer must not handle credentials ----
 /** Strip comments: the invariant is about code, and documenting the boundary

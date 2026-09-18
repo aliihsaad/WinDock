@@ -13,3 +13,13 @@ obj/
 
 # local host config
 config.json
+
+# Local toolchains and packaged applications
+.tools/
+artifacts/
+website/demo/
+.vercel/
+WinDockHelper.exe
+android/.gradle/
+android/local.properties
+android/**/build/

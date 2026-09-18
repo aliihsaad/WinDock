@@ -24,14 +24,14 @@ object Discovery {
     fun parseReply(message: String): String? {
         if (!message.startsWith(REPLY_PREFIX)) return null
         val endpoint = message.removePrefix(REPLY_PREFIX).trim()
-        return endpoint.ifEmpty { null }
+        return EndpointPolicy.normalize(endpoint)
     }
 
     /**
      * Broadcast a probe and return the first valid endpoint, or null.
      * Runs on a background thread; never call from the main thread.
      */
-    fun find(): String? {
+    fun find(reachable: (String) -> Boolean): String? = try {
         DatagramSocket().use { socket ->
             socket.broadcast = true
             socket.soTimeout = TIMEOUT_MS
@@ -45,7 +45,7 @@ object Discovery {
                     val packet = DatagramPacket(buffer, buffer.size)
                     socket.receive(packet)
                     val reply = String(packet.data, 0, packet.length)
-                    parseReply(reply)?.let { return it }
+                    parseReply(reply)?.takeIf(reachable)?.let { return it }
                 } catch (_: SocketTimeoutException) {
                     // try again
                 } catch (_: java.io.IOException) {
@@ -53,6 +53,6 @@ object Discovery {
                 }
             }
         }
-        return null
-    }
+        null
+    } catch (_: java.io.IOException) { null }
 }

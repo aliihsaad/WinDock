@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": "npm run build:website-demo",
+  "outputDirectory": "website",
+  "installCommand": "npm ci --ignore-scripts --no-audit --no-fund",
+  "headers": [
+    {
+      "source": "/downloads.json",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }]
+    }
+  ]
+}

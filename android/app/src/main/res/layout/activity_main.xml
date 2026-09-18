@@ -1,22 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="#0b0d12">
-
-    <WebView
-        android:id="@+id/web"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:visibility="gone" />
-
-    <TextView
-        android:id="@+id/status"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:padding="24dp"
-        android:gravity="center"
-        android:textColor="#8d96ab"
-        android:textSize="15sp" />
+    android:layout_width="match_parent" android:layout_height="match_parent">
+    <WebView android:id="@+id/web" android:layout_width="match_parent"
+        android:layout_height="match_parent" android:visibility="gone" />
+    <ScrollView android:id="@+id/connection" android:layout_width="match_parent"
+        android:layout_height="match_parent" android:fillViewport="true">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:gravity="center" android:padding="24dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="@string/app_name" android:textColor="#F3F8FA" android:textSize="26sp"
+                android:textStyle="bold" />
+            <TextView android:id="@+id/status" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:gravity="center"
+                android:padding="12dp" android:textColor="#AABBC8" android:textSize="15sp" />
+            <ProgressBar android:id="@+id/progress" android:layout_width="24dp"
+                android:layout_height="24dp" android:indeterminateTint="#88E9C4" />
+            <EditText android:id="@+id/address" android:layout_width="360dp"
+                android:layout_height="56dp" android:layout_marginTop="12dp"
+                android:inputType="textUri" android:singleLine="true" android:imeOptions="actionGo"
+                android:hint="@string/address_hint" android:autofillHints=""
+                android:importantForAutofill="no" android:maxLength="200"
+                android:textColor="#F3F8FA" android:textColorHint="#8196A6"
+                android:backgroundTint="#568475" />
+            <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:layout_marginTop="8dp">
+                <Button android:id="@+id/retry" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:text="@string/retry"
+                    android:textAllCaps="false" />
+                <Button android:id="@+id/connect" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:layout_marginStart="12dp"
+                    android:text="@string/connect" android:textAllCaps="false" />
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
 </FrameLayout>

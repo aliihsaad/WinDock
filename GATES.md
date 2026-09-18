@@ -5,15 +5,19 @@ OWNS: src/**, public/**, scripts/**, test/**, native/**, server.js, package.json
 Scope: A Windows-hosted remote app dock. A Node host serves a PWA and syncs over
 WebSocket; a phone on the same LAN launches and focuses Windows apps and drives
 system/media control. This ledger covers the host, the platform provider layer,
-the Windows provider logic, the PWA, and the security boundary. Compiling the C#
-helpers, running real Win32 calls, and building the Android APK are recorded as
-explicit handoffs because this machine has no .NET SDK, no Android SDK, and no
-Windows.
+the Windows provider logic, the PWA, and the security boundary. The C#
+helpers and tray are built on Windows; the Android debug APK is built and tested
+in an emulator. Physical-phone validation remains pending. Historical automatic-evidence rows
+below describe the original Linux run; the current Windows verification is
+`npm test` (15 scripts, 857 assertions), passing on 2026-09-18. Earlier native
+smoke runs passed on 2026-09-17; the latest rerun rejects window focus with both old
+and new helpers. The historical G13 evidence remains recorded, while the current
+focus failure is tracked in ROADMAP.md. See WINDOWS_READINESS.md for the audit.
 
 - [x] G0: this ledger states outcomes that can fail
-  CHECK: node /home/aliihsaad/.claude/skills/unlazy/scripts/gate-lint.mjs GATES.md
-  EXPECT: LINT OK
-  EVIDENCE: automatic-evidence=v1; definition-sha256=361d81a841bbccc63b4d7ae04c094e685fb18334b464e7b41c20ca818536c3bd; exit=0; EXPECT=matched; output-sha256=48630b7361dd44ee870917b12c3d19b9d7bdea738aaca16bb04d4cab83b772d2; output-bytes=8; shell=/bin/sh; cwd=/home/aliihsaad/Projects/WinDock; path=35711f0c9bd2/13 entries
+  CHECK: npm run gates
+  EXPECT: STATUS OK
+  EVIDENCE: 2026-09-17: portable status reader validates all 18 unique gate IDs; no external Claude/Linux tools required.
 
 - [x] G1: every platform provider implements the whole provider contract with correct arities
   CHECK: node scripts/verify-contract.mjs
@@ -80,7 +84,7 @@ Windows.
   EXPECT: editing verification passed
   EVIDENCE: automatic-evidence=v1; definition-sha256=f5eec30ccedd862785d82c7ec48c661ecf8f35ad00547e8b1ba818533a1645ab; exit=0; EXPECT=matched; output-sha256=201558dfc6cf43684eb4950f7383722c5392b181bd404b00cec8a85ea0307a42; output-bytes=42; shell=/bin/sh; cwd=/home/aliihsaad/Projects/WinDock; path=35711f0c9bd2/13 entries
 
-- [x] G16: the PWA registers a service worker and serves an installable offline shell
+- [x] G16: service-worker registration and offline-shell assets pass repository verification (secure origin required on phones)
   CHECK: node scripts/verify-offline.mjs
   EXPECT: offline verification passed
   EVIDENCE: automatic-evidence=v1; definition-sha256=21f19cd3bbe58b8b15151d80cbf3c2c8d19b77db3196f1bfe2a070b45836d8a4; exit=0; EXPECT=matched; output-sha256=30947b977dd6f2f91cc42e41bd54a55bdd4ea0261f8d8f6766bffb340a8a7812; output-bytes=42; shell=/bin/sh; cwd=/home/aliihsaad/Projects/WinDock; path=35711f0c9bd2/13 entries
@@ -88,13 +92,12 @@ Windows.
 - [x] G17: the Android wrapper source agrees with the host discovery and API contract
   CHECK: node scripts/verify-android.mjs
   EXPECT: android verification passed
-  EVIDENCE: automatic-evidence=v1; definition-sha256=7a4c5bd32a170d3a456ac7a69936fbcf8d2229241b47c793371a34e5ce9d5fd7; exit=0; EXPECT=matched; output-sha256=6f12790208b6f2b57a0336613af32782a963aaf65e1443c8afeb7b8c7681963a; output-bytes=42; shell=/bin/sh; cwd=/home/aliihsaad/Projects/WinDock; path=35711f0c9bd2/13 entries
+  EVIDENCE: 2026-09-17: 41 host/Kotlin contract assertions, four JVM tests executing the real endpoint/discovery policy, assembleDebug, lintDebug (zero errors) and APK signature verification pass. Android 16 emulator instrumentation passes pairing, WebSocket sync, fullscreen layout, touch swipes, long press, fixture action requests, connection recovery and Activity recreation. Three old mirrored-JavaScript parser assertions were replaced by actual Kotlin tests.
 
-- [ ] G13: C# native helpers compile into a runnable Windows tray host
-  EVIDENCE: pending
+- [x] G13: C# native helpers compile into a runnable Windows tray host
+  CHECK: npm run build:windows
+  EXPECT: WINDOWS BUILD OK
+  EVIDENCE: 2026-09-17: SDK 8.0.425 published both self-contained Windows executables, bundled Node and ws. npm run test:windows passed native argument delivery, enumeration, focus, WM_CLOSE, Core Audio at the existing level, now-playing invocation, and tray startup/cleanup from a different working directory.
 
 - [ ] G14: a real Android device launches and focuses an app on a real Windows PC
-  EVIDENCE: pending
-
-ABANDON: G13 no .NET SDK on this machine (dotnet runtime 10.0.11 present, `dotnet --list-sdks` empty) and no Windows host; C# sources are delivered unbuilt for compilation on a Windows box with the .NET SDK.
-ABANDON: G14 no Android SDK, no JDK, no adb, and no Windows PC available here; end-to-end device verification is handed off to hardware.
+  EVIDENCE: pending — PC native checks and desktop-browser pairing/editing pass. Still requires a real Android phone over the LAN; desktop/browser simulation does not clear this gate.

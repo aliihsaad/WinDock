@@ -99,4 +99,16 @@ t.equal(
   "the first external IPv4 address is chosen",
 );
 
+const multiAdapter = {
+  Tailscale: [{ family: "IPv4", internal: false, address: "100.100.10.1" }],
+  "vEthernet (Default Switch)": [{ family: "IPv4", internal: false, address: "172.22.80.1" }],
+  Ethernet: [{ family: "IPv4", internal: false, address: "192.168.178.80" }],
+};
+t.equal(primaryAddress(multiAdapter), "192.168.178.80", "physical LAN wins over earlier VPN and Hyper-V adapters");
+t.equal(primaryAddress(multiAdapter, "100.100.10.1"), "100.100.10.1", "explicit selection supports intentional VPN use");
+await t.rejects(async () => primaryAddress(multiAdapter, "192.168.99.99"), "an unassigned advertised address is rejected");
+await t.rejects(async () => primaryAddress(multiAdapter, "http://evil.test"), "a URL is not accepted as an address");
+t.equal(primaryAddress({ Ethernet: [{ family: 4, internal: false, address: "169.254.1.2" }] }), null, "link-local fallback is not advertised as a LAN host");
+t.equal(primaryAddress({ Tailscale: multiAdapter.Tailscale }), "100.100.10.1", "VPN-only machines still have a usable fallback");
+
 t.done("discovery verification passed");

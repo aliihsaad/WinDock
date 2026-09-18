@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <title>WinDock</title>
+  <rect x="24" y="24" width="88" height="88" rx="18" fill="#82E7BF"/>
+  <rect x="144" y="24" width="88" height="88" rx="18" fill="#C7FAE9"/>
+  <rect x="24" y="144" width="88" height="88" rx="18" fill="#80B9FF"/>
+  <rect x="144" y="144" width="88" height="88" rx="18" fill="#69DACB"/>
+</svg>

@@ -19,10 +19,14 @@
  */
 
 import { CONTROL_VERBS, validateControl } from "./contract.js";
+import { createHash } from "node:crypto";
+import { fileURLToPath } from "node:url";
+import { createWindowsCapture } from "./capture.js";
 
-/** Constant PowerShell: Start Menu shortcuts + registry uninstall entries. */
+/** Constant PowerShell: classic shortcuts and the Windows packaged-app catalog. */
 export const INVENTORY_PS = [
   "$ErrorActionPreference='SilentlyContinue';",
+  "[Console]::OutputEncoding=New-Object System.Text.UTF8Encoding($false);",
   "$out=@();",
   "$roots=@(",
   "  [Environment]::GetFolderPath('CommonStartMenu'),",
@@ -41,16 +45,26 @@ export const INVENTORY_PS = [
   "    }",
   "  }",
   "};",
+  "$catalog=(New-Object -ComObject Shell.Application).NameSpace('shell:AppsFolder');",
+  "if($catalog){foreach($item in $catalog.Items()) {",
+  "  $aumid=$item.ExtendedProperty('System.AppUserModel.ID');",
+  "  if($aumid -and $aumid.Contains('!')){",
+  "    $out+=[pscustomobject]@{name=$item.Name; target=('shell:AppsFolder\\'+$aumid); args=''; icon=''; source='packaged'}",
+  "  }",
+  "}};",
   "$out | ConvertTo-Json -Compress -Depth 3",
 ].join(" ");
 
 /** Constant PowerShell: processes owning a top-level window. */
 export const RUNNING_PS = [
   "$ErrorActionPreference='SilentlyContinue';",
+  "[Console]::OutputEncoding=New-Object System.Text.UTF8Encoding($false);",
+  "Add-Type -TypeDefinition 'using System; using System.Text; using System.Runtime.InteropServices; public static class WinDockIdentity { [DllImport(\"kernel32.dll\")] static extern IntPtr OpenProcess(uint access, bool inherit, int id); [DllImport(\"kernel32.dll\")] static extern bool CloseHandle(IntPtr handle); [DllImport(\"kernel32.dll\", CharSet=CharSet.Unicode)] static extern int GetApplicationUserModelId(IntPtr handle, ref uint length, StringBuilder value); public static string Read(int id) { var handle=OpenProcess(0x1000,false,id); if(handle==IntPtr.Zero)return null; try { uint length=256; var value=new StringBuilder(256); return GetApplicationUserModelId(handle,ref length,value)==0?value.ToString():null; } finally { CloseHandle(handle); } } }';",
   "Get-Process | Where-Object { $_.MainWindowHandle -ne 0 } |",
   "  Select-Object Id,ProcessName,MainWindowTitle,",
   "    @{n='Handle';e={[int64]$_.MainWindowHandle}},",
-  "    @{n='Path';e={$_.Path}} |",
+  "    @{n='Path';e={$_.Path}},",
+  "    @{n='AppUserModelId';e={[WinDockIdentity]::Read($_.Id)}} |",
   "  ConvertTo-Json -Compress -Depth 3",
 ].join(" ");
 
@@ -101,6 +115,20 @@ export function appIdFromTarget(target) {
   return String(target || "").trim().toLowerCase().replace(/\\/g, "/");
 }
 
+const PACKAGED_PREFIX = "shell:AppsFolder\\";
+export function packagedAppId(target) {
+  if (typeof target !== "string" || !target.toLowerCase().startsWith(PACKAGED_PREFIX.toLowerCase())) return null;
+  const aumid = target.slice(PACKAGED_PREFIX.length);
+  return aumid.length <= 128 && !/\s/.test(aumid) && /^[a-z0-9][a-z0-9.-]*_[a-z0-9]+![a-z0-9][a-z0-9._-]*$/i.test(aumid) ? aumid : null;
+}
+
+/** Keep different shortcut modes/profiles without changing argument-free IDs. */
+export function appIdFromLaunch(target, args = "") {
+  const id = appIdFromTarget(target);
+  const argumentsText = String(args || "").trim();
+  return argumentsText ? `${id}#${createHash("sha256").update(argumentsText).digest("hex").slice(0, 16)}` : id;
+}
+
 function jsonArray(raw) {
   const text = String(raw || "").trim();
   if (!text) return [];
@@ -125,8 +153,10 @@ export function parseInstalled(raw) {
     const target = typeof row?.target === "string" ? row.target.trim() : "";
     const name = typeof row?.name === "string" ? row.name.trim() : "";
     if (!target || !name) continue;
-    if (!/\.exe$/i.test(target)) continue;
-    const id = appIdFromTarget(target);
+    const packaged = packagedAppId(target);
+    if (!packaged && (/^shell:/i.test(target) || !/\.exe$/i.test(target))) continue;
+    const args = packaged ? "" : typeof row?.args === "string" ? row.args.trim() : "";
+    const id = appIdFromLaunch(target, args);
     // Start Menu wins over registry: it carries the user-facing display name.
     const existing = byId.get(id);
     if (existing && existing.source === "startmenu" && row.source !== "startmenu") continue;
@@ -134,9 +164,9 @@ export function parseInstalled(raw) {
       id,
       name,
       target,
-      args: typeof row?.args === "string" ? row.args.trim() : "",
+      args,
       icon: typeof row?.icon === "string" ? row.icon.trim() : "",
-      source: row?.source === "registry" ? "registry" : "startmenu",
+      source: packaged ? "packaged" : row?.source === "registry" ? "registry" : "startmenu",
     });
   }
   return [...byId.values()].sort((a, b) =>
@@ -158,16 +188,18 @@ export function parseRunning(raw) {
     if (!Number.isInteger(handle) || handle === 0) continue;
     const path = typeof row?.Path === "string" ? row.Path.trim() : "";
     const procName = typeof row?.ProcessName === "string" ? row.ProcessName.trim() : "";
+    const packagedTarget = PACKAGED_PREFIX + (typeof row?.AppUserModelId === "string" ? row.AppUserModelId : "");
     if (!path && !procName) continue;
     if (seen.has(pid)) continue;
     seen.add(pid);
     out.push({
-      id: path ? appIdFromTarget(path) : `proc:${procName.toLowerCase()}`,
+      id: packagedAppId(packagedTarget) ? appIdFromTarget(packagedTarget) : path ? appIdFromTarget(path) : `proc:${procName.toLowerCase()}`,
       name: procName,
       title: typeof row?.MainWindowTitle === "string" ? row.MainWindowTitle.trim() : "",
       pid,
       handle,
       path,
+      ...(packagedAppId(packagedTarget) ? { activationId: row.AppUserModelId } : {}),
     });
   }
   return out.sort((a, b) => a.pid - b.pid);
@@ -217,15 +249,27 @@ export function unmappedVerbs() {
  * @param {(file:string,args:string[])=>Promise<{stdout:string}>} opts.exec
  * @param {string} [opts.helperPath] path to WinDockHelper.exe
  */
-export function createWindowsProvider({ exec, helperPath = "WinDockHelper.exe" } = {}) {
+export function createWindowsProvider({ exec, helperPath = process.env.WINDOCK_HELPER || fileURLToPath(new URL("../../WinDockHelper.exe", import.meta.url)) } = {}) {
   if (typeof exec !== "function") throw new Error("windows provider requires exec");
 
   const ps = (script) => exec(POWERSHELL, [...PS_FLAGS, script]);
   const helper = (args) => exec(helperPath, args);
+  // DDC/CI monitor firmware can reject overlapping requests.
+  let brightnessQueue = Promise.resolve();
 
   return {
     id: "windows",
     displayName: "Windows",
+    capture: createWindowsCapture({ helperPath }),
+
+    async appIcon(app) {
+      const aumid = packagedAppId(app.target);
+      const { stdout } = await helper(aumid ? ["icon-packaged", aumid] : ["icon", app.target, app.icon || ""]);
+      const [row] = jsonArray(stdout);
+      if (typeof row?.png !== "string" || row.png.length > 512 * 1024) return null;
+      const bytes = Buffer.from(row.png, "base64");
+      return bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])) ? bytes : null;
+    },
 
     async listInstalledApps() {
       const { stdout } = await ps(INVENTORY_PS);
@@ -242,15 +286,28 @@ export function createWindowsProvider({ exec, helperPath = "WinDockHelper.exe" }
       if (typeof target !== "string" || !target.trim()) {
         throw new Error("launchApp requires a target path");
       }
+      if (/^shell:/i.test(target)) {
+        const aumid = packagedAppId(target);
+        if (!aumid) throw new Error("invalid packaged app identifier");
+        await helper(["launch-packaged", aumid]);
+        return;
+      }
       // argv array: the target is one argument even if it contains spaces,
       // quotes, ampersands or newlines.
-      await helper(["launch", target]);
+      const args = typeof app === "object" && typeof app?.args === "string" ? app.args : "";
+      await helper(args ? ["launch", target, args] : ["launch", target]);
     },
 
     async focusApp(running) {
       const pid = Number(running?.pid);
       if (!Number.isInteger(pid) || pid <= 0) {
         throw new Error("focusApp requires a positive integer pid");
+      }
+      if (typeof running.activationId === "string") {
+        const aumid = packagedAppId(PACKAGED_PREFIX + running.activationId);
+        if (!aumid) throw new Error("invalid packaged app identifier");
+        await helper(["launch-packaged", aumid]);
+        return;
       }
       await helper(["focus", String(pid)]);
     },
@@ -264,7 +321,17 @@ export function createWindowsProvider({ exec, helperPath = "WinDockHelper.exe" }
     },
 
     async control(verb, value) {
-      await helper(controlArgv(verb, value));
+      const args = controlArgv(verb, value);
+      if (verb === "brightness-set") {
+        const pending = brightnessQueue.then(() => helper(args));
+        brightnessQueue = pending.catch(() => {});
+        try { await pending; }
+        catch (cause) {
+          const error = new Error("Could not adjust display brightness. Check that DDC/CI is enabled in your monitor's menu and its picture mode allows brightness changes.", { cause });
+          error.status = 503;
+          throw error;
+        }
+      } else await helper(args);
       return { ok: true, verb };
     },
 

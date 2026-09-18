@@ -2,6 +2,7 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { request, Agent } from "node:http";
 import { createChecker } from "./lib/assert.mjs";
 import { createApp } from "../server.js";
 import { createWindowsProvider } from "../src/platform/windows.js";
@@ -24,6 +25,7 @@ const provider = createWindowsProvider({
   exec: async (file, args) => {
     if (file === "H.exe") {
       helperCalls.push(args);
+      if (args[0] === "control" && args[1] === "brightness-set") throw new Error("unsupported monitor; private native diagnostics");
       if (args[0] === "nowplaying") return { stdout: '{"title":"Track","artist":"Band","playing":true}' };
       return { stdout: "" };
     }
@@ -148,6 +150,10 @@ t.equal((await call("/api/apps/focus", { method: "POST", body: { pid: "4812; id"
 const control = await call("/api/control", { method: "POST", body: { verb: "volume-set", value: 30 } });
 t.equal(control.status, 200, "POST /api/control succeeds for a valid verb");
 t.deepEqual(helperCalls.at(-1), ["control", "volume-set", "30"], "control reaches the helper with exact argv");
+const brightnessFailure = await call("/api/control", { method: "POST", body: { verb: "brightness-set", value: 50 } });
+t.equal(brightnessFailure.status, 503, "unsupported brightness reaches the phone as an actionable failure");
+t.ok(brightnessFailure.json.error.includes("DDC/CI"), "brightness API response explains the monitor setting");
+t.ok(!brightnessFailure.json.error.includes("private native"), "brightness API response does not disclose native diagnostics");
 t.equal((await call("/api/control", { method: "POST", body: { verb: "nope" } })).status, 400,
   "an unknown verb is rejected");
 t.equal((await call("/api/control", { method: "POST", body: { verb: "volume-set", value: 500 } })).status, 400,
@@ -172,6 +178,37 @@ const big = await fetch(`${base}/api/tiles`, {
   body: JSON.stringify({ tiles: Array.from({ length: 200000 }, () => ({ kind: "control", verb: "lock" })) }),
 });
 t.equal(big.status, 413, "an oversized body is refused");
+t.equal((await big.json()).error, "body too large", "the entire 413 response arrives without a reset");
+
+// Exercise an upload without Content-Length and reuse exactly one connection.
+// The body limit must reject it before persistence and leave the socket usable.
+const agent = new Agent({ keepAlive: true, maxSockets: 1 });
+function rawCall(method, path, chunks = []) {
+  return new Promise((resolve, reject) => {
+    const req = request(`${base}${path}`, {
+      method, agent, headers: { cookie, origin: base, "content-type": "application/json" },
+    }, (res) => {
+      const data = [];
+      res.on("data", (chunk) => data.push(chunk));
+      res.on("error", reject);
+      res.on("end", () => resolve({ status: res.statusCode, body: Buffer.concat(data).toString(), reused: req.reusedSocket }));
+    });
+    req.on("error", reject);
+    for (const chunk of chunks) req.write(chunk);
+    req.end();
+  });
+}
+try {
+  const chunked = await rawCall("PUT", "/api/tiles", Array(20).fill("x".repeat(8192)));
+  t.equal(chunked.status, 413, "an oversized chunked body is refused");
+  t.equal(JSON.parse(chunked.body).error, "body too large", "chunked rejection has a complete response");
+  const following = await rawCall("GET", "/api/tiles");
+  t.equal(following.reused, true, "follow-up uses the same keep-alive socket");
+  t.equal(following.status, 200, "the next request succeeds on that socket");
+  t.equal(JSON.parse(following.body).tiles.length, 2, "rejected uploads do not overwrite tiles");
+} finally {
+  agent.destroy();
+}
 
 const badJson = await fetch(`${base}/api/tiles`, {
   method: "PUT",
@@ -179,18 +216,21 @@ const badJson = await fetch(`${base}/api/tiles`, {
   body: "{not json",
 });
 t.equal(badJson.status, 400, "a malformed JSON body is refused");
+await badJson.arrayBuffer();
 
 // ---- unauthenticated access ----
 const saved = cookie;
 cookie = "";
 const anon = await fetch(`${base}/api/state`, { headers: { origin: base, cookie: "windock_session=bogus" } });
 t.equal(anon.status, 401, "an invalid session cannot read state");
+await anon.arrayBuffer();
 const anonAction = await fetch(`${base}/api/control`, {
   method: "POST",
   headers: { "content-type": "application/json", origin: base, cookie: "windock_session=bogus" },
   body: JSON.stringify({ verb: "shutdown" }),
 });
 t.equal(anonAction.status, 401, "an invalid session cannot trigger a power action");
+await anonAction.arrayBuffer();
 cookie = saved;
 
 // ---- loopback trust is a real feature: verify it works when enabled ----
