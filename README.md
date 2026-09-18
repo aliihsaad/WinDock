@@ -4,6 +4,9 @@ A remote app dock and control surface for a Windows PC, driven from a phone on
 the same network. Pin your apps as tiles, tap to launch or focus them, and drive
 volume, media, brightness and power without getting up.
 
+[Website and interactive demo](https://windock.vercel.app) ·
+[Downloads](https://windock.vercel.app/#download)
+
 ![A Windows desktop with WinDock running on a landscape phone beside the keyboard.](website/assets/windock-desktop.png)
 
 *WinDock at your desk — an AI-generated product illustration.*
@@ -138,10 +141,11 @@ PIN. On Linux it runs with the Linux provider; on Windows it selects the Windows
 provider automatically.
 
 ```sh
-npm test        # all 14 oracles
+npm test        # all 16 verification scripts
 ```
 
-Tap **Add** to pin apps or controls, **Edit** to reorder and remove them.
+Swipe up and open **Apps** to pin apps or controls. Hold an icon to rearrange
+or remove it.
 
 ### Build the Windows installer
 

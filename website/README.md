@@ -43,9 +43,9 @@ menu entry, optional desktop shortcut/autostart, and a Windows uninstaller.
 Neither personal dock settings nor pairing credentials are included. The
 download command copies the EXE/APK and produces SHA-256 hashes.
 
-The website reads `downloads.json`. The committed manifest honestly displays
-an unavailable state. The local preview server substitutes the generated
-manifest so both download buttons serve real files and show their sizes.
+The website reads `downloads.json`. The committed manifest points directly to
+the tested Windows and Android assets in a public GitHub Release. The local
+preview server substitutes its generated manifest to serve local builds.
 The Windows button downloads one setup EXE. Users do not extract an archive.
 
 ## Vercel deployment
@@ -55,6 +55,9 @@ static site. `.vercelignore` excludes local toolchains, packaged applications,
 native/Android sources, and personal configuration from CLI uploads. Use the
 linked WinDock project and its default Vercel domain; no custom domain is needed.
 The app host itself continues to run locally on Windows.
+
+Production: [windock.vercel.app](https://windock.vercel.app). The Vercel project
+is connected to this repository, so pushes to `main` deploy the website.
 
 `.github/workflows/build-release.yml` builds and tests Windows/Android on GitHub.
 Pushes to main produce build artifacts. Its manual **Create a draft GitHub
