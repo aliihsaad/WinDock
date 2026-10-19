@@ -31,8 +31,10 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
     }
     const x = event.clientX - contact.rect.left, y = event.clientY - contact.rect.top;
     contact.node.style.transform = `translate3d(${x}px, ${y}px, 0)`;
-    contact.node.style.setProperty("--contact-x", x + "px");
-    contact.node.style.setProperty("--contact-y", y + "px");
+    if (!document.documentElement.classList.contains("perf")) {
+      contact.node.style.setProperty("--contact-x", x + "px");
+      contact.node.style.setProperty("--contact-y", y + "px");
+    }
     contact.node.classList.add("is-touching");
   }
   function hideContact(id) { contacts.get(id)?.node.classList.remove("is-touching"); contacts.delete(id); }

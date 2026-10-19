@@ -9,6 +9,8 @@ const apps = ['Browser', 'Editor', 'Music', 'Terminal', 'Notes'].map((name, i) =
   id: `smoke-${i + 1}`, name, target: `C:\\Smoke\\app${i + 1}.exe`, args: '', icon: '',
 }));
 const events = [];
+const inputEvents = [];
+let inputWrites = Promise.resolve();
 let running = [];
 async function record(action, app) {
   events.push({ action, id: app.id, pid: app.pid });
@@ -24,9 +26,20 @@ const provider = {
   control: async () => { throw new Error('Control actions disabled in the emulator fixture'); },
   nowPlaying: async () => null,
   systemStats: async () => ({}),
+  input: {
+    open() {
+      return { ready: Promise.resolve(), send: event => {
+        inputEvents.push(event);
+        inputWrites = inputWrites.then(() => writeFile(resolve(dir, 'input-events.json'), JSON.stringify(inputEvents, null, 2)));
+        return inputWrites;
+      }, close() {} };
+    },
+    dispose() {},
+  },
 };
 const configStore = createConfigStore({ path: resolve(dir, 'config.json') });
 await configStore.save({ tiles: apps.map(app => ({ ...app, kind: 'app', label: app.name })) });
 await writeFile(resolve(dir, 'events.json'), '[]');
+await writeFile(resolve(dir, 'input-events.json'), '[]');
 const app = await createApp({ provider, configStore, pin: '8642', trustLoopback: false, allowDestructive: false });
 app.server.listen(18622, '127.0.0.1', () => console.log('Android emulator fixture ready on 18622'));

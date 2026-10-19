@@ -2,6 +2,7 @@ package com.windock.app
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.ActivityManager
 import android.app.AlertDialog
 import android.graphics.Bitmap
 import android.os.Bundle
@@ -334,7 +335,9 @@ class MainActivity : Activity() {
                     address.setText(selected)
                     status.setText(R.string.connecting)
                     loadFailed = false
-                    web.loadUrl(selected)
+                    // Only the page URL carries the hint; discovery and saved endpoints stay clean.
+                    val lowRam = (getSystemService(ACTIVITY_SERVICE) as ActivityManager).isLowRamDevice
+                    web.loadUrl(PerformancePolicy.pageUrl(selected, lowRam))
                     web.postDelayed(loadTimeout, 15000)
                 }
             }
