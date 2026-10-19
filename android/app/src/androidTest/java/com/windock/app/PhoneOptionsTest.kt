@@ -206,11 +206,12 @@ class PhoneOptionsTest {
                     }
                 }
                 awaitUi(scenario) { it.findViewById<View>(R.id.connection).visibility == View.VISIBLE }
+                val rememberedUsb = ServerUrl.load(context, true)
                 scenario.onActivity { it.findViewById<Button>(R.id.retry).performClick() }
                 loaded(scenario)
                 assertFalse(PhonePreferences.usbOnly(context))
                 assertEquals(endpoint, ServerUrl.load(context, false))
-                assertEquals("http://192.168.42.10:8620", ServerUrl.load(context, true))
+                assertEquals(rememberedUsb, ServerUrl.load(context, true))
             }
         } finally {
             PhonePreferences.setUsbOnly(context, false)
