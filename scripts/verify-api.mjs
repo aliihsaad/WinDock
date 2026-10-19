@@ -9,7 +9,7 @@ import { createWindowsProvider } from "../src/platform/windows.js";
 import { createConfigStore } from "../src/config.js";
 
 const t = createChecker("api");
-const PIN = "4321";
+const PIN = "432187";
 
 const INSTALLED = JSON.stringify([
   { name: "Firefox", target: "C:\\Apps\\firefox.exe", args: "", icon: "", source: "startmenu" },
@@ -87,8 +87,23 @@ t.ok(manifest.headers.get("content-type").includes("manifest+json"), "manifest c
 t.equal((await call("/does-not-exist.js")).status, 404, "a missing asset returns 404");
 t.equal((await call("/../server.js")).status, 404, "traversal above public is refused");
 
+// ---- DNS rebinding: unknown Host names are refused outright ----
+function rawStatus(path, host, headers = {}) {
+  return new Promise((resolveStatus, reject) => {
+    const req = request({ host: "127.0.0.1", port, path, method: "GET", headers: { host, ...headers } }, (res) => {
+      res.resume();
+      resolveStatus(res.statusCode);
+    });
+    req.on("error", reject);
+    req.end();
+  });
+}
+t.equal(await rawStatus("/api/state", `evil.example:${port}`), 421, "a foreign Host is refused before auth");
+t.equal(await rawStatus("/", `evil.example:${port}`), 421, "a foreign Host can't even load the shell");
+t.equal(await rawStatus("/health", `localhost:${port}`), 200, "localhost Host is accepted");
+
 // ---- pairing ----
-t.equal((await call("/api/auth", { method: "POST", body: { pin: "0000" } })).status, 401, "a wrong pin is refused");
+t.equal((await call("/api/auth", { method: "POST", body: { pin: "000000" } })).status, 401, "a wrong pin is refused");
 t.equal((await call("/api/auth", { method: "POST", body: { pin: "12" } })).status, 400, "a malformed pin is refused");
 t.equal(
   (await call("/api/auth", { method: "POST", body: { pin: PIN }, origin: "http://evil.test" })).status,

@@ -56,7 +56,7 @@ Their maximum age is 180 days, but in-memory sessions disappear on host restart.
 State-changing requests and WebSocket upgrades check the request origin.
 Loopback is trusted by default for the tray; `trustLoopback: false` in
 `createApp` also requires pairing on the host. Discovery never includes the PIN.
-The four-digit PIN and LAN HTTP design are intended for a trusted local network;
+The six-digit PIN and LAN HTTP design are intended for a trusted local network;
 do not expose the host port directly to the internet.
 
 ## Windows configuration and checks

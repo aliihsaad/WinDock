@@ -24,7 +24,7 @@ async (page) => {
   });
   await page.goto("http://127.0.0.1:18623");
   if (await page.locator("#pair").isVisible()) {
-    await page.getByRole("textbox", { name: "PIN", exact: true }).fill("8642");
+    await page.getByRole("textbox", { name: "PIN", exact: true }).fill("864213");
     await page.locator("#pair-form button[type=submit]").click();
   }
   await textIs("#conn", "Connected");

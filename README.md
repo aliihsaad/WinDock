@@ -121,7 +121,11 @@ WebView. A Node.js host handles PIN pairing and live updates; a C# helper
 performs the Windows actions. You can also open the tray address in a browser.
 
 Your app actions and captures stay on your PC. WinDock is designed for a trusted
-home or office network, not internet remote access. Sessions reset when the PC
+home or office network, not internet remote access. Traffic is plain HTTP, so
+anyone who can watch your Wi-Fi can see what you type through the phone keyboard;
+prefer USB tethering on shared networks. If you reach the host by a custom DNS
+name, add it to `WINDOCK_ALLOWED_HOSTS` (comma separated); otherwise only IP
+addresses, `localhost` and the PC's own name are accepted. Sessions reset when the PC
 host restarts. The website's interactive demo uses sample apps and simulated
 touchpad, typing, signature and capture actions; it never connects to your PC.
 

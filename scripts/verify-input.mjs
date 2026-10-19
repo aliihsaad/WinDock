@@ -113,7 +113,7 @@ const received = [], sessions = [], provider = { id: "test", displayName: "Test"
   open(_fail, emit) { emit({ type: "focus", target: "1", editable: true, password: false }); const session = { closed: false, ready: Promise.resolve(), send: (value) => received.push(value), close() { session.closed = true; } }; sessions.push(session); return session; },
   saveSignature: async () => ({ type: "saved", path: "Pictures/WinDock/Signatures/example.png" }), dispose() {},
 } };
-const app = await createApp({ provider, pin: "4321", trustLoopback: false, configStore: { load: async () => ({ tiles: [] }) } });
+const app = await createApp({ provider, pin: "432187", trustLoopback: false, configStore: { load: async () => ({ tiles: [] }) } });
 await new Promise((resolve) => app.server.listen(0, "127.0.0.1", resolve));
 const base = `http://127.0.0.1:${app.server.address().port}`;
 let cookie = "";
@@ -136,7 +136,7 @@ try {
   t.equal((await request("/api/signature", signature)).code, 401, "signature saving requires pairing");
   t.equal((await request("/api/signature/insert", signature)).code, 401, "signature insertion requires pairing");
   await t.rejects(() => socket(), "unpaired input websocket refused");
-  await request("/api/auth", { pin: "4321" });
+  await request("/api/auth", { pin: "432187" });
   t.equal((await request("/api/signature", signature, "https://evil.example")).code, 403, "foreign origin cannot save signatures");
   t.equal((await request("/api/signature/insert", signature, "https://evil.example")).code, 403, "foreign origin cannot paste a signature");
   await t.rejects(() => socket("/input", { cookie, origin: "https://evil.example" }), "foreign origin cannot control mouse");

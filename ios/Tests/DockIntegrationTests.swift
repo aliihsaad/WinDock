@@ -91,7 +91,7 @@ final class DockIntegrationTests: XCTestCase {
         try await screenshot("02-pairing")
         _ = try await js("document.getElementById('pin').value='0000'; document.querySelector('#pair-form button').click(); true")
         try await waitForJS("document.getElementById('pair-error').textContent.length > 0")
-        _ = try await js("document.getElementById('pin').value='8642'; document.querySelector('#pair-form button').click(); true")
+        _ = try await js("document.getElementById('pin').value='864213'; document.querySelector('#pair-form button').click(); true")
         try await waitForJS("!document.getElementById('app').hidden && document.querySelectorAll('.tile').length === 5")
         try await waitForJS("document.getElementById('conn').textContent === 'Connected'")
         try await waitForJS("Array.from(document.querySelectorAll('.tile img')).filter(i => i.complete && i.naturalWidth > 0).length === 5")

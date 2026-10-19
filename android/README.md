@@ -87,7 +87,7 @@ the real URL/discovery parser and same-origin request policy.
 
 For the emulator flow, start `node scripts/android-smoke-host.mjs` in another
 terminal. It listens only on loopback port 18622 and provides five fake apps,
-test PIN 8642, and an action log in `artifacts/android-smoke/events.json`.
+test PIN 864213, and an action log in `artifacts/android-smoke/events.json`.
 It never calls a Windows provider or reads the user's saved dock.
 
 With an Android emulator running, use the SDK's adb (specify `-s SERIAL` if

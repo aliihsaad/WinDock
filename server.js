@@ -26,6 +26,7 @@ import {
   createSessionStore,
   sessionCookie,
   authorize,
+  createHostCheck,
 } from "./src/auth.js";
 
 export const DEFAULT_PORT = 8620;
@@ -124,6 +125,7 @@ export async function createApp({
   lockout = createLockout(),
   allowDestructive = true,
   trustLoopback = true,
+  hostAllowed = createHostCheck(),
 } = {}) {
   const state = { pin };
   const appIcon = createIconCache(provider);
@@ -161,7 +163,12 @@ export async function createApp({
 
   const server = createServer(async (req, res) => {
     const remote = req.socket.remoteAddress || "";
-    const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
+    // Refuse unknown Host names before anything else. This is what blocks DNS
+    // rebinding, where a page on some other domain points it at this machine.
+    if (!hostAllowed(req.headers.host)) {
+      return sendJson(res, 421, { error: "unknown host" });
+    }
+    const url = new URL(req.url, `http://${req.headers.host}`);
     const path = url.pathname;
 
     try {
@@ -323,6 +330,7 @@ export async function createApp({
   const hub = createSyncHub({
     server,
     isAuthorized: (req) =>
+      hostAllowed(req.headers.host) &&
       authorize({
         req,
         sessions,
@@ -334,6 +342,7 @@ export async function createApp({
   });
 
   const inputHub = createInputHub({ server, input: provider.input, isAuthorized: (req) =>
+    hostAllowed(req.headers.host) &&
     authorize({ req, sessions, lockout, remote: req.socket.remoteAddress || "", trustLoopback }).ok,
   });
   server.on("close", () => { provider.capture?.dispose().catch(() => {}); provider.input?.dispose(); });

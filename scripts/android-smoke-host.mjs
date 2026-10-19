@@ -28,5 +28,5 @@ const provider = {
 const configStore = createConfigStore({ path: resolve(dir, 'config.json') });
 await configStore.save({ tiles: apps.map(app => ({ ...app, kind: 'app', label: app.name })) });
 await writeFile(resolve(dir, 'events.json'), '[]');
-const app = await createApp({ provider, configStore, pin: '8642', trustLoopback: false, allowDestructive: false });
+const app = await createApp({ provider, configStore, pin: '864213', trustLoopback: false, allowDestructive: false });
 app.server.listen(18622, '127.0.0.1', () => console.log('Android emulator fixture ready on 18622'));

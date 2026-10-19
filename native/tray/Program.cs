@@ -53,7 +53,7 @@ internal sealed partial class TrayApp : ApplicationContext
     private Uri? _balloonRelease;
 
     [GeneratedRegex(@"open:\s*(\S+)")] private static partial Regex EndpointLine();
-    [GeneratedRegex(@"PIN:\s*(\d{4})")] private static partial Regex PinLine();
+    [GeneratedRegex(@"PIN:\s*(\d{4,8})")] private static partial Regex PinLine();
 
     public TrayApp(bool smoke)
     {

@@ -1,18 +1,30 @@
 /**
  * Pairing and session auth.
  *
- * A 4-digit PIN is shown on the host; a device posts it once and receives an
+ * A 6-digit PIN is shown on the host; a device posts it once and receives an
  * opaque session token. PIN comparison is constant-time, failures are counted
- * per client, and a client is locked out after a threshold. Loopback is trusted
- * so the tray app on the host itself does not have to pair with the machine the
- * user is already sitting at.
+ * per client, and a client is locked out after a threshold. On top of that a
+ * host-wide failure budget pauses pairing for everyone, so an attacker can't
+ * get around the per-client limit by hopping between addresses.
+ *
+ * Loopback is trusted so the tray app on the host itself does not have to pair
+ * with the machine the user is already sitting at. That trust only applies when
+ * the Host header is a loopback name too, and every request must carry a Host
+ * we recognise. Together these stop DNS rebinding: a web page whose domain
+ * resolves to 127.0.0.1 still sends its own domain as Host and gets refused.
  */
 
 import { randomBytes, randomInt, timingSafeEqual } from "node:crypto";
+import { isIP } from "node:net";
+import { hostname as osHostname } from "node:os";
 
-export const PIN_LENGTH = 4;
+export const PIN_LENGTH = 6;
 export const MAX_FAILS = 5;
 export const LOCK_MS = 60_000;
+/** Host-wide budget: this many wrong PINs from any mix of clients pauses pairing. */
+export const GLOBAL_MAX_FAILS = 30;
+export const GLOBAL_WINDOW_MS = 10 * 60_000;
+export const GLOBAL_LOCK_MS = 10 * 60_000;
 export const SESSION_TTL_MS = 180 * 24 * 60 * 60 * 1000; // 180 days
 export const COOKIE_NAME = "windock_session";
 
@@ -39,6 +51,50 @@ export function safeEqual(a, b) {
   return timingSafeEqual(bufA, bufB);
 }
 
+/**
+ * Split a Host header into its name, without port or IPv6 brackets.
+ * Returns "" for anything that doesn't parse.
+ */
+export function hostName(header) {
+  if (typeof header !== "string" || !header) return "";
+  try {
+    const name = new URL(`http://${header}`).hostname.toLowerCase();
+    return name.startsWith("[") && name.endsWith("]") ? name.slice(1, -1) : name;
+  } catch {
+    return "";
+  }
+}
+
+export function isLoopbackHost(header) {
+  const name = hostName(header);
+  return name === "localhost" || name.endsWith(".localhost") || isLoopback(name);
+}
+
+/**
+ * Build the Host header check. IP literals are always fine, because a rebinding
+ * page can't make the browser send a bare IP as Host. Names are limited to
+ * localhost, this machine's own name (plain and .local), and anything listed in
+ * WINDOCK_ALLOWED_HOSTS (comma separated) for people who use a custom DNS name.
+ */
+export function createHostCheck({ machine = osHostname(), extra = process.env.WINDOCK_ALLOWED_HOSTS } = {}) {
+  const names = new Set(["localhost"]);
+  const base = String(machine || "").toLowerCase();
+  if (base) {
+    names.add(base);
+    names.add(`${base}.local`);
+  }
+  for (const item of String(extra || "").split(",")) {
+    const name = item.trim().toLowerCase();
+    if (name) names.add(name);
+  }
+  return function hostAllowed(header) {
+    const name = hostName(header);
+    if (!name) return false;
+    if (isIP(name)) return true;
+    return names.has(name) || name.endsWith(".localhost");
+  };
+}
+
 export function isLoopback(address) {
   if (typeof address !== "string" || !address) return false;
   const addr = address.startsWith("::ffff:") ? address.slice(7) : address;
@@ -46,8 +102,18 @@ export function isLoopback(address) {
 }
 
 /** Per-client failure tracking with a time-boxed lockout. */
-export function createLockout({ maxFails = MAX_FAILS, lockMs = LOCK_MS, now = Date.now } = {}) {
+export function createLockout({
+  maxFails = MAX_FAILS,
+  lockMs = LOCK_MS,
+  globalMaxFails = GLOBAL_MAX_FAILS,
+  globalWindowMs = GLOBAL_WINDOW_MS,
+  globalLockMs = GLOBAL_LOCK_MS,
+  now = Date.now,
+} = {}) {
   const entries = new Map();
+  // Timestamps of recent failures from every client, plus when pairing reopens.
+  let recent = [];
+  let globalUntil = 0;
 
   function prune(at) {
     for (const [key, entry] of entries) {
@@ -60,6 +126,7 @@ export function createLockout({ maxFails = MAX_FAILS, lockMs = LOCK_MS, now = Da
     /** @returns {{locked:boolean, retryInMs:number}} */
     status(key) {
       const at = now();
+      if (globalUntil > at) return { locked: true, retryInMs: globalUntil - at, global: true };
       const entry = entries.get(key);
       if (!entry || !entry.until) return { locked: false, retryInMs: 0 };
       if (entry.until <= at) {
@@ -76,7 +143,13 @@ export function createLockout({ maxFails = MAX_FAILS, lockMs = LOCK_MS, now = Da
       entry.last = at;
       if (entry.fails >= maxFails) entry.until = at + lockMs;
       entries.set(key, entry);
-      return { locked: Boolean(entry.until), fails: entry.fails };
+      recent = recent.filter((t) => at - t < globalWindowMs);
+      recent.push(at);
+      if (recent.length >= globalMaxFails) {
+        globalUntil = at + globalLockMs;
+        recent = [];
+      }
+      return { locked: Boolean(entry.until) || globalUntil > at, fails: entry.fails };
     },
     recordSuccess(key) {
       entries.delete(key);
@@ -161,9 +234,13 @@ export function sessionCookie(token, { secure = false, maxAgeMs = SESSION_TTL_MS
  * `key` is the rate-limit bucket, normally the remote address.
  */
 export function authorize({ req, sessions, lockout, remote, trustLoopback = true }) {
-  if (trustLoopback && isLoopback(remote)) return { ok: true, via: "loopback" };
+  if (trustLoopback && isLoopback(remote) && isLoopbackHost(req?.headers?.host)) {
+    return { ok: true, via: "loopback" };
+  }
   const status = lockout.status(remote);
-  if (status.locked) {
+  // The host-wide pause only stops new pairing. Phones that already hold a
+  // session keep working, so a noisy device on the LAN can't lock you out.
+  if (status.locked && !status.global) {
     return { ok: false, via: "locked", retryInMs: status.retryInMs, code: 429 };
   }
   if (sessions.verify(tokenFromRequest(req))) return { ok: true, via: "session" };
