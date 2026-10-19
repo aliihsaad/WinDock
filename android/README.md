@@ -50,8 +50,10 @@ discovery. Unplugging the cable requires reconnecting or choosing another link.
 
 Discovery binds probes to each local interface and uses the responder's source
 address, avoiding a stale Wi-Fi address advertised by a PC with several network
-adapters. Host identity and local-address validation still apply. Android OEM
-interface naming and Windows firewall behavior need physical-device verification.
+adapters. Host identity and local-address validation still apply. USB discovery,
+PIN pairing, and PC app control were verified on a Huawei Mate 10 Pro with Wi-Fi
+disabled on October 19, 2026. Other Android OEM interface names and Windows
+firewall configurations still need device-specific verification.
 
 ## Phone display options (development build)
 
@@ -133,8 +135,8 @@ its `system screen_off_timeout` and `global stay_on_while_plugged_in` values wit
 `adb shell settings get`. Set them to `15000` and `0` respectively, add
 `-e verifySleep true` to the test command, and restore both original settings
 afterward. Change these settings only on the test emulator, never a personal
-phone. Physical USB validation still requires a tethering-enabled phone and
-Windows PC, discovery, PIN pairing, and an app action with Wi-Fi disabled.
+phone. For each additional physical device, verify discovery, PIN pairing, and
+an app action through USB tethering with the phone's Wi-Fi disabled.
 
 ### Automatic now-playing regression
 

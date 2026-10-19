@@ -8,7 +8,8 @@
   and optional keep-awake while the dock is open. A first tap wakes the dock
   without activating its controls. Thanks to [waly-git](https://github.com/waly-git)
   for [suggesting #6](https://github.com/aliihsaad/WinDock/issues/6).
-  These features require the new Android build; physical USB testing is pending.
+  These features require the new Android build. USB pairing and PC app control
+  were verified on a Huawei Mate 10 Pro with the phone’s Wi-Fi off.
 - Add the first native iPhone companion source: remembered PC address, PIN pairing
   through the shared landscape dock, and reconnect/change-PC controls.
 - Add a GitHub macOS workflow for simulator tests, screenshots and unsigned iOS
