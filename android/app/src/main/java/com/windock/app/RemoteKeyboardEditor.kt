@@ -9,6 +9,7 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import android.view.inputmethod.InputConnectionWrapper
 import android.widget.EditText
+import androidx.core.widget.doOnTextChanged
 
 /**
  * The IME composes/autocorrects a word locally. Only committed text goes to the PC,
@@ -18,6 +19,7 @@ import android.widget.EditText
 class RemoteKeyboardEditor(context: Context) : EditText(context) {
     var onText: (String) -> Unit = {}
     var onRemoteKey: (String) -> Unit = {}
+    var onUserActivity: () -> Unit = {}
     private var discarding = false
     private var generation = 0
 
@@ -30,6 +32,11 @@ class RemoteKeyboardEditor(context: Context) : EditText(context) {
         textSize = 15f
         filters = arrayOf(InputFilter.LengthFilter(1024))
         configure(false)
+        doOnTextChanged { _, _, before, count ->
+            // IME composition may remain local for a long time before a word
+            // is committed to the PC. It still counts as active typing.
+            if (!discarding && (before > 0 || count > 0)) onUserActivity()
+        }
     }
 
     fun configure(password: Boolean) {

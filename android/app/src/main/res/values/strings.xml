@@ -10,4 +10,23 @@
     <string name="invalid_address">Enter the local IPv4 address shown in the WinDock tray.</string>
     <string name="retry">Find my PC</string>
     <string name="connect">Connect</string>
+    <string name="usb_title">Connect by USB</string>
+    <string name="usb_instructions">1. Connect your phone to the PC with a data-capable USB cable.\n\n2. In Android Settings, turn on USB tethering (usually under Hotspot &amp; tethering). USB debugging is not needed.\n\n3. Keep WinDock running on Windows, then return here and tap Find USB PC.\n\nIf Windows asks, allow WinDock on your trusted USB network. Tethering may also share your mobile data with Windows; disable mobile data if you do not want that.\n\nUSB mode only searches wired links; it will not switch to Wi-Fi.</string>
+    <string name="network_settings">Open network settings</string>
+    <string name="find_usb_pc">Find USB PC</string>
+    <string name="usb_searching">Looking for your PC over USB…</string>
+    <string name="usb_not_found">No USB PC found. Check the cable, turn on USB tethering, and keep WinDock running on Windows. Allow WinDock on the trusted USB network. You can also enter the PC’s USB IPv4 address, or choose Find my PC for Wi-Fi.</string>
+    <string name="phone_options">This phone</string>
+    <string name="phone_options_intro">Display settings for this phone only. Your PC display is unchanged.</string>
+    <string name="dim_after">Dim after inactivity</string>
+    <string name="dim_level">Dim brightness</string>
+    <string name="sleep_after">Screen off</string>
+    <string name="screen_sleep_explanation">At a timed limit, the dock goes black and allows Android to turn the screen off. Your phone’s screen timeout may add a delay. Tap to return while the screen is still on; after it sleeps, use your normal wake control.</string>
+    <string name="display_care_note">Lower brightness and screen breaks reduce display wear. These options cannot guarantee that burn-in will never happen. Stay awake keeps the display on only while this dock is visible.</string>
+    <string name="android_display_settings">Phone’s display settings</string>
+    <string name="open_settings_manually">Open Android Settings to change this option.</string>
+    <string name="save">Save</string>
+    <string name="screen_resting">Screen resting. Tap to return to the dock.</string>
+    <string-array name="dim_delays"><item>Never</item><item>After 15 seconds</item><item>After 30 seconds</item><item>After 1 minute</item><item>After 2 minutes</item></string-array>
+    <string-array name="sleep_delays"><item>Use phone’s timeout</item><item>After 1 minute idle</item><item>After 2 minutes idle</item><item>After 5 minutes idle</item><item>After 10 minutes idle</item><item>Stay awake while dock is open</item></string-array>
 </resources>

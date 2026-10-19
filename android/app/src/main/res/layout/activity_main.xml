@@ -31,6 +31,17 @@
                     android:layout_height="wrap_content" android:layout_marginStart="12dp"
                     android:text="@string/connect" android:textAllCaps="false" />
             </LinearLayout>
+            <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:layout_marginTop="8dp">
+                <Button android:id="@+id/usb_connect" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:text="@string/usb_title" android:textAllCaps="false" />
+                <Button android:id="@+id/phone_options" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:layout_marginStart="12dp"
+                    android:text="@string/phone_options" android:textAllCaps="false" />
+            </LinearLayout>
         </LinearLayout>
     </ScrollView>
+    <View android:id="@+id/idle_cover" android:layout_width="match_parent" android:layout_height="match_parent"
+        android:background="#000000" android:visibility="gone" android:clickable="true" android:focusable="true"
+        android:contentDescription="@string/screen_resting" />
 </FrameLayout>

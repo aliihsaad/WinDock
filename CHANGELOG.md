@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Add Android USB networking through USB tethering, with a dedicated USB-only
+  connection flow and discovery that follows the responding network adapter.
+- Add phone-only idle dimming, timed black-screen rest with Android sleep,
+  and optional keep-awake while the dock is open. A first tap wakes the dock
+  without activating its controls. Thanks to [waly-git](https://github.com/waly-git)
+  for [suggesting #6](https://github.com/aliihsaad/WinDock/issues/6).
+  These features require the new Android build; physical USB testing is pending.
 - Add the first native iPhone companion source: remembered PC address, PIN pairing
   through the shared landscape dock, and reconnect/change-PC controls.
 - Add a GitHub macOS workflow for simulator tests, screenshots and unsigned iOS

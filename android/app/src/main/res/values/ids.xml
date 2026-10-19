@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="dim_delay" type="id" />
+    <item name="dim_level" type="id" />
+    <item name="sleep_delay" type="id" />
+</resources>

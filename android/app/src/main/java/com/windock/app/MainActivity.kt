@@ -2,9 +2,12 @@ package com.windock.app
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.AlertDialog
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.View
+import android.view.MotionEvent
+import android.view.KeyEvent
 import android.view.Gravity
 import android.webkit.JavascriptInterface
 import android.widget.FrameLayout
@@ -45,6 +48,11 @@ class MainActivity : Activity() {
     @Volatile private var endpoint: String? = null
     private var loadFailed = false
     private var connecting = false
+    private lateinit var idleDisplay: IdleDisplayController
+    private var phoneDialog: AlertDialog? = null
+    private var wakingGesture = false
+    private val wakingKeys = mutableSetOf<Int>()
+    private var usbOnly = false
     private val loadTimeout = Runnable {
         if (connecting) {
             failConnection(R.string.connection_lost)
@@ -62,6 +70,8 @@ class MainActivity : Activity() {
         address = findViewById(R.id.address)
         connectButton = findViewById(R.id.connect)
         retryButton = findViewById(R.id.retry)
+        usbOnly = PhonePreferences.usbOnly(this)
+        idleDisplay = IdleDisplayController(this, findViewById(R.id.idle_cover), onRest = { hideRemoteKeyboard() })
         setupRemoteKeyboard()
         address.setText(ServerUrl.load(this).orEmpty())
         connectButton.setOnClickListener {
@@ -69,7 +79,11 @@ class MainActivity : Activity() {
             if (selected == null) address.error = getString(R.string.invalid_address)
             else connect(selected)
         }
-        retryButton.setOnClickListener { connect() }
+        retryButton.setOnClickListener {
+            usbOnly = false; PhonePreferences.setUsbOnly(this, false); connect()
+        }
+        findViewById<Button>(R.id.usb_connect).setOnClickListener { showUsbSetup() }
+        findViewById<Button>(R.id.phone_options).setOnClickListener { showPhoneOptions() }
         address.setOnEditorActionListener { _, _, _ -> connectButton.performClick(); true }
 
         web.setBackgroundColor(getColor(R.color.dock_background))
@@ -101,6 +115,7 @@ class MainActivity : Activity() {
                 connection.visibility = View.GONE
                 web.visibility = View.VISIBLE
                 hideSystemBars()
+                syncIdleDisplay()
             }
 
             override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
@@ -113,6 +128,52 @@ class MainActivity : Activity() {
         }
         hideSystemBars()
         connect()
+    }
+
+    private fun syncIdleDisplay() {
+        if (::idleDisplay.isInitialized) idleDisplay.setActive(resumed && !connecting && !loadFailed &&
+            web.visibility == View.VISIBLE && phoneDialog == null)
+    }
+
+    private fun showPhoneOptions() {
+        if (phoneDialog != null) return
+        showPhoneDialog(PhoneOptions.displayDialog(this) { idleDisplay.reloadPreferences() })
+    }
+
+    private fun showUsbSetup() {
+        if (phoneDialog != null) return
+        showPhoneDialog(PhoneOptions.usbDialog(this) {
+            usbOnly = true; PhonePreferences.setUsbOnly(this, true); connect()
+        })
+    }
+
+    private fun showPhoneDialog(dialog: AlertDialog) {
+        phoneDialog = dialog
+        syncIdleDisplay()
+        dialog.setOnDismissListener { if (phoneDialog === dialog) phoneDialog = null; syncIdleDisplay() }
+        dialog.show()
+    }
+
+    override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+        if (::idleDisplay.isInitialized) {
+            if (event.actionMasked == MotionEvent.ACTION_DOWN) wakingGesture = idleDisplay.userActivity()
+            else if (event.actionMasked == MotionEvent.ACTION_MOVE) idleDisplay.userActivity()
+            if (wakingGesture) {
+                if (event.actionMasked == MotionEvent.ACTION_UP || event.actionMasked == MotionEvent.ACTION_CANCEL) wakingGesture = false
+                return true
+            }
+        }
+        return super.dispatchTouchEvent(event)
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (::idleDisplay.isInitialized && event.action == KeyEvent.ACTION_DOWN && idleDisplay.userActivity())
+            wakingKeys.add(event.keyCode)
+        if (event.keyCode in wakingKeys) {
+            if (event.action == KeyEvent.ACTION_UP) wakingKeys.remove(event.keyCode)
+            return true
+        }
+        return super.dispatchKeyEvent(event)
     }
 
     private fun hideSystemBars() {
@@ -132,6 +193,7 @@ class MainActivity : Activity() {
             visibility = View.GONE
         }
         keyboardEditor = RemoteKeyboardEditor(this)
+        keyboardEditor.onUserActivity = { idleDisplay.userActivity() }
         keyboardEditor.onText = { emitKeyboardInput(JSONObject().put("type", "text").put("text", it)) }
         keyboardEditor.onRemoteKey = { emitKeyboardInput(JSONObject().put("type", "key").put("key", it)) }
         val close = Button(this).apply {
@@ -157,6 +219,7 @@ class MainActivity : Activity() {
     private fun emitKeyboardInput(message: JSONObject) {
         val target = keyboardTarget ?: return
         if (!trustedKeyboardPage()) return
+        idleDisplay.userActivity()
         message.put("target", target)
         web.evaluateJavascript("window.dispatchEvent(new CustomEvent('windock-keyboard-input',{detail:$message}))", null)
     }
@@ -192,6 +255,7 @@ class MainActivity : Activity() {
             }
         }
         @JavascriptInterface fun hideKeyboard() { runOnUiThread { hideRemoteKeyboard() } }
+        @JavascriptInterface fun showPhoneSettings() { runOnUiThread { if (trustedKeyboardPage()) showPhoneOptions() } }
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -212,6 +276,7 @@ class MainActivity : Activity() {
         connectButton.isEnabled = !busy
         retryButton.isEnabled = !busy
         address.isEnabled = !busy
+        findViewById<View>(R.id.usb_connect).isEnabled = !busy
         findViewById<View>(R.id.progress).visibility = if (busy) View.VISIBLE else View.GONE
     }
 
@@ -222,6 +287,7 @@ class MainActivity : Activity() {
         web.visibility = View.GONE
         connection.visibility = View.VISIBLE
         status.setText(message)
+        syncIdleDisplay()
     }
 
     /** Validate remembered, entered and discovered hosts with the same health check. */
@@ -231,17 +297,20 @@ class MainActivity : Activity() {
             .hideSoftInputFromWindow(address.windowToken, 0)
         web.stopLoading()
         web.visibility = View.GONE
+        syncIdleDisplay()
         connection.visibility = View.VISIBLE
-        status.setText(R.string.searching)
+        status.setText(if (usbOnly) R.string.usb_searching else R.string.searching)
         setBusy(true)
+        val useUsb = usbOnly
         io.execute {
+            val networks = LocalNetwork.available()
             val remembered = manual ?: ServerUrl.load(this)
-            val selected = remembered?.takeIf { reachable(it) }
-                ?: if (manual == null) Discovery.find(::reachable) else null
+            val selected = remembered?.takeIf { Discovery.permitsRememberedEndpoint(it, useUsb, networks) && reachable(it) }
+                ?: if (manual == null) Discovery.find(::reachable, useUsb, networks) else null
             runOnUiThread {
                 if (isDestroyed || isFinishing) return@runOnUiThread
                 if (selected == null) {
-                    failConnection(R.string.not_found)
+                    failConnection(if (useUsb) R.string.usb_not_found else R.string.not_found)
                 } else {
                     endpoint = selected
                     ServerUrl.save(this, selected)
@@ -299,9 +368,12 @@ class MainActivity : Activity() {
         }
     }
 
-    override fun onResume() { super.onResume(); resumed = true; if (::web.isInitialized) web.onResume() }
-    override fun onPause() { resumed = false; hideRemoteKeyboard(); if (::web.isInitialized) web.onPause(); super.onPause() }
+    override fun onResume() { super.onResume(); resumed = true; if (::web.isInitialized) web.onResume(); syncIdleDisplay() }
+    override fun onPause() { resumed = false; wakingGesture = false; wakingKeys.clear(); syncIdleDisplay(); hideRemoteKeyboard(); if (::web.isInitialized) web.onPause(); super.onPause() }
     override fun onDestroy() {
+        phoneDialog?.setOnDismissListener(null)
+        phoneDialog?.dismiss()
+        idleDisplay.close()
         io.shutdownNow()
         web.removeCallbacks(loadTimeout)
         web.stopLoading()

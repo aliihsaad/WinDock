@@ -15,6 +15,8 @@ assembleDebug` on Linux with those prerequisites.
 Output: `artifacts/WinDock-android-debug.apk`. It supports Android 7/API 24 and
 newer, targets API 34, and uses a local debug signing key. Updating requires the
 same signing key. Production signing and Play Store preparation are separate.
+The current development APK identifies as `0.2.2-preview.1` (version code 4);
+it has not yet replaced the public download.
 
 Transfer the APK to the phone, open it and allow installation from the chosen
 browser/file manager if Android asks. Alternatively, enable USB debugging,
@@ -25,6 +27,52 @@ If discovery misses the PC, enter its full tray URL or IPv4 address/port and tap
 Connect. A bare IP defaults to port 8620. Back closes an open sheet; a second
 Back returns to the connection screen. Android's first fullscreen prompt needs
 one tap on Got it. System-edge swipes can temporarily reveal navigation bars.
+
+## USB connection (development build)
+
+The new Android build supports USB networking through **USB tethering**. This
+uses the existing Windows host and PIN pairing; USB debugging and developer
+options are not required. A charging-only cable will not work.
+
+1. Connect the phone to the PC with a data-capable USB cable.
+2. Enable **USB tethering** in Android Settings (often under Hotspot & tethering).
+3. Keep WinDock running on Windows. In the Android connection screen, select
+   **Connect by USB → Find USB PC**. Back from the dock returns to that screen.
+4. Pair using the PIN in the Windows tray. If discovery is blocked, enter the
+   PC's IPv4 address on its USB network adapter, rather than its Wi-Fi address.
+
+Allow WinDock through Windows Firewall on the trusted USB connection when
+prompted. Tethering may also share mobile data with Windows; turn mobile data
+off if that is unwanted. Some phones or carrier configurations restrict USB
+tethering. The USB choice is remembered and only searches wired interfaces;
+it does not silently fall back to Wi-Fi. **Find my PC** returns to normal LAN
+discovery. Unplugging the cable requires reconnecting or choosing another link.
+
+Discovery binds probes to each local interface and uses the responder's source
+address, avoiding a stale Wi-Fi address advertised by a PC with several network
+adapters. Host identity and local-address validation still apply. Android OEM
+interface naming and Windows firewall behavior need physical-device verification.
+
+## Phone display options (development build)
+
+Open **This phone** on the connection screen, or **Appearance → This phone ·
+screen & sleep** in the updated shared dock. These preferences stay on this
+phone and do not change the PC's brightness or power settings.
+
+- **Dim after inactivity:** never, 15 seconds, 30 seconds (default), 1 or 2 minutes.
+- **Dim brightness:** 5%, 10% (default), or 20%; never raises an already lower brightness.
+- **Screen off:** use the phone's normal timeout (default), or rest after 1, 2,
+  5 or 10 minutes idle. An explicit stay-awake option lasts only while the dock
+  is visible in the foreground.
+
+At a timed limit the app draws black, lowers window brightness, and releases
+its keep-awake flag so Android can turn the screen off. Android's configured
+timeout may add a delay. No device-admin, accessibility service, or global
+settings permission is used. The first gesture on a dimmed or resting dock only
+wakes it; after Android turns off the screen, use the phone's normal wake control.
+Leaving the app restores brightness and releases keep-awake. Live PC updates
+do not reset the idle timer. Lower brightness and screen breaks reduce prolonged
+display exposure but cannot guarantee prevention of OLED burn-in.
 
 ## Verification
 
@@ -59,6 +107,34 @@ fullscreen explanation is dismissed using UI Automator on the English emulator.
 The emulator flow passed on Android 16/API 36.1. It does not establish physical
 LAN broadcast reachability or real Windows app activation. G14 remains pending
 until those actions succeed on the user's phone and PC.
+
+### USB discovery and idle display regression
+
+The Kotlin unit suite also checks actual UDP request/reply exchange, rejects
+malformed replies, corrects stale advertised addresses, and verifies USB-only
+selection and idle deadlines. It does not emulate a physical USB cable.
+
+With the smoke host above running, install the app and instrumentation APKs,
+then run on the emulator:
+
+```powershell
+adb -s emulator-5554 shell am instrument -w -e class com.windock.app.PhoneOptionsTest com.windock.app.test/androidx.test.runner.AndroidJUnitRunner
+```
+
+The two tests cover native settings through the WebView bridge, saved preferences
+after Activity recreation, timed dimming, consumption of the first wake gesture,
+black rest mode, keyboard dismissal, keep-awake release, background cleanup,
+and remembered USB mode with a return to LAN. They require about 90 seconds.
+The JVM tests separately verify that USB mode refuses remembered Wi-Fi hosts;
+recent emulators also expose a virtual Ethernet link on their Wi-Fi subnet.
+
+To also verify Android actually powers down the emulator display, first record
+its `system screen_off_timeout` and `global stay_on_while_plugged_in` values with
+`adb shell settings get`. Set them to `15000` and `0` respectively, add
+`-e verifySleep true` to the test command, and restore both original settings
+afterward. Change these settings only on the test emulator, never a personal
+phone. Physical USB validation still requires a tethering-enabled phone and
+Windows PC, discovery, PIN pairing, and an app action with Wi-Fi disabled.
 
 ### Automatic now-playing regression
 

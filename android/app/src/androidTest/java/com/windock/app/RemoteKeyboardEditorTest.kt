@@ -6,6 +6,23 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class RemoteKeyboardEditorTest {
+    @Test fun compositionKeepsTheDockActiveButCleanupDoesNot() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        instrumentation.runOnMainSync {
+            val editor = RemoteKeyboardEditor(instrumentation.targetContext)
+            var activity = 0
+            editor.onUserActivity = { activity++ }
+            val connection = editor.onCreateInputConnection(EditorInfo())!!
+            connection.setComposingText("unfinished", 1)
+            assertTrue(activity > 0)
+            val previous = activity
+            editor.resetSession()
+            assertEquals(previous, activity)
+            assertFalse(connection.setComposingText("stale", 1))
+            assertEquals(previous, activity)
+        }
+    }
+
     @Test fun compositionEmojiDeletionAndStaleConnection() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         instrumentation.runOnMainSync {
