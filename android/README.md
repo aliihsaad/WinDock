@@ -45,8 +45,11 @@ Allow WinDock through Windows Firewall on the trusted USB connection when
 prompted. Tethering may also share mobile data with Windows; turn mobile data
 off if that is unwanted. Some phones or carrier configurations restrict USB
 tethering. The USB choice is remembered and only searches wired interfaces;
-it does not silently fall back to Wi-Fi. **Find my PC** returns to normal LAN
-discovery. Unplugging the cable requires reconnecting or choosing another link.
+it does not silently fall back to Wi-Fi during an explicit USB attempt.
+**Connect by Wi-Fi** returns to wireless, using its own remembered PC address.
+On startup, if the wired link is gone, WinDock returns to Wi-Fi automatically.
+The connection screen always shows which mode is selected. If you unplug while
+the dock is open, return to this screen and choose Wi-Fi, or reopen the app.
 
 Discovery binds probes to each local interface and uses the responder's source
 address, avoiding a stale Wi-Fi address advertised by a PC with several network

@@ -14,18 +14,28 @@ object ServerUrl {
     private const val PREFS = "windock"
     private const val KEY = "endpoint"
 
+    private fun key(usbOnly: Boolean) = if (usbOnly) "usbEndpoint" else "wifiEndpoint"
+
+    /** Preserve the old single address under its original transport before switching modes. */
+    fun migrate(context: Context) {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        if (prefs.contains("usbEndpoint") || prefs.contains("wifiEndpoint")) return
+        val old = prefs.getString(KEY, null)?.let { EndpointPolicy.normalize(it) } ?: return
+        prefs.edit().putString(key(PhonePreferences.usbOnly(context)), old).apply()
+    }
+
     fun isValid(url: String?): Boolean = EndpointPolicy.normalize(url) != null
 
-    fun load(context: Context): String? =
+    fun load(context: Context, usbOnly: Boolean = PhonePreferences.usbOnly(context)): String? =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getString(KEY, null)
+            .getString(key(usbOnly), null)
             ?.let { EndpointPolicy.normalize(it) }
 
-    fun save(context: Context, url: String) {
+    fun save(context: Context, url: String, usbOnly: Boolean = PhonePreferences.usbOnly(context)) {
         val endpoint = EndpointPolicy.normalize(url) ?: return
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit()
-            .putString(KEY, endpoint)
+            .putString(key(usbOnly), endpoint)
             .apply()
     }
 }

@@ -22,9 +22,14 @@ object Discovery {
     private const val TIMEOUT_MS = 500
     private const val ATTEMPTS = 3
 
+    fun useUsbOnStartup(previousUsb: Boolean, networks: List<LocalNetwork>): Boolean =
+        previousUsb && networks.any { it.wired }
+
     fun permitsRememberedEndpoint(endpoint: String, usbOnly: Boolean, networks: List<LocalNetwork>): Boolean {
         val url = EndpointPolicy.normalize(endpoint) ?: return false
-        return !usbOnly || networks.any { it.wired && it.contains(URI(url).host.orEmpty()) }
+        val host = URI(url).host.orEmpty()
+        return if (usbOnly) networks.any { it.wired && it.contains(host) }
+        else networks.any { !it.wired && it.contains(host) } || networks.none { it.wired && it.contains(host) }
     }
 
     /** Parse a reply datagram into an endpoint, or null if it is not ours. */
@@ -46,13 +51,13 @@ object Discovery {
      */
     fun find(reachable: (String) -> Boolean, usbOnly: Boolean = false,
              networks: List<LocalNetwork> = LocalNetwork.available()): String? {
-        val links = networks.filter { !usbOnly || it.wired }
+        val links = networks.filter { it.wired == usbOnly }
         // USB mode never silently falls back to Wi-Fi. The wildcard broadcast
         // preserves discovery on phones which hide interface enumeration.
         val targets: List<LocalNetwork?> = if (usbOnly) links else links + listOf(null)
         for (link in targets) {
             if (Thread.currentThread().isInterrupted) return null
-            val found = findOnLink(link, reachable)
+            val found = findOnLink(link) { permitsRememberedEndpoint(it, usbOnly, networks) && reachable(it) }
             if (found != null) return found
         }
         return null

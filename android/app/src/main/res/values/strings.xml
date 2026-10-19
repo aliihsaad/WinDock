@@ -1,21 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">WinDock</string>
-    <string name="searching">Looking for your PC…</string>
+    <string name="searching">Looking for your PC on Wi-Fi…</string>
     <string name="not_found">Keep WinDock running on your PC and connect both devices to the same network.\nTry again, or enter the address shown in the PC tray.</string>
     <string name="connecting">Opening your dock…</string>
     <string name="connection_lost">Could not reach your PC. Check the connection and try again.</string>
     <string name="choose_pc">Connect to your PC, or search for another one.</string>
     <string name="address_hint">PC address · 192.168.1.40:8620</string>
     <string name="invalid_address">Enter the local IPv4 address shown in the WinDock tray.</string>
-    <string name="retry">Find my PC</string>
-    <string name="connect">Connect</string>
+    <string name="retry">Connect by Wi-Fi</string>
+    <string name="connect">Use this address</string>
+    <string name="mode_wifi">Wi-Fi selected · Phone and PC on the same network</string>
+    <string name="mode_usb">USB selected · USB tethering must be on</string>
+    <string name="usb_address_hint">PC USB address · 192.168.42.10:8620</string>
+    <string name="usb_disconnected">USB disconnected. Looking for your PC on Wi-Fi…</string>
     <string name="usb_title">Connect by USB</string>
-    <string name="usb_instructions">1. Connect your phone to the PC with a data-capable USB cable.\n\n2. In Android Settings, turn on USB tethering (usually under Hotspot &amp; tethering). USB debugging is not needed.\n\n3. Keep WinDock running on Windows, then return here and tap Find USB PC.\n\nIf Windows asks, allow WinDock on your trusted USB network. Tethering may also share your mobile data with Windows; disable mobile data if you do not want that.\n\nUSB mode only searches wired links; it will not switch to Wi-Fi.</string>
+    <string name="usb_instructions">1. Connect your phone to the PC with a data-capable USB cable.\n\n2. In Android Settings, turn on USB tethering (usually under Hotspot &amp; tethering). USB debugging is not needed.\n\n3. Keep WinDock running on Windows, then return here and tap Find USB PC.\n\nIf Windows asks, allow WinDock on your trusted USB network. Tethering may also share your mobile data with Windows; disable mobile data if you do not want that.\n\nThis USB attempt stays on the cable. Choose Connect by Wi-Fi for wireless. Reopening the app without a USB link returns to Wi-Fi.</string>
     <string name="network_settings">Open network settings</string>
     <string name="find_usb_pc">Find USB PC</string>
     <string name="usb_searching">Looking for your PC over USB…</string>
-    <string name="usb_not_found">No USB PC found. Check the cable, turn on USB tethering, and keep WinDock running on Windows. Allow WinDock on the trusted USB network. You can also enter the PC’s USB IPv4 address, or choose Find my PC for Wi-Fi.</string>
+    <string name="usb_not_found">No USB PC found. Check the cable, USB tethering, and WinDock on Windows. For wireless, tap Connect by Wi-Fi above. You can also enter the PC’s USB IPv4 address below.</string>
     <string name="phone_options">This phone</string>
     <string name="phone_options_intro">Display settings for this phone only. Your PC display is unchanged.</string>
     <string name="dim_after">Dim after inactivity</string>

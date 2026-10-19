@@ -70,6 +70,7 @@ class MainActivity : Activity() {
         address = findViewById(R.id.address)
         connectButton = findViewById(R.id.connect)
         retryButton = findViewById(R.id.retry)
+        ServerUrl.migrate(this)
         usbOnly = PhonePreferences.usbOnly(this)
         idleDisplay = IdleDisplayController(this, findViewById(R.id.idle_cover), onRest = { hideRemoteKeyboard() })
         setupRemoteKeyboard()
@@ -80,7 +81,7 @@ class MainActivity : Activity() {
             else connect(selected)
         }
         retryButton.setOnClickListener {
-            usbOnly = false; PhonePreferences.setUsbOnly(this, false); connect()
+            selectConnection(false); connect()
         }
         findViewById<Button>(R.id.usb_connect).setOnClickListener { showUsbSetup() }
         findViewById<Button>(R.id.phone_options).setOnClickListener { showPhoneOptions() }
@@ -127,7 +128,7 @@ class MainActivity : Activity() {
             }
         }
         hideSystemBars()
-        connect()
+        connect(restoreOnStartup = true)
     }
 
     private fun syncIdleDisplay() {
@@ -143,7 +144,7 @@ class MainActivity : Activity() {
     private fun showUsbSetup() {
         if (phoneDialog != null) return
         showPhoneDialog(PhoneOptions.usbDialog(this) {
-            usbOnly = true; PhonePreferences.setUsbOnly(this, true); connect()
+            selectConnection(true); connect()
         })
     }
 
@@ -280,6 +281,14 @@ class MainActivity : Activity() {
         findViewById<View>(R.id.progress).visibility = if (busy) View.VISIBLE else View.GONE
     }
 
+    private fun selectConnection(useUsb: Boolean, enteredAddress: String? = null) {
+        usbOnly = useUsb
+        PhonePreferences.setUsbOnly(this, useUsb)
+        address.setText(enteredAddress ?: ServerUrl.load(this, useUsb).orEmpty())
+        address.setHint(if (useUsb) R.string.usb_address_hint else R.string.address_hint)
+        findViewById<TextView>(R.id.connection_mode).setText(if (useUsb) R.string.mode_usb else R.string.mode_wifi)
+    }
+
     private fun failConnection(message: Int) {
         hideRemoteKeyboard()
         loadFailed = true
@@ -291,7 +300,7 @@ class MainActivity : Activity() {
     }
 
     /** Validate remembered, entered and discovered hosts with the same health check. */
-    private fun connect(manual: String? = null) {
+    private fun connect(manual: String? = null, restoreOnStartup: Boolean = false) {
         if (connecting) return
         (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager)
             .hideSoftInputFromWindow(address.windowToken, 0)
@@ -299,12 +308,20 @@ class MainActivity : Activity() {
         web.visibility = View.GONE
         syncIdleDisplay()
         connection.visibility = View.VISIBLE
+        findViewById<TextView>(R.id.connection_mode).setText(if (usbOnly) R.string.mode_usb else R.string.mode_wifi)
         status.setText(if (usbOnly) R.string.usb_searching else R.string.searching)
         setBusy(true)
-        val useUsb = usbOnly
+        val requestedUsb = usbOnly
         io.execute {
             val networks = LocalNetwork.available()
-            val remembered = manual ?: ServerUrl.load(this)
+            val useUsb = if (restoreOnStartup) Discovery.useUsbOnStartup(requestedUsb, networks) else requestedUsb
+            runOnUiThread {
+                if (!isDestroyed && !isFinishing) {
+                    selectConnection(useUsb, manual)
+                    status.setText(if (requestedUsb && !useUsb) R.string.usb_disconnected else if (useUsb) R.string.usb_searching else R.string.searching)
+                }
+            }
+            val remembered = manual ?: ServerUrl.load(this, useUsb)
             val selected = remembered?.takeIf { Discovery.permitsRememberedEndpoint(it, useUsb, networks) && reachable(it) }
                 ?: if (manual == null) Discovery.find(::reachable, useUsb, networks) else null
             runOnUiThread {
@@ -313,7 +330,7 @@ class MainActivity : Activity() {
                     failConnection(if (useUsb) R.string.usb_not_found else R.string.not_found)
                 } else {
                     endpoint = selected
-                    ServerUrl.save(this, selected)
+                    ServerUrl.save(this, selected, useUsb)
                     address.setText(selected)
                     status.setText(R.string.connecting)
                     loadFailed = false

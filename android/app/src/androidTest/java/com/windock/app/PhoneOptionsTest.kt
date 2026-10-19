@@ -167,17 +167,23 @@ class PhoneOptionsTest {
 
     @Test fun usbGuideRemembersChoiceAndAllowsReturnToLan() {
         prepare()
+        ServerUrl.save(context, "http://192.168.42.10:8620", true)
         try {
             ActivityScenario.launch(MainActivity::class.java).use { scenario ->
                 loaded(scenario)
                 scenario.onActivity { @Suppress("DEPRECATION") it.onBackPressed() }
                 awaitUi(scenario) { it.findViewById<View>(R.id.connection).visibility == View.VISIBLE }
+                scenario.onActivity {
+                    assertEquals("Connect by Wi-Fi", it.findViewById<Button>(R.id.retry).text.toString())
+                    assertEquals(it.getString(R.string.mode_wifi), it.findViewById<TextView>(R.id.connection_mode).text)
+                }
                 scenario.onActivity { it.findViewById<Button>(R.id.usb_connect).performClick() }
                 assertTrue(device.wait(Until.hasObject(By.text("Connect by USB")), 5000))
                 screenshot("usb-setup.png")
                 device.findObject(By.res("android", "button1")).click()
                 awaitUi(scenario) { PhonePreferences.usbOnly(context) }
                 assertTrue(PhonePreferences.usbOnly(context))
+                assertEquals(endpoint, ServerUrl.load(context, false))
                 awaitUi(scenario, 20000) {
                     it.findViewById<Button>(R.id.usb_connect).isEnabled
                 }
@@ -193,7 +199,7 @@ class PhoneOptionsTest {
                 awaitUi(scenario, 20000) {
                     it.findViewById<Button>(R.id.usb_connect).isEnabled
                 }
-                assertTrue(PhonePreferences.usbOnly(context))
+                assertEquals(LocalNetwork.available().any { it.wired }, PhonePreferences.usbOnly(context))
                 scenario.onActivity {
                     if (it.findViewById<WebView>(R.id.web).visibility == View.VISIBLE) {
                         @Suppress("DEPRECATION") it.onBackPressed()
@@ -203,6 +209,8 @@ class PhoneOptionsTest {
                 scenario.onActivity { it.findViewById<Button>(R.id.retry).performClick() }
                 loaded(scenario)
                 assertFalse(PhonePreferences.usbOnly(context))
+                assertEquals(endpoint, ServerUrl.load(context, false))
+                assertEquals("http://192.168.42.10:8620", ServerUrl.load(context, true))
             }
         } finally {
             PhonePreferences.setUsbOnly(context, false)

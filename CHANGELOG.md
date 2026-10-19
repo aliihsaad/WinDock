@@ -2,19 +2,42 @@
 
 ## Unreleased
 
+- Add the first native iPhone companion source: remembered PC address, PIN pairing
+  through the shared landscape dock, and reconnect/change-PC controls.
+- Add a GitHub macOS workflow for simulator tests, screenshots and unsigned iOS
+  archives. This is not an installable iPhone release; signing and physical testing
+  are still pending. This is separate from the Windows and Android releases below.
+
+## [0.2.2-preview.1](https://github.com/aliihsaad/WinDock/releases/tag/v0.2.2-preview.1) — October 19, 2026
+
 - Add Android USB networking through USB tethering, with a dedicated USB-only
   connection flow and discovery that follows the responding network adapter.
+- Make Wi-Fi and USB separate connection choices with their own remembered PC
+  addresses. Reopening the app after disconnecting USB returns to Wi-Fi.
 - Add phone-only idle dimming, timed black-screen rest with Android sleep,
   and optional keep-awake while the dock is open. A first tap wakes the dock
   without activating its controls. Thanks to [waly-git](https://github.com/waly-git)
   for [suggesting #6](https://github.com/aliihsaad/WinDock/issues/6).
   These features require the new Android build. USB pairing and PC app control
   were verified on a Huawei Mate 10 Pro with the phone’s Wi-Fi off.
-- Add the first native iPhone companion source: remembered PC address, PIN pairing
-  through the shared landscape dock, and reconnect/change-PC controls.
-- Add a GitHub macOS workflow for simulator tests, screenshots and unsigned iOS
-  archives. This is not an installable iPhone release; signing and physical testing
-  are still pending. This is separate from the Windows maintenance releases below.
+- Add **Appearance → This phone · screen & sleep** in the dock for Android.
+
+Update both apps. Quit WinDock from the Windows tray and run the new installer;
+your PC dock settings are preserved. The new Android APK is version code 4 and
+uses a different debug signing key from the previous public previews. Uninstall
+the old Android app, install this APK, and pair again. Phone-only preferences
+reset on uninstall; the dock stored on the PC is kept. Recent local test builds
+with the same key can update directly.
+
+For USB, connect a data-capable cable, enable **USB tethering** in Android
+Settings, then choose **Connect by USB → Find USB PC** and enter the normal
+tray PIN. No USB debugging is required. Choose **Connect by Wi-Fi** to return
+to wireless. Tethering may share mobile data with Windows.
+
+Display options live under **This phone** on the connection screen or in the
+dock’s Appearance panel. Timed rest goes black and lets Android sleep; the
+phone’s own screen timeout may add a delay. These options reduce prolonged
+display exposure but do not guarantee prevention of burn-in.
 
 ## [0.2.1-preview.1](https://github.com/aliihsaad/WinDock/releases/tag/v0.2.1-preview.1) — October 17, 2026
 

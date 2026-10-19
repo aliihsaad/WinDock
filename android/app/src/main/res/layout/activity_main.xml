@@ -15,6 +15,17 @@
                 android:padding="12dp" android:textColor="#AABBC8" android:textSize="15sp" />
             <ProgressBar android:id="@+id/progress" android:layout_width="24dp"
                 android:layout_height="24dp" android:indeterminateTint="#88E9C4" />
+            <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:layout_marginTop="8dp">
+                <Button android:id="@+id/retry" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:text="@string/retry" android:textAllCaps="false" />
+                <Button android:id="@+id/usb_connect" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:layout_marginStart="12dp"
+                    android:text="@string/usb_title" android:textAllCaps="false" />
+            </LinearLayout>
+            <TextView android:id="@+id/connection_mode" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:gravity="center" android:text="@string/mode_wifi"
+                android:textColor="#AABBC8" android:textSize="13sp" />
             <EditText android:id="@+id/address" android:layout_width="360dp"
                 android:layout_height="56dp" android:layout_marginTop="12dp"
                 android:inputType="textUri" android:singleLine="true" android:imeOptions="actionGo"
@@ -24,17 +35,9 @@
                 android:backgroundTint="#568475" />
             <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:orientation="horizontal" android:layout_marginTop="8dp">
-                <Button android:id="@+id/retry" android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" android:text="@string/retry"
-                    android:textAllCaps="false" />
                 <Button android:id="@+id/connect" android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" android:layout_marginStart="12dp"
+                    android:layout_height="wrap_content"
                     android:text="@string/connect" android:textAllCaps="false" />
-            </LinearLayout>
-            <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:orientation="horizontal" android:layout_marginTop="8dp">
-                <Button android:id="@+id/usb_connect" android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" android:text="@string/usb_title" android:textAllCaps="false" />
                 <Button android:id="@+id/phone_options" android:layout_width="wrap_content"
                     android:layout_height="wrap_content" android:layout_marginStart="12dp"
                     android:text="@string/phone_options" android:textAllCaps="false" />

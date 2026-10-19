@@ -10,7 +10,7 @@ on:
       release_tag:
         description: New release tag (used only when creating a draft)
         type: string
-        default: v0.2.1-preview.1
+        default: v0.2.2-preview.1
   push:
     branches: [main]
     paths:

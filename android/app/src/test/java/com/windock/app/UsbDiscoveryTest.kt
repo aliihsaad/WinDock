@@ -46,10 +46,28 @@ class UsbDiscoveryTest {
         assertFalse(Discovery.permitsRememberedEndpoint("http://192.168.42.10:8620", true, emptyList()))
         assertTrue(Discovery.permitsRememberedEndpoint("http://192.168.42.10:8620", true, links))
         assertTrue(Discovery.permitsRememberedEndpoint("http://192.168.1.10:8620", false, links))
+        assertFalse(Discovery.permitsRememberedEndpoint("http://192.168.42.10:8620", false, links))
         assertFalse(Discovery.permitsRememberedEndpoint("https://example.com", false, links))
     }
 
+    @Test fun startupReturnsToWifiAfterTheCableIsRemoved() {
+        val wifi = LocalNetwork("192.168.1.20", "192.168.1.255", 24, false)
+        val usb = LocalNetwork("192.168.42.129", "192.168.42.255", 24, true)
+        assertFalse(Discovery.useUsbOnStartup(true, listOf(wifi)))
+        assertFalse(Discovery.useUsbOnStartup(true, emptyList()))
+        assertTrue(Discovery.useUsbOnStartup(true, listOf(wifi, usb)))
+        assertFalse(Discovery.useUsbOnStartup(false, listOf(wifi, usb)))
+    }
+
     @Test fun actualDatagramUsesSourceAddressAndHealthCheck() {
+        checkDatagram(true)
+    }
+
+    @Test fun wifiDiscoveryStillWorksAfterAddingUsb() {
+        checkDatagram(false)
+    }
+
+    private fun checkDatagram(usbOnly: Boolean) {
         val worker = Executors.newSingleThreadExecutor()
         try {
             DatagramSocket(Discovery.PORT, InetAddress.getByName("127.0.0.1")).use { host ->
@@ -66,8 +84,8 @@ class UsbDiscoveryTest {
                     }
                 }
                 val checked = mutableListOf<String>()
-                val result = Discovery.find({ checked.add(it); it == "http://127.0.0.1:18622" }, true,
-                    listOf(LocalNetwork("127.0.0.1", "127.0.0.1", 8, true)))
+                val result = Discovery.find({ checked.add(it); it == "http://127.0.0.1:18622" }, usbOnly,
+                    listOf(LocalNetwork("127.0.0.1", "127.0.0.1", 8, usbOnly)))
                 reply.get(5, TimeUnit.SECONDS)
                 assertEquals("http://127.0.0.1:18622", result)
                 assertEquals(listOf(result), checked)

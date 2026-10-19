@@ -1,40 +1,31 @@
-## WinDock 0.2.1-preview.1
+## WinDock 0.2.2-preview.1
 
-Playing information now keeps up automatically, and the Windows tray can check
-for future updates.
+Connect your Android phone over USB and give its screen a rest when you step away.
+Thanks to [@waly-git](https://github.com/waly-git) for suggesting [#6](https://github.com/aliihsaad/WinDock/issues/6).
 
-- **Now playing:** track, artist and playback changes update every two seconds
-  while connected and visible. Polling pauses in the background and resumes when
-  you return. Thanks @Peter-KIbe for reporting [#1](https://github.com/aliihsaad/WinDock/issues/1).
-- **Updates:** choose **Check for updates** in the Windows tray. WinDock also
-  checks at startup and notifies you when a newer release is available. Click the
-  notification or download menu item to view the release. Installation is manual.
-- **Reliability:** transient failures recover automatically, slow media requests
-  do not pile up, and unchanged playback controls keep keyboard focus.
+- **USB connection:** use a data-capable cable and Android USB tethering. No USB debugging is required; the usual pairing PIN still protects your PC.
+- **Clear connection choices:** Wi-Fi and USB remember their own PC addresses. Choose either on the connection screen. On startup, a disconnected USB link returns to Wi-Fi; an explicit USB connection attempt stays on USB.
+- **Phone display:** configure idle dimming, dim brightness, timed screen rest, or keep-awake under **This phone**. The dock also has **Appearance → This phone · screen & sleep**.
+- **Screen rest:** the dock goes black and allows Android to sleep. Android’s own screen timeout can add a delay. The first touch wakes the dock without activating a control; after the screen turns off, use the phone’s normal wake control.
 
-### Update instructions
+### Update both apps
 
-1. Quit WinDock using its Windows tray menu.
-2. Download and run **WinDockSetup.exe**. Your dock settings are preserved.
-3. Start WinDock, then disconnect/reconnect your Android app to load the updated
-   dock. Pair again with the tray PIN if prompted.
+1. Quit WinDock from the Windows tray, then download and run **WinDockSetup.exe**. Your dock settings stay on the PC.
+2. Download **WinDock-android-debug.apk** on your phone. **Previous public Android previews must be uninstalled first**, because this APK uses a different debug signing key. Install the new APK and pair again. Uninstalling resets phone-only preferences, not your PC’s dock. Recent local test builds signed with the same key can update directly.
+3. Start WinDock on Windows and Android. Use the PIN from **Show connection info** in the Windows tray.
 
-**No Android APK update is required.** The APK included here is byte-for-byte the
-existing 0.2.0-preview.1 Android build (version code 3), included for new users.
-Existing Windows users must install this release manually once; earlier versions
-cannot check for updates. Windows notification settings may suppress a startup
-notification, so **Check for updates** is always available in the tray.
+### Connect by USB or Wi-Fi
 
-### Verification and preview status
+For USB, connect a data-capable cable, enable **USB tethering** in Android Settings, then select **Connect by USB → Find USB PC**. If Windows asks, allow WinDock on your trusted USB network. Tethering may also share mobile data with Windows; turn mobile data off if unwanted.
 
-The media fix passed browser and Android emulator WebView regressions without
-Refresh clicks, including pause/resume, ended playback, and background return.
-The release build checks update detection, native input, app tests, and installer
-installation, launch, upgrade and uninstall.
+For wireless, connect the phone and PC to the same trusted network and select **Connect by Wi-Fi**. Press Android Back from the dock to return to connection choices (close any open sheet first).
 
-Windows is unsigned and Android is debug-signed. The September 18 Android preview
-used a different signing key and must be uninstalled before installing the newer
-APK. iOS remains in development with no installable public release.
+### Preview status
 
-Download hashes are in **SHA256SUMS.txt**. See the full
-[version history](https://github.com/aliihsaad/WinDock/blob/main/CHANGELOG.md).
+USB pairing and PC app control were verified on a Huawei Mate 10 Pro with phone Wi-Fi off. Android display behavior and connection switching are checked in the emulator; Windows input, update checks and bundled-host startup are tested separately.
+
+Windows is unsigned and Android remains debug-signed (version code 4). Dimming and rest reduce prolonged screen exposure; they cannot guarantee burn-in prevention. iOS remains in development with no installable public release.
+
+Windows 0.2.1-preview.1 and newer can discover this release through **Check for updates** or a startup notification. Downloading and installing remain manual.
+
+Download hashes are in **SHA256SUMS.txt**. See the full [version history](https://github.com/aliihsaad/WinDock/blob/main/CHANGELOG.md).
