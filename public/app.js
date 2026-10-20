@@ -603,8 +603,13 @@ async function executeVoice(command, phrase) {
   const heard = " · “" + phrase + "”";
   try {
     if (action === "launch") {
-      const running = state.running.find((item) => item.id === args.id);
-      await api(running ? "/api/apps/focus" : "/api/apps/launch", { method: "POST", body: JSON.stringify(running ? { pid: running.pid, id: running.id } : { id: args.id }) });
+      let running = state.running.find((item) => item.id === args.id);
+      if (running) {
+        // The snapshot can lag a relaunch or a quit; a stale pid should not end the command.
+        try { await api("/api/apps/focus", { method: "POST", body: JSON.stringify({ pid: running.pid, id: running.id }) }); }
+        catch (error) { if (error.message !== "process not running") throw error; running = null; }
+      }
+      if (!running) await api("/api/apps/launch", { method: "POST", body: JSON.stringify({ id: args.id }) });
       notify((running ? "Brought forward: " : "Opened: ") + args.name + heard);
     } else if (action === "control") {
       await api("/api/control", { method: "POST", body: JSON.stringify(args) });

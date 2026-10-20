@@ -147,6 +147,7 @@ t.ok(appJs.includes("window.WinDockVoice = {") && appJs.includes("onResult(") &&
 t.ok(/if \(command\.confirm\) return offerVoiceConfirm/.test(appJs), "a confirm command is never executed directly");
 t.ok(/VOICE_CONFIRM_MS = 4000/.test(appJs), "the confirmation offer lasts four seconds");
 t.ok(appJs.includes("Didn’t catch that"), "not understood tells the user what was heard");
+t.ok(/error\.message !== "process not running"/.test(appJs) && appJs.includes("if (!running) await api(\"/api/apps/launch\""), "a stale running pid falls back to launching the app");
 t.ok(sw.includes('"/voice.js"'), "the service worker precaches voice.js");
 t.ok(/<div id="voice-online-row" hidden>/.test(html) && html.includes('id="voice-online"'), "the online switch exists and starts hidden");
 t.ok(appJs.includes("window.WinDockAndroid.setVoiceOnline(") && appJs.includes("window.WinDockAndroid.voiceOnline()"), "the switch reads and writes the phone's setting through the bridge");
