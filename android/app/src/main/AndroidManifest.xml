@@ -6,6 +6,16 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+    <!-- RECORD_AUDIO: voice commands. Requested only when the Voice button is first tapped.
+         Recognition runs on the phone; only the interpreted command reaches the PC. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!-- Android 11+ package visibility: let SpeechRecognizer find the system recognizer. -->
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+    </queries>
 
     <application
         android:label="@string/app_name"

@@ -4,6 +4,7 @@ import { addAppTile, addControlTile, removeTile, moveTile, toWireTiles, availabl
 import { normalizeLayout, renderPages, pageCount, moveToTile } from "./launcher.js";
 import { createInputPad } from "./input-pad.js";
 import { createNowPlayingPoller } from "./now-playing.js";
+import { interpret } from "./voice.js";
 
 const $ = (id) => document.getElementById(id);
 let state = { tiles: [], running: [], verbs: [] };
@@ -13,6 +14,8 @@ let currentPage = 0, toastTimer, selectedKey = "", suppressClickUntil = 0;
 let pageHintTimer;
 let captureState = { available: false, phase: "idle" }, captureBusy = false, capturePoll = false, captureReceivedAt = Date.now();
 let nowPlayingHtml = "";
+let voice = null, voiceTimer, pendingVoice = null, voiceConfirmTimer;
+const VOICE_CONFIRM_MS = 4000, VOICE_LISTEN_MS = 20000;
 const nowPlaying = createNowPlayingPoller({
   load: async (signal) => (await api("/api/nowplaying", { signal })).nowPlaying,
   isActive: () => paired && online && !document.hidden,
@@ -29,11 +32,24 @@ if (typeof window.WinDockAndroid?.showPhoneSettings === "function") {
   $("phone-options-row").hidden = false;
   $("phone-options").addEventListener("click", () => window.WinDockAndroid.showPhoneSettings());
 }
+if (typeof window.WinDockAndroid?.listen === "function") {
+  $("drawer-voice").hidden = false;
+  $("drawer-voice").addEventListener("click", startVoice);
+  // Phones without an offline recognizer can opt in to the online one. Off by default.
+  if (typeof window.WinDockAndroid.setVoiceOnline === "function") {
+    $("voice-online-row").hidden = false;
+    try { $("voice-online").checked = window.WinDockAndroid.voiceOnline() === true; } catch { /* default off */ }
+    $("voice-online").addEventListener("change", () => {
+      try { window.WinDockAndroid.setVoiceOnline($("voice-online").checked); } catch { /* the phone keeps its setting */ }
+      notify($("voice-online").checked ? "Online voice recognition on · audio goes to your phone’s speech provider" : "Online voice recognition off · speech stays on this phone");
+    });
+  }
+}
 document.addEventListener("error", (event) => {
   if (event.target instanceof HTMLImageElement && event.target.closest(".app-icon")) event.target.parentElement.classList.add("icon-failed");
 }, true);
 
-function notify(message, error = false) {
+function notify(message, error = false, sticky = false) {
   clearTimeout(toastTimer);
   const el = $("toast");
   el.textContent = message;
@@ -41,7 +57,7 @@ function notify(message, error = false) {
   // Native dialogs occupy the top layer; feedback belongs inside the active one.
   (Array.from(document.querySelectorAll("dialog[open]")).at(-1) || document.body).append(el);
   el.hidden = false;
-  toastTimer = setTimeout(() => { el.hidden = true; }, error ? 5500 : 2700);
+  if (!sticky) toastTimer = setTimeout(() => { el.hidden = true; }, error ? 5500 : 2700);
 }
 function report(error) {
   if (error.message === "unauthorized") return;
@@ -113,6 +129,7 @@ async function api(path, options = {}) {
 function showPair(message = "") {
   paired = false;
   paintCapture();
+  cancelVoice();
   syncLayout();
   clearTimeout(reconnectTimer);
   if (socket) { socket.onclose = null; socket.close(); socket = null; }
@@ -506,6 +523,107 @@ $("drawer-input").addEventListener("click", () => inputPad.open());
 $("capture-screenshot").addEventListener("click", () => captureAction("screenshot"));
 $("capture-record").addEventListener("click", () => captureAction(captureActive() ? "stop" : "start"));
 $("recording-stop").addEventListener("click", () => captureAction("stop"));
+// ---- Voice commands. The Android wrapper transcribes on the phone and calls
+// window.WinDockVoice; the shell only interprets text and reuses the API calls.
+const voiceErrors = {
+  "no-match": "Didn’t catch that. Try again.",
+  permission: "Allow microphone access to use voice commands.",
+  language: "Offline speech recognition isn’t available for your phone’s language. Download it in Android’s voice input settings.",
+  downloading: "Downloading the offline speech pack for your language. Try again in a minute.",
+  busy: "Still listening. Try again in a moment.",
+  unavailable: "Voice recognition isn’t available on this phone right now.",
+};
+async function loadApps() {
+  if (appsLoaded) return installedApps;
+  const { apps } = await api("/api/apps/installed");
+  installedApps = apps; appsLoaded = true;
+  return apps;
+}
+function cancelVoice() {
+  clearTimeout(voiceTimer);
+  if (voice) { voice = null; $("toast").hidden = true; }
+  hideVoiceConfirm();
+}
+function startVoice() {
+  $("drawer").close();
+  if (!online) return notify("Your PC is disconnected. Wait for it to reconnect.", true);
+  if (voice) return;
+  hideVoiceConfirm();
+  // App names are needed to resolve "open …"; fetch them while the user speaks.
+  voice = { apps: loadApps().catch(() => installedApps) };
+  notify("Listening…", false, true);
+  clearTimeout(voiceTimer);
+  voiceTimer = setTimeout(() => { if (voice) { voice = null; notify(voiceErrors["no-match"], true); } }, VOICE_LISTEN_MS);
+  try { window.WinDockAndroid.listen(); }
+  catch { cancelVoice(); notify(voiceErrors.unavailable, true); }
+}
+window.WinDockVoice = {
+  onResult(text, isFinal) {
+    if (!voice || typeof text !== "string") return;
+    const heard = text.trim();
+    if (!isFinal) { if (heard) notify("Listening… “" + heard + "”", false, true); return; }
+    const session = voice; voice = null; clearTimeout(voiceTimer);
+    runVoice(heard, session).catch(report);
+  },
+  onError(code, detail) {
+    if (!voice) return;
+    voice = null; clearTimeout(voiceTimer);
+    let text = (voiceErrors[code] || voiceErrors.unavailable) + (typeof detail === "string" && detail ? " · " + detail : "");
+    if (["language", "unavailable"].includes(code) && !$("voice-online-row").hidden && !$("voice-online").checked) text += " · Or turn on Online voice recognition under Appearance.";
+    // Language details are long and worth reading; keep them up longer than a normal error.
+    notify(text, true, Boolean(detail));
+    if (detail) voiceTimer = setTimeout(() => { $("toast").hidden = true; }, 15000);
+  },
+};
+async function runVoice(phrase, session) {
+  const command = interpret(phrase, { apps: await session.apps, recording: captureActive() });
+  if (command.action === "unknown") {
+    return notify((command.args.app ? "No app with that name on your PC" : "Didn’t catch that") + " · “" + phrase + "”", true);
+  }
+  if (command.confirm) return offerVoiceConfirm(command, phrase);
+  await executeVoice(command, phrase);
+}
+function offerVoiceConfirm(command, phrase) {
+  hideVoiceConfirm();
+  $("toast").hidden = true;
+  pendingVoice = { command, phrase };
+  $("voice-confirm-text").textContent = powerActions[command.args.verb][0] + " Heard “" + phrase + "”.";
+  $("voice-confirm").hidden = false;
+  voiceConfirmTimer = setTimeout(() => hideVoiceConfirm("Not confirmed. Nothing was sent to your PC."), VOICE_CONFIRM_MS);
+}
+function hideVoiceConfirm(message) {
+  clearTimeout(voiceConfirmTimer);
+  pendingVoice = null;
+  $("voice-confirm").hidden = true;
+  if (message) notify(message);
+}
+async function executeVoice(command, phrase) {
+  if (!online) return notify("Your PC is disconnected. Wait for it to reconnect.", true);
+  const { action, args, label } = command;
+  const heard = " · “" + phrase + "”";
+  try {
+    if (action === "launch") {
+      const running = state.running.find((item) => item.id === args.id);
+      await api(running ? "/api/apps/focus" : "/api/apps/launch", { method: "POST", body: JSON.stringify(running ? { pid: running.pid, id: running.id } : { id: args.id }) });
+      notify((running ? "Brought forward: " : "Opened: ") + args.name + heard);
+    } else if (action === "control") {
+      await api("/api/control", { method: "POST", body: JSON.stringify(args) });
+      if (args.verb.startsWith("media-")) nowPlaying.refresh().catch(() => {});
+      notify(label + (powerActions[args.verb] ? " · Command sent to your PC" : heard));
+    } else if (action === "capture") {
+      if (!captureState.available) return notify("Screen capture needs an updated WinDock on your PC.", true);
+      if (args.action === "stop" && !captureActive()) return notify("Nothing is recording right now.", true);
+      if (args.action === "start" && captureActive()) return notify("Already recording. Say “stop recording” to save it.", true);
+      await captureAction(args.action);
+    } else if (action === "page") {
+      const before = currentPage;
+      pageTo(currentPage + args.delta);
+      notify(currentPage === before ? (args.delta > 0 ? "You’re on the last page already" : "You’re on the first page already") : "Page " + (currentPage + 1) + heard);
+    }
+  } catch (error) { report(error); }
+}
+$("voice-confirm-go").addEventListener("click", () => { const pending = pendingVoice; hideVoiceConfirm(); if (pending) executeVoice(pending.command, pending.phrase).catch(report); });
+$("voice-confirm-cancel").addEventListener("click", () => hideVoiceConfirm("Canceled. Nothing was sent to your PC."));
 setInterval(() => { if (paired && !document.hidden) refreshCapture().catch(() => {}); }, 2000);
 setInterval(() => { if (paired && captureActive() && !document.hidden) paintCapture(); }, 500);
 // The invisible lower edge is also a keyboard-accessible button. Track swipes
@@ -556,4 +674,7 @@ syncLayout();
   catch (error) { showPair(error.message === "unauthorized" ? "" : "Start WinDock on your PC, then connect with its PIN."); }
 })();
 // Refresh when returning to the dock. No background native polling while hidden.
-document.addEventListener("visibilitychange", () => { if (!document.hidden && paired) refresh().then(connect).catch(report); });
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) cancelVoice();
+  else if (paired) refresh().then(connect).catch(report);
+});

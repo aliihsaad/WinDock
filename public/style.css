@@ -148,6 +148,11 @@ h2 { margin: 0; font-size: 25px; font-weight: 500; letter-spacing: -.6px; }
 .confirm__actions button { flex: 1; }
 .toast { position: fixed; z-index: 50; bottom: 24px; left: 50%; transform: translateX(-50%); width: max-content; max-width: calc(100vw - 40px); padding: 12px 18px; border: 1px solid #597462; border-radius: 13px; background: #2b4236; color: #e0f8e7; box-shadow: 0 5px 25px #0005; font-size: 12px; text-align: center; pointer-events: none; }
 .toast[data-error="true"] { background: #462c2c; border-color: #8d5a5a; color: #ffe6e6; }
+.voice-confirm { position: fixed; z-index: 60; bottom: 24px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; max-width: calc(100vw - 40px); padding: 9px 10px 9px 16px; border: 1px solid #8d5a5a; border-radius: 13px; background: #462c2c; color: #ffe6e6; box-shadow: 0 5px 25px #0005; font-size: 12px; }
+.voice-confirm__icon { color: #ed9695; }
+.voice-confirm__icon .icon { width: 20px; height: 20px; }
+.voice-confirm p { margin: 0 6px 0 0; }
+.voice-confirm .button { min-height: 36px; padding: 7px 13px; font-size: 11px; border-radius: 10px; white-space: nowrap; }
 .pair { display: flex; align-items: center; justify-content: center; gap: 10vw; min-height: 100dvh; padding: 25px max(30px, env(safe-area-inset-left)); }
 .pair__intro h1 { font-size: 49px; font-weight: 450; line-height: 1.05; letter-spacing: -2px; margin: 30px 0 18px; }
 .pair__intro h1 em { font-style: normal; color: var(--accent); }
@@ -285,7 +290,7 @@ body.is-immersive .empty .button .icon { width: 36px; height: 36px; }
 .glass-drawer[open] { animation: drawer-in .25s cubic-bezier(.2,.7,.2,1); }
 .drawer-grip { display: block; width: 100%; min-height: 29px; padding: 10px; background: none; border: 0; touch-action: none; }
 .drawer-grip > span { display: block; width: 33px; height: 3px; margin: auto; border-radius: 3px; background: #ebf5f44d; }
-.drawer-actions { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 7px; padding: 6px 0 16px; }
+.drawer-actions { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 7px; padding: 6px 0 16px; }
 .drawer-actions button { display: flex; flex-direction: column; align-items: center; gap: 12px; border: 0; border-radius: 18px; padding: 15px 6px 13px; min-height: 88px; background: #ffffff06; font-size: 11px; color: #eef6f5; }
 .drawer-actions button > [data-icon] { width: 29px; height: 29px; }
 .drawer-actions .icon { width: 27px; height: 27px; }

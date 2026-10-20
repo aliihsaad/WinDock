@@ -203,6 +203,37 @@ The PNG is a handwritten signature image, not a certificate-based digital signat
 Touchpad control follows Windows permissions and cannot operate secure prompts
 or applications running with higher privileges than WinDock.
 
+## Voice commands
+
+In the updated Android app, swipe up and choose **Voice**. The first tap asks
+for microphone access. Speech is recognized on the phone: Android 12 and newer
+use the system's on-device recognizer, and older phones ask their recognizer to
+prefer its offline language pack. Audio and the transcript stay on the phone;
+only the command WinDock understood is sent to the PC, through the same requests
+the buttons use. If a language pack is missing, Android 13 and newer download
+it on the first attempt (try again a minute later); older phones offer it in
+Android's voice input settings. Some phones ship no offline recognizer at all;
+there, **Online voice recognition** under Appearance can be turned on. It is off
+by default, and while it is on, audio goes to the phone's speech provider.
+
+WinDock understands a short, fixed vocabulary in Spanish and English, with or
+without accents. Anything else shows "Didn't catch that" with what was heard.
+
+| Do this | Say (Spanish) | Say (English) |
+| --- | --- | --- |
+| Open an app | abrir / abre *app* | open / launch *app* |
+| Volume | sube el volumen · baja el volumen · volumen al 50 · silencio | volume up · volume down · volume 50 · mute |
+| Playback | pausa / reproducir · siguiente · anterior · detener | play / pause · next · previous · stop |
+| Capture | captura / pantallazo · grabar pantalla · detener grabación | screenshot · start recording · stop recording |
+| Dock pages | página siguiente · página anterior | next page · previous page |
+| Power | bloquear · suspender · reiniciar · apagar | lock · sleep · restart · shut down |
+
+App names match the names in the app library, so "abre Word" opens Microsoft
+Word and "open Visual Studio" opens Visual Studio rather than Visual Studio Code.
+Power commands show a Confirm button for four seconds and send nothing unless
+you tap it. While a recording is running, a plain "stop" ends the recording.
+Browsers do not show the Voice button; it needs the updated Android APK.
+
 ## How it works
 
 The Windows companion serves the dock interface on your local network. The
