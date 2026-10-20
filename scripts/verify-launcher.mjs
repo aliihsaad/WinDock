@@ -2,7 +2,7 @@ import { readFile, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createChecker } from "./lib/assert.mjs";
-import { normalizeLayout, renderPages, pageCount, moveToTile } from "../public/launcher.js";
+import { normalizeLayout, fitLayout, renderPages, pageCount, moveToTile, GRIDS, ICON_SCALE, ICON_SIZES } from "../public/launcher.js";
 import { tileKey } from "../public/tiles.js";
 import { createIconCache, FALLBACK_ICON } from "../src/icons.js";
 import { createApp } from "../server.js";
@@ -19,6 +19,22 @@ for (const count of [4, 6, 8]) {
   t.equal(preference.rows, 2, `${count} icons use two rows`);
 }
 t.ok(normalizeLayout({ perPage: 4 }).iconSize > normalizeLayout({ perPage: 6 }).iconSize && normalizeLayout({ perPage: 6 }).iconSize > layout.iconSize, "icons become smaller as density increases");
+for (const count of [12, 16]) {
+  const preference = normalizeLayout({ perPage: count });
+  t.equal(preference.columns, 4, `${count} icons keep four columns`);
+  t.equal(preference.rows, count / 4, `${count} icons add rows instead of columns`);
+}
+t.ok(normalizeLayout({ perPage: 8 }).iconSize >= normalizeLayout({ perPage: 12 }).iconSize && normalizeLayout({ perPage: 12 }).iconSize > normalizeLayout({ perPage: 16 }).iconSize, "tablet densities never enlarge the phone icon");
+t.deepEqual(Object.keys(GRIDS), Object.keys(ICON_SIZES), "every grid has an icon size");
+t.deepEqual(Object.keys(GRIDS), Object.keys(ICON_SCALE), "every grid has a viewport share");
+t.equal(normalizeLayout({ perPage: 10 }).perPage, 4, "an unsupported density resets to the spacious preset");
+t.equal(normalizeLayout({ columns: 4, rows: 3 }).perPage, 12, "old twelve-icon layouts migrate without changing capacity");
+const tablet = normalizeLayout({ perPage: 16 });
+t.deepEqual(fitLayout(tablet, { height: 500 }), normalizeLayout({ perPage: 8 }), "a tablet density on a short screen is drawn as eight");
+t.equal(fitLayout(tablet, { height: 639 }).perPage, 8, "just under the threshold is still a phone");
+t.equal(fitLayout(tablet, { height: 640 }), tablet, "from the threshold the tablet density stands");
+t.equal(fitLayout(tablet, {}), tablet, "without a viewport the preference stands");
+t.equal(fitLayout(layout, { height: 300 }), layout, "phone densities are never rewritten");
 t.equal(normalizeLayout({ columns: 4, rows: 2 }).perPage, 8, "old eight-icon layouts migrate without changing capacity");
 t.equal(normalizeLayout({ columns: 6, rows: 2 }).columns, 2, "old unsupported layouts reset to the spacious preset");
 t.equal(normalizeLayout({ background: 'url(https://example.com)', theme: 'unknown' }).background, 'aurora', "background settings only accept bundled scenes");
@@ -29,6 +45,8 @@ t.equal(normalizeLayout().immersive, true, "immersive mode is enabled by default
 const tiles = Array.from({ length: 17 }, (_, i) => ({ kind: "app", id: `c:/apps/${i}.exe`, target: `C:\\Apps\\${i}.exe`, label: `App ${i}` }));
 t.equal(pageCount(tiles, layout), 3, "overflow creates a partially populated third page");
 t.equal(pageCount([], layout), 1, "empty dock keeps one page");
+t.equal(pageCount(tiles, tablet), 2, "sixteen per page: seventeen tiles fill two pages");
+t.equal((renderPages({ tiles }, tablet).match(/class="dock-page"/g) || []).length, 2, "tablet pages render the larger capacity");
 const markup = renderPages({ tiles }, layout, true);
 t.equal((markup.match(/class="dock-page"/g) || []).length, 3, "all pages render");
 t.equal((markup.match(/data-action="options"/g) || []).length, 17, "every editing tile opens options");
