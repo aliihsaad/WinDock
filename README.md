@@ -23,6 +23,7 @@ screen — all over your local network, with no account or cloud service.
 | Windows 10 / 11, x64 | [Download the installer](https://github.com/aliihsaad/WinDock/releases/download/v0.2.3-preview.1/WinDockSetup.exe) |
 | Android 7.0+ | [Download the APK](https://github.com/aliihsaad/WinDock/releases/download/v0.2.3-preview.1/WinDock-android-debug.apk) |
 | Linux (Hyprland), x86-64 | [Arch/Omarchy and Debian/Ubuntu installer preview](#linux-preview) |
+| macOS 13 or newer (tested on 27) | [Run from source (phase 1 preview)](#macos-preview) |
 | iOS | Coming soon — [native companion development & GitHub builds](ios/README.md); no installable public release yet. |
 
 1. **Install on your PC.** Open `WinDockSetup.exe`. It includes the required
@@ -146,6 +147,34 @@ On Linux:
 
 See the [developer reference](docs/DEVELOPMENT.md#linux-host) for how each
 feature works.
+
+## macOS preview
+
+WinDock can also host a dock from a Mac. This first phase covers the app
+library with real icons, launching, bringing apps forward and quitting them,
+volume and mute, play/pause and track skipping in Spotify or Music, "now
+playing", and sleep, lock and power actions. The touchpad, phone keyboard,
+signatures, screen capture and brightness need a native helper and are not
+available on macOS yet; the dock hides what the host does not offer.
+
+You need **Node.js 20.11+** (for example `brew install node`). Nothing else
+has to be installed: the host uses `open`, `osascript`, `plutil` and `sips`,
+which ship with macOS. In this repository:
+
+```bash
+npm ci
+npm start
+```
+
+Keep the terminal open: it prints the address and pairing PIN for your phone.
+The first time the host lists running apps, macOS asks whether your terminal
+may control **System Events**; allow it, or the dock shows no running apps.
+**Lock** turns the display off, which locks the Mac when *Require password
+after screen saver begins or display is turned off* is set to immediately in
+System Settings → Lock Screen (the default).
+
+Spotify and Music are the media players this phase understands. There is no
+menu bar app, autostart or packaged installer yet.
 
 ## What you can do
 
