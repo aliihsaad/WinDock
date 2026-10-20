@@ -46,6 +46,7 @@ export const PROFILES = Object.freeze([
   },
 ]);
 
+/** The profile with this id, or the first one when the stored id is stale. */
 export function profileById(id) {
   return PROFILES.find((profile) => profile.id === id) || PROFILES[0];
 }
@@ -57,13 +58,17 @@ export function profileById(id) {
  * acceleration feels.
  */
 export class KnobDial {
+  /** Thresholds are in degrees, pixels and degrees per second; `now` is injectable for tests. */
   constructor({ stepDegrees = 12, deadZone = 14, fastDegreesPerSecond = 240, fastFactor = 3, now = () => performance.now() } = {}) {
     Object.assign(this, { stepDegrees, deadZone, fastDegreesPerSecond, fastFactor, now });
     this.rotation = 0;
     this.reset();
   }
+  /** Forget the current turn; the accumulated face rotation is kept for the visual. */
   reset() { this.active = false; this.angle = null; this.residual = 0; this.time = null; this.cx = 0; this.cy = 0; }
+  /** Angle of a point around the centre, in degrees, clockwise positive on screen. */
   angleAt(x, y) { return (Math.atan2(y - this.cy, x - this.cx) * 180) / Math.PI; }
+  /** Start a turn around (cx, cy) from the first touch; inside the dead zone the anchor waits. */
   begin(cx, cy, x, y) {
     this.reset();
     this.active = true; this.cx = cx; this.cy = cy; this.time = this.now();
@@ -89,6 +94,7 @@ export class KnobDial {
     this.residual -= steps * this.stepDegrees;
     return steps * (fast ? this.fastFactor : 1);
   }
+  /** Finish the turn; later movement is ignored until `begin` is called again. */
   end() { this.reset(); }
 }
 

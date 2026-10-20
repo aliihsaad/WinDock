@@ -226,7 +226,9 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
   $("signature-save").addEventListener("click", () => saveSignature());
   $("signature-insert").addEventListener("click", () => saveSignature(true));
   // ---- Knobs: rotary dials beside the touchpad, over the same socket. One dial turns at a time.
+  /** Status line for a live touchpad: the profile hint while the knobs are docked, else the gesture hint. */
   function touchpadHint() { return knobsOpen ? profileById(knobProfile).hint : "Tap to click · Two fingers: slide to scroll, tap for right-click · Pinch to zoom"; }
+  /** Show or hide the knob dock beside the touchpad and remember the choice on this device. */
   function toggleKnobs() {
     knobsOpen = !knobsOpen;
     try { storage.setItem("windock-knobs-open", String(knobsOpen)); } catch { /* optional preference */ }
@@ -234,6 +236,7 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
     paint();
     if (ready && mode === "touchpad" && !demo) setStatus(touchpadHint());
   }
+  /** Render the profile chooser and the three dials of the current profile; readouts start at zero. */
   function drawKnobs() {
     const profile = profileById(knobProfile);
     $("knobs-profiles").innerHTML = renderProfiles(PROFILES, profile.id);
@@ -241,10 +244,12 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
     $("knobs-hint").textContent = profile.hint;
     knobTotals = {};
   }
+  /** Release the dial being turned, if any. */
   function endDial() {
     if (!activeDial) return;
     activeDial.dial.end(); activeDial.element.classList.remove("is-turning"); activeDial = null;
   }
+  /** Send the messages for `steps` turns of `knob` and update its readout. */
   function turnKnob(knob, steps, element) {
     if (!knob || !ready) return;
     const { messages, blocked } = knobMessages(knob, steps, { target: focusTarget });
