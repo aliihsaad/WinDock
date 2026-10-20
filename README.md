@@ -28,7 +28,8 @@ screen — all over your local network, with no account or cloud service.
 1. **Install on your PC.** Open `WinDockSetup.exe`. It includes the required
    runtimes and adds WinDock to your Start menu and system tray.
 2. **Install on your phone.** Open the Android APK and allow installation from
-   your browser or file manager when prompted.
+   your browser or file manager when prompted. Every PC you connect to is kept
+   under Recent PCs, so switching between two of them is one tap.
 3. **Connect.** Keep both devices on the same trusted network. Open WinDock on
    your phone, select your PC, and enter the PIN from **Show connection info**
    in the Windows tray menu. Enter the tray address manually if discovery misses it.

@@ -38,4 +38,20 @@ object ServerUrl {
             .putString(key(usbOnly), endpoint)
             .apply()
     }
+
+    private const val KNOWN = "knownHosts"
+
+    /** Every PC this phone has reached, most recent first. */
+    fun knownHosts(context: Context): List<KnownHost> =
+        KnownHosts.parse(context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KNOWN, null))
+
+    fun rememberHost(context: Context, endpoint: String, label: String, usbOnly: Boolean, now: Long = System.currentTimeMillis()) {
+        val hosts = KnownHosts.remember(knownHosts(context), KnownHost(endpoint, label, usbOnly, now))
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KNOWN, KnownHosts.serialize(hosts)).apply()
+    }
+
+    fun forgetHost(context: Context, endpoint: String) {
+        val hosts = KnownHosts.forget(knownHosts(context), endpoint)
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KNOWN, KnownHosts.serialize(hosts)).apply()
+    }
 }
