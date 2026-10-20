@@ -78,7 +78,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if requested { return }
         let detail = host?.lastError ?? ""
         // A host that ran for a while is restarted; one that dies at once is reported.
-        if (host?.uptime ?? 0) > 10 && failures < 3 {
+        // A long run clears earlier failures, so crashes days apart never add up.
+        let uptime = host?.uptime ?? 0
+        if uptime > 600 { failures = 0 }
+        if uptime > 10 && failures < 3 {
             failures += 1
             statusLine.title = "Host stopped (code \(code)). Restarting…"
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in

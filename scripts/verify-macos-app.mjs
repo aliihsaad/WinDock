@@ -25,6 +25,7 @@ const pack = await read("scripts/package-macos-app.sh");
 t.ok(pack.includes("Contents/Resources/host") && pack.includes('cp "$NODE" "$HOST/node"') && pack.includes("windock-input"), "the package carries the host, the helper and the Node runtime");
 t.ok(pack.includes("hdiutil create") && pack.includes("SHA256SUMS-macos.txt"), "the package is a DMG with a checksum");
 t.ok(pack.includes('rm -f "$APP/Contents/Resources/host-root"'), "a packaged app no longer points at the repository");
+t.ok(pack.includes('otool -L "$NODE"') && pack.includes("WINDOCK_PACKAGE_NODE"), "the package refuses a Node that links libraries outside the system");
 const hostSource = await read("native/macos-app/Host.swift");
 t.ok(hostSource.includes("static var bundled") && hostSource.includes('appendingPathComponent("host")'), "the app prefers its bundled host and runtime");
 const build = await read("scripts/build-macos-app.sh");
@@ -54,8 +55,8 @@ if (process.platform === "darwin" && existsSync(app)) {
   t.ok(run.stdout.includes("TRAY OK: server started, URL and PIN received"), "the app started the host and read its address and PIN");
   t.ok(/^node: \/.*\/node$/m.test(run.stdout), "the app found a Node binary");
   t.ok(/^login item: (enabled|not enabled)$/m.test(run.stdout), "the app can read the login item state");
-  const stale = spawnSync("pgrep", ["-f", "server.js"], { encoding: "utf8" });
-  t.ok(!stale.stdout.split("\n").some((line) => line.includes("18620")), "the smoke host does not outlive the app");
+  const stale = spawnSync("lsof", ["-nP", "-iTCP:18620", "-sTCP:LISTEN"], { encoding: "utf8" });
+  t.equal(stale.stdout.trim(), "", "the smoke host does not outlive the app: nothing listens on its port");
 } else {
   process.stdout.write(`menu bar app not built (${app}); run npm run build:macos-app to test it here\n`);
 }

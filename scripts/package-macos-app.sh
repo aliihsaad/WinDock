@@ -5,8 +5,17 @@
 set -eu
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 VERSION=$(node -p "require('$ROOT/package.json').version")
-NODE=$(node -p "process.execPath")
+NODE=${WINDOCK_PACKAGE_NODE:-$(node -p "process.execPath")}
+[ -x "$NODE" ] || { echo "Node runtime not found at $NODE" >&2; exit 1; }
 [ -x "$ROOT/windock-input" ] || { echo "Build the input helper first: npm run build:macos" >&2; exit 1; }
+# The bundled runtime must stand on its own: a Node that links libraries from
+# Homebrew or another prefix would fail on a Mac without them.
+FOREIGN=$(otool -L "$NODE" | tail -n +2 | awk '{print $1}' | grep -v -E '^(/usr/lib/|/System/Library/)' || true)
+if [ -n "$FOREIGN" ]; then
+  echo "This Node links libraries outside the system: $FOREIGN" >&2
+  echo "Package with a self-contained Node (the nodejs.org installer or an nvm build): WINDOCK_PACKAGE_NODE=/path/to/node npm run package:macos" >&2
+  exit 1
+fi
 sh "$ROOT/scripts/build-macos-app.sh"
 APP="$ROOT/artifacts/WinDock.app"
 HOST="$APP/Contents/Resources/host"
