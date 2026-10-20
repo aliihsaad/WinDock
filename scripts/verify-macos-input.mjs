@@ -142,6 +142,10 @@ if (process.platform === "darwin" && existsSync(INPUT_HELPER)) {
   t.equal(verdicts.length, good.length + bads.length, "every line gets a verdict");
   t.deepEqual(verdicts.slice(0, good.length).map((v) => v.ok), good.map(() => true), "the helper accepts the protocol");
   t.deepEqual(verdicts.slice(good.length).map((v) => v.ok), bads.map(() => false), "the helper rejects everything else");
+  t.deepEqual(verdicts.slice(0, 3).map((v) => v.type), ["move", "zoom", "button"], "verdicts name the message kind only");
+  t.ok(verdicts.every((v) => !JSON.stringify(v).includes("tab")), "typed text never comes back out of the helper");
+  const oversized = spawnSync(INPUT_HELPER, ["parse"], { input: '{"type":"ping"' + " ".repeat(8200) + "}\n", encoding: "utf8" });
+  t.ok(/Input too large/.test(oversized.stdout), "lines over 8192 bytes are refused by the validator too");
 } else {
   process.stdout.write(`native helper not built (${INPUT_HELPER}); run npm run build:macos to test it here\n`);
 }

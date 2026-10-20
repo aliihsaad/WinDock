@@ -5,9 +5,16 @@ import AppKit
 import Foundation
 
 /// One touchpad per user session, like the Windows `Local\WinDock.Touchpad` mutex.
-private func singleInstance() throws -> Int32 {
-    let path = (NSTemporaryDirectory() as NSString).appendingPathComponent("windock-touchpad.lock")
-    let fd = open(path, O_WRONLY | O_CREAT | O_CLOEXEC, 0o600)
+/// The lock lives in the per-user temporary directory; without one that this
+/// user owns, the lock is skipped rather than placed in a shared folder.
+private func singleInstance() throws -> Int32? {
+    var buffer = [CChar](repeating: 0, count: Int(PATH_MAX))
+    guard confstr(_CS_DARWIN_USER_TEMP_DIR, &buffer, buffer.count) > 0 else { return nil }
+    let directory = String(cString: buffer)
+    var info = stat()
+    guard stat(directory, &info) == 0, info.st_uid == getuid(), (info.st_mode & S_IFMT) == S_IFDIR else { return nil }
+    let path = (directory as NSString).appendingPathComponent("windock-touchpad.lock")
+    let fd = open(path, O_WRONLY | O_CREAT | O_NOFOLLOW | O_CLOEXEC, 0o600)
     guard fd >= 0 else { throw fail("Could not open the touchpad lock: \(String(cString: strerror(errno)))") }
     if flock(fd, LOCK_EX | LOCK_NB) != 0 {
         close(fd)
@@ -20,7 +27,7 @@ let accessibilityHint = "Accessibility permission is not granted, so the touchpa
 
 func runTouchpad() throws {
     let lock = try singleInstance()
-    defer { close(lock) }
+    defer { if let lock { close(lock) } }
     guard AXIsProcessTrusted() else {
         // Ask macOS to list the responsible app under Accessibility, so granting is one switch away.
         _ = AXIsProcessTrustedWithOptions([kAXTrustedCheckOptionPrompt.takeUnretainedValue(): true] as CFDictionary)

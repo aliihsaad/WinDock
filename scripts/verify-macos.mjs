@@ -52,7 +52,7 @@ t.equal(parseInfoPlist(plist({ CFBundleIdentifier: "com.x y" }), "/a/S.app"), nu
 t.equal(parseInfoPlist(plist({ CFBundleIdentifier: "-rf" }), "/a/S.app"), null, "a bundle id that looks like an option is rejected");
 t.equal(parseInfoPlist("not json", "/a/S.app"), null, "an unreadable plist is not an app");
 for (const bad of ["", "com.x y", "-b", "a".repeat(256), "com.x;rm", 'com.x"'] ) t.ok(!BUNDLE_ID.test(bad), `bundle id ${JSON.stringify(bad)} is rejected`);
-t.ok(BUNDLE_ID.test("com.anthropic.claudefordesktop") && BUNDLE_ID.test("io.tailscale.ipn.macsys") && BUNDLE_ID.test("org.mozilla_firefox-1"), "real bundle ids pass");
+t.ok(BUNDLE_ID.test("com.apple.Safari") && BUNDLE_ID.test("org.mozilla.firefox") && BUNDLE_ID.test("com.example.my_app-2"), "real-looking bundle ids pass");
 
 // ---- inventory over real folders with a simulated plutil ----
 const apps = join(tmp, "Applications"), userApps = join(tmp, "UserApplications");
@@ -60,7 +60,7 @@ const bundle = async (dir, name, info) => {
   await mkdir(join(dir, `${name}.app`, "Contents"), { recursive: true });
   await writeFile(join(dir, `${name}.app`, "Contents", "Info.plist"), info === null ? "" : JSON.stringify(info));
 };
-await bundle(apps, "Zed", { CFBundleIdentifier: "dev.zed.Zed", CFBundleName: "Zed", CFBundleIconFile: "AppIcon" });
+await bundle(apps, "Zeta", { CFBundleIdentifier: "com.example.Zeta", CFBundleName: "Zeta", CFBundleIconFile: "AppIcon" });
 await bundle(apps, "Alpha", { CFBundleIdentifier: "com.example.alpha", CFBundleName: "Alpha" });
 await bundle(apps, "Agent", { CFBundleIdentifier: "com.example.agent", CFBundleName: "Agent", LSUIElement: 1 });
 await bundle(apps, "Broken", null);
@@ -84,7 +84,7 @@ const fakeExec = async (file, args) => {
 let clock = 0;
 const provider = createMacProvider({ exec: fakeExec, appDirs: [apps, userApps, join(tmp, "missing")], tmp, now: () => clock, capture: {}, input: null });
 const inventory = await provider.listInstalledApps();
-t.deepEqual(inventory.map((app) => app.name), ["Alpha", "Beta", "Zed"], "bundles are listed by name; agents, broken plists and other files are skipped");
+t.deepEqual(inventory.map((app) => app.name), ["Alpha", "Beta", "Zeta"], "bundles are listed by name; agents, broken plists and other files are skipped");
 t.equal(inventory.find((app) => app.id === "com.example.alpha").target, join(apps, "Alpha.app"), "the first folder claims a duplicated bundle id");
 t.ok(execCalls.every((call) => call[0] !== "plutil" || call.slice(1, 4).join(" ") === "-convert json -o"), "plutil is asked for JSON on stdout");
 t.ok(execCalls.some((call) => call[0] === "plutil" && call.at(-1) === join(apps, "Broken.app", "Contents", "Info.plist")), "every bundle's Info.plist is read");
@@ -96,7 +96,7 @@ await provider.listInstalledApps();
 t.ok(execCalls.length > before, "the inventory is refreshed after 30 seconds");
 
 // ---- icons ----
-const zed = inventory.find((app) => app.id === "dev.zed.zed");
+const zed = inventory.find((app) => app.id === "com.example.zeta");
 const icon = await provider.appIcon(zed);
 t.ok(icon?.equals(PNG(16)), "an .icns is converted to PNG through sips");
 const sips = execCalls.find((call) => call[0] === "sips");
@@ -113,14 +113,14 @@ t.equal(await notPng.appIcon({ icon: "/a/b.icns" }), null, "a conversion that is
 // ---- running apps ----
 const processes = JSON.stringify([
   { name: "Finder", bundleId: "com.apple.finder", pid: 625 },
-  { name: "Zed", bundleId: "dev.zed.Zed", pid: 4000 },
-  { name: "Zed", bundleId: "dev.zed.Zed", pid: 4000 },
+  { name: "Zeta", bundleId: "com.example.Zeta", pid: 4000 },
+  { name: "Zeta", bundleId: "com.example.Zeta", pid: 4000 },
   { name: "Evil", bundleId: "com.x; rm -rf /", pid: 4100 },
   { name: "NoPid", bundleId: "com.example.nopid", pid: 0 },
   { name: "", bundleId: "com.example.unnamed", pid: 4200 },
 ]);
 const running = parseProcesses(processes, inventory);
-t.deepEqual(running.map((r) => r.id), ["proc:com.apple.finder", "dev.zed.zed", "proc:com.example.unnamed"], "inventory apps keep their dock id; others get a process id; malformed rows are dropped");
+t.deepEqual(running.map((r) => r.id), ["proc:com.apple.finder", "com.example.zeta", "proc:com.example.unnamed"], "inventory apps keep their dock id; others get a process id; malformed rows are dropped");
 t.equal(running[1].path, zed.target, "a running inventory app reports its bundle path");
 t.equal(running[2].name, "com.example.unnamed", "an unnamed process is shown by its bundle id");
 t.deepEqual(parseProcesses("not json"), [], "garbage output is an empty list");
@@ -140,9 +140,9 @@ await t.rejects(() => live.launchApp({ target: "Zed.app" }), "launch requires an
 await t.rejects(() => live.launchApp({ target: "/Applications/evil" }), "launch requires an application bundle");
 await t.rejects(() => live.launchApp("-b"), "launch cannot be turned into an option");
 await live.focusApp(running[1]);
-t.deepEqual(execCalls.at(-1), ["open", "-b", "dev.zed.Zed"], "focus activates the app by bundle id");
+t.deepEqual(execCalls.at(-1), ["open", "-b", "com.example.Zeta"], "focus activates the app by bundle id");
 await live.closeApp(running[1]);
-t.deepEqual(execCalls.at(-1), [OSASCRIPT, ...JXA_FLAGS, QUIT_JXA, "dev.zed.Zed"], "close asks the app to quit, with the bundle id as an argument");
+t.deepEqual(execCalls.at(-1), [OSASCRIPT, ...JXA_FLAGS, QUIT_JXA, "com.example.Zeta"], "close asks the app to quit, with the bundle id as an argument");
 await t.rejects(() => live.focusApp({ pid: 4000 }), "focus needs a bundle id");
 await t.rejects(() => live.closeApp({ pid: 4000, bundleId: "com.x; rm" }), "close rejects a malformed bundle id");
 t.ok(!QUIT_JXA.includes("${") && !VOLUME_JXA.includes("${") && !MEDIA_JXA.includes("${"), "scripts are constant text without interpolation markers");

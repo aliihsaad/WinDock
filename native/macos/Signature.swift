@@ -114,7 +114,12 @@ func saveSignature(dir: String, insert: Bool) throws {
     // Read a bounded payload from the private parent pipe, never a client path.
     let png = try encodePNG(try render(try parseSignature(try readBody())))
 
-    try FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+    // Create the WinDock folder and Signatures each with 0700; intermediate
+    // directories otherwise get the default mask.
+    let parent = (dir as NSString).deletingLastPathComponent
+    for folder in [parent, dir] where !FileManager.default.fileExists(atPath: folder) {
+        try FileManager.default.createDirectory(atPath: folder, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+    }
     let name = "Signature-\(timestamp())-\(randomHex()).png"
     let path = (dir as NSString).appendingPathComponent(name)
     let fd = open(path, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0o600)

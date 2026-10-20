@@ -31,14 +31,30 @@ func check() {
     ])
 }
 
-/// The protocol validator alone, so the host's tests can exercise it without a desktop.
+/// The protocol validator alone, so the host's tests can exercise it without a
+/// desktop. Lines go through the same bounded reader as the touchpad, and only
+/// the message kind is echoed, never its text.
 func parseLines() {
-    while let line = readLine(strippingNewline: true) {
+    let input = LineReader(fd: STDIN_FILENO)
+    while true {
         do {
-            let message = try parse(line)
-            emit(["ok": true, "message": "\(message)"])
+            guard case .line(let line) = try input.next(timeout: 60) else { return }
+            let kind: String
+            switch try parse(line) {
+            case .ping: kind = "ping"
+            case .release: kind = "release"
+            case .focus: kind = "focus"
+            case .move: kind = "move"
+            case .scroll: kind = "scroll"
+            case .zoom: kind = "zoom"
+            case .button: kind = "button"
+            case .text: kind = "text"
+            case .key: kind = "key"
+            }
+            emit(["ok": true, "type": kind])
         } catch {
             emit(["ok": false, "error": "\(error)"])
+            if "\(error)" == "Input too large." { return } // the stream is no longer line-aligned
         }
     }
 }
