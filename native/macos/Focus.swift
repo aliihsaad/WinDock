@@ -116,12 +116,16 @@ final class Focus {
         wake.signal()
     }
 
-    /// Keyboard input needs the current token and the same app still in front.
+    /// Keyboard input needs the current token and the same focused element,
+    /// read live: the cached state can be a tick old, and focus may have moved
+    /// to another field of the same app, such as a password.
     func accepts(_ target: String) -> Bool {
         lock.lock()
         let current = state
         lock.unlock()
-        return !target.isEmpty && current.target == target && current.pid == Focus.frontmostPid()
+        guard !target.isEmpty, current.target == target else { return false }
+        let live = Focus.identify()
+        return live.pid == current.pid && live.identity == current.identity
     }
 
     func stop() {

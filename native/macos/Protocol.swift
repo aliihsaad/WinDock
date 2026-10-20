@@ -146,15 +146,18 @@ final class LineReader {
 
 private let emitLock = NSLock()
 
-/// Write one JSON line to stdout. The lock keeps lines from different threads whole.
+/// Write one JSON line to stdout. The lock keeps lines from different threads
+/// whole. A parent that has gone away closes the pipe: SIGPIPE is ignored at
+/// startup and the failed write is dropped, so the focus thread can never end
+/// the helper before the main thread releases the buttons.
 func emit(_ value: [String: Any]) {
-    guard let data = try? JSONSerialization.data(withJSONObject: value, options: [.sortedKeys]) else { return }
+    guard var data = try? JSONSerialization.data(withJSONObject: value, options: [.sortedKeys]) else { return }
+    data.append(0x0a)
     emitLock.lock()
     defer { emitLock.unlock() }
-    FileHandle.standardOutput.write(data)
-    FileHandle.standardOutput.write(Data([0x0a]))
+    try? FileHandle.standardOutput.write(contentsOf: data)
 }
 
 func warn(_ message: String) {
-    FileHandle.standardError.write(Data((message + "\n").utf8))
+    try? FileHandle.standardError.write(contentsOf: Data((message + "\n").utf8))
 }

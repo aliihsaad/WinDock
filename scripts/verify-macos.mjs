@@ -280,6 +280,27 @@ t.ok(stopped.lastCapture.path.endsWith(".mp4") && stopped.lastCapture.path.start
 t.deepEqual(captureCalls.at(-1), ["convert", rec.args.at(-1), stopped.lastCapture.path], "the movie is converted next to itself");
 t.deepEqual(await readdir(join(tmp, "recording")), [stopped.lastCapture.name], "the movie is removed once the MP4 exists");
 
+let finishConversion;
+const slowConvert = createMacCapture({
+  folder: async (kind) => join(tmp, kind), startupMs: 10, stopMs: 200,
+  exec: async () => ({ stdout: "" }),
+  spawn: (command, args) => fakeChild(command, args),
+  convert: (source, output) => new Promise((resolve) => { finishConversion = async () => { await writeFile(output, PNGB(6)); resolve(); }; }),
+});
+await slowConvert.start();
+const converting = children.at(-1);
+const slowStop = slowConvert.stop();
+await writeFile(converting.args.at(-1), PNGB(5));
+converting.exit(0);
+await new Promise((resolve) => setTimeout(resolve, 20));
+t.equal(slowConvert.status().phase, "stopping", "the conversion is part of stopping");
+const duringConversion = await slowConvert.start().catch((error) => error);
+t.equal(duringConversion.status, 409, "a start during the conversion is refused instead of racing the previous result");
+await finishConversion();
+t.equal((await slowStop).lastCapture.name.endsWith(".mp4"), true, "the conversion still completes");
+t.equal((await slowConvert.start()).phase, "recording", "recording is possible again once the MP4 exists");
+await slowConvert.dispose().catch(() => {});
+
 conversionWorks = false;
 await capture.start();
 const kept = children.at(-1);

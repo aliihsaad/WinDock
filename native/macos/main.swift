@@ -59,6 +59,9 @@ func parseLines() {
     }
 }
 
+// The parent closing its end of a pipe must not end the helper mid-session.
+signal(SIGPIPE, SIG_IGN)
+
 let arguments = Array(CommandLine.arguments.dropFirst())
 do {
     switch (arguments.count, arguments.first ?? "") {

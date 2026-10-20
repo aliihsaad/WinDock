@@ -157,28 +157,33 @@ export function createMacCapture({
     const code = await current.exited;
     clearTimeout(current.limit);
     clearTimeout(current.force);
-    if (worker === current) worker = null;
     startedAt = null;
-    let capture = code === 0 ? await saved("recording", current.file) : null;
-    if (capture) {
-      // The MP4 sits next to the movie with the same stamp; the movie goes once it exists.
-      const output = { name: current.file.name.replace(/\.mov$/, ".mp4"), path: current.file.path.replace(/\.mov$/, ".mp4") };
-      const converted = await convert(current.file.path, output.path).then(() => saved("recording", output), () => null);
-      if (converted) {
-        await unlink(current.file.path).catch(() => {});
-        capture = converted;
-      } else {
-        await unlink(output.path).catch(() => {}); // a failed conversion may leave a partial MP4
+    try {
+      let capture = code === 0 ? await saved("recording", current.file) : null;
+      if (capture) {
+        // The MP4 sits next to the movie with the same stamp; the movie goes once it exists.
+        const output = { name: current.file.name.replace(/\.mov$/, ".mp4"), path: current.file.path.replace(/\.mov$/, ".mp4") };
+        const converted = await convert(current.file.path, output.path).then(() => saved("recording", output), () => null);
+        if (converted) {
+          await unlink(current.file.path).catch(() => {});
+          capture = converted;
+        } else {
+          await unlink(output.path).catch(() => {}); // a failed conversion may leave a partial MP4
+        }
+        lastCapture = capture;
+        error = null;
+        phase = "idle";
+        return status();
       }
-      lastCapture = capture;
-      error = null;
-      phase = "idle";
-      return status();
+      await unlink(current.file.path).catch(() => {}); // a failed recording may leave an empty movie
+      error = CAPTURE_ERROR;
+      phase = "error";
+      throw failure(CAPTURE_ERROR);
+    } finally {
+      // Released only now: a start during the conversion is refused as "still saving"
+      // instead of racing this recording's result.
+      if (worker === current) worker = null;
     }
-    await unlink(current.file.path).catch(() => {}); // a failed recording may leave an empty movie
-    error = CAPTURE_ERROR;
-    phase = "error";
-    throw failure(CAPTURE_ERROR);
   }
 
   async function startRecording() {
