@@ -215,9 +215,13 @@ function rawCall(method, path, chunks = []) {
   });
 }
 try {
-  const chunked = await rawCall("PUT", "/api/tiles", Array(20).fill("x".repeat(8192)));
+  // The tiles endpoint allows up to 512 KB so a full dock with long paths fits.
+  const chunked = await rawCall("PUT", "/api/tiles", Array(80).fill("x".repeat(8192)));
   t.equal(chunked.status, 413, "an oversized chunked body is refused");
   t.equal(JSON.parse(chunked.body).error, "body too large", "chunked rejection has a complete response");
+  // Every other endpoint keeps the small 64 KB limit.
+  const smallLimit = await rawCall("POST", "/api/control", Array(20).fill("x".repeat(8192)));
+  t.equal(smallLimit.status, 413, "other endpoints still refuse bodies over 64 KB");
   const following = await rawCall("GET", "/api/tiles");
   t.equal(following.reused, true, "follow-up uses the same keep-alive socket");
   t.equal(following.status, 200, "the next request succeeds on that socket");

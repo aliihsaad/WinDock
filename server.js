@@ -31,6 +31,9 @@ import {
 
 export const DEFAULT_PORT = 8620;
 export const BODY_MAX_BYTES = 64 * 1024;
+// A full dock of 200 tiles with long Start Menu paths can pass 64 KB, so the
+// tiles endpoint gets more room. Everything else keeps the small limit.
+export const TILES_BODY_MAX_BYTES = 512 * 1024;
 const PUBLIC_DIR = resolve(import.meta.dirname, "public");
 
 const MIME = {
@@ -57,7 +60,7 @@ function sendJson(res, status, body, headers = {}) {
 }
 
 /** Read a bounded JSON body. Oversized or malformed input is rejected. */
-async function readJsonBody(req) {
+async function readJsonBody(req, maxBytes = BODY_MAX_BYTES) {
   let size = 0;
   const chunks = [];
   // Reject immediately at the cap, but keep draining without retaining bytes.
@@ -65,9 +68,9 @@ async function readJsonBody(req) {
   // can reset the response or the next request on a keep-alive connection.
   await new Promise((resolve, reject) => {
     req.on("data", (chunk) => {
-      if (size > BODY_MAX_BYTES) return;
+      if (size > maxBytes) return;
       size += chunk.length;
-      if (size > BODY_MAX_BYTES) {
+      if (size > maxBytes) {
         chunks.length = 0;
         const err = new Error("body too large");
         err.status = 413;
@@ -152,9 +155,11 @@ export async function createApp({
       platform: provider.id,
       platformName: provider.displayName,
       hostName: hostname(),
-      tiles: config.tiles.map((tile) =>
-        tile.kind === "app" ? { ...tile, running: runningIds.has(tile.id) } : tile,
-      ),
+      tiles: config.tiles.map(function withRunning(tile) {
+        if (tile.kind === "app") return { ...tile, running: runningIds.has(tile.id) };
+        if (tile.kind === "folder") return { ...tile, tiles: tile.tiles.map(withRunning) };
+        return tile;
+      }),
       running,
       verbs: CONTROL_VERBS,
       allowDestructive,
@@ -256,7 +261,7 @@ export async function createApp({
       }
 
       if (path === "/api/tiles" && req.method === "PUT") {
-        const body = await readJsonBody(req);
+        const body = await readJsonBody(req, TILES_BODY_MAX_BYTES);
         const saved = await configStore.save({ tiles: body.tiles });
         await hub.broadcast();
         return sendJson(res, 200, saved);

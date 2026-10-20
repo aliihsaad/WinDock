@@ -62,8 +62,10 @@ timeout may add a delay before the display turns off.
 - **Launch your Windows apps.** Pin classic Start Menu shortcuts and packaged
   apps, including Claude and ChatGPT, with their real icons. Tap to launch or
   bring an app forward when Windows permits it.
-- **Build your own dock.** Choose 4, 6, or 8 icons per page. Hold to rearrange,
-  drag to an edge to move between pages, and swipe left or right to navigate.
+- **Build your own dock.** Choose 4, 6, or 8 icons per page, with as many pages
+  as you need (up to 200 tiles). Hold to rearrange, drag to an edge to move
+  between pages, and swipe left or right to navigate. To group apps, tap one
+  while arranging and choose **Add to folder…**.
 - **Set the mood.** Choose a background and glass style. The landscape interface
   opens to large icons; swipe up for Apps, Controls, Capture, and Appearance.
 - **Control the essentials.** Adjust volume and supported display brightness,

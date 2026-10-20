@@ -14,10 +14,23 @@ import {
   availableControls,
   catalogVerbs,
   CONTROL_CATALOG,
+  flattenTiles,
+  countTiles,
+  findTile,
+  folderOfApp,
+  createFolder,
+  addToFolder,
+  takeOutOfFolder,
+  renameFolder,
+  ungroupFolder,
+  newFolderId,
+  MAX_TILES as CLIENT_MAX_TILES,
+  MAX_FOLDERS as CLIENT_MAX_FOLDERS,
+  MAX_FOLDER_TILES as CLIENT_MAX_FOLDER_TILES,
 } from "../public/tiles.js";
-import { renderTiles, renderTile, renderControlPicker } from "../public/dock.js";
+import { renderTiles, renderTile, renderControlPicker, renderFolderGrid } from "../public/dock.js";
 import { CONTROL_VERBS, verbTakesValue } from "../src/platform/contract.js";
-import { normalizeTile } from "../src/config.js";
+import { normalizeTile, normalizeTiles, MAX_TILES, MAX_FOLDERS, MAX_FOLDER_TILES } from "../src/config.js";
 import { createApp } from "../server.js";
 import { createWindowsProvider } from "../src/platform/windows.js";
 import { createConfigStore } from "../src/config.js";
@@ -241,9 +254,132 @@ const emptied = await fetch(`${base}/api/tiles`, {
 t.equal(emptied.status, 200, "the host accepts removing every tile");
 t.equal((await emptied.json()).tiles.length, 0, "an emptied dock persists as empty");
 
+// ---- folders over the wire ----
+let grouped = createFolder(three, "app:c:/a.exe", "Work", "f-work");
+grouped = addToFolder(grouped, "app:c:/b.exe", "folder:f-work");
+const put3 = await fetch(`${base}/api/tiles`, {
+  method: "PUT",
+  headers: { "content-type": "application/json", origin: base },
+  body: JSON.stringify({ tiles: toWireTiles(grouped) }),
+});
+t.equal(put3.status, 200, "the host accepts a dock with a folder");
+const savedFolder = (await put3.json()).tiles;
+t.equal(savedFolder[0].kind, "folder", "the folder round-trips");
+t.deepEqual(savedFolder[0].tiles.map(tileKey), ["app:c:/a.exe", "app:c:/b.exe"], "folder contents round-trip in order");
+const stateRes = await (await fetch(`${base}/api/state`)).json();
+t.equal(typeof stateRes.tiles[0].tiles[0].running, "boolean", "apps inside folders get live running state");
+
+// ---- folder limit over the wire: nothing is silently dropped ----
+// A 41st folder placed before the others used to make the host keep the first
+// 40 it saw, losing the last existing folder and the apps inside it.
+const full = Array.from({ length: MAX_FOLDERS }, (_, i) => ({ kind: "folder", id: `f${i}`, label: `F${i}`, tiles: [{ kind: "app", id: `x${i}`, target: `X${i}` }] }));
+const putFull = await fetch(`${base}/api/tiles`, {
+  method: "PUT",
+  headers: { "content-type": "application/json", origin: base },
+  body: JSON.stringify({ tiles: full }),
+});
+t.equal(putFull.status, 200, "the host accepts exactly the folder limit");
+await putFull.arrayBuffer();
+const extra = { kind: "folder", id: "f-new", label: "New", tiles: [{ kind: "app", id: "y", target: "Y" }] };
+const putOver = await fetch(`${base}/api/tiles`, {
+  method: "PUT",
+  headers: { "content-type": "application/json", origin: base },
+  body: JSON.stringify({ tiles: [extra, ...full] }),
+});
+t.equal(putOver.status, 400, "one folder too many is refused instead of trimmed");
+t.ok((await putOver.json()).error.includes(String(MAX_FOLDERS)), "the refusal names the folder limit");
+const afterOver = (await (await fetch(`${base}/api/state`)).json()).tiles;
+t.deepEqual(afterOver.map(tileKey), full.map(tileKey), "a refused save leaves every existing folder in place");
+const tooManyInside = await fetch(`${base}/api/tiles`, {
+  method: "PUT",
+  headers: { "content-type": "application/json", origin: base },
+  body: JSON.stringify({ tiles: [{ kind: "folder", id: "big", tiles: Array.from({ length: MAX_FOLDER_TILES + 1 }, (_, i) => ({ kind: "app", id: `z${i}`, target: `Z${i}` })) }] }),
+});
+t.equal(tooManyInside.status, 400, "an overfull folder is refused instead of trimmed");
+await tooManyInside.arrayBuffer();
+const tooManyTiles = await fetch(`${base}/api/tiles`, {
+  method: "PUT",
+  headers: { "content-type": "application/json", origin: base },
+  body: JSON.stringify({ tiles: Array.from({ length: MAX_TILES + 1 }, (_, i) => ({ kind: "app", id: `w${i}`, target: `W${i}` })) }),
+});
+t.equal(tooManyTiles.status, 400, "a dock over the tile limit is refused instead of trimmed");
+await tooManyTiles.arrayBuffer();
+
 app.server.closeAllConnections?.();
 await app.hub.close();
 await new Promise((r) => app.server.close(r));
 await rm(dir, { recursive: true, force: true });
+
+// ---- folders: pure helpers ----
+{
+  const A = { id: "a", target: "A", name: "A" }, B = { id: "b", target: "B", name: "B" }, C = { id: "c", target: "C", name: "C" };
+  let dock = addAppTile(addAppTile(addAppTile([], A), B), C);
+  const before = toWireTiles(dock);
+  let f = createFolder(dock, "app:a", "Work", "f1");
+  t.deepEqual(dock, before, "createFolder never mutates its input");
+  t.equal(f[0].kind, "folder", "a new folder takes the tile's place");
+  t.deepEqual(f[0].tiles.map(tileKey), ["app:a"], "the tile moves inside the new folder");
+  t.equal(countTiles(f), 3, "folders don't change the tile count");
+  f = addToFolder(f, "app:c", "folder:f1");
+  t.deepEqual(f.map(tileKey), ["folder:f1", "app:b"], "a tile moved into a folder leaves its page");
+  t.equal(folderOfApp(f, "c")?.label, "Work", "the picker can tell which folder an app is in");
+  t.ok(hasTile(f, "app:c"), "hasTile looks inside folders");
+  t.deepEqual(addAppTile(f, C), f, "an app inside a folder can't be added again");
+  t.deepEqual(addAppTile(f, { id: "d", target: "D", name: "D" }, "folder:f1")[0].tiles.map(tileKey), ["app:a", "app:c", "app:d"], "the picker can add straight into a folder");
+  t.deepEqual(moveTile(f, "app:c", -1)[0].tiles.map(tileKey), ["app:c", "app:a"], "moving inside a folder reorders the folder");
+  t.deepEqual(takeOutOfFolder(f, "app:a").map(tileKey), ["folder:f1", "app:a", "app:b"], "a tile taken out lands right after its folder");
+  t.deepEqual(takeOutOfFolder(takeOutOfFolder(f, "app:a"), "app:c").map(tileKey), ["app:c", "app:a", "app:b"], "taking out the last tile removes the empty folder");
+  t.deepEqual(removeTile(f, "app:a")[0].tiles.map(tileKey), ["app:c"], "removing a tile inside a folder works");
+  t.deepEqual(removeTile(f, "folder:f1").map(tileKey), ["app:b"], "removing a folder removes what is in it");
+  t.equal(renameFolder(f, "folder:f1", "  Games  ")[0].label, "Games", "folders can be renamed");
+  t.equal(renameFolder(f, "folder:f1", "   ")[0].label, "Work", "a blank name is ignored");
+  t.deepEqual(ungroupFolder(f, "folder:f1").map(tileKey), ["app:a", "app:c", "app:b"], "ungrouping puts tiles back where the folder stood");
+  const two = addToFolder(createFolder(f, "app:b", "Other", "f2"), "app:a", "folder:f2");
+  t.deepEqual(two.map((x) => x.tiles.map(tileKey)), [["app:c"], ["app:b", "app:a"]], "tiles can move between folders");
+  t.deepEqual(createFolder(f, "app:c", "Sub", "f3").map(tileKey), ["folder:f1", "folder:f3", "app:b"], "making a folder from a folder's tile lifts it out first");
+  t.deepEqual(createFolder(f, "folder:f1", "Nested", "f4"), toWireTiles(f), "folders can't go inside folders");
+  t.equal(findTile(f, "app:c").folder.id, "f1", "findTile reports the containing folder");
+  t.equal(flattenTiles(f).length, 3, "flattenTiles lists every leaf");
+  t.ok(/^[a-z0-9-]{1,32}$/.test(newFolderId()), "generated folder ids match the host's rule");
+  t.equal(CLIENT_MAX_TILES, MAX_TILES, "phone and host agree on the tile limit");
+  t.equal(CLIENT_MAX_FOLDERS, MAX_FOLDERS, "phone and host agree on the folder limit");
+  t.equal(CLIENT_MAX_FOLDER_TILES, MAX_FOLDER_TILES, "phone and host agree on the folder size limit");
+  const atLimit = Array.from({ length: MAX_FOLDERS }, (_, i) => ({ kind: "folder", id: `g${i}`, label: `G${i}`, tiles: [{ kind: "app", id: `g${i}`, target: "G", label: "G" }] }));
+  const withLoose = [{ kind: "app", id: "loose", target: "L", label: "L" }, ...atLimit];
+  t.deepEqual(createFolder(withLoose, "app:loose", "One more", "g-new"), toWireTiles(withLoose), "the phone won't create a folder past the limit");
+}
+
+// ---- folders: rendering ----
+{
+  const evil = { kind: "folder", id: "f1", label: '<img src=x onerror="alert(1)">', tiles: [{ kind: "app", id: "a", target: "A", label: "A", running: true }, { kind: "control", verb: "lock", label: "Lock" }] };
+  const html = renderTile(evil, { launcher: true });
+  t.ok(!html.includes("<img src=x"), "a hostile folder name is escaped");
+  t.ok(html.includes('data-action="folder"') && html.includes('data-tile-key="folder:f1"'), "a folder tile opens the folder and is draggable");
+  t.ok(html.includes("is-running"), "a folder shows a running dot when an app inside is running");
+  t.ok(renderTile(evil, { launcher: true, editing: true }).includes('data-action="folder-edit"'), "in arrange mode a folder opens for arranging");
+  t.equal((html.match(/folder-mini__cell/g) || []).length, 2, "the preview shows the folder's icons");
+  t.ok(renderFolderGrid(evil).includes('data-action="launch"'), "apps inside an open folder launch on tap");
+  t.ok(renderFolderGrid({ tiles: [] }).includes("empty"), "an empty folder shows a hint");
+}
+
+// ---- folders: host validation ----
+{
+  const leaf = (i) => ({ kind: "app", id: `x${i}`, target: `X${i}` });
+  t.equal(normalizeTile({ kind: "folder", id: "f1", tiles: [leaf(1)] }), null, "a folder can't sneak in through normalizeTile");
+  const nested = normalizeTiles([{ kind: "folder", id: "f1", label: "Out", tiles: [leaf(1), { kind: "folder", id: "f2", tiles: [leaf(2)] }] }]);
+  t.deepEqual(nested[0].tiles.map((x) => x.id), ["x1"], "a folder inside a folder is dropped");
+  t.equal(normalizeTiles([{ kind: "folder", id: "f1", tiles: [] }]).length, 0, "an empty folder is dropped");
+  t.equal(normalizeTiles([{ kind: "folder", id: "BAD ID", tiles: [leaf(1)] }]).length, 0, "a folder id outside [a-z0-9-] is dropped");
+  t.equal(normalizeTiles([{ kind: "folder", id: "f1", tiles: [leaf(1)] }])[0].label, "Folder", "a nameless folder gets a default name");
+  t.equal(normalizeTiles([{ kind: "folder", id: "f1", label: "x".repeat(99), tiles: [leaf(1)] }])[0].label.length, 40, "folder names are capped");
+  const dupes = normalizeTiles([leaf(1), { kind: "folder", id: "f1", tiles: [leaf(1), leaf(2)] }, { kind: "folder", id: "f1", tiles: [leaf(3)] }]);
+  t.deepEqual(dupes.map((x) => x.kind === "folder" ? x.tiles.map((c) => c.id) : x.id), ["x1", ["x2"]], "keys stay unique across folders and duplicate folder ids are dropped");
+  const many = normalizeTiles([...Array.from({ length: 150 }, (_, i) => leaf(i)), { kind: "folder", id: "f1", tiles: Array.from({ length: 80 }, (_, i) => leaf(1000 + i)) }]);
+  t.equal(many.at(-1).tiles.length, Math.min(MAX_FOLDER_TILES, MAX_TILES - 150), "folder contents count toward the tile limit");
+  t.ok(flattenTiles(many).length <= MAX_TILES, "the whole dock stays within the tile limit");
+  const lots = normalizeTiles(Array.from({ length: MAX_FOLDERS + 5 }, (_, i) => ({ kind: "folder", id: `f${i}`, tiles: [leaf(i)] })));
+  t.equal(lots.length, MAX_FOLDERS, "the number of folders is capped");
+  t.equal(normalizeTiles(Array.from({ length: 300 }, (_, i) => leaf(i))).length, MAX_TILES, "a flat dock is capped at the tile limit");
+}
 
 t.done("editing verification passed");

@@ -1,6 +1,12 @@
-import { renderNowPlaying, renderControlPicker, renderAppIcon, renderControls, escapeHtml } from "./dock.js";
+import { renderNowPlaying, renderControlPicker, renderAppIcon, renderControls, renderFolderGrid, renderFolderPreview, escapeHtml } from "./dock.js";
 import { icon, controlIcon } from "./icons.js";
-import { addAppTile, addControlTile, removeTile, moveTile, toWireTiles, availableControls, tileKey } from "./tiles.js";
+import {
+  addAppTile, addControlTile, removeTile, moveTile, toWireTiles, availableControls, tileKey,
+  flattenTiles, countTiles, findTile, folders, folderOfApp, createFolder, addToFolder,
+  takeOutOfFolder, renameFolder, ungroupFolder, newFolderId, MAX_TILES, MAX_FOLDERS, MAX_FOLDER_TILES,
+} from "./tiles.js";
+
+const FOLDERS_FULL = "You have " + MAX_FOLDERS + " folders, the most a dock can hold. Add this to an existing folder instead.";
 import { normalizeLayout, renderPages, pageCount, moveToTile } from "./launcher.js";
 import { createInputPad } from "./input-pad.js";
 import { createNowPlayingPoller } from "./now-playing.js";
@@ -13,6 +19,11 @@ let currentPage = 0, toastTimer, selectedKey = "", suppressClickUntil = 0;
 let pageHintTimer;
 let captureState = { available: false, phase: "idle" }, captureBusy = false, capturePoll = false, captureReceivedAt = Date.now();
 let nowPlayingHtml = "";
+// Folder sheet and picker state. pickerFolder is set when the picker was
+// opened from inside a folder, so new tiles land there instead of on a page.
+let openFolderKey = "", folderEditing = false, pickerFolder = "", folderNameMode = "create";
+let pickerView = "all";
+try { if (["all", "new", "added"].includes(localStorage.getItem("windock-picker-view"))) pickerView = localStorage.getItem("windock-picker-view"); } catch { /* Optional. */ }
 const nowPlaying = createNowPlayingPoller({
   load: async (signal) => (await api("/api/nowplaying", { signal })).nowPlaying,
   isActive: () => paired && online && !document.hidden,
@@ -158,9 +169,33 @@ function showPageHint() {
   $("page-dots").classList.add("is-awake");
   pageHintTimer = setTimeout(() => $("page-dots").classList.remove("is-awake"), 1300);
 }
-function paint() {
+function liveTiles() {
   const running = new Set(state.running.map((app) => app.id));
-  const view = { ...state, tiles: state.tiles.map((tile) => tile.kind === "app" ? { ...tile, running: running.has(tile.id) } : tile) };
+  const withRunning = (tile) => tile.kind === "app" ? { ...tile, running: running.has(tile.id) }
+    : tile.kind === "folder" ? { ...tile, tiles: tile.tiles.map(withRunning) } : tile;
+  return state.tiles.map(withRunning);
+}
+function paintFolder() {
+  if (!$("folder").open) return;
+  const folder = liveTiles().find((tile) => tileKey(tile) === openFolderKey);
+  // The folder can vanish under us: ungrouped, removed, or emptied on another phone.
+  if (!folder) { $("folder").close(); return; }
+  $("folder-title").textContent = folder.label;
+  $("folder-count").textContent = folder.tiles.length + (folder.tiles.length === 1 ? " ITEM" : " ITEMS");
+  $("folder-grid").innerHTML = renderFolderGrid(folder, { editing: folderEditing });
+  $("folder-grid").classList.toggle("is-editing", folderEditing);
+  $("folder-edit").setAttribute("aria-pressed", String(folderEditing));
+  $("folder-edit").setAttribute("aria-label", folderEditing ? "Done arranging" : "Arrange this folder");
+  $("folder-edit").innerHTML = icon(folderEditing ? "check" : "edit");
+  $("folder-hint").textContent = folderEditing ? "Tap an icon for options" : "Tap to open · Hold an icon to arrange";
+}
+function openFolder(key, edit = false) {
+  openFolderKey = key; folderEditing = edit;
+  if (!$("folder").open) $("folder").showModal();
+  paintFolder();
+}
+function paint() {
+  const view = { ...state, tiles: liveTiles() };
   const pages = pageCount(state.tiles, layout);
   currentPage = Math.min(currentPage, pages - 1);
   $("dock").innerHTML = renderPages(view, layout, editing);
@@ -177,6 +212,7 @@ function paint() {
   $("edit").setAttribute("aria-label", editing ? "Done editing" : "Edit dock");
   $("edit").innerHTML = icon(editing ? "check" : "edit") + "<span>" + (editing ? "Done" : "Edit") + "</span>";
   $("page-dots").innerHTML = Array.from({ length: pages }, (_, i) => '<button class="page-dot" type="button" data-page="' + i + '" aria-label="Go to page ' + (i + 1) + '"' + (i === currentPage ? ' aria-current="page"' : "") + '></button>').join("");
+  paintFolder();
 }
 function pageTo(page, smooth = true) {
   currentPage = Math.max(0, Math.min(pageCount(state.tiles, layout) - 1, page));
@@ -233,8 +269,11 @@ const powerActions = {
   shutdown: ["Shut down your PC?", "Save your work first. You’ll need to turn your computer back on to reconnect.", "Shut down"],
 };
 function confirmPower(verb) {
+  return confirmAction(...powerActions[verb]);
+}
+function confirmAction(title, description, label, symbol = "power") {
   return new Promise((resolve) => {
-    const [title, description, label] = powerActions[verb];
+    document.querySelector("#confirm .confirm__icon").innerHTML = icon(symbol);
     $("confirm-title").textContent = title;
     $("confirm-description").textContent = description;
     $("confirm-go").textContent = label;
@@ -245,7 +284,10 @@ function confirmPower(verb) {
   });
 }
 async function activate(button) {
-  if (editing && button.dataset.tileKey) return openTileOptions(button.dataset.tileKey);
+  const { action: kind } = button.dataset;
+  if (kind === "folder" || kind === "folder-edit") return openFolder("folder:" + button.dataset.key, kind === "folder-edit");
+  const arranging = button.closest("#folder-grid") ? folderEditing : editing;
+  if (arranging && button.dataset.tileKey) return openTileOptions(button.dataset.tileKey);
   if (!online) return notify("Your PC is disconnected. Wait for it to reconnect.", true);
   const { action, key } = button.dataset;
   if (action === "control" && powerActions[key] && !await confirmPower(key)) return;
@@ -259,7 +301,7 @@ async function activate(button) {
       notify(powerActions[key] ? "Command sent to your PC" : "Control sent");
     } else if (action === "launch") {
       const running = state.running.find((item) => item.id === key);
-      const title = state.tiles.find((item) => item.id === key)?.label || "App";
+      const title = flattenTiles(state.tiles).find((item) => item.id === key)?.label || "App";
       await api(running ? "/api/apps/focus" : "/api/apps/launch", { method: "POST", body: JSON.stringify(running ? { pid: running.pid } : { id: key }) });
       notify((running ? "Brought forward: " : "Opened: ") + title);
     }
@@ -267,22 +309,86 @@ async function activate(button) {
   finally { button.disabled = false; button.removeAttribute("aria-busy"); }
 }
 function openTileOptions(key) {
+  const found = findTile(state.tiles, key);
+  if (!found) return;
   selectedKey = key;
-  const index = state.tiles.findIndex((tile) => tileKey(tile) === key);
-  const tile = state.tiles[index];
-  if (!tile) return;
+  const { tile, folder, index } = found;
+  const siblings = folder ? folder.tiles : state.tiles;
+  const isFolder = tile.kind === "folder";
   $("tile-options-title").textContent = tile.label;
-  $("tile-options-icon").innerHTML = tile.kind === "app" ? renderAppIcon(tile) : controlIcon(tile.verb);
+  $("tile-options-icon").innerHTML = isFolder ? renderFolderPreview(tile) : tile.kind === "app" ? renderAppIcon(tile) : controlIcon(tile.verb);
   $("tile-earlier").disabled = index === 0;
-  $("tile-later").disabled = index === state.tiles.length - 1;
-  $("tile-options").showModal();
+  $("tile-later").disabled = index === siblings.length - 1;
+  $("tile-folder").hidden = isFolder;
+  $("tile-folder-label").textContent = folder ? "Move to another folder…" : "Add to folder…";
+  $("tile-unfolder").hidden = !folder;
+  $("tile-rename").hidden = !isFolder;
+  $("tile-ungroup").hidden = !isFolder;
+  $("tile-remove-label").textContent = isFolder ? "Remove folder and its items" : "Remove from dock";
+  if (!$("tile-options").open) $("tile-options").showModal();
+}
+async function changeTiles(next, message) {
+  try { await commitTiles(next); if (message) notify(message); }
+  catch (error) { report(error); }
+}
+function suggestFolderName() {
+  const taken = new Set(folders(state.tiles).map((folder) => folder.label.toLowerCase()));
+  for (let n = 1; ; n += 1) { const name = n === 1 ? "Folder" : "Folder " + n; if (!taken.has(name.toLowerCase())) return name; }
+}
+function openFolderName(mode) {
+  folderNameMode = mode;
+  const found = findTile(state.tiles, selectedKey);
+  $("folder-name-title").textContent = mode === "rename" ? "Rename folder" : "New folder";
+  $("folder-name-save").textContent = mode === "rename" ? "Save" : "Create";
+  $("folder-name-input").value = mode === "rename" ? found?.tile.label || "" : suggestFolderName();
+  $("folder-name").showModal();
+  $("folder-name-input").select();
+}
+function openFolderPick() {
+  const found = findTile(state.tiles, selectedKey);
+  const choices = folders(state.tiles).filter((folder) => folder.id !== found?.folder?.id);
+  const full = folders(state.tiles).length >= MAX_FOLDERS;
+  // With nothing to pick from, go straight to naming the new folder.
+  if (!choices.length) return full ? notify(FOLDERS_FULL, true) : openFolderName("create");
+  $("folder-pick-list").innerHTML = '<button type="button" data-new-folder' + (full ? " disabled" : "") + ">" + icon("plus") + "<span>" + (full ? "Folder limit reached" : "New folder…") + "</span></button>" + choices.map((folder) =>
+    '<button type="button" data-folder="' + escapeHtml(tileKey(folder)) + '"' + (folder.tiles.length >= MAX_FOLDER_TILES ? " disabled" : "") + ">" + icon("folder") +
+    "<span>" + escapeHtml(folder.label) + '</span><small class="options__count">' + folder.tiles.length + "</small></button>").join("");
+  $("folder-pick").showModal();
+}
+function pickerMatches() {
+  const term = $("filter").value.trim().toLowerCase();
+  const onDock = new Set(flattenTiles(state.tiles).filter((tile) => tile.kind === "app").map((tile) => tile.id));
+  const found = installedApps.filter((app) => app.name.toLowerCase().includes(term));
+  const shown = found.filter((app) => pickerView === "all" || (pickerView === "added") === onDock.has(app.id));
+  return { term, onDock, shown };
 }
 function drawApps() {
-  const term = $("filter").value.trim().toLowerCase();
-  const matches = installedApps.filter((app) => app.name.toLowerCase().includes(term));
-  const pinned = new Set(state.tiles.filter((tile) => tile.kind === "app").map((tile) => tile.id));
-  $("picker-status").textContent = matches.length + " apps" + (term ? " found" : " on your PC") + " · " + pinned.size + " pinned";
-  $("picker-list").innerHTML = matches.length ? matches.map((app) => '<li><button type="button" data-id="' + escapeHtml(app.id) + '"' + (pinned.has(app.id) ? " disabled" : "") + ' aria-label="' + escapeHtml((pinned.has(app.id) ? "Pinned: " : "Add ") + app.name) + '">' + renderAppIcon(app, true) + '<span class="picker__name">' + escapeHtml(app.name) + '<small>' + (pinned.has(app.id) ? "On your dock" : "Windows app") + '</small></span><span class="picker__add">' + icon(pinned.has(app.id) ? "check" : "plus") + "</span></button></li>").join("") : '<li class="picker__empty">No apps found. Try a different name.</li>';
+  const { term, onDock, shown } = pickerMatches();
+  $("filter-clear").hidden = !term;
+  document.querySelectorAll("#picker-view [data-view]").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.view === pickerView)));
+  const used = countTiles(state.tiles);
+  const noun = { all: shown.length === 1 ? " app" : " apps", new: " not added yet", added: " on your dock" }[pickerView];
+  $("picker-status").textContent = shown.length + noun + (term ? " matching “" + $("filter").value.trim() + "”" : "") +
+    (pickerView === "all" ? " · " + onDock.size + " on your dock" : "") + (used >= MAX_TILES - 20 ? " · " + used + " of " + MAX_TILES + " tiles used" : "");
+  const empty = term ? "No apps match that name." : pickerView === "added" ? "Nothing here is on your dock yet." : pickerView === "new" ? "Every app here is already on your dock." : "No apps found on this PC.";
+  $("picker-list").innerHTML = shown.length ? shown.map((app) => {
+    const added = onDock.has(app.id);
+    const where = added ? folderOfApp(state.tiles, app.id) : null;
+    const note = added ? (where ? "In " + where.label : "On your dock") : "Windows app";
+    return '<li><button type="button" class="' + (added ? "is-added" : "") + '" data-id="' + escapeHtml(app.id) + '"' + (added ? " disabled" : "") + ' aria-label="' + escapeHtml((added ? note + ": " : "Add ") + app.name) + '">' + renderAppIcon(app, true) + '<span class="picker__name">' + escapeHtml(app.name) + "<small>" + escapeHtml(note) + '</small></span><span class="picker__add">' + icon(added ? "check" : "plus") + "</span></button></li>";
+  }).join("") : '<li class="picker__empty">' + empty + "</li>";
+}
+function pickerTargetName() {
+  return pickerFolder ? findTile(state.tiles, pickerFolder)?.tile.label || "" : "";
+}
+async function addApp(app) {
+  if (countTiles(state.tiles) >= MAX_TILES) return notify("Your dock is full. Remove a tile before adding another.", true);
+  const target = pickerTargetName();
+  if (pickerFolder && !target) pickerFolder = "";
+  if (pickerFolder && findTile(state.tiles, pickerFolder).tile.tiles.length >= MAX_FOLDER_TILES) return notify("This folder is full. Make another folder for the rest.", true);
+  await commitTiles(addAppTile(state.tiles, app, pickerFolder));
+  drawApps();
+  notify(app.name + (target ? " added to " + target : " added to your dock"));
 }
 function drawControls() {
   const groups = availableControls(state.verbs, state.tiles);
@@ -299,9 +405,13 @@ function selectTab(which) {
   $("picker-list").hidden = !apps;
   $("control-list").hidden = apps;
   $("picker-search").hidden = !apps;
+  $("picker-view").hidden = !apps;
   if (apps && appsLoaded) drawApps(); else if (!apps) drawControls();
 }
-async function openPicker() {
+async function openPicker(folderKey = "") {
+  pickerFolder = typeof folderKey === "string" ? folderKey : "";
+  const target = pickerTargetName();
+  $("picker-title").textContent = target ? "Add to " + target : "Add to your dock";
   selectTab("apps");
   if (!$("picker").open) $("picker").showModal();
   if (appsLoaded) drawApps();
@@ -320,22 +430,40 @@ $("picker-list").addEventListener("click", async (event) => {
   if (!button || button.disabled || saving) return;
   const app = installedApps.find((item) => item.id === button.dataset.id);
   if (!app) return;
-  if (state.tiles.length >= 64) return notify("Your dock is full. Remove a tile before adding another.", true);
   button.disabled = true;
-  try {
-    await commitTiles(addAppTile(state.tiles, app));
-    drawApps();
-    notify(app.name + " added to your dock");
-  } catch (error) { report(error); button.disabled = false; }
+  try { await addApp(app); } catch (error) { report(error); button.disabled = false; }
 });
+$("filter").addEventListener("keydown", (event) => {
+  if (event.key !== "Enter") return;
+  event.preventDefault();
+  // One app left that isn't on the dock yet: Enter adds it. Otherwise just
+  // close the phone keyboard so the list is easier to scan.
+  const { onDock, shown } = pickerMatches();
+  const candidates = shown.filter((app) => !onDock.has(app.id));
+  if (candidates.length === 1 && !saving) addApp(candidates[0]).catch(report);
+  else $("filter").blur();
+});
+$("filter-clear").addEventListener("click", (event) => {
+  event.preventDefault();
+  $("filter").value = ""; drawApps(); $("filter").focus();
+});
+$("picker-view").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-view]");
+  if (!button) return;
+  pickerView = button.dataset.view;
+  try { localStorage.setItem("windock-picker-view", pickerView); } catch { /* Optional. */ }
+  drawApps();
+});
+$("picker").addEventListener("close", () => { pickerFolder = ""; });
 $("control-list").addEventListener("click", async (event) => {
   const button = event.target.closest("button[data-verb]");
   if (!button || button.disabled || saving) return;
-  if (state.tiles.length >= 64) return notify("Your dock is full. Remove a tile before adding another.", true);
+  if (countTiles(state.tiles) >= MAX_TILES) return notify("Your dock is full. Remove a tile before adding another.", true);
   const value = button.dataset.value === undefined ? null : Number(button.dataset.value);
   const item = availableControls(state.verbs, state.tiles).flatMap((group) => group.items).find((item) => item.verb === button.dataset.verb && (item.value ?? null) === value);
+  const target = pickerTargetName();
   button.disabled = true;
-  try { await commitTiles(addControlTile(state.tiles, item.verb, item.label, value)); drawControls(); notify(item.label + " added to your dock"); }
+  try { await commitTiles(addControlTile(state.tiles, item.verb, item.label, value, target ? pickerFolder : "")); drawControls(); notify(item.label + (target ? " added to " + target : " added to your dock")); }
   catch (error) { report(error); button.disabled = false; }
 });
 
@@ -454,14 +582,58 @@ function toggleEditing() { if (!saving) { editing = !editing; paint(); } }
 $("edit").addEventListener("click", toggleEditing);
 $("edit-done").addEventListener("click", toggleEditing);
 $("drawer-edit").addEventListener("click", () => { $("drawer").close(); toggleEditing(); });
-for (const [id, delta] of [["tile-earlier", -1], ["tile-later", 1], ["tile-remove", 0]]) {
-  $(id).addEventListener("click", async () => {
-    $("tile-options").close();
-    try { await commitTiles(delta ? moveTile(state.tiles, selectedKey, delta) : removeTile(state.tiles, selectedKey)); notify(delta ? "Position updated" : "Removed from your dock"); }
-    catch (error) { report(error); }
-  });
+for (const [id, delta] of [["tile-earlier", -1], ["tile-later", 1]]) {
+  $(id).addEventListener("click", () => { $("tile-options").close(); changeTiles(moveTile(state.tiles, selectedKey, delta), "Position updated"); });
 }
-$("add").addEventListener("click", openPicker);
+$("tile-remove").addEventListener("click", async () => {
+  const found = findTile(state.tiles, selectedKey);
+  $("tile-options").close();
+  if (found?.tile.kind === "folder") {
+    const n = found.tile.tiles.length;
+    const ok = await confirmAction("Remove " + found.tile.label + "?", "The folder and the " + n + (n === 1 ? " item" : " items") + " in it leave your dock. Nothing is uninstalled from your PC. To keep the items, choose Ungroup instead.", "Remove", "trash");
+    if (!ok) return;
+  }
+  changeTiles(removeTile(state.tiles, selectedKey), "Removed from your dock");
+});
+$("tile-folder").addEventListener("click", () => { $("tile-options").close(); openFolderPick(); });
+$("tile-unfolder").addEventListener("click", () => { $("tile-options").close(); changeTiles(takeOutOfFolder(state.tiles, selectedKey), "Moved out of the folder"); });
+$("tile-rename").addEventListener("click", () => { $("tile-options").close(); openFolderName("rename"); });
+$("tile-ungroup").addEventListener("click", () => { $("tile-options").close(); changeTiles(ungroupFolder(state.tiles, selectedKey), "Folder ungrouped"); });
+$("folder-pick-list").addEventListener("click", (event) => {
+  const button = event.target.closest("button");
+  if (!button || button.disabled) return;
+  $("folder-pick").close();
+  if (button.hasAttribute("data-new-folder")) return openFolderName("create");
+  const name = findTile(state.tiles, button.dataset.folder)?.tile.label || "the folder";
+  changeTiles(addToFolder(state.tiles, selectedKey, button.dataset.folder), "Moved to " + name);
+});
+$("folder-name-form").addEventListener("submit", (event) => {
+  event.preventDefault();
+  const name = $("folder-name-input").value.trim();
+  if (!name) return;
+  $("folder-name").close();
+  if (folderNameMode === "rename") return changeTiles(renameFolder(state.tiles, selectedKey, name), "Folder renamed");
+  if (folders(state.tiles).length >= MAX_FOLDERS) return notify(FOLDERS_FULL, true);
+  changeTiles(createFolder(state.tiles, selectedKey, name, newFolderId()), "Folder created · Add more from its options");
+});
+$("folder-add").addEventListener("click", () => openPicker(openFolderKey));
+$("folder-edit").addEventListener("click", () => { folderEditing = !folderEditing; paintFolder(); });
+$("folder-more").addEventListener("click", () => openTileOptions(openFolderKey));
+$("folder").addEventListener("close", () => { openFolderKey = ""; folderEditing = false; });
+// Holding an icon inside a folder switches the folder into arranging, the
+// same gesture as on the dock pages.
+let folderHold = null;
+$("folder-grid").addEventListener("contextmenu", (event) => event.preventDefault());
+$("folder-grid").addEventListener("pointerdown", (event) => {
+  if (folderEditing || !event.target.closest("[data-tile-key]")) return;
+  const start = { x: event.clientX, y: event.clientY };
+  folderHold = { start, timer: setTimeout(() => { folderHold = null; suppressClickUntil = Date.now() + 600; folderEditing = true; paintFolder(); navigator.vibrate?.(18); }, 450) };
+});
+$("folder-grid").addEventListener("pointermove", (event) => {
+  if (folderHold && Math.hypot(event.clientX - folderHold.start.x, event.clientY - folderHold.start.y) > 10) { clearTimeout(folderHold.timer); folderHold = null; }
+});
+for (const type of ["pointerup", "pointercancel", "pointerleave"]) $("folder-grid").addEventListener(type, () => { if (folderHold) { clearTimeout(folderHold.timer); folderHold = null; } });
+$("add").addEventListener("click", () => openPicker());
 $("picker-close").addEventListener("click", () => $("picker").close());
 $("tab-apps").addEventListener("click", () => selectTab("apps"));
 $("tab-controls").addEventListener("click", () => selectTab("controls"));

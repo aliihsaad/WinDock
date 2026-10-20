@@ -7,6 +7,7 @@
 <meta name="color-scheme" content="dark">
 <title>WinDock</title>
 <link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" href="/icon-192.png">
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -125,7 +126,12 @@
   <div class="picker__tools"><div class="picker__tabs" role="tablist" aria-label="Tile type">
     <button id="tab-apps" class="picker__tab is-active" type="button" role="tab" aria-selected="true" aria-controls="picker-list">Apps</button>
     <button id="tab-controls" class="picker__tab" type="button" role="tab" aria-selected="false" aria-controls="control-list" tabindex="-1">Controls</button>
-  </div><label id="picker-search" class="search-box"><span data-icon="search"></span><input id="filter" placeholder="Find an app…" aria-label="Search apps" autocomplete="off"></label></div>
+  </div><label id="picker-search" class="search-box"><span data-icon="search"></span><input id="filter" type="search" placeholder="Find an app…" aria-label="Search apps" autocomplete="off" enterkeyhint="done"><button id="filter-clear" class="search-box__clear" type="button" aria-label="Clear search" hidden><span data-icon="close"></span></button></label></div>
+  <div id="picker-view" class="picker__chips" role="group" aria-label="Show apps">
+    <button type="button" class="chip" data-view="all" aria-pressed="true">All</button>
+    <button type="button" class="chip" data-view="new" aria-pressed="false">Not added</button>
+    <button type="button" class="chip" data-view="added" aria-pressed="false">On your dock</button>
+  </div>
   <p id="picker-status" class="picker__status" role="status">Loading your apps…</p>
   <ul id="picker-list" class="picker__list" role="tabpanel" aria-labelledby="tab-apps"></ul>
   <ul id="control-list" class="picker__list" role="tabpanel" aria-labelledby="tab-controls" hidden></ul>
@@ -167,8 +173,29 @@
 
 <dialog id="tile-options" class="options" aria-labelledby="tile-options-title">
   <span id="tile-options-icon" class="options__icon"></span><h2 id="tile-options-title">App options</h2><p>Make a little room. Keep it in reach.</p>
-  <div class="options__actions"><button id="tile-earlier" type="button"><span data-icon="left"></span>Move earlier</button><button id="tile-later" type="button"><span data-icon="right"></span>Move later</button><button id="tile-remove" class="danger-text" type="button"><span data-icon="trash"></span>Remove from dock</button></div>
+  <div class="options__actions"><button id="tile-earlier" type="button"><span data-icon="left"></span>Move earlier</button><button id="tile-later" type="button"><span data-icon="right"></span>Move later</button><button id="tile-folder" type="button"><span data-icon="folder"></span><span id="tile-folder-label">Add to folder…</span></button><button id="tile-unfolder" type="button" hidden><span data-icon="unfolder"></span>Take out of folder</button><button id="tile-rename" type="button" hidden><span data-icon="edit"></span>Rename folder</button><button id="tile-ungroup" type="button" hidden><span data-icon="unfolder"></span>Ungroup</button><button id="tile-remove" class="danger-text" type="button"><span data-icon="trash"></span><span id="tile-remove-label">Remove from dock</span></button></div>
   <button class="button options__done" type="button" data-close="tile-options">Done</button>
+</dialog>
+
+<dialog id="folder" class="sheet folder-sheet" aria-labelledby="folder-title">
+  <div class="sheet-handle"></div>
+  <div class="sheet__heading"><div><p id="folder-count" class="eyebrow">FOLDER</p><h2 id="folder-title">Folder</h2></div><div class="folder-sheet__actions"><button id="folder-add" class="icon-button" type="button" aria-label="Add to this folder"><span data-icon="plus"></span></button><button id="folder-edit" class="icon-button" type="button" aria-label="Arrange this folder" aria-pressed="false"><span data-icon="edit"></span></button><button id="folder-more" class="icon-button" type="button" aria-label="Folder options"><span data-icon="more"></span></button><button class="icon-button" type="button" data-close="folder" aria-label="Close folder"><span data-icon="close"></span></button></div></div>
+  <p id="folder-hint" class="picker__status folder-sheet__hint">Tap to open · Hold an icon to arrange</p>
+  <div id="folder-grid" class="folder-grid"></div>
+</dialog>
+
+<dialog id="folder-pick" class="options" aria-labelledby="folder-pick-title">
+  <span class="options__icon" data-icon="folder"></span><h2 id="folder-pick-title">Add to a folder</h2><p>Pick a folder, or start a new one.</p>
+  <div id="folder-pick-list" class="options__actions"></div>
+  <button class="button options__done" type="button" data-close="folder-pick">Cancel</button>
+</dialog>
+
+<dialog id="folder-name" class="options" aria-labelledby="folder-name-title">
+  <form id="folder-name-form">
+    <span class="options__icon" data-icon="folder"></span><h2 id="folder-name-title">New folder</h2><p>Keep it short, like Work or Games.</p>
+    <input id="folder-name-input" class="text-input" maxlength="40" autocomplete="off" enterkeyhint="done" aria-label="Folder name" required>
+    <div class="confirm__actions"><button class="button" type="button" data-close="folder-name">Cancel</button><button id="folder-name-save" class="button button--primary" type="submit">Create</button></div>
+  </form>
 </dialog>
 
 <dialog id="confirm" class="confirm" aria-labelledby="confirm-title" aria-describedby="confirm-description">

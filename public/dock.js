@@ -51,7 +51,35 @@ export function renderAppIcon(app, lazy = false) {
  * remove controls, so a tap cannot launch something while the user is arranging
  * the dock.
  */
+/** The 2x2 preview inside a folder tile: the first four icons it holds. */
+export function renderFolderPreview(folder) {
+  const cells = (Array.isArray(folder?.tiles) ? folder.tiles : []).slice(0, 4).map((child) =>
+    `<span class="folder-mini__cell">${child.kind === "app" ? renderAppIcon(child, true) : controlIcon(child.verb)}</span>`,
+  );
+  return `<span class="folder-mini">${cells.join("")}</span>`;
+}
+
+function renderFolderTile(tile, { editing = false } = {}) {
+  const children = Array.isArray(tile.tiles) ? tile.tiles : [];
+  const running = children.some((child) => child.kind === "app" && child.running === true);
+  const classes = ["tile", "tile--folder"];
+  if (running) classes.push("is-running");
+  if (editing) classes.push("is-editing");
+  const count = children.length + (children.length === 1 ? " item" : " items");
+  return [
+    `<button class="${classes.join(" ")}" type="button" data-action="${editing ? "folder-edit" : "folder"}"`,
+    ` data-key="${escapeHtml(tile.id)}" data-tile-key="folder:${escapeHtml(tile.id)}"`,
+    ` aria-label="${escapeHtml(tile.label)}, folder, ${count}" aria-haspopup="dialog">`,
+    `<span class="tile__glyph" aria-hidden="true">${renderFolderPreview(tile)}</span>`,
+    `<span class="tile__label">${escapeHtml(tile.label)}</span>`,
+    !editing ? `<span class="tile__hint">${count}</span>` : "",
+    running && !editing ? '<span class="tile__dot" aria-hidden="true"></span>' : "",
+    "</button>",
+  ].join("");
+}
+
 export function renderTile(tile, { editing = false, first = false, last = false, launcher = false } = {}) {
+  if (tile?.kind === "folder") return renderFolderTile(tile, { editing });
   const running = tile.kind === "app" && tile.running === true;
   const classes = ["tile", `tile--${tile.kind}`];
   if (running) classes.push("is-running");
@@ -109,6 +137,13 @@ export function renderTiles(state, { editing = false } = {}) {
       renderTile(tile, { editing, first: i === 0, last: i === tiles.length - 1 }),
     )
     .join("");
+}
+
+/** The open folder: its tiles in a simple grid, or a hint when it is empty. */
+export function renderFolderGrid(folder, { editing = false } = {}) {
+  const children = Array.isArray(folder?.tiles) ? folder.tiles : [];
+  if (!children.length) return '<p class="folder-sheet__empty">This folder is empty.</p>';
+  return children.map((child) => renderTile(child, { editing, launcher: true })).join("");
 }
 
 /** Render the grouped control picker from `availableControls()` output. */

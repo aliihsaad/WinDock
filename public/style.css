@@ -262,6 +262,9 @@ body.is-immersive .tile--control .tile__glyph {
   box-shadow: inset 0 1px 0 #ffffff14, 0 10px 25px #0002; color: #edf5f5;
 }
 body.is-immersive .tile__dot { width: 4px; height: 4px; bottom: max(7px, calc(50% - var(--display-icon) / 2 - 15px)); opacity: .8; }
+/* With labels on there is no room under the icon, so the running dot sits in front of the label text. */
+body.is-immersive.show-labels .tile__dot { display: none; }
+body.is-immersive.show-labels .tile.is-running .tile__label::before { content: ""; display: inline-block; width: 5px; height: 5px; margin: 0 5px 2px 0; border-radius: 50%; background: var(--live); vertical-align: middle; }
 body.is-immersive .tile.is-editing::after { left: calc(50% - var(--display-icon) / 2 - 4px); top: calc(50% - var(--display-icon) / 2 - 6px); background: #e5edf0d9; backdrop-filter: blur(12px); }
 body.is-immersive .page-dots { position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); z-index: 3; min-height: 22px; height: 22px; opacity: 0; transition: opacity .4s; }
 body.is-immersive .page-dots.is-awake, body.is-immersive .page-dots:focus-within, body.is-immersive.is-arranging .page-dots { opacity: .7; }
@@ -423,3 +426,45 @@ body.is-immersive .empty .button .icon { width: 36px; height: 36px; }
 @media (max-height: 450px) { .input-pad { padding-top: 8px; padding-bottom: 8px; } .input-pad[open], .input-pad__pane { gap: 7px; } .input-pad__tabs button { padding: 7px 14px; } .input-pad__status { font-size: 10px; } }
 @media (max-width: 640px) { .input-pad__tools { gap: 8px; } .signature-tools button { padding: 8px 11px; } .touchpad-toolbar { gap: 8px; left: max(8px, env(safe-area-inset-left)); right: max(8px, env(safe-area-inset-right)); bottom: max(8px, env(safe-area-inset-bottom)); } .touchpad-toolbar button { padding-inline: 12px; font-size: 11px; } .touchpad-navigation { gap: 2px; } .touchpad-navigation button { padding: 0; width: 44px; } .mouse-buttons button { min-width: 66px; } .touchpad-hint { font-size: 10px; gap: 8px; } .pointer-options { width: 220px; } .drawer-actions { gap: 3px; } .drawer-actions button { font-size: 10px; padding-inline: 2px; } }
 @media (orientation: portrait) { .input-pad[open] { visibility: hidden; } }
+
+/* Folders. A folder tile is a glass square holding a 2x2 preview of what is inside. */
+.tile--folder .tile__glyph { box-sizing: border-box; border-radius: 23%; background: linear-gradient(145deg, #ffffff1f, #ffffff08); border: 1px solid #ffffff24; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: inset 0 1px 0 #ffffff14, 0 10px 25px #0002; }
+/* Sized in % of the glass square itself. Padding % would follow the tile's width instead. */
+.folder-mini { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 9%; width: 72%; height: 72%; }
+.folder-mini__cell { display: grid; place-items: center; min-width: 0; min-height: 0; color: var(--accent); }
+.folder-mini__cell > .icon { width: 72%; height: 72%; }
+.folder-mini .app-icon img { filter: none; }
+.folder-mini .app-icon__fallback { font-size: 11px; border-radius: 28%; }
+.options__icon > .folder-mini { box-sizing: border-box; width: 100%; height: 100%; padding: 7px; border-radius: 23%; background: #ffffff12; border: 1px solid #ffffff22; }
+.options__icon[data-icon] { display: grid; place-items: center; color: var(--accent); }
+.options__icon[data-icon] .icon { width: 34px; height: 34px; }
+.folder-sheet { width: min(92vw, 720px); }
+.folder-sheet__actions { display: flex; gap: 6px; }
+.folder-sheet__hint { margin-top: 0; }
+.folder-sheet__empty { grid-column: 1 / -1; padding: 30px; text-align: center; color: var(--muted); font-size: 13px; }
+.folder-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 6px 10px; padding: 8px 20px 24px; overflow-y: auto; overscroll-behavior: contain; }
+.folder-sheet .folder-grid .tile { --icon-size: 64px; --display-icon: 64px; height: auto; max-height: none; padding: 10px 6px; gap: 8px; }
+.folder-sheet .folder-grid .tile__glyph { width: 64px; height: 64px; }
+.folder-sheet .folder-grid .tile__label { display: block; font-size: 11px; }
+.folder-sheet .folder-grid .tile__dot { display: none; }
+.folder-sheet .folder-grid .tile.is-running .tile__label::before { content: ""; display: inline-block; width: 5px; height: 5px; margin: 0 5px 2px 0; border-radius: 50%; background: var(--live); vertical-align: middle; }
+#folder-pick-list button { justify-content: flex-start; padding: 0 14px; }
+.options__count { margin-left: auto; color: var(--muted); font-size: 11px; }
+.text-input { width: 100%; height: 44px; margin-top: 14px; padding: 0 13px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface-2); color: var(--text); font-size: 15px; }
+
+/* Apps picker: show filter, search clear button, and a quieter look for apps already on the dock. */
+.picker__chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 25px 0; }
+.chip { min-height: 32px; padding: 5px 13px; border: 1px solid var(--line); border-radius: 999px; background: none; color: var(--muted); font-size: 11px; }
+.chip[aria-pressed="true"] { color: #152c20; background: var(--accent); border-color: var(--accent); }
+.search-box__clear { display: grid; place-items: center; width: 30px; height: 30px; margin-right: -6px; flex-shrink: 0; border: 0; border-radius: 8px; background: #ffffff0d; color: var(--muted); }
+.search-box__clear .icon { width: 14px; height: 14px; }
+.search-box input::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; display: none; }
+.picker__list li > button.is-added .app-icon { opacity: .5; filter: grayscale(.7); }
+.picker__list li > button.is-added .picker__name { color: var(--muted); }
+@media (max-height: 550px) and (orientation: landscape) {
+  .picker__chips { margin-top: 7px; }
+  .chip { min-height: 28px; padding: 3px 11px; }
+  .folder-grid { grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); padding-bottom: 14px; }
+  .folder-sheet .folder-grid .tile { --icon-size: 52px; --display-icon: 52px; padding: 6px 4px; }
+  .folder-sheet .folder-grid .tile__glyph { width: 52px; height: 52px; }
+}

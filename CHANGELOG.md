@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Add optional folders. In Arrange mode, tap an icon and choose **Add to folder…**
+  to group it. Folders open as a sheet where you can launch, add, reorder, rename,
+  ungroup, or take items back out. Nothing changes for docks that don't use them.
+- Raise the dock limit from 64 to 200 tiles, counting tiles inside folders. A
+  dock holds up to 40 folders of 60 tiles each. Saves over a limit are refused
+  rather than trimmed, so nothing already on the dock is lost.
+- Apps library: filter by All, Not added or On your dock (remembered per phone),
+  dimmed rows for apps already added that say which folder they are in, a clear
+  button for search, and Enter adds the app when only one new match is left.
+- Running indicators no longer overlap app names when labels are shown.
 - Security: refuse HTTP and WebSocket requests whose Host header isn't an IP
   address, `localhost`, this PC's own name (plain or `.local`), or a name listed
   in `WINDOCK_ALLOWED_HOSTS`. This closes a DNS rebinding hole where a web page
