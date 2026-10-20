@@ -7,14 +7,18 @@
  * interfaces of Spotify and Music. Every action is an argv array exactly like
  * the Windows and Linux providers. Scripts are constant text and receive
  * their input as osascript arguments, so no caller value is ever spliced into
- * a script. Touchpad, keyboard, signatures, capture and brightness need a
- * native helper and are not part of this phase.
+ * a script. Capture comes from screencapture; the touchpad, phone keyboard
+ * and signatures from the Swift helper in native/macos. Brightness still
+ * waits for a native command.
  */
 
+import { spawn as spawnProcess } from "node:child_process";
 import { mkdtemp, readdir, readFile, rm } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { validateControl } from "./contract.js";
+import { createMacCapture } from "./macos-capture.js";
+import { createMacInput } from "./macos-input.js";
 
 export const APP_DIRS = Object.freeze([
   "/Applications",
@@ -252,9 +256,12 @@ export function parseNowPlaying(raw) {
 
 export function createMacProvider({
   exec,
+  spawn = spawnProcess,
   appDirs = APP_DIRS,
   tmp = tmpdir(),
   now = Date.now,
+  capture,
+  input,
 } = {}) {
   if (typeof exec !== "function") throw new Error("macos provider requires exec");
 
@@ -280,6 +287,8 @@ export function createMacProvider({
   return {
     id: "darwin",
     displayName: "macOS",
+    capture: capture ?? createMacCapture({ exec, spawn }),
+    input: input === undefined ? createMacInput({ spawn }) : input,
 
     async appIcon(app) {
       const icns = typeof app?.icon === "string" ? app.icon : "";

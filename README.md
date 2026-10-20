@@ -23,7 +23,7 @@ screen — all over your local network, with no account or cloud service.
 | Windows 10 / 11, x64 | [Download the installer](https://github.com/aliihsaad/WinDock/releases/download/v0.2.3-preview.1/WinDockSetup.exe) |
 | Android 7.0+ | [Download the APK](https://github.com/aliihsaad/WinDock/releases/download/v0.2.3-preview.1/WinDock-android-debug.apk) |
 | Linux (Hyprland), x86-64 | [Arch/Omarchy and Debian/Ubuntu installer preview](#linux-preview) |
-| macOS 13 or newer (tested on 27) | [Run from source (phase 1 preview)](#macos-preview) |
+| macOS 13 or newer (tested on 27) | [Run from source (preview)](#macos-preview) |
 | iOS | Coming soon — [native companion development & GitHub builds](ios/README.md); no installable public release yet. |
 
 1. **Install on your PC.** Open `WinDockSetup.exe`. It includes the required
@@ -150,29 +150,37 @@ feature works.
 
 ## macOS preview
 
-WinDock can also host a dock from a Mac. This first phase covers the app
-library with real icons, launching, bringing apps forward and quitting them,
-volume and mute, play/pause and track skipping in Spotify or Music, "now
-playing", and sleep, lock and power actions. The touchpad, phone keyboard,
-signatures, screen capture and brightness need a native helper and are not
-available on macOS yet; the dock hides what the host does not offer.
+WinDock can also host a dock from a Mac. The same Android app connects to it,
+with the app library and real icons, launching, bringing apps forward and
+quitting them, volume and mute, play/pause and track skipping in Spotify or
+Music, "now playing", sleep, lock and power actions, PNG screenshots and
+silent MP4 recordings, the touchpad, the phone keyboard and signatures.
+Brightness is the one control still waiting for a native command.
 
-You need **Node.js 20.11+** (for example `brew install node`). Nothing else
-has to be installed: the host uses `open`, `osascript`, `plutil` and `sips`,
-which ship with macOS. In this repository:
+You need **Node.js 20.11+** (for example `brew install node`) and the Xcode
+Command Line Tools (`xcode-select --install`) for `swiftc`, which builds the
+small input helper. Everything else ships with macOS. In this repository:
 
 ```bash
 npm ci
+npm run build:macos
 npm start
 ```
 
 Keep the terminal open: it prints the address and pairing PIN for your phone.
-The first time the host lists running apps, macOS asks whether your terminal
-may control **System Events**; allow it, or the dock shows no running apps.
+macOS asks for three permissions on behalf of the app that runs WinDock (your
+terminal), each the first time it is needed: **Automation** for System Events
+when the dock lists running apps, **Screen Recording** for the first capture,
+and **Accessibility** for the touchpad and keyboard. The touchpad refuses to
+start until Accessibility is granted and WinDock's output says so.
 **Lock** turns the display off, which locks the Mac when *Require password
 after screen saver begins or display is turned off* is set to immediately in
-System Settings → Lock Screen (the default).
+System Settings → Lock Screen (the default). Pinch zoom sends ⌘+ and ⌘−, which
+zoom browsers, editors and documents.
 
+Screenshots and signatures go to Pictures/WinDock, recordings to
+Movies/WinDock. A recording is finalized as a QuickTime movie and converted to
+H.264 MP4 within 1920x1080; if the conversion fails the movie is kept.
 Spotify and Music are the media players this phase understands. There is no
 menu bar app, autostart or packaged installer yet.
 

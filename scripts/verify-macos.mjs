@@ -1,5 +1,6 @@
 /** macOS provider: bundle inventory, System Events processes, open/quit, volume, media, power and stats. */
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { EventEmitter } from "node:events";
+import { mkdir, mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createChecker } from "./lib/assert.mjs";
@@ -22,6 +23,7 @@ import {
   parseNowPlaying,
   parseProcesses,
 } from "../src/platform/macos.js";
+import { CONVERT_PRESET, captureFolder, captureName, convertArgv, createMacCapture, recorderArgv, screenshotArgv } from "../src/platform/macos-capture.js";
 
 const t = createChecker("macos");
 const tmp = await mkdtemp(join(tmpdir(), "windock-macos-"));
@@ -80,7 +82,7 @@ const fakeExec = async (file, args) => {
   return { stdout: "" };
 };
 let clock = 0;
-const provider = createMacProvider({ exec: fakeExec, appDirs: [apps, userApps, join(tmp, "missing")], tmp, now: () => clock });
+const provider = createMacProvider({ exec: fakeExec, appDirs: [apps, userApps, join(tmp, "missing")], tmp, now: () => clock, capture: {}, input: null });
 const inventory = await provider.listInstalledApps();
 t.deepEqual(inventory.map((app) => app.name), ["Alpha", "Beta", "Zed"], "bundles are listed by name; agents, broken plists and other files are skipped");
 t.equal(inventory.find((app) => app.id === "com.example.alpha").target, join(apps, "Alpha.app"), "the first folder claims a duplicated bundle id");
@@ -196,6 +198,138 @@ const stats = createMacProvider({
 });
 t.deepEqual(await stats.systemStats(), { cpu: 39, memory: 44, battery: 50, charging: true }, "stats combine top, memory_pressure and pmset");
 t.deepEqual(await refused.systemStats(), { cpu: null, memory: null, battery: null, charging: null }, "stats degrade to nulls when commands fail");
+
+// ---- capture ----
+t.ok(/^WinDock-\d{4}-\d{2}-\d{2}-\d{6}-\d{3}-[0-9a-f]{6}\.png$/.test(captureName("screenshot")), "capture names match the Windows helper");
+t.ok(captureName("recording").endsWith(".mp4") && captureName("recording", undefined, undefined, "mov").endsWith(".mov"), "recordings are MP4, with a movie while they run");
+t.equal(captureFolder("screenshot", "/Users/x"), "/Users/x/Pictures/WinDock", "screenshots go to Pictures/WinDock");
+t.equal(captureFolder("recording", "/Users/x"), "/Users/x/Movies/WinDock", "recordings go to Movies/WinDock");
+t.deepEqual(screenshotArgv("/p/x.png"), ["screencapture", ["-x", "-t", "png", "/p/x.png"]], "screenshots are silent PNGs");
+t.deepEqual(recorderArgv("/m/x.mov"), ["screencapture", ["-x", "-v", "/m/x.mov"]], "recordings are silent movies without -V, which would break SIGINT finalization");
+t.deepEqual(convertArgv("/m/x.mov", "/m/x.mp4"), ["avconvert", ["--source", "/m/x.mov", "--preset", CONVERT_PRESET, "--output", "/m/x.mp4"]], "the movie is converted within 1920x1080");
+t.throws(() => createMacCapture({}), "capture needs an injected exec");
+
+const PNGB = (size) => Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), Buffer.alloc(size)]);
+const children = [];
+function fakeChild(command, args) {
+  const child = Object.assign(new EventEmitter(), { command, args, signals: [] });
+  child.kill = (signal) => {
+    child.signals.push(signal);
+    if (signal === "SIGKILL") queueMicrotask(() => child.exit(null));
+    return true;
+  };
+  child.exit = (code) => child.emit("close", code);
+  children.push(child);
+  return child;
+}
+const captureCalls = [];
+let screenshotWorks = true, conversionWorks = true;
+const capture = createMacCapture({
+  folder: async (kind) => join(tmp, kind),
+  startupMs: 20,
+  stopMs: 200,
+  exec: async (file, args) => {
+    captureCalls.push([file, ...args]);
+    if (file === "screencapture") {
+      if (!screenshotWorks) {
+        await writeFile(args.at(-1), ""); // a refused capture can leave an empty file
+        throw Object.assign(new Error("could not create image from display"), { stderr: "private" });
+      }
+      await writeFile(args.at(-1), PNGB(2));
+    }
+    return { stdout: "" };
+  },
+  spawn: (command, args, options) => {
+    t.equal(options.shell, false, `${command} never runs through a shell`);
+    return fakeChild(command, args);
+  },
+  convert: async (source, output) => {
+    captureCalls.push(["convert", source, output]);
+    if (!conversionWorks) throw new Error("avconvert exited with code 1");
+    await writeFile(output, PNGB(9));
+  },
+});
+const shot = await capture.screenshot();
+t.equal(shot.lastCapture.kind, "screenshot", "a screenshot is reported");
+t.ok(shot.lastCapture.path.startsWith(join(tmp, "screenshot")), "screenshots use the host folder");
+t.deepEqual(captureCalls.find((call) => call[0] === "screencapture").slice(1, 4), ["-x", "-t", "png"], "screenshots run screencapture");
+screenshotWorks = false;
+const shotError = await capture.screenshot().catch((error) => error);
+t.equal(shotError.status, 503, "a failed screenshot is a service error");
+t.ok(!shotError.message.includes("private") && !capture.status().error.includes("private"), "native diagnostics stay private");
+t.ok(shotError.message.includes("Screen Recording"), "the error names the permission to check");
+t.equal((await readdir(join(tmp, "screenshot"))).length, 1, "a failed screenshot leaves no empty file behind");
+
+const first = capture.start(), duplicate = capture.start();
+t.equal(capture.status().phase, "starting", "starting is visible");
+const recording = await first;
+t.equal((await duplicate).startedAt, recording.startedAt, "duplicate start shares one recording");
+t.equal(recording.phase, "recording", "a recorder that survives startup is recording");
+const rec = children[0];
+t.equal(rec.command, "screencapture", "recordings run screencapture");
+t.ok(rec.args.includes("-v") && rec.args.at(-1).endsWith(".mov"), "the recorder writes a movie");
+const stopping = capture.stop();
+t.deepEqual(rec.signals, ["SIGINT"], "stop asks screencapture to finalize");
+await t.rejects(() => capture.start(), "cannot start while the old recording saves");
+await writeFile(rec.args.at(-1), PNGB(3));
+rec.exit(0);
+const stopped = await stopping;
+t.equal(stopped.phase, "idle", "a finalized recording returns to idle");
+t.equal(stopped.lastCapture.kind, "recording", "the recording is reported");
+t.ok(stopped.lastCapture.path.endsWith(".mp4") && stopped.lastCapture.path.startsWith(join(tmp, "recording")), "the MP4 is what the user gets");
+t.deepEqual(captureCalls.at(-1), ["convert", rec.args.at(-1), stopped.lastCapture.path], "the movie is converted next to itself");
+t.deepEqual(await readdir(join(tmp, "recording")), [stopped.lastCapture.name], "the movie is removed once the MP4 exists");
+
+conversionWorks = false;
+await capture.start();
+const kept = children.at(-1);
+const keptStop = capture.stop();
+await writeFile(kept.args.at(-1), PNGB(4));
+kept.exit(0);
+const keptResult = await keptStop;
+t.equal(keptResult.phase, "idle", "a recording whose conversion fails is still a success");
+t.ok(keptResult.lastCapture.path.endsWith(".mov"), "the movie is kept when avconvert fails");
+t.ok((await readdir(join(tmp, "recording"))).includes(keptResult.lastCapture.name), "the kept movie stays on disk");
+conversionWorks = true;
+
+const spawnedBefore = children.length;
+const dead = capture.start();
+for (let i = 0; i < 100 && children.length === spawnedBefore; i += 1) await new Promise((resolve) => setTimeout(resolve, 5));
+const early = children.at(-1);
+early.exit(1); // screencapture refused (permission, locked screen)
+await t.rejects(() => dead, "a recorder that exits at once has not started");
+t.equal(capture.status().phase, "error", "the failed start is visible");
+t.ok(!(await readdir(join(tmp, "recording"))).includes(early.args.at(-1).split("/").pop()), "a failed start leaves no empty movie behind");
+
+const limited = createMacCapture({
+  folder: async (kind) => join(tmp, kind), startupMs: 10, limitMs: 30, stopMs: 500,
+  exec: async () => ({ stdout: "" }),
+  spawn: (command, args) => fakeChild(command, args),
+  convert: async (source, output) => { await writeFile(output, PNGB(1)); },
+});
+await limited.start();
+const auto = children.at(-1);
+await new Promise((resolve) => setTimeout(resolve, 60));
+t.deepEqual(auto.signals, ["SIGINT"], "recordings stop themselves at the time limit");
+t.equal(limited.status().phase, "stopping", "the automatic stop is visible");
+await writeFile(auto.args.at(-1), PNGB(4));
+auto.exit(0);
+await new Promise((resolve) => setTimeout(resolve, 10));
+t.equal(limited.status().lastCapture?.kind, "recording", "an automatically stopped recording is kept");
+await limited.start();
+const crashed = children.at(-1);
+crashed.exit(1);
+await new Promise((resolve) => setTimeout(resolve, 10));
+t.equal(limited.status().phase, "error", "a recorder that dies mid-recording is reported");
+await limited.start();
+const disposing = limited.dispose();
+const last = children.at(-1);
+t.deepEqual(last.signals, ["SIGINT"], "host shutdown finalizes the recording");
+await writeFile(last.args.at(-1), PNGB(5));
+last.exit(0);
+await disposing;
+await t.rejects(() => limited.start(), "a disposed capture refuses new recordings");
+t.ok(createMacProvider({ exec: async () => ({ stdout: "" }), appDirs: [], tmp }).capture, "the provider exposes capture");
 
 await rm(tmp, { recursive: true, force: true });
 t.done("macos verification passed");
