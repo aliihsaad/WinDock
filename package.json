@@ -12,6 +12,8 @@
     "package:downloads": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/package-downloads.ps1",
     "build:windows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/build-windows.ps1",
     "build:macos": "swiftc -O -swift-version 5 -o windock-input native/macos/*.swift",
+    "build:macos-app": "sh scripts/build-macos-app.sh",
+    "install:macos-app": "sh scripts/install-macos-app.sh",
     "build:linux": "cargo build --release --locked --manifest-path native/linux/Cargo.toml && install -m 755 native/linux/target/release/windock-input windock-input",
     "package:linux": "docker build --platform linux/amd64 -f native/linux/packaging/Dockerfile --target packages --output type=local,dest=artifacts/linux .",
     "build:installer": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/build-installer.ps1",

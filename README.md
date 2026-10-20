@@ -181,8 +181,29 @@ zoom browsers, editors and documents.
 Screenshots and signatures go to Pictures/WinDock, recordings to
 Movies/WinDock. A recording is finalized as a QuickTime movie and converted to
 H.264 MP4 within 1920x1080; if the conversion fails the movie is kept.
-Spotify and Music are the media players this phase understands. There is no
-menu bar app, autostart or packaged installer yet.
+Spotify and Music are the media players this phase understands.
+
+### Menu bar app and start at login
+
+Instead of keeping a terminal open, build the menu bar companion once and
+install it in your Applications folder:
+
+```bash
+npm run build:macos-app
+npm run install:macos-app
+open ~/Applications/WinDock.app
+```
+
+WinDock then lives in the menu bar, like the Windows tray: **Show connection
+info** has the address and PIN, **Open saved files** opens the capture and
+signature folders, and **Start at login** registers it as a login item so the
+dock is ready whenever the Mac is. Quitting finalizes a running recording
+first. The app starts `server.js` from this repository with the newest Node 20+
+it finds (your shell's, nvm, Homebrew or the installer), so keep the
+repository where it was when you built the app, or build again after moving
+it. macOS asks the permissions above in WinDock's name instead of the
+terminal's. The bundle is signed ad hoc, not notarized: there is no packaged
+installer yet.
 
 ## What you can do
 
