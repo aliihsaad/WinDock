@@ -89,7 +89,7 @@ final class DockIntegrationTests: XCTestCase {
         try await waitForJS("document.getElementById('pair') && !document.getElementById('pair').hidden")
         XCTAssertTrue(controller.view.bounds.width > controller.view.bounds.height, "Landscape presentation")
         try await screenshot("02-pairing")
-        _ = try await js("document.getElementById('pin').value='0000'; document.querySelector('#pair-form button').click(); true")
+        _ = try await js("document.getElementById('pin').value='000000'; document.querySelector('#pair-form button').click(); true")
         try await waitForJS("document.getElementById('pair-error').textContent.length > 0")
         _ = try await js("document.getElementById('pin').value='864213'; document.querySelector('#pair-form button').click(); true")
         try await waitForJS("!document.getElementById('app').hidden && document.querySelectorAll('.tile').length === 5")

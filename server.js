@@ -184,6 +184,12 @@ export async function createApp({
           return sendJson(res, 429, { error: "locked", retryInMs: status.retryInMs });
         }
         const body = await readJsonBody(req);
+        // Check again now that the body is in. Requests that were already
+        // uploading when the pause started must not get to try their PIN.
+        const after = lockout.status(remote);
+        if (after.locked) {
+          return sendJson(res, 429, { error: "locked", retryInMs: after.retryInMs });
+        }
         if (!isValidPinShape(body.pin)) {
           lockout.recordFailure(remote);
           return sendJson(res, 400, { error: "invalid pin" });

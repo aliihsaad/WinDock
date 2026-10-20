@@ -154,11 +154,13 @@ for (const good of ["localhost", "localhost:8620", "127.0.0.1:8620", "192.168.1.
   t.ok(hostOk(good), `Host ${good} is allowed`);
 }
 for (const bad of ["", null, undefined, "evil.example", "evil.example:8620", "127.0.0.1.nip.io:8620",
-  "desk-pc.evil.example", "localhost.evil.example", "a b"]) {
+  "desk-pc.evil.example", "localhost.evil.example", "a b", "attacker.example@localhost",
+  "evil.example@127.0.0.1:8620", "evil.example/@localhost", "localhost/x", "localhost?x", "localhost#x", "[::1]x"]) {
   t.ok(!hostOk(bad), `Host ${JSON.stringify(bad)} is refused`);
 }
 t.ok(isLoopbackHost("localhost:1") && isLoopbackHost("[::1]:1") && isLoopbackHost("127.0.0.1"), "loopback Host names are recognised");
 t.ok(!isLoopbackHost("192.168.1.4") && !isLoopbackHost("evil.example"), "other Host names are not loopback");
+t.ok(!isLoopbackHost("attacker.example@localhost"), "login details in a Host header can't pass as localhost");
 
 // ---- host-wide failure budget ----
 let gclock = 5_000_000;

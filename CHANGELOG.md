@@ -10,7 +10,9 @@
   loopback name.
 - Security: the pairing PIN is now six digits, and a host-wide budget pauses new
   pairing for 10 minutes after 30 wrong PINs from any mix of addresses. Phones
-  that are already paired keep working during the pause.
+  that are already paired keep working during the pause. Pairing requests that
+  were still uploading when the pause began are refused too.
+- Security: Host header checks now reject login details such as `name@localhost`.
 - Add the first native iPhone companion source: remembered PC address, PIN pairing
   through the shared landscape dock, and reconnect/change-PC controls.
 - Add a GitHub macOS workflow for simulator tests, screenshots and unsigned iOS

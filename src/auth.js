@@ -53,10 +53,13 @@ export function safeEqual(a, b) {
 
 /**
  * Split a Host header into its name, without port or IPv6 brackets.
- * Returns "" for anything that doesn't parse.
+ * Returns "" for anything that doesn't parse. The header has to be a bare name
+ * or IP with an optional port before URL parsing, otherwise something like
+ * "evil.example@localhost" would parse as login details plus "localhost".
  */
+const HOST_HEADER = /^(?:\[[0-9a-f:.]+\]|[a-z0-9.-]+)(?::\d{1,5})?$/i;
 export function hostName(header) {
-  if (typeof header !== "string" || !header) return "";
+  if (typeof header !== "string" || !HOST_HEADER.test(header)) return "";
   try {
     const name = new URL(`http://${header}`).hostname.toLowerCase();
     return name.startsWith("[") && name.endsWith("]") ? name.slice(1, -1) : name;
