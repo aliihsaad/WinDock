@@ -1,8 +1,10 @@
 package com.windock.app
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.View
@@ -53,6 +55,9 @@ class MainActivity : Activity() {
     private var wakingGesture = false
     private val wakingKeys = mutableSetOf<Int>()
     private var usbOnly = false
+    private var voice: VoiceRecognition? = null
+    private var microphoneRequested = false
+    private companion object { const val MICROPHONE_REQUEST = 41 }
     private val loadTimeout = Runnable {
         if (connecting) {
             failConnection(R.string.connection_lost)
@@ -257,6 +262,45 @@ class MainActivity : Activity() {
         }
         @JavascriptInterface fun hideKeyboard() { runOnUiThread { hideRemoteKeyboard() } }
         @JavascriptInterface fun showPhoneSettings() { runOnUiThread { if (trustedKeyboardPage()) showPhoneOptions() } }
+        @JavascriptInterface fun listen() { runOnUiThread { startVoice() } }
+        @JavascriptInterface fun voiceOnline(): Boolean = PhonePreferences.voiceOnline(this@MainActivity)
+        @JavascriptInterface fun setVoiceOnline(enabled: Boolean) {
+            runOnUiThread { if (trustedKeyboardPage()) { PhonePreferences.setVoiceOnline(this@MainActivity, enabled); voice?.cancel() } }
+        }
+    }
+
+    /** Voice commands: recognition runs on the phone; the dock receives text and decides what to send. */
+    private fun startVoice() {
+        if (!trustedKeyboardPage()) return
+        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            microphoneRequested = true
+            requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), MICROPHONE_REQUEST)
+            return
+        }
+        idleDisplay.userActivity()
+        val engine = voice ?: VoiceRecognition(this, ::emitVoiceResult, ::emitVoiceError).also { voice = it }
+        engine.start(online = PhonePreferences.voiceOnline(this))
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode != MICROPHONE_REQUEST || !microphoneRequested) return
+        microphoneRequested = false
+        val granted = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
+        // The result arrives before onResume; wait until the page counts as trusted again.
+        web.post { if (granted) startVoice() else emitVoiceError("permission", null) }
+    }
+
+    private fun emitVoiceResult(text: String, isFinal: Boolean) {
+        if (!trustedKeyboardPage()) return
+        idleDisplay.userActivity()
+        web.evaluateJavascript("window.WinDockVoice&&window.WinDockVoice.onResult(${JSONObject.quote(text)},$isFinal)", null)
+    }
+
+    private fun emitVoiceError(code: String, detail: String?) {
+        if (!trustedKeyboardPage()) return
+        val extra = if (detail == null) "" else "," + JSONObject.quote(detail)
+        web.evaluateJavascript("window.WinDockVoice&&window.WinDockVoice.onError(${JSONObject.quote(code)}$extra)", null)
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -386,10 +430,11 @@ class MainActivity : Activity() {
     }
 
     override fun onResume() { super.onResume(); resumed = true; if (::web.isInitialized) web.onResume(); syncIdleDisplay() }
-    override fun onPause() { resumed = false; wakingGesture = false; wakingKeys.clear(); syncIdleDisplay(); hideRemoteKeyboard(); if (::web.isInitialized) web.onPause(); super.onPause() }
+    override fun onPause() { resumed = false; voice?.cancel(); wakingGesture = false; wakingKeys.clear(); syncIdleDisplay(); hideRemoteKeyboard(); if (::web.isInitialized) web.onPause(); super.onPause() }
     override fun onDestroy() {
         phoneDialog?.setOnDismissListener(null)
         phoneDialog?.dismiss()
+        voice?.destroy()
         idleDisplay.close()
         io.shutdownNow()
         web.removeCallbacks(loadTimeout)

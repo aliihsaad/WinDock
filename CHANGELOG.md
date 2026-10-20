@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add voice commands to the Android app. Swipe up and choose Voice; speech is
+  recognized on the phone (on-device on Android 12+, offline-preferred before
+  that) and only the interpreted command reaches the PC. A fixed Spanish and
+  English vocabulary opens apps, adjusts volume and playback, takes screenshots,
+  starts or stops recordings, turns dock pages, and asks for confirmation
+  before power actions.
 - Add the first native iPhone companion source: remembered PC address, PIN pairing
   through the shared landscape dock, and reconnect/change-PC controls.
 - Add a GitHub macOS workflow for simulator tests, screenshots and unsigned iOS

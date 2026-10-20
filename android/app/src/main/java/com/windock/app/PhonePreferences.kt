@@ -17,6 +17,9 @@ object PhonePreferences {
         store(context).edit().putLong("dimAfterMs", policy.dimAfterMs)
             .putLong("sleepAfterMs", policy.sleepAfterMs).putInt("dimPercent", policy.dimPercent).apply()
     }
+    /** Off by default: voice commands never leave the phone unless the user turns this on. */
+    fun voiceOnline(context: Context) = store(context).getBoolean("voiceOnline", false)
+    fun setVoiceOnline(context: Context, enabled: Boolean) { store(context).edit().putBoolean("voiceOnline", enabled).apply() }
     fun usbOnly(context: Context) = store(context).getBoolean("usbOnly", false)
     fun setUsbOnly(context: Context, enabled: Boolean) { store(context).edit().putBoolean("usbOnly", enabled).apply() }
 }

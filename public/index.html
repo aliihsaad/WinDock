@@ -57,6 +57,7 @@
     <button id="drawer-apps" type="button"><span data-icon="plus"></span><span>Apps</span></button>
     <button id="drawer-controls" type="button"><span data-icon="sliders"></span><span>Controls</span></button>
     <button id="drawer-capture" type="button"><span data-icon="camera"></span><span>Capture</span></button>
+    <button id="drawer-voice" type="button" hidden><span data-icon="mic"></span><span>Voice</span></button>
     <button id="drawer-input" type="button"><span data-icon="touchpad"></span><span>Touch & sign</span></button>
     <button id="drawer-settings" type="button"><span data-icon="sun"></span><span>Appearance</span></button>
     <button id="drawer-edit" type="button"><span data-icon="edit"></span><span>Arrange</span></button>
@@ -155,6 +156,7 @@
       <label class="setting-row" for="glass-theme">Glass style<select id="glass-theme"><option value="glass">Clear</option><option value="frost">Frosted</option><option value="smoke">Smoked</option></select></label>
       <div class="settings__utilities"><button id="fullscreen" class="button" type="button"><span data-icon="monitor"></span>Fullscreen</button><button id="refresh" class="button" type="button"><span data-icon="refresh"></span>Refresh</button></div>
       <div class="settings__utilities" id="phone-options-row" hidden><button id="phone-options" class="button" type="button"><span data-icon="sun"></span>This phone · screen &amp; sleep</button></div>
+      <div id="voice-online-row" hidden><label class="setting-row">Online voice recognition<input id="voice-online" class="switch" type="checkbox" role="switch"></label><p class="settings__tip">Off: speech stays on this phone. On: when no offline pack exists, audio goes to your phone’s speech provider (usually Google).</p></div>
     </section>
   </div>
 </dialog>
@@ -175,6 +177,7 @@
   <span class="confirm__icon" data-icon="power"></span><h2 id="confirm-title">Continue?</h2><p id="confirm-description"></p>
   <div class="confirm__actions"><button id="confirm-cancel" class="button" type="button" autofocus>Cancel</button><button id="confirm-go" class="button button--danger" type="button">Continue</button></div>
 </dialog>
+<div id="voice-confirm" class="voice-confirm" role="alertdialog" aria-live="assertive" aria-label="Confirm voice command" hidden><span class="voice-confirm__icon" data-icon="power"></span><p id="voice-confirm-text"></p><button id="voice-confirm-cancel" class="button" type="button">Cancel</button><button id="voice-confirm-go" class="button button--danger" type="button">Confirm</button></div>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 <script type="module" src="/app.js"></script>
 </body>
