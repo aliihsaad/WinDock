@@ -203,6 +203,26 @@ The PNG is a handwritten signature image, not a certificate-based digital signat
 Touchpad control follows Windows permissions and cannot operate secure prompts
 or applications running with higher privileges than WinDock.
 
+## Knobs
+
+In **Touch & sign**, choose **Knobs** (also from the touchpad's bottom-left
+toolbar). Three large dials turn finger rotation into steps: a slow turn moves
+one step per click, a quick flick moves three. Knobs send only what the touchpad
+and the phone keyboard already can, so they work with any WinDock host that has
+touchpad support, without a PC update.
+
+- **Wheel** profile: the first dial is the mouse wheel, the second the
+  horizontal wheel, the third Ctrl + wheel zoom. Point the PC cursor at a
+  slider or page first. In Lightroom Classic on Windows, click a slider and
+  turn. Lightroom on macOS does not move its sliders with the wheel; use Arrows.
+- **Arrows** profile: click a value or field on the PC, then the dials press
+  ↑ ↓ and ← → one step per click; the third dial stays a wheel. Lightroom,
+  Photoshop and most apps nudge a selected value with the arrow keys.
+
+The readout under each dial counts the steps sent since the profile was chosen.
+Knobs cannot hold modifier keys or send app shortcuts: that would need new
+native code on every PC platform and is deliberately outside the input protocol.
+
 ## How it works
 
 The Windows companion serves the dock interface on your local network. The

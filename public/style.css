@@ -412,6 +412,23 @@ body.is-immersive .empty .button .icon { width: 36px; height: 36px; }
 .input-pad[data-mode="touchpad"][data-ready="true"][data-demo="false"] .input-pad__connection { visibility: hidden; }
 .input-pad__status { margin: 0; min-height: 18px; color: var(--muted); font-size: 11px; overflow-wrap: anywhere; line-height: 1.5; }
 #input-reconnect { pointer-events: auto; border: 0; border-radius: 12px; padding: 10px 16px; min-height: 44px; background: #a8c7ff18; color: var(--accent); font-size: 12px; flex-shrink: 0; }
+.knobs-pane { gap: 10px; }
+.knobs-top { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+.knobs-profiles { display: flex; gap: 6px; }
+.knobs-profiles button { padding: 8px 16px; border: 1px solid #ffffff14; border-radius: 10px; background: transparent; font-size: 12px; color: var(--muted); }
+.knobs-profiles button[aria-pressed="true"] { background: #a8c7ff12; border-color: #a8c7ff55; color: var(--accent); }
+.knobs-hint { margin: 0; flex: 1; min-width: 200px; font-size: 11px; color: var(--muted); text-align: right; }
+.knobs-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: center; justify-items: center; }
+.knob { display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center; }
+.knob__dial { position: relative; width: min(42vh, 26vw, 170px); aspect-ratio: 1; padding: 0; border: 1px solid #ffffff1c; border-radius: 50%; background: radial-gradient(circle at 36% 30%, #2b3649, #10151f 72%); box-shadow: 0 12px 34px #0008, inset 0 1px 0 #ffffff16; touch-action: none; }
+.knob__dial:active:not(:disabled) { transform: none; }
+.knob__dial::before { content: ""; position: absolute; inset: -9px; border-radius: 50%; background: repeating-conic-gradient(from 0deg, #ffffff22 0 1deg, transparent 1deg 12deg); -webkit-mask: radial-gradient(circle, transparent 60%, #000 61%); mask: radial-gradient(circle, transparent 60%, #000 61%); pointer-events: none; }
+.knob__dial.is-turning { border-color: #a8c7ff66; box-shadow: 0 12px 34px #0008, 0 0 0 6px #a8c7ff14, inset 0 1px 0 #ffffff16; }
+.knob__face { position: absolute; inset: 0; border-radius: 50%; will-change: transform; }
+.knob__pointer { position: absolute; left: calc(50% - 3px); top: 9%; width: 6px; height: 24%; border-radius: 3px; background: var(--accent); box-shadow: 0 0 10px #a8c7ff66; }
+.knob__label { margin-top: 6px; font-size: 13px; color: #e1e7f0; }
+.knob__detail { font-size: 10px; color: var(--muted); }
+.knob__value { min-height: 16px; font-size: 12px; font-variant-numeric: tabular-nums; color: var(--accent); }
 .signature-space { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
 .signature-paper { position: relative; aspect-ratio: 8 / 3; height: 100%; max-width: 100%; max-height: 100%; border-radius: 15px; overflow: hidden; background: #f2f2ec; }
 #signature-canvas { display: block; width: 100%; height: 100%; touch-action: none; user-select: none; -webkit-user-select: none; cursor: crosshair; }
