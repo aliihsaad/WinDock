@@ -205,11 +205,12 @@ or applications running with higher privileges than WinDock.
 
 ## Knobs
 
-In **Touch & sign**, choose **Knobs** (also from the touchpad's bottom-left
-toolbar). Three large dials turn finger rotation into steps: a slow turn moves
-one step per click, a quick flick moves three. Knobs send only what the touchpad
-and the phone keyboard already can, so they work with any WinDock host that has
-touchpad support, without a PC update.
+In **Touch & sign**, tap **Knobs** in the touchpad's bottom-left toolbar. Three
+dials appear beside the touchpad and stay there while you keep pointing and
+clicking with the rest of the surface, so there is no screen to switch to. A
+slow turn moves one step per click, a quick flick moves three. Knobs send only
+what the touchpad and the phone keyboard already can, so they work with any
+WinDock host that has touchpad support, without a PC update.
 
 - **Wheel** profile: the first dial is the mouse wheel, the second the
   horizontal wheel, the third Ctrl + wheel zoom. Point the PC cursor at a

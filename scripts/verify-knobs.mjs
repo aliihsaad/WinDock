@@ -104,11 +104,15 @@ t.equal(formatSteps("x"), "0", "a bad readout is zero");
 
 // ---- shell wiring ----
 const html = read("public/index.html"), pad = read("public/input-pad.js"), css = read("public/style.css"), sw = read("public/sw.js");
-t.ok(html.includes('id="input-knobs-tab"') && html.includes('id="knobs-pane"'), "the sheet has a Knobs tab and pane");
-for (const id of ["knobs-profiles", "knobs-grid", "knobs-hint", "touchpad-knobs"]) t.ok(html.includes(`id="${id}"`), `the shell defines #${id}`);
+t.ok(/<section id="touchpad-pane"[\s\S]*<aside id="knobs-dock"[\s\S]*<\/section>/.test(html), "the knobs live inside the touchpad pane, not a separate tab");
+t.ok(!html.includes('id="input-knobs-tab"') && !html.includes('id="knobs-pane"'), "there is no separate Knobs tab to jump to");
+t.ok(/<button id="touchpad-knobs"[^>]*aria-pressed="false"/.test(html), "the toolbar button is a toggle that starts off");
+for (const id of ["knobs-dock", "knobs-profiles", "knobs-grid", "knobs-hint", "touchpad-knobs"]) t.ok(html.includes(`id="${id}"`), `the shell defines #${id}`);
 t.ok(pad.includes('from "./knobs.js"'), "the input pad uses the shared knobs module");
 t.ok(/knobMessages\(/.test(pad) && /new KnobDial\(/.test(pad), "dials and profiles drive the pad");
-t.ok(/\["touchpad", "knobs"\]\.includes\(mode\)/.test(pad), "knobs share the touchpad socket");
+t.ok(pad.includes('$("knobs-dock").hidden = !(knobsOpen && mode === "touchpad")'), "the dials show only beside a live touchpad");
+t.ok(pad.includes('storage.getItem("windock-knobs-open")'), "the toggle is remembered per device");
+t.ok(!pad.includes('select("knobs")'), "knobs are never a mode of their own");
 t.ok(/focusTarget = message\.target/.test(pad), "the pad remembers the PC's focus token for arrow knobs");
 t.ok(css.includes(".knob__dial") && css.includes("touch-action: none"), "dials own their touches");
 t.ok(sw.includes('"/knobs.js"'), "the service worker precaches knobs.js");

@@ -16,8 +16,11 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
   let color = "black", frame = null, pending = { move: [0, 0], scroll: [0, 0] }, speed = 1.5;
   let canInsertSignature = false;
   // Knobs ride the touchpad socket; arrow knobs need the PC's last focus token.
-  let focusTarget = null, knobProfile = PROFILES[0].id, knobTotals = {}, activeDial = null;
-  try { const saved = storage.getItem("windock-knob-profile"); if (PROFILES.some((profile) => profile.id === saved)) knobProfile = saved; } catch { /* optional preference */ }
+  let focusTarget = null, knobProfile = PROFILES[0].id, knobTotals = {}, activeDial = null, knobsOpen = false;
+  try {
+    const saved = storage.getItem("windock-knob-profile"); if (PROFILES.some((profile) => profile.id === saved)) knobProfile = saved;
+    knobsOpen = storage.getItem("windock-knobs-open") === "true";
+  } catch { /* optional preference */ }
   // The PC answered and has no touchpad support: retrying cannot change that.
   let unsupported = false;
   const keyboard = createRemoteKeyboard({ send: raw, isReady: () => ready && mode === "touchpad", onSignature: () => select("signature"), notify });
@@ -50,12 +53,12 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
     dialog.dataset.mode = mode; dialog.dataset.ready = String(ready); dialog.dataset.demo = String(demo);
     $("touchpad-pane").hidden = mode !== "touchpad";
     $("signature-pane").hidden = mode !== "signature";
-    $("knobs-pane").hidden = mode !== "knobs";
-    $("input-knobs-tab").setAttribute("aria-pressed", String(mode === "knobs"));
+    $("knobs-dock").hidden = !(knobsOpen && mode === "touchpad");
+    $("touchpad-knobs").setAttribute("aria-pressed", String(knobsOpen));
     $("input-touchpad-tab").setAttribute("aria-pressed", String(mode === "touchpad"));
     $("input-signature-tab").setAttribute("aria-pressed", String(mode === "signature"));
     $("touchpad-surface").dataset.ready = String(ready);
-    $("input-reconnect").hidden = !["touchpad", "knobs"].includes(mode) || ready || connecting || unsupported;
+    $("input-reconnect").hidden = mode !== "touchpad" || ready || connecting || unsupported;
     for (const id of ["mouse-left", "mouse-right", "mouse-drag"]) $(id).disabled = !ready;
     $("mouse-drag").setAttribute("aria-pressed", String(dragging));
     $("mouse-drag").textContent = dragging ? "Release" : "Drag";
@@ -104,7 +107,7 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
   async function select(next) {
     const ticket = ++generation;
     disconnect(); mode = next; available = false; unsupported = false; connecting = true; demo = false;
-    if (mode === "knobs") drawKnobs();
+    if (mode === "touchpad" && knobsOpen) drawKnobs();
     paint();
     $("touchpad-surface").dataset.used = "false";
     setStatus(next === "signature" ? "Draw here. Save a transparent PNG to Pictures / WinDock / Signatures." : "Connecting to your PC…");
@@ -117,10 +120,9 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
       demo = Boolean(status.demo);
       if (demo) setStatus("Demo only · No cursor control or files saved.");
       if (!available) { connecting = false; unsupported = true; setStatus("Touchpad and signature saving need an updated WinDock on your PC."); paint(); return; }
-      const live = ["touchpad", "knobs"].includes(mode);
-      if (!live) connecting = false;
+      if (mode !== "touchpad") connecting = false;
       paint();
-      if (!live) return;
+      if (mode !== "touchpad") return;
       const ws = new WebSocketClass((location.protocol === "https:" ? "wss:" : "ws:") + "//" + location.host + "/input");
       socket = ws;
       startup = setTimeout(() => { if (socket === ws) { disconnect(); setStatus("PC did not respond. Reopen the touchpad to retry."); } }, 8000);
@@ -134,7 +136,7 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
         if (message.type === "ready") {
           clearTimeout(startup); ready = true; connecting = false;
           heartbeat = setInterval(() => raw({ type: "ping" }), 500);
-          raw({ type: "ping" }); paint(); setStatus(demo ? "Demo only · No cursor control or files saved." : mode === "knobs" ? profileById(knobProfile).hint : "Tap to click · Two fingers: slide to scroll, tap for right-click · Pinch to zoom");
+          raw({ type: "ping" }); paint(); setStatus(demo ? "Demo only · No cursor control or files saved." : touchpadHint());
         }
       };
       ws.onclose = ws.onerror = () => { if (socket === ws) { disconnect(); setStatus("Touchpad disconnected. Tap Reconnect to continue."); } };
@@ -223,7 +225,15 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
   }
   $("signature-save").addEventListener("click", () => saveSignature());
   $("signature-insert").addEventListener("click", () => saveSignature(true));
-  // ---- Knobs: rotary dials over the same socket. One dial turns at a time.
+  // ---- Knobs: rotary dials beside the touchpad, over the same socket. One dial turns at a time.
+  function touchpadHint() { return knobsOpen ? profileById(knobProfile).hint : "Tap to click · Two fingers: slide to scroll, tap for right-click · Pinch to zoom"; }
+  function toggleKnobs() {
+    knobsOpen = !knobsOpen;
+    try { storage.setItem("windock-knobs-open", String(knobsOpen)); } catch { /* optional preference */ }
+    if (knobsOpen) drawKnobs(); else endDial();
+    paint();
+    if (ready && mode === "touchpad" && !demo) setStatus(touchpadHint());
+  }
   function drawKnobs() {
     const profile = profileById(knobProfile);
     $("knobs-profiles").innerHTML = renderProfiles(PROFILES, profile.id);
@@ -249,7 +259,7 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
     if (!button) return;
     knobProfile = profileById(button.dataset.profile).id;
     try { storage.setItem("windock-knob-profile", knobProfile); } catch { /* optional preference */ }
-    endDial(); drawKnobs(); if (ready) setStatus(profileById(knobProfile).hint);
+    endDial(); drawKnobs(); if (ready && !demo) setStatus(touchpadHint());
   });
   const grid = $("knobs-grid");
   grid.addEventListener("pointerdown", (event) => {
@@ -274,12 +284,11 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
   });
   for (const name of ["pointerup", "pointercancel", "lostpointercapture"]) grid.addEventListener(name, (event) => { if (activeDial && event.pointerId === activeDial.pointerId) endDial(); });
   grid.addEventListener("contextmenu", (event) => event.preventDefault());
-  $("input-knobs-tab").addEventListener("click", () => select("knobs"));
-  $("touchpad-knobs").addEventListener("click", () => select("knobs"));
+  $("touchpad-knobs").addEventListener("click", () => { if (dragging) release(); toggleKnobs(); });
   $("input-touchpad-tab").addEventListener("click", () => select("touchpad"));
   $("input-signature-tab").addEventListener("click", () => select("signature"));
   dialog.addEventListener("close", () => { generation++; disconnect(); finishStroke(); });
-  document.addEventListener("visibilitychange", () => { if (document.hidden) { generation++; disconnect(); finishStroke(); if (dialog.open && ["touchpad", "knobs"].includes(mode)) setStatus("Touchpad paused. Tap Reconnect to continue."); } });
+  document.addEventListener("visibilitychange", () => { if (document.hidden) { generation++; disconnect(); finishStroke(); if (dialog.open && mode === "touchpad") setStatus("Touchpad paused. Tap Reconnect to continue."); } });
   window.addEventListener("pagehide", disconnect);
   window.addEventListener("blur", () => { if (ready) release(); });
   window.addEventListener("resize", () => { release(); finishStroke(); if (matchMedia("(orientation: portrait)").matches) { generation++; disconnect(); setStatus("Touchpad paused. Turn sideways and tap Reconnect."); } });

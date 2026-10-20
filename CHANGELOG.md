@@ -2,7 +2,8 @@
 
 ## Unreleased
 
-- Add Knobs to Touch & sign: three rotary dials with a Wheel profile (mouse
+- Add Knobs to Touch & sign: a toolbar toggle shows three rotary dials beside
+  the touchpad, with a Wheel profile (mouse
   wheel, horizontal wheel, Ctrl + wheel zoom) and an Arrows profile (arrow keys
   for the value or field selected on the PC). Slow turns step once per click,
   flicks step three times. Knobs reuse the touchpad protocol, so no PC update
