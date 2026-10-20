@@ -91,8 +91,13 @@
       <div id="touchpad-feedback" class="touchpad-feedback" aria-hidden="true"><span></span><span></span><span></span></div>
       <p id="touchpad-hint" class="touchpad-hint" aria-hidden="true">Tap to click <span>·</span> Two fingers to scroll <span>·</span> Pinch to zoom</p>
     </div>
+    <aside id="knobs-dock" class="knobs-dock" aria-label="Knobs" hidden>
+      <div class="knobs-top"><div id="knobs-profiles" class="knobs-profiles" role="group" aria-label="Knob profile"></div></div>
+      <div id="knobs-grid" class="knobs-grid"></div>
+      <p id="knobs-hint" class="knobs-hint"></p>
+    </aside>
     <div class="touchpad-toolbar" aria-label="Touchpad controls">
-      <div class="touchpad-navigation"><button type="button" data-close="input-pad" aria-label="Back to dock" title="Back to dock"><span data-icon="left"></span></button><button id="touchpad-signature" type="button" aria-label="Open signature pad" title="Signature"><span data-icon="edit"></span></button><button id="touchpad-keyboard" type="button" aria-label="Open phone keyboard" aria-pressed="false" title="Keyboard" hidden><span data-icon="keyboard"></span></button></div>
+      <div class="touchpad-navigation"><button type="button" data-close="input-pad" aria-label="Back to dock" title="Back to dock"><span data-icon="left"></span></button><button id="touchpad-signature" type="button" aria-label="Open signature pad" title="Signature"><span data-icon="edit"></span></button><button id="touchpad-knobs" type="button" aria-label="Show knobs beside the touchpad" aria-pressed="false" title="Knobs"><span data-icon="dial"></span></button><button id="touchpad-keyboard" type="button" aria-label="Open phone keyboard" aria-pressed="false" title="Keyboard" hidden><span data-icon="keyboard"></span></button></div>
       <div class="mouse-buttons"><button id="mouse-left" type="button" disabled>Left click</button><button id="mouse-right" type="button" disabled>Right click</button><button id="mouse-drag" type="button" aria-pressed="false" disabled>Drag</button></div>
       <div class="touchpad-options"><button id="pointer-options-toggle" type="button" aria-expanded="false" aria-controls="pointer-options"><span data-icon="sliders"></span><span>Speed</span></button>
         <div id="pointer-options" class="pointer-options" hidden><label class="pointer-speed" for="pointer-speed">Pointer speed <output id="pointer-speed-value" for="pointer-speed">1.5×</output></label><input id="pointer-speed" type="range" min="0.5" max="3" step="0.25" value="1.5" aria-label="Pointer speed"><div class="pointer-speed-scale" aria-hidden="true"><span>Precise</span><span>Fast</span></div></div>
