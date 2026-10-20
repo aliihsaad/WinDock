@@ -8,11 +8,20 @@ struct HostError: Error, CustomStringConvertible {
 }
 
 enum Node {
-    /// Node 20+: an explicit WINDOCK_NODE wins; otherwise the newest of the
-    /// user's shell, nvm, Homebrew and the installer. A login shell without a
-    /// terminal does not load nvm, so its versions are scanned directly.
+    /// The runtime a packaged app carries beside its host, if any.
+    static var bundled: String? {
+        guard let host = HostRoot.bundled else { return nil }
+        let node = host.appendingPathComponent("node").path
+        return FileManager.default.isExecutableFile(atPath: node) ? node : nil
+    }
+
+    /// Node 20+: an explicit WINDOCK_NODE wins, then the bundled runtime;
+    /// otherwise the newest of the user's shell, nvm, Homebrew and the
+    /// installer. A login shell without a terminal does not load nvm, so its
+    /// versions are scanned directly.
     static func find(environment: [String: String] = ProcessInfo.processInfo.environment, home: String = NSHomeDirectory()) -> String? {
         if let override = environment["WINDOCK_NODE"], override.hasPrefix("/"), majorVersion(override) ?? 0 >= 20 { return override }
+        if let bundled, majorVersion(bundled) ?? 0 >= 20 { return bundled }
         var candidates = [String]()
         if let fromShell = loginShell("command -v node") { candidates.append(fromShell) }
         let nvm = "\(home)/.nvm/versions/node"
@@ -58,11 +67,20 @@ enum Node {
     }
 }
 
-/// Where server.js lives: recorded by the build, or set in the environment.
+/// Where server.js lives: set in the environment, carried inside a packaged
+/// app, or recorded by a development build.
 enum HostRoot {
+    /// A packaged app carries the host in Contents/Resources/host.
+    static var bundled: URL? {
+        guard let resources = Bundle.main.resourceURL else { return nil }
+        let host = resources.appendingPathComponent("host")
+        return FileManager.default.fileExists(atPath: host.appendingPathComponent("server.js").path) ? host : nil
+    }
+
     static func locate() throws -> URL {
         var candidates = [String]()
         if let override = ProcessInfo.processInfo.environment["WINDOCK_HOST_ROOT"] { candidates.append(override) }
+        if let bundled { candidates.append(bundled.path) }
         if let recorded = Bundle.main.url(forResource: "host-root", withExtension: nil),
            let text = try? String(contentsOf: recorded, encoding: .utf8) {
             candidates.append(text.trimmingCharacters(in: .whitespacesAndNewlines))
@@ -71,7 +89,7 @@ enum HostRoot {
             let url = URL(fileURLWithPath: candidate)
             if FileManager.default.fileExists(atPath: url.appendingPathComponent("server.js").path) { return url }
         }
-        throw HostError(message: "The WinDock host folder was not found. Build the app again from the WinDock repository (npm run build:macos-app).")
+        throw HostError(message: "The WinDock host folder was not found. Reinstall WinDock, or build the app again from the WinDock repository (npm run build:macos-app).")
     }
 }
 

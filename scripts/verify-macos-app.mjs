@@ -20,6 +20,13 @@ t.ok(plist.includes("<key>LSMinimumSystemVersion</key><string>13.0</string>"), "
 const pkg = JSON.parse(await read("package.json"));
 t.equal(pkg.scripts["build:macos-app"], "sh scripts/build-macos-app.sh", "build:macos-app builds the bundle");
 t.equal(pkg.scripts["install:macos-app"], "sh scripts/install-macos-app.sh", "install:macos-app copies it to ~/Applications");
+t.equal(pkg.scripts["package:macos"], "sh scripts/package-macos-app.sh", "package:macos makes a self-contained DMG");
+const pack = await read("scripts/package-macos-app.sh");
+t.ok(pack.includes("Contents/Resources/host") && pack.includes('cp "$NODE" "$HOST/node"') && pack.includes("windock-input"), "the package carries the host, the helper and the Node runtime");
+t.ok(pack.includes("hdiutil create") && pack.includes("SHA256SUMS-macos.txt"), "the package is a DMG with a checksum");
+t.ok(pack.includes('rm -f "$APP/Contents/Resources/host-root"'), "a packaged app no longer points at the repository");
+const hostSource = await read("native/macos-app/Host.swift");
+t.ok(hostSource.includes("static var bundled") && hostSource.includes('appendingPathComponent("host")'), "the app prefers its bundled host and runtime");
 const build = await read("scripts/build-macos-app.sh");
 t.ok(build.includes("swiftc") && build.includes("native/macos-app/*.swift"), "the build compiles the app sources");
 t.ok(build.includes("host-root"), "the bundle records where server.js lives");

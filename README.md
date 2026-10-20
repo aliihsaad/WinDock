@@ -153,9 +153,9 @@ feature works.
 WinDock can also host a dock from a Mac. The same Android app connects to it,
 with the app library and real icons, launching, bringing apps forward and
 quitting them, volume and mute, play/pause and track skipping in Spotify or
-Music, "now playing", sleep, lock and power actions, PNG screenshots and
-silent MP4 recordings, the touchpad, the phone keyboard and signatures.
-Brightness is the one control still waiting for a native command.
+Music, "now playing", brightness of the built-in display, sleep, lock and
+power actions, PNG screenshots and silent MP4 recordings, the touchpad, the
+phone keyboard and signatures. External monitors cannot be dimmed yet.
 
 You need **Node.js 20.11+** (for example `brew install node`) and the Xcode
 Command Line Tools (`xcode-select --install`) for `swiftc`, which builds the
@@ -202,8 +202,22 @@ first. The app starts `server.js` from this repository with the newest Node 20+
 it finds (your shell's, nvm, Homebrew or the installer), so keep the
 repository where it was when you built the app, or build again after moving
 it. macOS asks the permissions above in WinDock's name instead of the
-terminal's. The bundle is signed ad hoc, not notarized: there is no packaged
-installer yet.
+terminal's. The bundle is signed ad hoc, not notarized.
+
+### Packaged app
+
+`npm run package:macos` builds a self-contained `WinDock.app` that carries
+the host, the input helper and the Node runtime of the Mac that builds it,
+and wraps it in `artifacts/WinDock-macos-<version>.dmg` with a checksum in
+`SHA256SUMS-macos.txt`. A Mac that installs it needs neither Node nor this
+repository: open the DMG, drag WinDock to Applications, and open it with a
+right-click → Open the first time, because the bundle is not notarized.
+
+To ship a notarized release, sign the bundle with a Developer ID certificate
+before packaging (`codesign --deep --options runtime --sign "Developer ID
+Application: …"`), then `xcrun notarytool submit <dmg> --wait` with an Apple
+Developer account and `xcrun stapler staple <dmg>`. That account is the only
+thing this repository cannot provide.
 
 ## What you can do
 

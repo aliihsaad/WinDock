@@ -7,6 +7,7 @@
 //   touchpad                 stream pointer/keyboard input from stdin, emit ready/focus events
 //   signature <dir>          render stdin strokes to a transparent PNG in <dir>
 //   signature-insert <dir>   same, then copy it to the clipboard and paste with Command+V
+//   brightness [0-100]       read, or set and read back, the main display's brightness
 //   parse                    validate protocol lines from stdin, one JSON verdict per line (no input)
 //   check                    print which permissions are granted, as JSON
 //
@@ -68,9 +69,13 @@ do {
     case (1, "touchpad"): try runTouchpad()
     case (2, "signature"): try saveSignature(dir: arguments[1], insert: false)
     case (2, "signature-insert"): try saveSignature(dir: arguments[1], insert: true)
+    case (1, "brightness"): emit(["type": "brightness", "value": try Brightness.get()])
+    case (2, "brightness"):
+        guard let percent = Int(arguments[1]), (0...100).contains(percent) else { usage("brightness takes a whole number from 0 to 100") }
+        emit(["type": "brightness", "value": try Brightness.set(percent)])
     case (1, "parse"): parseLines()
     case (1, "check"): check()
-    default: usage("usage: windock-input <touchpad | signature DIR | signature-insert DIR | parse | check>")
+    default: usage("usage: windock-input <touchpad | signature DIR | signature-insert DIR | brightness [0-100] | parse | check>")
     }
     exit(0)
 } catch {

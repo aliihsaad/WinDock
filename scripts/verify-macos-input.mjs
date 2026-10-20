@@ -122,6 +122,9 @@ if (process.platform === "darwin" && existsSync(INPUT_HELPER)) {
   const bad = spawnSync(INPUT_HELPER, ["signature", out], { input: JSON.stringify({ ...signature, color: "red" }), encoding: "utf8" });
   t.equal(bad.status, 2, "native validation refuses unknown ink");
   t.equal((await readdir(out)).length, 1, "a refused signature creates no file");
+  const level = spawnSync(INPUT_HELPER, ["brightness"], { encoding: "utf8" });
+  t.ok(level.status === 0 ? /^\{"type":"brightness","value":\d{1,3}\}$/.test(level.stdout.trim()) : level.status === 2, `brightness reads a level or explains why not ${level.stderr.trim()}`);
+  t.equal(spawnSync(INPUT_HELPER, ["brightness", "150"], { encoding: "utf8" }).status, 1, "an out-of-range level is a usage error, nothing is changed");
   const check = JSON.parse(spawnSync(INPUT_HELPER, ["check"], { encoding: "utf8" }).stdout || "{}");
   t.ok(["accessibility", "screenRecording", "frontmost"].every((key) => typeof check[key] === "boolean"), "check reports every permission");
 

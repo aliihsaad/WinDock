@@ -18,7 +18,7 @@ import { homedir, tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { validateControl } from "./contract.js";
 import { createMacCapture } from "./macos-capture.js";
-import { createMacInput } from "./macos-input.js";
+import { createMacInput, INPUT_HELPER } from "./macos-input.js";
 
 export const APP_DIRS = Object.freeze([
   "/Applications",
@@ -101,7 +101,7 @@ const media = (verb) => () => jxa(MEDIA_JXA, verb);
 
 /**
  * Control verbs mapped to concrete macOS argv. Brightness has no stock
- * command line on macOS and waits for the native helper.
+ * command line on macOS; it goes through the Swift helper (see `control`).
  */
 export const MAC_CONTROL = Object.freeze({
   "volume-up": () => jxa(VOLUME_JXA, "volume-up"),
@@ -260,10 +260,13 @@ export function createMacProvider({
   appDirs = APP_DIRS,
   tmp = tmpdir(),
   now = Date.now,
+  helperPath = INPUT_HELPER,
   capture,
   input,
 } = {}) {
   if (typeof exec !== "function") throw new Error("macos provider requires exec");
+  // The display firmware can reject overlapping requests, like DDC/CI on the other hosts.
+  let brightnessQueue = Promise.resolve();
 
   let inventory = null;
   let inventoryAt = 0;
@@ -342,7 +345,17 @@ export function createMacProvider({
       const checked = validateControl(verb, value);
       if (!checked.ok) throw new Error(checked.error);
       if (checked.verb === "brightness-set") {
-        throw failure("Brightness control is not available on macOS yet.", 501);
+        const pending = brightnessQueue.then(() => exec(helperPath, ["brightness", String(checked.value)]));
+        brightnessQueue = pending.catch(() => {});
+        try {
+          await pending;
+        } catch (cause) {
+          const hint = cause?.code === "ENOENT"
+            ? "WinDock's input helper is not built on this Mac. Build it with: npm run build:macos"
+            : "Could not adjust display brightness. Built-in displays are supported; external monitors are not yet.";
+          throw Object.assign(new Error(hint, { cause }), { status: 503 });
+        }
+        return { ok: true, verb: checked.verb };
       }
       const build = MAC_CONTROL[checked.verb];
       if (!build) throw new Error(`unmapped control verb: ${checked.verb}`);
