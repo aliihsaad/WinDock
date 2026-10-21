@@ -20,6 +20,9 @@
     <string name="find_usb_pc">Find USB PC</string>
     <string name="usb_searching">Looking for your PC over USB…</string>
     <string name="usb_not_found">No USB PC found. Check the cable, USB tethering, and WinDock on Windows. For wireless, tap Connect by Wi-Fi above. You can also enter the PC’s USB IPv4 address below.</string>
+    <string name="recent_pcs">Recent PCs · Tap to connect, hold to forget</string>
+    <string name="forget_pc">Forget %1$s?</string>
+    <string name="forget">Forget</string>
     <string name="phone_options">This phone</string>
     <string name="phone_options_intro">Display settings for this phone only. Your PC display is unchanged.</string>
     <string name="dim_after">Dim after inactivity</string>
