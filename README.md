@@ -271,7 +271,7 @@ installer preview are available to download.
 
 | Command | Purpose |
 | --- | --- |
-| `npm test` | Run the 21 platform-independent verification scripts |
+| `npm test` | Run the 22 platform-independent verification scripts |
 | `npm run build:windows` | Package the Windows helper, tray, Node host, and web UI |
 | `npm run test:windows` | Run native Windows smoke checks |
 | `npm run build:linux` | Build the Linux input helper (`windock-input`, needs Rust) |
@@ -298,6 +298,12 @@ version or Linux desktop, phone model, reproduction steps, and expected behavior
 keep the platform-provider boundary intact and run `npm test`; native or Android
 changes also need the relevant platform checks. Never include pairing PINs,
 session cookies, or your personal dock configuration in a report or commit.
+
+Every pull request runs the [CI workflow](https://github.com/aliihsaad/WinDock/actions/workflows/ci.yml):
+`npm test` on Linux, Windows and macOS, the Linux helper's Rust tests, the
+Windows native input and update checks, and a build of any native macOS code.
+Its **CI passed** check must succeed before a pull request can merge. Pull
+requests from a fork run once a maintainer approves them.
 
 ## License
 
