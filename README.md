@@ -302,8 +302,8 @@ session cookies, or your personal dock configuration in a report or commit.
 Every pull request runs the [CI workflow](https://github.com/aliihsaad/WinDock/actions/workflows/ci.yml):
 `npm test` on Linux, Windows and macOS, the Linux helper's Rust tests, the
 Windows native input and update checks, and a build of any native macOS code.
-Its **CI passed** check must succeed before a pull request can merge. Pull
-requests from a fork run once a maintainer approves them.
+Its **CI passed** check must succeed before a pull request can merge. A
+first-time contributor's pull request runs once a maintainer approves it.
 
 ## License
 
