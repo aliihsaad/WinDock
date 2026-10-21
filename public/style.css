@@ -332,6 +332,22 @@ body.is-immersive .empty .button .icon { width: 36px; height: 36px; }
   .swatch { height: 34px; }
   .settings__utilities { margin-top: 10px; }
 }
+/* Tablet densities need a tall screen; a phone keeps 4, 6 and 8 and ignores a stored 12 or 16. */
+@media (max-height: 639px) { .layout-choices button[data-per-page="12"], .layout-choices button[data-per-page="16"] { display: none; } }
+/* A tablet or a desktop window: icons grow up to their 256px source, and the drawer and sheets use the room. */
+@media (min-width: 900px) and (min-height: 640px) {
+  body.is-immersive .tile, body.is-immersive .drag-ghost {
+    --display-icon: min(calc(var(--icon-size) * 1.6), 256px, calc((100dvh - 64px) * var(--icon-scale)), calc((100vw - 96px) / var(--columns) - 36px));
+  }
+  body.is-immersive .dock-page { padding-left: max(14px, calc((100vw - 1400px) / 2)); padding-right: max(14px, calc((100vw - 1400px) / 2)); row-gap: 14px; }
+  .tile { max-height: 220px; }
+  .tile__label { font-size: 13px; }
+  body.is-immersive.show-labels .tile__label { font-size: 13px; }
+  .glass-drawer { width: min(80vw, 820px); }
+  .drawer-actions button { min-height: 100px; font-size: 12px; }
+  .drawer-connection { font-size: 11px; }
+  .sheet { width: min(88vw, 1000px); }
+}
 @media (orientation: portrait) { .drawer-trigger, .edit-done, .glass-drawer[open] { visibility: hidden; } }
 @media (prefers-reduced-motion: reduce) { .glass-drawer[open] { animation: none; } }
 

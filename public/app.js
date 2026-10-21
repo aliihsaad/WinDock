@@ -1,7 +1,7 @@
 import { renderNowPlaying, renderControlPicker, renderAppIcon, renderControls, escapeHtml } from "./dock.js";
 import { icon, controlIcon } from "./icons.js";
 import { addAppTile, addControlTile, removeTile, moveTile, toWireTiles, availableControls, tileKey } from "./tiles.js";
-import { normalizeLayout, renderPages, pageCount, moveToTile } from "./launcher.js";
+import { normalizeLayout, fitLayout, ICON_SCALE, renderPages, pageCount, moveToTile } from "./launcher.js";
 import { createInputPad } from "./input-pad.js";
 import { createNowPlayingPoller } from "./now-playing.js";
 
@@ -24,6 +24,8 @@ const nowPlaying = createNowPlayingPoller({
 });
 let layout;
 try { layout = normalizeLayout(JSON.parse(localStorage.getItem("windock-layout"))); } catch { layout = normalizeLayout(); }
+// The grid actually drawn: the preference, unless this screen is too short for it.
+let grid = fitLayout(layout, { height: window.innerHeight });
 document.querySelectorAll("[data-icon]").forEach((el) => { el.innerHTML = icon(el.dataset.icon); });
 if (typeof window.WinDockAndroid?.showPhoneSettings === "function") {
   $("phone-options-row").hidden = false;
@@ -132,11 +134,14 @@ function setConn(on) {
   paintCapture();
 }
 function syncLayout() {
+  const fitted = fitLayout(layout, { height: window.innerHeight });
+  const regrid = fitted.perPage !== grid.perPage;
+  grid = fitted;
   const root = document.documentElement.style;
-  root.setProperty("--columns", layout.columns);
-  root.setProperty("--rows", layout.rows);
-  root.setProperty("--icon-size", (layout.immersive ? layout.iconSize : 72) + "px");
-  root.setProperty("--icon-scale", { 4: .44, 6: .38, 8: .32 }[layout.perPage]);
+  root.setProperty("--columns", grid.columns);
+  root.setProperty("--rows", grid.rows);
+  root.setProperty("--icon-size", (layout.immersive ? grid.iconSize : 72) + "px");
+  root.setProperty("--icon-scale", ICON_SCALE[grid.perPage]);
   document.documentElement.dataset.background = layout.background;
   document.documentElement.dataset.theme = layout.theme;
   document.body.classList.toggle("is-immersive", layout.immersive);
@@ -147,9 +152,10 @@ function syncLayout() {
   $("show-labels").checked = layout.showLabels;
   $("show-labels").disabled = !layout.immersive;
   $("glass-theme").value = layout.theme;
-  $("layout-summary").textContent = layout.perPage + " icons · " + layout.columns + " × 2";
+  $("layout-summary").textContent = grid.perPage + " icons · " + grid.columns + " × " + grid.rows + (grid.perPage === layout.perPage ? "" : " · " + layout.perPage + " on a larger screen");
   document.querySelectorAll("[data-per-page]").forEach((button) => button.setAttribute("aria-pressed", String(Number(button.dataset.perPage) === layout.perPage)));
   document.querySelectorAll("[data-background]").forEach((button) => { if (button.tagName === "BUTTON") button.setAttribute("aria-pressed", String(button.dataset.background === layout.background)); });
+  return regrid;
 }
 function saveLayout(changes) {
   layout = normalizeLayout({ ...layout, ...changes });
@@ -164,9 +170,9 @@ function showPageHint() {
 function paint() {
   const running = new Set(state.running.map((app) => app.id));
   const view = { ...state, tiles: state.tiles.map((tile) => tile.kind === "app" ? { ...tile, running: running.has(tile.id) } : tile) };
-  const pages = pageCount(state.tiles, layout);
+  const pages = pageCount(state.tiles, grid);
   currentPage = Math.min(currentPage, pages - 1);
-  $("dock").innerHTML = renderPages(view, layout, editing);
+  $("dock").innerHTML = renderPages(view, grid, editing);
   $("dock").classList.toggle("is-editing", editing);
   $("dock").scrollTo({ left: currentPage * $("dock").clientWidth, behavior: "instant" });
   $("host-name").textContent = state.hostName || state.platformName || "Your PC";
@@ -182,7 +188,7 @@ function paint() {
   $("page-dots").innerHTML = Array.from({ length: pages }, (_, i) => '<button class="page-dot" type="button" data-page="' + i + '" aria-label="Go to page ' + (i + 1) + '"' + (i === currentPage ? ' aria-current="page"' : "") + '></button>').join("");
 }
 function pageTo(page, smooth = true) {
-  currentPage = Math.max(0, Math.min(pageCount(state.tiles, layout) - 1, page));
+  currentPage = Math.max(0, Math.min(pageCount(state.tiles, grid) - 1, page));
   $("dock").scrollTo({ left: currentPage * $("dock").clientWidth, behavior: smooth ? "smooth" : "instant" });
   if (smooth) showPageHint();
 }
@@ -400,9 +406,9 @@ document.addEventListener("pointermove", (event) => {
   else if (!edgeTimer) edgeTimer = setTimeout(() => {
     edgeTimer = null;
     if (!gesture?.dragging) return;
-    const page = Math.max(0, Math.min(pageCount(state.tiles, layout) - 1, currentPage + direction));
+    const page = Math.max(0, Math.min(pageCount(state.tiles, grid) - 1, currentPage + direction));
     if (page === currentPage) return;
-    const capacity = layout.columns * layout.rows;
+    const capacity = grid.columns * grid.rows;
     const targetIndex = Math.min(state.tiles.length - 1, page * capacity + (direction < 0 ? capacity - 1 : 0));
     state = { ...state, tiles: moveToTile(state.tiles, gesture.key, tileKey(state.tiles[targetIndex])) };
     currentPage = page; paint();
@@ -442,7 +448,11 @@ $("page-dots").addEventListener("click", (event) => {
   const button = event.target.closest("[data-page]");
   if (button) pageTo(Number(button.dataset.page));
 });
-window.addEventListener("resize", () => { syncLayout(); requestAnimationFrame(() => pageTo(currentPage, false)); });
+window.addEventListener("resize", () => {
+  // Rotating or resizing across the tablet threshold changes the grid, so the pages are rebuilt.
+  if (syncLayout()) { currentPage = 0; paint(); }
+  requestAnimationFrame(() => pageTo(currentPage, false));
+});
 document.addEventListener("click", (event) => {
   // A gesture can open a dialog before the browser emits its follow-up click.
   // Suppress that click globally, even when it is retargeted to the new dialog.
