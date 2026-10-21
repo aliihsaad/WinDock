@@ -11,6 +11,7 @@ import { platform } from "node:os";
 import { contractViolations } from "./contract.js";
 import { createWindowsProvider } from "./windows.js";
 import { createLinuxProvider } from "./linux.js";
+import { createMacProvider } from "./macos.js";
 
 /** Default ceiling on child output; inventory on a large Start Menu is chatty. */
 export const EXEC_MAX_BUFFER = 8 * 1024 * 1024;
@@ -46,6 +47,7 @@ export function createExec({ timeout = EXEC_TIMEOUT_MS, maxBuffer = EXEC_MAX_BUF
 export const PROVIDERS = Object.freeze({
   win32: createWindowsProvider,
   linux: createLinuxProvider,
+  darwin: createMacProvider,
 });
 
 /**
