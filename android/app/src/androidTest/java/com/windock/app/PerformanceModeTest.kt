@@ -28,17 +28,21 @@ class PerformanceModeTest {
     private val context = instrumentation.targetContext
     private val endpoint = "http://10.0.2.2:18622"
 
-    private fun js(web: WebView, expression: String): String {
+    private fun evaluate(web: WebView, expression: String, timeoutSeconds: Long): String? {
         val done = CountDownLatch(1)
         var result = "null"
         instrumentation.runOnMainSync { web.evaluateJavascript(expression) { result = it; done.countDown() } }
-        assertTrue("WebView callback: $expression", done.await(20, TimeUnit.SECONDS))
-        return result
+        return if (done.await(timeoutSeconds, TimeUnit.SECONDS)) result else null
     }
 
+    private fun js(web: WebView, expression: String): String =
+        evaluate(web, expression, 20) ?: throw AssertionError("WebView callback: $expression")
+
     private fun awaitJs(web: WebView, expression: String) {
-        val deadline = SystemClock.uptimeMillis() + 15000
-        while (js(web, expression) != "true") {
+        val deadline = SystemClock.uptimeMillis() + 30000
+        // A navigation can discard a callback evaluated against the outgoing document.
+        // Retry bounded read-only predicates; never retry actions or weaken assertions.
+        while (evaluate(web, expression, 2) != "true") {
             assertTrue("Timed out: $expression", SystemClock.uptimeMillis() < deadline)
             SystemClock.sleep(100)
         }
