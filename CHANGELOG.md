@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Add **Appearance → Performance mode** with Auto, On, and Off. Reduce blur,
+  shadows, animation, and touchpad effects; use instant dock paging while enabled.
+  Auto follows the updated Android companion's low-RAM hint, with a remembered
+  manual override. Off restores the existing background and glass preferences.
+  Thanks to [waly-git](https://github.com/waly-git) for the detailed
+  [Galaxy S4 report and prototype findings (#9)](https://github.com/aliihsaad/WinDock/issues/9).
+
 - Add the first native iPhone companion source: remembered PC address, PIN pairing
   through the shared landscape dock, and reconnect/change-PC controls.
 - Add a GitHub macOS workflow for simulator tests, screenshots and unsigned iOS
