@@ -102,4 +102,9 @@ const np = renderNowPlaying({ title: XSS, artist: "A", playing: true });
 t.ok(!np.includes("<img"), "now playing escapes a hostile title");
 t.ok(np.includes("&lt;img"), "the hostile title is escaped rather than dropped");
 
+// Only the Windows host has a tray; Linux users must not be sent looking for one.
+t.ok(/<span id="capture-tray-tip" hidden>[^<]*tray[^<]*<\/span>/.test(html), "the tray tip is hidden until a host has a tray");
+t.ok(/\$\("capture-tray-tip"\)\.hidden = !tray/.test(appJs) && /const tray = state\.platform === "windows"/.test(appJs),
+  "the tray tip and tray instructions follow the host platform");
+
 t.done("pwa verification passed");

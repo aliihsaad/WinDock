@@ -1,23 +1,46 @@
 import { spawn as spawnProcess } from "node:child_process";
 import { validateInput, validateSignature } from "../input.js";
 
-const unavailable = () => Object.assign(new Error("Windows could not save the signature. Check the Pictures folder and try again."), { status: 503 });
-
-export function createWindowsInput({ helperPath, spawn = spawnProcess, startupMs = 5000, stopMs = 1800 } = {}) {
+/**
+ * Bridge to a native input helper speaking the newline-delimited JSON touchpad
+ * protocol: `touchpad` streams validated input and reports focus metadata, and
+ * the signature verbs rasterize validated strokes. Windows and Linux helpers
+ * implement the same protocol, so only the argv and messages differ.
+ */
+export function createHelperInput({
+  helperPath,
+  spawn = spawnProcess,
+  startupMs = 5000,
+  stopMs = 1800,
+  signatureArgs = (insert) => [insert ? "signature-insert" : "signature"],
+  unavailableMessage,
+  diagnostic = null,
+  missingHint = "",
+  startupError = "Your PC could not start the touchpad. Update WinDock there and try again.",
+}) {
+  const unavailable = () => Object.assign(new Error(unavailableMessage), { status: 503 });
   const workers = new Set();
   let disposed = false, saving = false;
-  function start(verb) {
+  function start(args) {
     if (disposed) throw new Error("Input service closed");
-    const child = spawn(helperPath, [verb], { windowsHide: true, shell: false, stdio: ["pipe", "pipe", "pipe"] });
+    const child = spawn(helperPath, args, { windowsHide: true, shell: false, stdio: ["pipe", "pipe", "pipe"] });
     workers.add(child);
-    child.stderr.resume(); // Native diagnostics never contain signature strokes in responses.
+    if (diagnostic) {
+      // Helpers never print typed text or signature strokes, only startup and device errors.
+      let report = "";
+      child.stderr.on("data", (data) => { if (report.length < 1024) report += data.toString(); });
+      child.once("close", () => { const text = report.trim().slice(0, 1024); if (text) diagnostic(text); });
+      child.once("error", (error) => diagnostic(error?.code === "ENOENT" ? `helper not found at ${helperPath}. ${missingHint}`.trim() : String(error?.message || error)));
+    } else child.stderr.resume(); // Native diagnostics never contain signature strokes in responses.
     child.stdin.on("error", () => {});
     child.once("close", () => workers.delete(child));
     return child;
   }
   return {
+    /** What the phone shows when the helper exits before `ready`; the cause differs per platform. */
+    startupError,
     open(onFailure = () => {}, onEvent = () => {}) {
-      const child = start("touchpad");
+      const child = start(["touchpad"]);
       let closed = false, ended = false, buffer = "", closing;
       let resolveReady, rejectReady, resolveExit;
       const ready = new Promise((resolve, reject) => { resolveReady = resolve; rejectReady = reject; });
@@ -63,8 +86,11 @@ export function createWindowsInput({ helperPath, spawn = spawnProcess, startupMs
       if (saving) throw Object.assign(new Error("A signature is already being saved."), { status: 409 });
       saving = true;
       try {
+        // Fixed argv spawns synchronously; a folder lookup is awaited first.
+        let args = signatureArgs(insert);
+        if (args instanceof Promise) args = await args;
         return await new Promise((resolve, reject) => {
-          const child = start(insert ? "signature-insert" : "signature");
+          const child = start(args);
           let output = "", failed = false;
           const timer = setTimeout(() => { failed = true; child.kill(); reject(unavailable()); }, 10000);
           child.on("error", () => { clearTimeout(timer); failed = true; reject(unavailable()); });
@@ -84,4 +110,11 @@ export function createWindowsInput({ helperPath, spawn = spawnProcess, startupMs
     },
     dispose() { disposed = true; for (const worker of workers) worker.stdin.end(); },
   };
+}
+
+export function createWindowsInput({ helperPath, spawn = spawnProcess, startupMs = 5000, stopMs = 1800 } = {}) {
+  return createHelperInput({
+    helperPath, spawn, startupMs, stopMs,
+    unavailableMessage: "Windows could not save the signature. Check the Pictures folder and try again.",
+  });
 }

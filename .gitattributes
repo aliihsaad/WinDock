@@ -1,2 +1,11 @@
+# Check out text with LF everywhere, so a Windows checkout cannot ship CRLF
+# into Linux packages. Windows-only scripts keep CRLF.
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+*.iss text eol=crlf
 android/gradlew text eol=lf
 android/gradlew.bat text eol=crlf
+*.sh text eol=lf
+native/linux/packaging/* text eol=lf

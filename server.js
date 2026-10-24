@@ -16,7 +16,7 @@ import { createConfigStore } from "./src/config.js";
 import { createSyncHub } from "./src/sync.js";
 import { createInputHub } from "./src/input-hub.js";
 import { validateSignature } from "./src/input.js";
-import { createIconCache, FALLBACK_ICON } from "./src/icons.js";
+import { createIconCache, iconType, FALLBACK_ICON } from "./src/icons.js";
 import { startDiscovery, primaryAddress, DISCOVERY_PORT } from "./src/discovery.js";
 import {
   newPin,
@@ -240,13 +240,16 @@ export async function createApp({
       if (path === "/api/apps/icon" && req.method === "GET") {
         const app = (await installedApps()).find((item) => item.id === url.searchParams.get("id"));
         if (!app) return sendJson(res, 404, { error: "unknown app" });
-        const png = await appIcon(app);
-        const body = png || FALLBACK_ICON;
+        const icon = await appIcon(app);
+        const type = iconType(icon);
+        const body = type ? icon : FALLBACK_ICON;
         res.writeHead(200, {
-          "content-type": png ? "image/png" : "image/svg+xml",
+          "content-type": type || "image/svg+xml",
           "content-length": body.length,
-          "cache-control": png ? "private, max-age=3600" : "private, no-store",
+          "cache-control": type ? "private, max-age=3600" : "private, no-store",
           "x-content-type-options": "nosniff",
+          // Theme SVGs are third-party files; opened directly they must not run script.
+          "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox",
         });
         return res.end(body);
       }
@@ -279,7 +282,9 @@ export async function createApp({
           return sendJson(res, 400, { error: "pid must be a positive integer" });
         }
         const running = await provider.listRunningApps();
-        const match = running.find((r) => r.pid === pid);
+        // Browser web apps share the browser's pid, so the app id picks the window.
+        const id = typeof body.id === "string" ? body.id : null;
+        const match = running.find((r) => r.pid === pid && (id === null || r.id === id));
         if (!match) return sendJson(res, 404, { error: "process not running" });
         if (path.endsWith("focus")) await provider.focusApp(match);
         else await provider.closeApp(match);
@@ -309,7 +314,7 @@ export async function createApp({
       if (Object.hasOwn(captureActions, path) && req.method === "POST") {
         const body = await readJsonBody(req);
         if (Object.keys(body).length) return sendJson(res, 400, { error: "capture actions take no options" });
-        if (!provider.capture) return sendJson(res, 501, { error: "Screen capture is available on Windows." });
+        if (!provider.capture) return sendJson(res, 501, { error: "Screen capture needs an updated WinDock on your PC." });
         return sendJson(res, 200, await provider.capture[captureActions[path]]());
       }
 
@@ -322,7 +327,7 @@ export async function createApp({
       }
       if (["/api/signature", "/api/signature/insert"].includes(path) && req.method === "POST") {
         const signature = validateSignature(await readJsonBody(req));
-        if (!provider.input) return sendJson(res, 501, { error: "Saving signatures needs the updated Windows host." });
+        if (!provider.input) return sendJson(res, 501, { error: "Saving signatures needs an updated WinDock on your PC." });
         return sendJson(res, 200, await provider.input.saveSignature(signature, path.endsWith("/insert")));
       }
 

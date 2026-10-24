@@ -1,0 +1,45 @@
+name: Build and test Linux installers
+
+on:
+  workflow_dispatch:
+  workflow_call:
+  pull_request:
+    paths:
+      - 'native/linux/**'
+      - 'src/**'
+      - 'public/**'
+      - 'server.js'
+      - 'package*.json'
+      - 'scripts/**'
+      - 'test/**'
+      - '.dockerignore'
+      - '.github/workflows/build-linux.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  packages:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm test
+      - name: Build bundled runtime and native helper; test Rust and packaging
+        run: docker build --platform linux/amd64 -f native/linux/packaging/Dockerfile --target packages --output type=local,dest=artifacts/linux .
+      - name: Test Debian install, normal-user launch, upgrade and uninstall
+        run: docker run --rm -v "$PWD/artifacts/linux:/packages:ro" -v "$PWD/scripts:/tests:ro" debian:bookworm-slim bash /tests/test-linux-package.sh deb
+      - name: Test Ubuntu install, normal-user launch, upgrade and uninstall
+        run: docker run --rm -v "$PWD/artifacts/linux:/packages:ro" -v "$PWD/scripts:/tests:ro" ubuntu:24.04 bash /tests/test-linux-package.sh deb
+      - name: Test Arch install, normal-user launch, upgrade and uninstall
+        run: docker run --rm -v "$PWD/artifacts/linux:/packages:ro" -v "$PWD/scripts:/tests:ro" archlinux:base bash /tests/test-linux-package.sh arch
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-installers
+          path: artifacts/linux/*
+          if-no-files-found: error

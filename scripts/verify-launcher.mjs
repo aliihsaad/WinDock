@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { createChecker } from "./lib/assert.mjs";
 import { normalizeLayout, renderPages, pageCount, moveToTile } from "../public/launcher.js";
 import { tileKey } from "../public/tiles.js";
-import { createIconCache } from "../src/icons.js";
+import { createIconCache, FALLBACK_ICON } from "../src/icons.js";
 import { createApp } from "../server.js";
 import { createConfigStore } from "../src/config.js";
 import { createWindowsProvider } from "../src/platform/windows.js";
@@ -99,5 +99,30 @@ try {
   await fallback.arrayBuffer();
 } finally {
   app.server.closeAllConnections(); await app.hub.close(); await new Promise((r) => app.server.close(r)); await rm(dir, { recursive: true, force: true });
+}
+
+// Linux themes ship scalable SVG icons; they are served as images that cannot run script.
+const svg = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>');
+const svgApp = await createApp({
+  provider: {
+    id: "test", displayName: "Test",
+    listInstalledApps: async () => [{ id: "svg-app", name: "SVG", target: "svg-app", icon: "svg-app" }, { id: "html-app", name: "HTML", target: "html-app", icon: "html-app" }],
+    listRunningApps: async () => [],
+    appIcon: async (item) => (item.id === "svg-app" ? svg : Buffer.from("<html><script>alert(1)</script>")),
+  },
+  configStore: {}, trustLoopback: true, pin: "6433",
+});
+await new Promise((r) => svgApp.server.listen(0, "127.0.0.1", r));
+try {
+  const svgBase = `http://127.0.0.1:${svgApp.server.address().port}`;
+  const response = await fetch(svgBase + "/api/apps/icon?id=svg-app");
+  t.equal(response.headers.get("content-type"), "image/svg+xml", "theme SVG icons keep their type");
+  t.ok(response.headers.get("content-security-policy").includes("sandbox"), "a theme SVG opened directly cannot run script");
+  t.ok(Buffer.from(await response.arrayBuffer()).equals(svg), "SVG bytes are served unchanged");
+  const html = await fetch(svgBase + "/api/apps/icon?id=html-app");
+  t.ok(Buffer.from(await html.arrayBuffer()).equals(FALLBACK_ICON), "bytes that are neither PNG nor SVG get the placeholder");
+  t.equal(html.headers.get("cache-control"), "private, no-store", "a rejected icon is retried later");
+} finally {
+  svgApp.server.closeAllConnections(); await svgApp.hub.close(); await new Promise((r) => svgApp.server.close(r));
 }
 t.done("launcher verification passed");

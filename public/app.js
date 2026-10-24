@@ -64,7 +64,10 @@ function paintCapture() {
   $("capture-record-icon").innerHTML = icon(active ? "stop" : "record");
   $("capture-record-label").textContent = active ? (waiting ? (captureState.phase === "starting" ? "Starting…" : "Saving recording…") : "Stop recording") : "Start recording";
   $("capture-record-detail").textContent = active ? captureTime() + " · Video only" : "MP4 · Video only";
-  $("capture-status").textContent = !online ? "PC disconnected. Any recording continues on the PC. Reconnect or stop from its tray menu." : captureState.error || (!captureState.available ? "Screen capture is available with the Windows host." : active ? "Recording your main monitor. Stop to save the video." : "Screenshots → Pictures / WinDock. Recordings → Videos / WinDock.");
+  // Only the Windows host has a tray to stop a recording from.
+  const tray = state.platform === "windows";
+  $("capture-tray-tip").hidden = !tray;
+  $("capture-status").textContent = !online ? "PC disconnected. Any recording continues on the PC. " + (tray ? "Reconnect or stop from its tray menu." : "Reconnect to stop it, or it stops after 60 minutes.") : captureState.error || (!captureState.available ? "Screen capture needs an updated WinDock on your PC." : active ? "Recording your main monitor. Stop to save the video." : "Screenshots → Pictures / WinDock. Recordings → Videos / WinDock.");
   const last = captureState.lastCapture;
   $("capture-file").hidden = !last;
   $("capture-file").textContent = last ? "Last saved: " + last.path : "";
@@ -260,7 +263,7 @@ async function activate(button) {
     } else if (action === "launch") {
       const running = state.running.find((item) => item.id === key);
       const title = state.tiles.find((item) => item.id === key)?.label || "App";
-      await api(running ? "/api/apps/focus" : "/api/apps/launch", { method: "POST", body: JSON.stringify(running ? { pid: running.pid } : { id: key }) });
+      await api(running ? "/api/apps/focus" : "/api/apps/launch", { method: "POST", body: JSON.stringify(running ? { pid: running.pid, id: running.id } : { id: key }) });
       notify((running ? "Brought forward: " : "Opened: ") + title);
     }
   } catch (error) { report(error); }
@@ -282,7 +285,7 @@ function drawApps() {
   const matches = installedApps.filter((app) => app.name.toLowerCase().includes(term));
   const pinned = new Set(state.tiles.filter((tile) => tile.kind === "app").map((tile) => tile.id));
   $("picker-status").textContent = matches.length + " apps" + (term ? " found" : " on your PC") + " · " + pinned.size + " pinned";
-  $("picker-list").innerHTML = matches.length ? matches.map((app) => '<li><button type="button" data-id="' + escapeHtml(app.id) + '"' + (pinned.has(app.id) ? " disabled" : "") + ' aria-label="' + escapeHtml((pinned.has(app.id) ? "Pinned: " : "Add ") + app.name) + '">' + renderAppIcon(app, true) + '<span class="picker__name">' + escapeHtml(app.name) + '<small>' + (pinned.has(app.id) ? "On your dock" : "Windows app") + '</small></span><span class="picker__add">' + icon(pinned.has(app.id) ? "check" : "plus") + "</span></button></li>").join("") : '<li class="picker__empty">No apps found. Try a different name.</li>';
+  $("picker-list").innerHTML = matches.length ? matches.map((app) => '<li><button type="button" data-id="' + escapeHtml(app.id) + '"' + (pinned.has(app.id) ? " disabled" : "") + ' aria-label="' + escapeHtml((pinned.has(app.id) ? "Pinned: " : "Add ") + app.name) + '">' + renderAppIcon(app, true) + '<span class="picker__name">' + escapeHtml(app.name) + '<small>' + (pinned.has(app.id) ? "On your dock" : escapeHtml((state.platformName || "Desktop") + " app")) + '</small></span><span class="picker__add">' + icon(pinned.has(app.id) ? "check" : "plus") + "</span></button></li>").join("") : '<li class="picker__empty">No apps found. Try a different name.</li>';
 }
 function drawControls() {
   const groups = availableControls(state.verbs, state.tiles);

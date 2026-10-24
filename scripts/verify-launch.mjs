@@ -86,10 +86,29 @@ await win.launchApp({ target: "C:\\Apps\\browser.exe", args: shortcutArgs });
 t.deepEqual(rec.calls[0].args, ["launch", "C:\\Apps\\browser.exe", shortcutArgs], "shortcut quoting and ampersands reach the helper as one opaque argument string");
 
 const lrec = recorder();
-const lin = createLinuxProvider({ exec: lrec.exec });
-await lin.launchApp({ target: "/usr/bin/firefox", argv: ["/usr/bin/firefox", "--new-window"] });
-t.equal(lrec.calls[0].file, "/usr/bin/firefox", "linux launch execs the binary directly");
-t.deepEqual(lrec.calls[0].args, ["--new-window"], "linux launch passes remaining argv");
+const launches = [];
+let gtkLaunchMissing = false;
+const lin = createLinuxProvider({
+  exec: lrec.exec,
+  launch: async (file, args, options = {}) => {
+    launches.push({ file, args, wait: options.wait === true });
+    if (file === "gtk-launch" && gtkLaunchMissing) throw Object.assign(new Error("spawn gtk-launch ENOENT"), { code: "ENOENT" });
+  },
+});
+const firefox = { target: "/usr/bin/firefox", argv: ["/usr/bin/firefox", "--new-window"], desktopId: "org.mozilla.Firefox" };
+await lin.launchApp(firefox);
+t.deepEqual(launches[0], { file: "gtk-launch", args: ["org.mozilla.Firefox"], wait: true },
+  "linux launch hands the case-preserved desktop id to gtk-launch");
+t.equal(lrec.calls.length, 0, "linux launch never goes through the waiting, timeout-killing exec");
+gtkLaunchMissing = true;
+await lin.launchApp(firefox);
+t.deepEqual(launches.slice(1), [
+  { file: "gtk-launch", args: ["org.mozilla.Firefox"], wait: true },
+  { file: "/usr/bin/firefox", args: ["--new-window"], wait: false },
+], "without gtk-launch the parsed Exec argv is started detached");
+await lin.launchApp({ target: "/usr/bin/app", argv: ["/usr/bin/app"], desktopId: "--help" });
+t.deepEqual(launches.at(-1), { file: "/usr/bin/app", args: [], wait: false },
+  "a desktop id shaped like an option never reaches gtk-launch");
 
 t.deepEqual(splitExec("/usr/bin/app %U"), ["/usr/bin/app"], "field codes are stripped from Exec");
 t.deepEqual(

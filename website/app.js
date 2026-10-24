@@ -1,4 +1,5 @@
 const paths = {
+  terminal: '<rect x="2" y="3" width="20" height="18" rx="3"/><path d="m6 8 4 4-4 4m7 0h5"/>',
   keyboard: '<rect x="2" y="5" width="20" height="14" rx="3"/><path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 13h.01M10 13h.01M14 13h.01M18 13h.01M8 16h8"/>',
   pen: '<path d="m15 3 6 6L9 21H3v-6zM12 6l6 6M3 21h18"/>',
   github: '<path fill="currentColor" stroke="none" d="M12 .75a11.25 11.25 0 0 0-3.558 21.922c.563.104.768-.244.768-.542 0-.267-.01-.974-.015-1.912-3.13.68-3.79-1.508-3.79-1.508-.512-1.3-1.25-1.646-1.25-1.646-1.021-.697.077-.683.077-.683 1.13.08 1.724 1.16 1.724 1.16 1.003 1.718 2.632 1.221 3.273.934.102-.727.393-1.222.715-1.503-2.5-.284-5.13-1.25-5.13-5.564 0-1.23.44-2.234 1.16-3.022-.116-.285-.503-1.43.11-2.981 0 0 .945-.303 3.095 1.155a10.79 10.79 0 0 1 5.636 0c2.149-1.458 3.092-1.155 3.092-1.155.614 1.55.228 2.696.112 2.98.722.79 1.158 1.794 1.158 3.023 0 4.325-2.634 5.277-5.144 5.556.404.349.765 1.037.765 2.09 0 1.508-.014 2.726-.014 3.096 0 .3.203.65.774.54A11.25 11.25 0 0 0 12 .75Z"/>',
@@ -200,6 +201,25 @@ function checkedUrl(value) {
   return url.href;
 }
 function fileSize(bytes) { return `${(bytes / 1024 / 1024).toFixed(1)} MB`; }
+/** Swap the Linux source preview for the prebuilt installers listed in the manifest. */
+function showLinuxInstallers(linux) {
+  const files = { arch: linux?.arch, deb: linux?.debian };
+  for (const file of Object.values(files)) {
+    if (!file || !Number.isSafeInteger(file.bytes) || file.bytes <= 0 || !/^[a-f0-9]{64}$/i.test(file.sha256)) throw new Error('Incomplete Linux downloads');
+  }
+  const hrefs = { arch: checkedUrl(files.arch.url), deb: checkedUrl(files.deb.url) };
+  const checksums = checkedUrl(linux.checksums);
+  for (const [kind, href] of Object.entries(hrefs)) {
+    const link = document.querySelector(`#download-linux-${kind}`);
+    link.href = href; link.removeAttribute('aria-disabled');
+    if (new URL(href).origin === location.origin) link.setAttribute('download', '');
+  }
+  document.querySelector('#linux-meta').textContent = `Hyprland · x86-64 · Arch ${fileSize(files.arch.bytes)} · Debian ${fileSize(files.deb.bytes)}`;
+  const checksumLink = document.querySelector('#linux-checksum-link');
+  checksumLink.href = checksums; checksumLink.hidden = false;
+  for (const id of ['linux-source-actions', 'linux-source-steps']) document.getElementById(id).hidden = true;
+  for (const id of ['linux-installer-actions', 'linux-installer-steps']) document.getElementById(id).hidden = false;
+}
 async function loadDownloads() {
   try {
     const response = await fetch('./downloads.json', { cache: 'no-store' });
@@ -229,17 +249,24 @@ async function loadDownloads() {
     }
     const checksumLink = document.querySelector('#checksum-link');
     checksumLink.href = checksums; checksumLink.hidden = false;
-    downloadStatus.textContent = 'Both downloads are ready. Start with the Windows companion.';
+    let linuxReady = false;
+    if (manifest.linux) {
+      // A bad Linux entry must not cost Windows and Android their downloads.
+      try { showLinuxInstallers(manifest.linux); linuxReady = true; } catch { /* keep the source preview */ }
+    }
+    downloadStatus.textContent = linuxReady
+      ? 'Windows, Android and Linux downloads are ready.'
+      : 'Windows and Android downloads are ready. Linux is available as a source preview.';
   } catch {
-    downloadStatus.textContent = 'Downloads are temporarily unavailable. Please reload to try again.';
-    document.querySelectorAll('.download-button > span:first-child').forEach(el => { el.textContent = 'Download unavailable'; });
+    downloadStatus.textContent = 'Windows and Android downloads are temporarily unavailable. Linux source and its setup guide are still available.';
+    document.querySelectorAll('#download-windows > span:first-child, #download-android > span:first-child').forEach(el => { el.textContent = 'Download unavailable'; });
   }
 }
 loadDownloads();
 
 function animateDownloadCounts(section, counts) {
   const format = new Intl.NumberFormat('en-US');
-  const values = Object.fromEntries(['total', 'windows', 'android'].map(key => {
+  const values = Object.fromEntries(['total', 'windows', 'android', 'linux'].map(key => {
     section.querySelector(`[data-count-readable="${key}"]`).textContent = format.format(counts[key]);
     return [key, section.querySelector(`#count-${key}`)];
   }));
@@ -248,7 +275,8 @@ function animateDownloadCounts(section, counts) {
   function render(progress) {
     const windows = Math.round(counts.windows * progress);
     const android = Math.round(counts.android * progress);
-    for (const [key, value] of Object.entries({ windows, android, total: windows + android })) values[key].textContent = format.format(value);
+    const linux = Math.round(counts.linux * progress);
+    for (const [key, value] of Object.entries({ windows, android, linux, total: windows + android + linux })) values[key].textContent = format.format(value);
   }
   function finish() {
     cancelAnimationFrame(frame);
@@ -296,8 +324,8 @@ async function loadDownloadCounts() {
     const response = await fetch('/api/download-stats', { signal: AbortSignal.timeout(10000) });
     if (!response.ok) throw new Error('Counts unavailable');
     const counts = await response.json();
-    if (!['total', 'windows', 'android'].every(key => Number.isSafeInteger(counts[key]) && counts[key] >= 0)
-        || counts.total !== counts.windows + counts.android || !Number.isFinite(Date.parse(counts.updatedAt))) {
+    if (!['total', 'windows', 'android', 'linux'].every(key => Number.isSafeInteger(counts[key]) && counts[key] >= 0)
+        || counts.total !== counts.windows + counts.android + counts.linux || !Number.isFinite(Date.parse(counts.updatedAt))) {
       throw new Error('Invalid counts');
     }
     status.textContent = 'Refreshed hourly';

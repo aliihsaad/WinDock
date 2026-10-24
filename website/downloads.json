@@ -1,16 +1,29 @@
 {
-  "version": "0.2.2-preview.1",
+  "version": "0.2.3-preview.1",
   "available": true,
-  "generatedAt": "2026-10-19T16:13:47.1541087Z",
+  "generatedAt": "2026-10-20T13:26:27.2111967Z",
   "windows": {
-    "url": "https://github.com/aliihsaad/WinDock/releases/download/v0.2.2-preview.1/WinDockSetup.exe",
-    "sha256": "ccf2535a5c80ad646a230f3db15571a5356e24588cba2673077cf014dd22465c",
-    "bytes": 122161691
+    "bytes": 123141693,
+    "sha256": "148a6a932f70ba1ec976e4239ed6f3043c8525cd4f7e08fb30df29c60516e15c",
+    "url": "https://github.com/aliihsaad/WinDock/releases/download/v0.2.3-preview.1/WinDockSetup.exe"
   },
   "android": {
-    "url": "https://github.com/aliihsaad/WinDock/releases/download/v0.2.2-preview.1/WinDock-android-debug.apk",
+    "bytes": 2143809,
     "sha256": "e7ba7a77c6cb26a6528e20b22d2aac853a6e56f192881aa77e2312bf6b8c7bc2",
-    "bytes": 2143809
+    "url": "https://github.com/aliihsaad/WinDock/releases/download/v0.2.3-preview.1/WinDock-android-debug.apk"
   },
-  "checksums": "https://github.com/aliihsaad/WinDock/releases/download/v0.2.2-preview.1/SHA256SUMS.txt"
+  "checksums": "https://github.com/aliihsaad/WinDock/releases/download/v0.2.3-preview.1/SHA256SUMS.txt",
+  "linux": {
+    "arch": {
+      "url": "https://github.com/aliihsaad/WinDock/releases/download/v0.2.3-preview.1/WinDock-linux-x64.pkg.tar.zst",
+      "bytes": 43826559,
+      "sha256": "8da5eada4bd764517fc2afc2a1ba1a17b8839da353fc760812dd946202ce0eed"
+    },
+    "debian": {
+      "url": "https://github.com/aliihsaad/WinDock/releases/download/v0.2.3-preview.1/WinDock-linux-amd64.deb",
+      "bytes": 31021640,
+      "sha256": "4a3620abbe2e4e9c622c3b8a8960ddb0ed193ebe80c1c7a91f5c80f45cf33b43"
+    },
+    "checksums": "https://github.com/aliihsaad/WinDock/releases/download/v0.2.3-preview.1/SHA256SUMS-linux.txt"
+  }
 }

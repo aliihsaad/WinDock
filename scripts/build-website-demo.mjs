@@ -17,7 +17,7 @@ export async function buildWebsiteDemo() {
   html = replaceOnce(html, 'src="/app.js"', 'src="./app.js"');
   html = replaceOnce(html, '<title>WinDock</title>', '<title>WinDock interactive preview</title>');
   html = replaceOnce(html, 'Main monitor · Saved on your PC', 'Demo · Nothing is captured or saved');
-  html = replaceOnce(html, 'Recordings stop after 60 minutes. You can also stop from the Windows tray.', 'In the app, captures are saved to your PC.');
+  html = replaceOnce(html, 'Recordings stop after 60 minutes.<span', 'In the app, captures are saved to your PC.<span');
   html = replaceOnce(html, '<head>', `<head>
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'">`);
   await writeFile(resolve(destination, 'index.html'), html);

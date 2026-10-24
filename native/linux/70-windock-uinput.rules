@@ -1,0 +1,14 @@
+# WinDock touchpad: let the user at the local seat create a virtual pointer.
+#
+# uaccess gives the active session's user an ACL on /dev/uinput, which allows
+# injecting input but not reading any keyboard. Adding the user to the
+# "input" group instead would also let every one of their programs read all
+# keyboards, so WinDock does not ask for that.
+#
+#   sudo install -m 644 native/linux/70-windock-uinput.rules /etc/udev/rules.d/
+#   sudo udevadm control --reload-rules
+#   sudo modprobe uinput && sudo udevadm trigger --name-match=/dev/uinput
+#
+# /dev/uinput is a static node until the module loads, and udev can only apply
+# the rule to a loaded device; static_node= covers it from the next boot on.
+KERNEL=="uinput", SUBSYSTEM=="misc", OPTIONS+="static_node=uinput", TAG+="uaccess"

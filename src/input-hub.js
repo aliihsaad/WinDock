@@ -17,7 +17,7 @@ export function createInputHub({ server, isAuthorized, input, leaseMs = 2000 }) 
     ws.on("error", () => {});
     const reply = (value) => { if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(value)); };
     if (!input || owner) {
-      reply({ type: "error", error: owner ? "Another device is using the touchpad." : "Touchpad needs the updated Windows host." });
+      reply({ type: "error", error: owner ? "Another device is using the touchpad." : "Touchpad needs an updated WinDock on your PC." });
       ws.close(1008); return;
     }
     owner = ws;
@@ -48,13 +48,13 @@ export function createInputHub({ server, isAuthorized, input, leaseMs = 2000 }) 
     });
     // open() returns the owned worker immediately; ready resolves after native startup.
     try {
-      worker = input.open(() => fail("Windows could not continue the touchpad session."), (event) => {
+      worker = input.open(() => fail("Your PC could not continue the touchpad session."), (event) => {
         if (closed) return;
         if (started) reply(event);
         else if (event.type === "focus") pendingFocus = event;
       });
-      worker.ready.then(() => { if (!closed) { started = true; lastSeen = Date.now(); reply({ type: "ready" }); if (pendingFocus) reply(pendingFocus); } }).catch(() => fail("Windows could not start the touchpad. Update the PC app and try again."));
-    } catch { fail("Windows could not start the touchpad."); }
+      worker.ready.then(() => { if (!closed) { started = true; lastSeen = Date.now(); reply({ type: "ready" }); if (pendingFocus) reply(pendingFocus); } }).catch(() => fail(input.startupError || "Your PC could not start the touchpad. Update WinDock there and try again."));
+    } catch { fail("Your PC could not start the touchpad."); }
   });
   return { wss, async close() { for (const ws of wss.clients) ws.terminate(); await new Promise((resolve) => wss.close(resolve)); } };
 }

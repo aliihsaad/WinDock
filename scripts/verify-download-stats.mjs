@@ -7,14 +7,15 @@ const release = (assets, draft = false) => ({ draft, prerelease: true, assets })
 const json = (body, headers = {}) => Response.json(body, { headers });
 const pages = [
   json([
-    release([asset('WinDockSetup.exe', 305), asset('WinDock-android-debug.apk', 259), asset('SHA256SUMS.txt', 400)]),
+    release([asset('WinDockSetup.exe', 305), asset('WinDock-android-debug.apk', 259), asset('WinDock-linux-x64.pkg.tar.zst', 7), asset('SHA256SUMS.txt', 400), asset('SHA256SUMS-linux.txt', 50)]),
     release([asset('WinDockSetup.exe', 999)], true),
   ], { link: '<https://api.github.com/repos/aliihsaad/WinDock/releases?per_page=100&page=2>; rel="next"' }),
-  json([release([asset('WinDockSetup.exe', 284), asset('WinDock-android-debug.apk', 553)])]),
+  json([release([asset('WinDockSetup.exe', 284), asset('WinDock-android-debug.apk', 553), asset('WinDock-linux-amd64.deb', 3)])]),
 ];
 const urls = [];
 const counts = await fetchDownloadCounts(async url => { urls.push(url); return pages.shift(); });
-assert.deepEqual([counts.windows, counts.android, counts.total], [589, 812, 1401]);
+// Both Linux packages count as Linux; checksum files count as nothing.
+assert.deepEqual([counts.windows, counts.android, counts.linux, counts.total], [589, 812, 10, 1411]);
 assert.deepEqual(urls, [1, 2].map(page => `https://api.github.com/repos/aliihsaad/WinDock/releases?per_page=100&page=${page}`));
 assert.ok(Number.isFinite(Date.parse(counts.updatedAt)));
 assert.equal((await fetchDownloadCounts(async () => json([]))).total, 0);

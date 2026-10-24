@@ -55,10 +55,10 @@ using var cancelled = new CancellationTokenSource(); cancelled.Cancel();
 Check((await checker.CheckAsync(cancelled.Token)).Status == UpdateStatus.Failed, "shutdown cancellation is handled");
 if (args.Contains("--live")) {
     using var live = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = TimeSpan.FromSeconds(12), MaxResponseContentBufferSize = 65536 };
-    var current = await new UpdateChecker(live, "0.2.2-preview.1").CheckAsync();
+    var current = await new UpdateChecker(live, "0.2.3-preview.1").CheckAsync();
     Check(current.Status == UpdateStatus.Current, "published feed recognizes current release");
-    var upgrade = await new UpdateChecker(live, "0.2.1-preview.1").CheckAsync();
-    Check(upgrade.Status == UpdateStatus.Available && upgrade.Version == "0.2.2-preview.1", "published feed notifies an older installation");
+    var upgrade = await new UpdateChecker(live, "0.2.2-preview.1").CheckAsync();
+    Check(upgrade.Status == UpdateStatus.Available && upgrade.Version == "0.2.3-preview.1", "published feed notifies an older installation");
 }
 Console.WriteLine($"{checks} update checks passed");
 

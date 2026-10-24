@@ -156,6 +156,10 @@ t.equal((await call("/api/apps/launch", { method: "POST", body: { id: "c:/nope.e
 const focus = await call("/api/apps/focus", { method: "POST", body: { pid: 4812 } });
 t.equal(focus.status, 200, "POST /api/apps/focus succeeds for a live pid");
 t.deepEqual(helperCalls.at(-1), ["focus", "4812"], "focus reaches the helper with exact argv");
+t.equal((await call("/api/apps/focus", { method: "POST", body: { pid: 4812, id: "c:/apps/firefox.exe" } })).status, 200,
+  "focus accepts the app id alongside its pid");
+t.equal((await call("/api/apps/focus", { method: "POST", body: { pid: 4812, id: "c:/apps/other.exe" } })).status, 404,
+  "an app id that does not own the pid is not substituted by another window");
 t.equal((await call("/api/apps/focus", { method: "POST", body: { pid: 999999 } })).status, 404,
   "focusing a dead pid returns 404");
 t.equal((await call("/api/apps/focus", { method: "POST", body: { pid: -1 } })).status, 400,

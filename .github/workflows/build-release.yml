@@ -10,7 +10,7 @@ on:
       release_tag:
         description: New release tag (used only when creating a draft)
         type: string
-        default: v0.2.2-preview.1
+        default: v0.2.3-preview.1
   push:
     branches: [main]
     paths:
@@ -22,11 +22,16 @@ on:
       - 'server.js'
       - 'package*.json'
       - '.github/workflows/build-release.yml'
+      - '.github/workflows/build-linux.yml'
+      - '.dockerignore'
 
 permissions:
   contents: read
 
 jobs:
+  linux:
+    uses: ./.github/workflows/build-linux.yml
+
   windows:
     runs-on: windows-latest
     timeout-minutes: 25
@@ -90,7 +95,7 @@ jobs:
 
   draft-release:
     if: github.event_name == 'workflow_dispatch' && inputs.draft_release
-    needs: [windows, android]
+    needs: [windows, android, linux]
     runs-on: windows-latest
     permissions:
       contents: write
@@ -104,6 +109,10 @@ jobs:
         with:
           name: android-preview
           path: artifacts
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-installers
+          path: artifacts/linux
       - name: Prepare direct links and draft release
         shell: pwsh
         env:
@@ -114,5 +123,11 @@ jobs:
         run: |
           if ($env:RELEASE_TAG -notmatch '^v\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?$') { throw 'Invalid release tag' }
           ./scripts/package-downloads.ps1 -DownloadBase "https://github.com/$env:RELEASE_REPO/releases/download/$env:RELEASE_TAG" -ReleaseVersion $env:RELEASE_TAG.TrimStart('v')
-          gh release create $env:RELEASE_TAG artifacts/website-downloads/WinDockSetup.exe artifacts/website-downloads/WinDock-android-debug.apk artifacts/website-downloads/SHA256SUMS.txt artifacts/website-downloads/downloads.json --repo $env:RELEASE_REPO --target $env:RELEASE_SHA --draft --prerelease --title "WinDock $env:RELEASE_TAG" --notes-file native/installer/RELEASE-NOTES.md
+          node scripts/linux-downloads.mjs "https://github.com/$env:RELEASE_REPO/releases/download/$env:RELEASE_TAG" --require
+          if ($LASTEXITCODE -ne 0) { throw 'Adding the Linux installers to downloads.json failed' }
+          # The release carries every platform, so its notes do too.
+          $notes = Join-Path $env:RUNNER_TEMP 'release-notes.md'
+          $combined = (Get-Content -Raw -LiteralPath native/installer/RELEASE-NOTES.md).TrimEnd() + "`n`n" + (Get-Content -Raw -LiteralPath native/linux/packaging/RELEASE-NOTES.md)
+          [IO.File]::WriteAllText($notes, $combined, [Text.UTF8Encoding]::new($false))
+          gh release create $env:RELEASE_TAG artifacts/website-downloads/WinDockSetup.exe artifacts/website-downloads/WinDock-android-debug.apk artifacts/website-downloads/SHA256SUMS.txt artifacts/website-downloads/downloads.json artifacts/linux/WinDock-linux-amd64.deb artifacts/linux/WinDock-linux-x64.pkg.tar.zst artifacts/linux/SHA256SUMS-linux.txt artifacts/linux/build-info.json --repo $env:RELEASE_REPO --target $env:RELEASE_SHA --draft --prerelease --title "WinDock $env:RELEASE_TAG" --notes-file $notes
           if ($LASTEXITCODE -ne 0) { throw 'Draft release creation failed' }

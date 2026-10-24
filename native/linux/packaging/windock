@@ -1,0 +1,19 @@
+#!/bin/sh
+set -eu
+if [ "$(id -u)" -eq 0 ]; then
+    echo "Open WinDock from your desktop as a normal user, without sudo." >&2
+    exit 1
+fi
+if [ "${1:-}" = "--version" ]; then
+    exec /usr/lib/windock/node -p "'WinDock ' + require('/usr/lib/windock/package.json').version"
+fi
+if [ -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
+    echo "WinDock's Linux preview needs a Hyprland desktop session." >&2
+    echo "Open it from your Hyprland application menu." >&2
+    exit 1
+fi
+echo "WinDock — Linux preview"
+echo "Keep this window open while using your phone. Press Ctrl+C to quit."
+echo "Your connection address and pairing PIN appear below."
+echo
+exec /usr/lib/windock/node /usr/lib/windock/server.js

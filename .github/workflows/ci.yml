@@ -1,0 +1,104 @@
+name: CI
+
+# Runs on every pull request, whatever it touches, so "CI passed" can be a
+# required check. The heavier installer, package and iOS builds stay in their
+# own path-filtered workflows.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Fork pull requests run with a read-only token and no secrets.
+permissions:
+  contents: read
+
+# A new push to a pull request replaces its older run. Every merge to main is
+# tested to the end, so a break on main points at the merge that caused it.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  linux:
+    name: Linux tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm test
+      - name: Test the Linux input helper
+        run: cargo test --locked --manifest-path native/linux/Cargo.toml
+
+  windows:
+    name: Windows tests
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '8.0.x'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm test
+      - name: Verify native touchpad protocol and transparent signature rendering
+        run: dotnet run --project native/input-tests/WinDockInputTests.csproj -c Release
+      - name: Verify update checks and startup notification policy
+        run: dotnet run --project native/update-tests/WinDockUpdateTests.csproj -c Release
+
+  macos:
+    name: macOS tests
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      # The native macOS code is built first, so npm test can exercise it.
+      - name: Build the macOS input helper
+        if: hashFiles('native/macos/*.swift') != ''
+        run: npm run build:macos
+      - name: Build the macOS menu bar app
+        if: hashFiles('native/macos-app/*.swift') != ''
+        run: npm run build:macos-app
+      - run: npm test
+
+  # The single required check: green when every job above passed. always()
+  # keeps it from being skipped, because GitHub counts a skipped required
+  # check as passing; a cancelled or failed job makes it fail instead.
+  ci-passed:
+    name: CI passed
+    if: always()
+    needs: [linux, windows, macos]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check the test jobs
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Results: $RESULTS"
+          for result in $RESULTS; do
+            if [ "$result" != "success" ]; then
+              echo "::error::A CI job did not succeed ($result)."
+              exit 1
+            fi
+          done

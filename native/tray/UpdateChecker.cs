@@ -54,7 +54,7 @@ internal sealed class UpdateChecker(HttpClient http, string installedVersion)
     internal const string ReleasesUrl = "https://github.com/aliihsaad/WinDock/releases";
     internal static string InstalledVersion => (typeof(UpdateChecker).Assembly
         .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
-        ?? "0.2.2-preview.1").Split('+')[0];
+        ?? "0.2.3-preview.1").Split('+')[0];
 
     public async Task<UpdateResult> CheckAsync(CancellationToken cancellationToken = default)
     {

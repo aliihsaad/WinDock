@@ -14,6 +14,8 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
   let dragging = false, available = false, demo = false, saving = false, strokes = [], activeStroke = null, signaturePointer = null;
   let color = "black", frame = null, pending = { move: [0, 0], scroll: [0, 0] }, speed = 1.5;
   let canInsertSignature = false;
+  // The PC answered and has no touchpad support: retrying cannot change that.
+  let unsupported = false;
   const keyboard = createRemoteKeyboard({ send: raw, isReady: () => ready && mode === "touchpad", onSignature: () => select("signature"), notify });
   try { const saved = Number(storage.getItem("windock-pointer-speed")); if (saved >= .5 && saved <= 3) speed = saved; } catch { /* optional preference */ }
   $("pointer-speed").value = speed;
@@ -47,7 +49,7 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
     $("input-touchpad-tab").setAttribute("aria-pressed", String(mode === "touchpad"));
     $("input-signature-tab").setAttribute("aria-pressed", String(mode === "signature"));
     $("touchpad-surface").dataset.ready = String(ready);
-    $("input-reconnect").hidden = mode !== "touchpad" || ready || connecting;
+    $("input-reconnect").hidden = mode !== "touchpad" || ready || connecting || unsupported;
     for (const id of ["mouse-left", "mouse-right", "mouse-drag"]) $(id).disabled = !ready;
     $("mouse-drag").setAttribute("aria-pressed", String(dragging));
     $("mouse-drag").textContent = dragging ? "Release" : "Drag";
@@ -95,7 +97,7 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
   }
   async function select(next) {
     const ticket = ++generation;
-    disconnect(); mode = next; available = false; connecting = true; demo = false; paint();
+    disconnect(); mode = next; available = false; unsupported = false; connecting = true; demo = false; paint();
     $("touchpad-surface").dataset.used = "false";
     setStatus(next === "touchpad" ? "Connecting to your PC…" : "Draw here. Save a transparent PNG to Pictures / WinDock / Signatures.");
     try {
@@ -106,7 +108,7 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
       keyboard.configure(status.keyboard);
       demo = Boolean(status.demo);
       if (demo) setStatus("Demo only · No cursor control or files saved.");
-      if (!available) { connecting = false; setStatus("Touchpad and signature saving need the updated Windows host."); paint(); return; }
+      if (!available) { connecting = false; unsupported = true; setStatus("Touchpad and signature saving need an updated WinDock on your PC."); paint(); return; }
       if (mode !== "touchpad") connecting = false;
       paint();
       if (mode !== "touchpad") return;

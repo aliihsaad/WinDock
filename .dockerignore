@@ -1,0 +1,11 @@
+.git
+node_modules
+artifacts
+.tools
+.codex*
+output
+*.log
+native/linux/target
+android
+ios
+website/demo

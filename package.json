@@ -1,6 +1,6 @@
 {
   "name": "windock",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "private": true,
   "license": "MIT",
   "type": "module",
@@ -11,10 +11,13 @@
     "build:website-demo": "node scripts/build-website-demo.mjs",
     "package:downloads": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/package-downloads.ps1",
     "build:windows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/build-windows.ps1",
+    "build:linux": "cargo build --release --locked --manifest-path native/linux/Cargo.toml && install -m 755 native/linux/target/release/windock-input windock-input",
+    "package:linux": "docker build --platform linux/amd64 -f native/linux/packaging/Dockerfile --target packages --output type=local,dest=artifacts/linux .",
     "build:installer": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/build-installer.ps1",
     "test:installer": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/test-installer.ps1",
     "build:android": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/build-android.ps1",
     "test:windows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/test-windows.ps1",
+    "test:linux": "cargo test --locked --manifest-path native/linux/Cargo.toml",
     "test": "node test/run.mjs",
     "gates": "node scripts/gates.mjs --status"
   },

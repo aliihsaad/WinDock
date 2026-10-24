@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=WinDock
+Comment=Connect your phone to your Hyprland desktop
+Exec=windock
+Icon=windock
+Terminal=true
+Categories=Network;RemoteAccess;
+Keywords=phone;remote;dock;Hyprland;
+StartupNotify=false

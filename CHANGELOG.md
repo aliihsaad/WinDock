@@ -19,6 +19,38 @@
   archives. This is not an installable iPhone release; signing and physical testing
   are still pending. This is separate from the Windows and Android releases below.
 
+## [0.2.3-preview.1](https://github.com/aliihsaad/WinDock/releases/tag/v0.2.3-preview.1) — October 20, 2026
+
+- Add a Hyprland-first Linux host. The same Android app connects to it and gets
+  app launching, running apps, media, volume, brightness, lock, screenshots and
+  recordings, plus the touchpad, phone keyboard and signatures through a small
+  Rust input helper. GNOME and KDE are not supported yet.
+- Add Linux x86-64 installer previews for Arch/Omarchy and Debian/Ubuntu
+  running Hyprland. Packages include Node.js and the native input helper,
+  an application-menu launcher, and automatic touchpad permission setup.
+  Users no longer need to compile the app. Install, launch, upgrade and removal
+  are checked in Debian 12, Ubuntu 24.04 and Arch containers, and the packages
+  were tested with an Android phone on a physical Omarchy desktop.
+  The launcher shows the pairing PIN in a terminal window that must stay open.
+- Make touchpad, signature and capture messages platform-neutral, so a Linux PC
+  is no longer told to update a Windows host. The app picker labels apps with
+  the PC’s platform, and only the Windows host mentions its tray for stopping a
+  recording.
+- Hide the touchpad’s Reconnect button when the PC has no touchpad support,
+  since retrying cannot change the answer.
+- On Linux, keep apps hidden by a user desktop entry (`Hidden` or `NoDisplay`)
+  out of the app picker.
+- Make the website easier to read and tap on phones, and fold earlier releases
+  into collapsible rows. The download section offers the Linux packages with
+  their checksums and counts Linux downloads alongside Windows and Android.
+
+Quit WinDock from the Windows tray and run the new installer; your dock settings
+are kept. Reconnect the phone app to load the updated dock. No new Android APK is
+needed: this release includes the 0.2.2-preview.1 APK (version code 4) for new
+users. Public Android previews older than 0.2.2 use a different signing key and
+must be uninstalled first. Linux install, update and removal steps are in the
+[Linux preview guide](README.md#linux-preview).
+
 ## [0.2.2-preview.1](https://github.com/aliihsaad/WinDock/releases/tag/v0.2.2-preview.1) — October 19, 2026
 
 - Add Android USB networking through USB tethering, with a dedicated USB-only

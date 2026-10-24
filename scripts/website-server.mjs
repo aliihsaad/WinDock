@@ -8,8 +8,8 @@ import { GET as downloadStats } from '../api/download-stats.js';
 await buildWebsiteDemo();
 const websiteRoot = resolve(import.meta.dirname, '../website');
 const downloadRoot = resolve(import.meta.dirname, '../artifacts/website-downloads');
-const mime = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.exe': 'application/octet-stream', '.apk': 'application/vnd.android.package-archive', '.txt': 'text/plain; charset=utf-8' };
-const downloads = new Set(['WinDockSetup.exe', 'WinDock-android-debug.apk', 'SHA256SUMS.txt']);
+const mime = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.exe': 'application/octet-stream', '.apk': 'application/vnd.android.package-archive', '.zst': 'application/zstd', '.deb': 'application/vnd.debian.binary-package', '.txt': 'text/plain; charset=utf-8' };
+const downloads = new Set(['WinDockSetup.exe', 'WinDock-android-debug.apk', 'SHA256SUMS.txt', 'WinDock-linux-x64.pkg.tar.zst', 'WinDock-linux-amd64.deb', 'SHA256SUMS-linux.txt']);
 const server = createServer(async (req, res) => {
   if (!['GET', 'HEAD'].includes(req.method)) { res.writeHead(405, { Allow: 'GET, HEAD' }); return res.end(); }
   try {
