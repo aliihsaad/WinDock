@@ -62,7 +62,7 @@ export function hostName(header) {
   if (typeof header !== "string" || !HOST_HEADER.test(header)) return "";
   try {
     const name = new URL(`http://${header}`).hostname.toLowerCase();
-    return name.startsWith("[") && name.endsWith("]") ? name.slice(1, -1) : name;
+    return name.startsWith("[") && name.endsWith("]") ? name.slice(1, -1) : name.replace(/\.$/, "");
   } catch {
     return "";
   }
@@ -70,7 +70,7 @@ export function hostName(header) {
 
 export function isLoopbackHost(header) {
   const name = hostName(header);
-  return name === "localhost" || name.endsWith(".localhost") || isLoopback(name);
+  return name === "localhost" || isLoopback(name);
 }
 
 /**
@@ -81,27 +81,34 @@ export function isLoopbackHost(header) {
  */
 export function createHostCheck({ machine = osHostname(), extra = process.env.WINDOCK_ALLOWED_HOSTS } = {}) {
   const names = new Set(["localhost"]);
-  const base = String(machine || "").toLowerCase();
+  const base = hostName(String(machine || "").trim());
   if (base) {
     names.add(base);
     names.add(`${base}.local`);
   }
   for (const item of String(extra || "").split(",")) {
-    const name = item.trim().toLowerCase();
+    const name = hostName(item.trim());
     if (name) names.add(name);
   }
   return function hostAllowed(header) {
     const name = hostName(header);
     if (!name) return false;
     if (isIP(name)) return true;
-    return names.has(name) || name.endsWith(".localhost");
+    return names.has(name);
   };
 }
 
 export function isLoopback(address) {
   if (typeof address !== "string" || !address) return false;
   const addr = address.startsWith("::ffff:") ? address.slice(7) : address;
-  return addr === "127.0.0.1" || addr === "::1" || addr.startsWith("127.");
+  return addr === "::1" || (isIP(addr) === 4 && addr.startsWith("127."));
+}
+
+/** Recovery is a native action on the PC, never a phone or browser action. */
+export function isLocalPairingRecovery(req, remote) {
+  return isLoopback(remote) && isLoopbackHost(req.headers.host) &&
+    !req.headers.origin && !req.headers["sec-fetch-site"] &&
+    req.headers["x-windock-local-action"] === "allow-pairing";
 }
 
 /** Per-client failure tracking with a time-boxed lockout. */
@@ -129,14 +136,11 @@ export function createLockout({
     /** @returns {{locked:boolean, retryInMs:number}} */
     status(key) {
       const at = now();
-      if (globalUntil > at) return { locked: true, retryInMs: globalUntil - at, global: true };
       const entry = entries.get(key);
-      if (!entry || !entry.until) return { locked: false, retryInMs: 0 };
-      if (entry.until <= at) {
-        entries.delete(key);
-        return { locked: false, retryInMs: 0 };
-      }
-      return { locked: true, retryInMs: entry.until - at };
+      if (entry?.until > at) return { locked: true, retryInMs: entry.until - at, global: false };
+      if (entry?.until) entries.delete(key);
+      if (globalUntil > at) return { locked: true, retryInMs: globalUntil - at, global: true };
+      return { locked: false, retryInMs: 0 };
     },
     recordFailure(key) {
       const at = now();
@@ -153,6 +157,11 @@ export function createLockout({
         recent = [];
       }
       return { locked: Boolean(entry.until) || globalUntil > at, fails: entry.fails };
+    },
+    /** PC-local recovery clears only the host-wide budget, never client penalties. */
+    resetGlobal() {
+      recent = [];
+      globalUntil = 0;
     },
     recordSuccess(key) {
       entries.delete(key);

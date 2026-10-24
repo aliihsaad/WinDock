@@ -47,7 +47,7 @@ t.ok(!safeEqual(undefined, undefined) === false, "undefined pair does not throw"
 for (const addr of ["127.0.0.1", "::1", "::ffff:127.0.0.1", "127.0.1.5"]) {
   t.ok(isLoopback(addr), `${addr} is loopback`);
 }
-for (const addr of ["192.168.1.40", "10.0.0.2", "", null, "::ffff:192.168.1.40", "8.8.8.8"]) {
+for (const addr of ["127.evil.example", "127.invalid", "192.168.1.40", "10.0.0.2", "", null, "::ffff:192.168.1.40", "8.8.8.8"]) {
   t.ok(!isLoopback(addr), `${addr} is not loopback`);
 }
 
@@ -148,18 +148,18 @@ t.ok(!locked.ok, "a locked-out client is refused even with a valid session");
 t.equal(locked.code, 429, "a locked-out client yields 429");
 
 // ---- host check (DNS rebinding) ----
-const hostOk = createHostCheck({ machine: "Desk-PC", extra: "dock.home.arpa" });
+const hostOk = createHostCheck({ machine: "Desk-PC", extra: "dock.home.arpa:8620, DOCK-ALIAS.HOME.ARPA.:8620" });
 for (const good of ["localhost", "localhost:8620", "127.0.0.1:8620", "192.168.1.40:8620", "[::1]:8620",
-  "[fe80::1]:8620", "desk-pc:8620", "DESK-PC.local:8620", "dock.home.arpa:8620", "app.localhost"]) {
+  "[fe80::1]:8620", "desk-pc:8620", "DESK-PC.local:8620", "dock.home.arpa:8620", "dock-alias.home.arpa.:8620", "localhost.", "desk-pc."]) {
   t.ok(hostOk(good), `Host ${good} is allowed`);
 }
 for (const bad of ["", null, undefined, "evil.example", "evil.example:8620", "127.0.0.1.nip.io:8620",
-  "desk-pc.evil.example", "localhost.evil.example", "a b", "attacker.example@localhost",
+  "app.localhost", "desk-pc.evil.example", "localhost.evil.example", "a b", "attacker.example@localhost",
   "evil.example@127.0.0.1:8620", "evil.example/@localhost", "localhost/x", "localhost?x", "localhost#x", "[::1]x"]) {
   t.ok(!hostOk(bad), `Host ${JSON.stringify(bad)} is refused`);
 }
 t.ok(isLoopbackHost("localhost:1") && isLoopbackHost("[::1]:1") && isLoopbackHost("127.0.0.1"), "loopback Host names are recognised");
-t.ok(!isLoopbackHost("192.168.1.4") && !isLoopbackHost("evil.example"), "other Host names are not loopback");
+t.ok(!isLoopbackHost("127.evil.example") && !isLoopbackHost("app.localhost") && !isLoopbackHost("192.168.1.4") && !isLoopbackHost("evil.example"), "other Host names are not loopback");
 t.ok(!isLoopbackHost("attacker.example@localhost"), "login details in a Host header can't pass as localhost");
 
 // ---- host-wide failure budget ----

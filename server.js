@@ -27,6 +27,7 @@ import {
   sessionCookie,
   authorize,
   createHostCheck,
+  isLocalPairingRecovery,
 } from "./src/auth.js";
 
 export const DEFAULT_PORT = 8620;
@@ -127,6 +128,7 @@ export async function createApp({
   trustLoopback = true,
   hostAllowed = createHostCheck(),
 } = {}) {
+  if (!isValidPinShape(pin)) throw new Error("Pairing PIN must contain exactly six ASCII digits.");
   const state = { pin };
   const appIcon = createIconCache(provider);
   let inventoryPromise;
@@ -166,9 +168,11 @@ export async function createApp({
     // Refuse unknown Host names before anything else. This is what blocks DNS
     // rebinding, where a page on some other domain points it at this machine.
     if (!hostAllowed(req.headers.host)) {
-      return sendJson(res, 421, { error: "unknown host" });
+      return sendJson(res, 421, { error: "unknown host; add your custom DNS name to WINDOCK_ALLOWED_HOSTS on the PC" });
     }
-    const url = new URL(req.url, `http://${req.headers.host}`);
+    let url;
+    try { url = new URL(req.url, `http://${req.headers.host}`); }
+    catch { return sendJson(res, 400, { error: "invalid request target" }); }
     const path = url.pathname;
 
     try {
@@ -177,26 +181,40 @@ export async function createApp({
         return;
       }
 
+      if (path === "/api/pairing/reset" && req.method === "POST") {
+        // Native PC-only action: browsers cannot supply this custom header cross-origin.
+        // Reject even same-origin browser requests; this must not be exposed to phones.
+        if (!isLocalPairingRecovery(req, remote)) {
+          return sendJson(res, 403, { error: "pairing recovery is available only on the PC" });
+        }
+        const body = await readJsonBody(req);
+        if (Object.keys(body).length) return sendJson(res, 400, { error: "pairing recovery takes no options" });
+        lockout.resetGlobal();
+        return sendJson(res, 200, { ok: true });
+      }
+
       if (path === "/api/auth" && req.method === "POST") {
         if (!sameOrigin(req)) return sendJson(res, 403, { error: "bad origin" });
         const status = lockout.status(remote);
         if (status.locked) {
-          return sendJson(res, 429, { error: "locked", retryInMs: status.retryInMs });
+          return sendJson(res, 429, { error: "locked", ...status });
         }
         const body = await readJsonBody(req);
         // Check again now that the body is in. Requests that were already
         // uploading when the pause started must not get to try their PIN.
         const after = lockout.status(remote);
         if (after.locked) {
-          return sendJson(res, 429, { error: "locked", retryInMs: after.retryInMs });
+          return sendJson(res, 429, { error: "locked", ...after });
         }
         if (!isValidPinShape(body.pin)) {
-          lockout.recordFailure(remote);
-          return sendJson(res, 400, { error: "invalid pin" });
+          const legacy = typeof body.pin === "string" && /^\d{4}$/.test(body.pin);
+          return sendJson(res, 400, { error: legacy
+            ? "WinDock on your PC was updated. Close and reopen this app, then enter the new 6-digit PIN."
+            : "invalid pin" });
         }
         if (!safeEqual(body.pin, state.pin)) {
-          const fail = lockout.recordFailure(remote);
-          return sendJson(res, 401, { error: "wrong pin", locked: fail.locked });
+          lockout.recordFailure(remote);
+          return sendJson(res, 401, { error: "wrong pin", ...lockout.status(remote) });
         }
         lockout.recordSuccess(remote);
         const token = sessions.issue();

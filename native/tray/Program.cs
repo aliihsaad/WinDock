@@ -69,6 +69,7 @@ internal sealed partial class TrayApp : ApplicationContext
         };
         _icon.ContextMenuStrip.Items.Add("Show connection info", null, (_, _) => ShowInfo());
         _icon.ContextMenuStrip.Items.Add("Copy URL", null, (_, _) => CopyUrl());
+        _icon.ContextMenuStrip.Items.Add("Allow pairing now", null, async (_, _) => await AllowPairing());
         _stopRecording = new ToolStripMenuItem("Stop recording", null, async (_, _) => await StopRecording());
         _stopRecording.Enabled = false;
         _icon.ContextMenuStrip.Items.Add(_stopRecording);
@@ -175,6 +176,29 @@ internal sealed partial class TrayApp : ApplicationContext
         {
             ShowBalloon("WinDock is running", $"{_endpoint}\nPIN {_pin}");
             if (!_startupCheckScheduled) { _startupCheckScheduled = true; _updateTimer.Start(); }
+        }
+    }
+
+    private async Task AllowPairing()
+    {
+        if (!Uri.TryCreate(_endpoint, UriKind.Absolute, out var endpoint) || _stopping) return;
+        try
+        {
+            using var http = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false })
+                { Timeout = TimeSpan.FromSeconds(5) };
+            using var request = new HttpRequestMessage(HttpMethod.Post,
+                $"http://127.0.0.1:{endpoint.Port}/api/pairing/reset");
+            request.Headers.Add("X-WinDock-Local-Action", "allow-pairing");
+            request.Content = new StringContent("{}", System.Text.Encoding.UTF8, "application/json");
+            using var response = await http.SendAsync(request, _shutdown.Token);
+            response.EnsureSuccessStatusCode();
+            if (!_stopping) ShowBalloon("Pairing is available", $"Enter PIN {_pin} on your phone. A device with too many attempts must still wait for its own timeout.");
+        }
+        catch (OperationCanceledException) when (_stopping) { }
+        catch (Exception)
+        {
+            if (!_stopping) MessageBox.Show("Could not reopen pairing. Check that WinDock is running and try again.",
+                "WinDock", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
     }
 

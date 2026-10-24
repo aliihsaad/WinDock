@@ -39,7 +39,7 @@ try {
     await new Promise((r) => setTimeout(r, 100));
   }
   assert.match(output, /WinDock host ready/);
-  const pin = output.match(/PIN:\s+(\d{4})\b/)?.[1];
+  const pin = output.match(/PIN:\s+(\d{6})\b/)?.[1];
   assert.ok(pin, "launcher displays a pairing PIN");
   const base = "http://127.0.0.1:18620";
   assert.deepEqual(await (await fetch(`${base}/health`)).json(), { ok: true, app: "windock", platform: "linux" });

@@ -3,6 +3,7 @@ import { icon, controlIcon } from "./icons.js";
 import { addAppTile, addControlTile, removeTile, moveTile, toWireTiles, availableControls, tileKey } from "./tiles.js";
 import { normalizeLayout, renderPages, pageCount, moveToTile } from "./launcher.js";
 import { createInputPad } from "./input-pad.js";
+import { pairingError } from "./pairing.js";
 import { createNowPlayingPoller } from "./now-playing.js";
 
 const $ = (id) => document.getElementById(id);
@@ -104,9 +105,7 @@ async function api(path, options = {}) {
   });
   if (res.status === 401 && path !== "/api/auth") { showPair("Enter the current PIN to reconnect."); throw new Error("unauthorized"); }
   if (!res.ok) {
-    const detail = (await res.json().catch(() => ({}))).error;
-    const messages = { "wrong pin": "That PIN doesn’t match. Try the PIN shown on your PC.", "invalid pin": "Enter all six digits.", locked: "Too many attempts. Wait a moment and try again.", "internal error": "Your PC couldn’t complete that action. Check the app or device and try again." };
-    throw new Error(messages[detail] || detail || "The request couldn’t be completed.");
+    throw new Error(pairingError(await res.json().catch(() => ({}))));
   }
   return res.json();
 }

@@ -165,11 +165,11 @@ try {
 }
 
 // A host without input or capture explains itself without naming an OS it may not be.
-const bare = await createApp({ provider: { id: "test", displayName: "Test", listRunningApps: async () => [] }, pin: "4321", trustLoopback: false, configStore: { load: async () => ({ tiles: [] }) } });
+const bare = await createApp({ provider: { id: "test", displayName: "Test", listRunningApps: async () => [] }, pin: "432187", trustLoopback: false, configStore: { load: async () => ({ tiles: [] }) } });
 await new Promise((resolve) => bare.server.listen(0, "127.0.0.1", resolve));
 const bareBase = `http://127.0.0.1:${bare.server.address().port}`;
 try {
-  const auth = await fetch(bareBase + "/api/auth", { method: "POST", headers: { origin: bareBase, "content-type": "application/json" }, body: JSON.stringify({ pin: "4321" }) });
+  const auth = await fetch(bareBase + "/api/auth", { method: "POST", headers: { origin: bareBase, "content-type": "application/json" }, body: JSON.stringify({ pin: "432187" }) });
   const headers = { cookie: auth.headers.get("set-cookie").split(";")[0], origin: bareBase, "content-type": "application/json" };
   const post = async (path, body) => { const res = await fetch(bareBase + path, { method: "POST", headers, body: JSON.stringify(body) }); return { code: res.status, error: (await res.json()).error }; };
   t.equal((await (await fetch(bareBase + "/api/input", { headers })).json()).available, false, "a host without input reports it unavailable");
@@ -192,11 +192,11 @@ const stalled = await createApp({ provider: { id: "test", displayName: "Test", l
   startupError: "platform specific startup advice",
   open() { const ready = Promise.reject(new Error("helper exited")); ready.catch(() => {}); return { ready, send() {}, close: async () => {} }; },
   saveSignature: async () => ({}), dispose() {},
-} }, pin: "4321", trustLoopback: false, configStore: { load: async () => ({ tiles: [] }) } });
+} }, pin: "432187", trustLoopback: false, configStore: { load: async () => ({ tiles: [] }) } });
 await new Promise((resolve) => stalled.server.listen(0, "127.0.0.1", resolve));
 const stalledBase = `http://127.0.0.1:${stalled.server.address().port}`;
 try {
-  const auth = await fetch(stalledBase + "/api/auth", { method: "POST", headers: { origin: stalledBase, "content-type": "application/json" }, body: JSON.stringify({ pin: "4321" }) });
+  const auth = await fetch(stalledBase + "/api/auth", { method: "POST", headers: { origin: stalledBase, "content-type": "application/json" }, body: JSON.stringify({ pin: "432187" }) });
   const ws = new WebSocket(stalledBase.replace("http:", "ws:") + "/input", { headers: { cookie: auth.headers.get("set-cookie").split(";")[0], origin: stalledBase } });
   const reply = JSON.parse((await once(ws, "message"))[0].toString()); ws.close();
   t.deepEqual(reply, { type: "error", error: "platform specific startup advice" }, "the phone gets the platform's startup advice");

@@ -263,6 +263,7 @@ await new Promise((r) => paused.server.listen(0, "127.0.0.1", r));
 const pbase = `http://127.0.0.1:${paused.server.address().port}`;
 const goodBody = JSON.stringify({ pin: PIN });
 let slowFinish;
+const requestStarted = new Promise((resolve) => paused.server.once("request", resolve));
 const slow = new Promise((resolveSlow, reject) => {
   const req = request(`${pbase}/api/auth`, {
     method: "POST",
@@ -276,7 +277,7 @@ const slow = new Promise((resolveSlow, reject) => {
   req.write(goodBody.slice(0, 5));
   slowFinish = () => req.end(goodBody.slice(5));
 });
-await new Promise((r) => setTimeout(r, 100));
+await requestStarted;
 for (let i = 0; i < 3; i += 1) {
   const wrong = await fetch(`${pbase}/api/auth`, {
     method: "POST",

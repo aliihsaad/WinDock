@@ -110,7 +110,7 @@ const svgApp = await createApp({
     listRunningApps: async () => [],
     appIcon: async (item) => (item.id === "svg-app" ? svg : Buffer.from("<html><script>alert(1)</script>")),
   },
-  configStore: {}, trustLoopback: true, pin: "6433",
+  configStore: {}, trustLoopback: true, pin: "643291",
 });
 await new Promise((r) => svgApp.server.listen(0, "127.0.0.1", r));
 try {
