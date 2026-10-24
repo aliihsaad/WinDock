@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+- Security: refuse HTTP and WebSocket requests whose Host header isn't an IP
+  address, `localhost`, this PC's own name (plain or `.local`), or a name listed
+  in `WINDOCK_ALLOWED_HOSTS`. This closes a DNS rebinding hole where a web page
+  could point its domain at 127.0.0.1 and use the loopback trust to drive the PC.
+- Security: loopback connections skip pairing only when the Host is also a
+  loopback name.
+- Security: the pairing PIN is now six digits, and a host-wide budget pauses new
+  pairing for 10 minutes after 30 wrong PINs from any mix of addresses. Phones
+  that are already paired keep working during the pause. Pairing requests that
+  were still uploading when the pause began are refused too. The Windows tray's
+  **Allow pairing now** action clears the host-wide pause locally; individual
+  device lockouts still apply. Older four-digit clients show upgrade instructions
+  without consuming the failure budget.
 - Add the first native iPhone companion source: remembered PC address, PIN pairing
   through the shared landscape dock, and reconnect/change-PC controls.
 - Add a GitHub macOS workflow for simulator tests, screenshots and unsigned iOS

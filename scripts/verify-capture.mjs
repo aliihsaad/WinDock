@@ -74,7 +74,7 @@ const provider = { id: "test", displayName: "Test", capture: {
   stop: async () => { calls.push("stop"); return { phase: "idle" }; },
   dispose: async () => {},
 } };
-const app = await createApp({ provider, pin: "4321", trustLoopback: false, configStore: {} });
+const app = await createApp({ provider, pin: "432187", trustLoopback: false, configStore: {} });
 await new Promise((resolve) => app.server.listen(0, "127.0.0.1", resolve));
 const base = `http://127.0.0.1:${app.server.address().port}`;
 let cookie = "";
@@ -87,7 +87,7 @@ async function request(path, method = "GET", body, origin = base) {
 try {
   for (const action of ["screenshot", "start", "stop"]) t.equal((await request("/api/capture/" + action, "POST", {})).status, 401, `${action} needs pairing`);
   t.equal((await request("/api/capture")).status, 401, "capture paths/status need pairing");
-  await request("/api/auth", "POST", { pin: "4321" });
+  await request("/api/auth", "POST", { pin: "432187" });
   const status = await request("/api/capture");
   t.equal(status.status, 200, "paired client can discover capture status");
   t.equal(status.cache, "no-store", "recording state is not cached");

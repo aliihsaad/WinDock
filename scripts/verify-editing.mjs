@@ -211,7 +211,7 @@ const provider = createWindowsProvider({
 });
 const dir = await mkdtemp(join(tmpdir(), "windock-edit-"));
 const configStore = createConfigStore({ path: join(dir, "config.json") });
-const app = await createApp({ provider, configStore, pin: "1111", trustLoopback: true });
+const app = await createApp({ provider, configStore, pin: "111111", trustLoopback: true });
 await new Promise((r) => app.server.listen(0, "127.0.0.1", r));
 const base = `http://127.0.0.1:${app.server.address().port}`;
 

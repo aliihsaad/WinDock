@@ -74,14 +74,14 @@ const provider = createWindowsProvider({ helperPath: "H.exe", exec: async (file,
   return { stdout: args.at(-1).includes("WScript.Shell") ? JSON.stringify([{ name: "App", target: "C:\\Apps\\real.exe", icon: "C:\\Icons\\app.dll,-4" }, { name: "Missing icon", target: "C:\\Apps\\missing.exe" }]) : "[]" };
 } });
 const dir = await mkdtemp(join(tmpdir(), "windock-icons-"));
-const app = await createApp({ provider, configStore: createConfigStore({ path: join(dir, "config.json") }), trustLoopback: false, pin: "6432" });
+const app = await createApp({ provider, configStore: createConfigStore({ path: join(dir, "config.json") }), trustLoopback: false, pin: "643291" });
 await new Promise((r) => app.server.listen(0, "127.0.0.1", r));
 const base = `http://127.0.0.1:${app.server.address().port}`;
 try {
   const path = "/api/apps/icon?id=" + encodeURIComponent("c:/apps/real.exe");
   const unauthorized = await fetch(base + path);
   t.equal(unauthorized.status, 401, "icons require pairing"); await unauthorized.text();
-  const auth = await fetch(base + "/api/auth", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ pin: "6432" }) });
+  const auth = await fetch(base + "/api/auth", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ pin: "643291" }) });
   const cookie = auth.headers.get("set-cookie").split(";")[0]; await auth.text();
   const response = await fetch(base + path, { headers: { cookie } });
   t.equal(response.status, 200, "paired client gets its installed app icon");
@@ -110,7 +110,7 @@ const svgApp = await createApp({
     listRunningApps: async () => [],
     appIcon: async (item) => (item.id === "svg-app" ? svg : Buffer.from("<html><script>alert(1)</script>")),
   },
-  configStore: {}, trustLoopback: true, pin: "6433",
+  configStore: {}, trustLoopback: true, pin: "643291",
 });
 await new Promise((r) => svgApp.server.listen(0, "127.0.0.1", r));
 try {

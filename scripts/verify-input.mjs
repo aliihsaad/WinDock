@@ -113,7 +113,7 @@ const received = [], sessions = [], provider = { id: "test", displayName: "Test"
   open(_fail, emit) { emit({ type: "focus", target: "1", editable: true, password: false }); const session = { closed: false, ready: Promise.resolve(), send: (value) => received.push(value), close() { session.closed = true; } }; sessions.push(session); return session; },
   saveSignature: async () => ({ type: "saved", path: "Pictures/WinDock/Signatures/example.png" }), dispose() {},
 } };
-const app = await createApp({ provider, pin: "4321", trustLoopback: false, configStore: { load: async () => ({ tiles: [] }) } });
+const app = await createApp({ provider, pin: "432187", trustLoopback: false, configStore: { load: async () => ({ tiles: [] }) } });
 await new Promise((resolve) => app.server.listen(0, "127.0.0.1", resolve));
 const base = `http://127.0.0.1:${app.server.address().port}`;
 let cookie = "";
@@ -136,7 +136,7 @@ try {
   t.equal((await request("/api/signature", signature)).code, 401, "signature saving requires pairing");
   t.equal((await request("/api/signature/insert", signature)).code, 401, "signature insertion requires pairing");
   await t.rejects(() => socket(), "unpaired input websocket refused");
-  await request("/api/auth", { pin: "4321" });
+  await request("/api/auth", { pin: "432187" });
   t.equal((await request("/api/signature", signature, "https://evil.example")).code, 403, "foreign origin cannot save signatures");
   t.equal((await request("/api/signature/insert", signature, "https://evil.example")).code, 403, "foreign origin cannot paste a signature");
   await t.rejects(() => socket("/input", { cookie, origin: "https://evil.example" }), "foreign origin cannot control mouse");
@@ -165,11 +165,11 @@ try {
 }
 
 // A host without input or capture explains itself without naming an OS it may not be.
-const bare = await createApp({ provider: { id: "test", displayName: "Test", listRunningApps: async () => [] }, pin: "4321", trustLoopback: false, configStore: { load: async () => ({ tiles: [] }) } });
+const bare = await createApp({ provider: { id: "test", displayName: "Test", listRunningApps: async () => [] }, pin: "432187", trustLoopback: false, configStore: { load: async () => ({ tiles: [] }) } });
 await new Promise((resolve) => bare.server.listen(0, "127.0.0.1", resolve));
 const bareBase = `http://127.0.0.1:${bare.server.address().port}`;
 try {
-  const auth = await fetch(bareBase + "/api/auth", { method: "POST", headers: { origin: bareBase, "content-type": "application/json" }, body: JSON.stringify({ pin: "4321" }) });
+  const auth = await fetch(bareBase + "/api/auth", { method: "POST", headers: { origin: bareBase, "content-type": "application/json" }, body: JSON.stringify({ pin: "432187" }) });
   const headers = { cookie: auth.headers.get("set-cookie").split(";")[0], origin: bareBase, "content-type": "application/json" };
   const post = async (path, body) => { const res = await fetch(bareBase + path, { method: "POST", headers, body: JSON.stringify(body) }); return { code: res.status, error: (await res.json()).error }; };
   t.equal((await (await fetch(bareBase + "/api/input", { headers })).json()).available, false, "a host without input reports it unavailable");
@@ -192,11 +192,11 @@ const stalled = await createApp({ provider: { id: "test", displayName: "Test", l
   startupError: "platform specific startup advice",
   open() { const ready = Promise.reject(new Error("helper exited")); ready.catch(() => {}); return { ready, send() {}, close: async () => {} }; },
   saveSignature: async () => ({}), dispose() {},
-} }, pin: "4321", trustLoopback: false, configStore: { load: async () => ({ tiles: [] }) } });
+} }, pin: "432187", trustLoopback: false, configStore: { load: async () => ({ tiles: [] }) } });
 await new Promise((resolve) => stalled.server.listen(0, "127.0.0.1", resolve));
 const stalledBase = `http://127.0.0.1:${stalled.server.address().port}`;
 try {
-  const auth = await fetch(stalledBase + "/api/auth", { method: "POST", headers: { origin: stalledBase, "content-type": "application/json" }, body: JSON.stringify({ pin: "4321" }) });
+  const auth = await fetch(stalledBase + "/api/auth", { method: "POST", headers: { origin: stalledBase, "content-type": "application/json" }, body: JSON.stringify({ pin: "432187" }) });
   const ws = new WebSocket(stalledBase.replace("http:", "ws:") + "/input", { headers: { cookie: auth.headers.get("set-cookie").split(";")[0], origin: stalledBase } });
   const reply = JSON.parse((await once(ws, "message"))[0].toString()); ws.close();
   t.deepEqual(reply, { type: "error", error: "platform specific startup advice" }, "the phone gets the platform's startup advice");

@@ -60,7 +60,7 @@ Their maximum age is 180 days, but in-memory sessions disappear on host restart.
 State-changing requests and WebSocket upgrades check the request origin.
 Loopback is trusted by default for the tray; `trustLoopback: false` in
 `createApp` also requires pairing on the host. Discovery never includes the PIN.
-The four-digit PIN and LAN HTTP design are intended for a trusted local network;
+The six-digit PIN and LAN HTTP design are intended for a trusted local network;
 do not expose the host port directly to the internet.
 
 ## Linux host
@@ -304,3 +304,30 @@ for version, HTTP, invalid-feed and notification-policy checks. Add `-- --live`
 after publishing 0.2.1-preview.1 to check the actual public feed for current and
 older installations. Update `package.json`, `package-lock.json`, and the tray
 project's numeric/informational versions together for future Windows releases.
+
+### Pairing recovery and older clients
+
+The host now requires a six-digit PIN. If an older open phone page still accepts
+only four digits, its pairing response tells the user to close and reopen the
+app. Neither that legacy input nor any malformed PIN consumes the failure budget.
+Only incorrect six-digit guesses count.
+
+The phone shows the remaining wait and whether the pause affects that device or
+all new pairing. On Windows, **Allow pairing now** in the tray menu clears the
+host-wide pause and recent failure budget. It preserves individual device
+lockouts and existing sessions; the PIN does not change.
+
+For a host without a tray, run this on the PC (use its configured port):
+
+    curl --request POST http://127.0.0.1:8620/api/pairing/reset \
+      --header 'X-WinDock-Local-Action: allow-pairing' \
+      --header 'Content-Type: application/json' --data '{}'
+
+This endpoint requires a loopback connection, a loopback Host, the explicit
+native-action header, no Origin or Sec-Fetch-Site header, and an empty JSON
+object. Paired phones and browser requests cannot use it.
+
+Custom WINDOCK_ALLOWED_HOSTS entries are comma-separated names, optionally with
+a port or trailing DNS dot. Unknown names receive HTTP 421 with configuration
+guidance. Only exact localhost has implicit name-based loopback trust;
+subdomains require explicit allowlisting and still require pairing.
