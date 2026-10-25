@@ -15,8 +15,7 @@ assembleDebug` on Linux with those prerequisites.
 Output: `artifacts/WinDock-android-debug.apk`. It supports Android 7/API 24 and
 newer, targets API 34, and uses a local debug signing key. Updating requires the
 same signing key. Production signing and Play Store preparation are separate.
-The current development APK identifies as `0.2.4-preview.1` (version code 5);
-it has not yet replaced the public download.
+The current public APK is `0.2.4-preview.1` (version code 5).
 
 Transfer the APK to the phone, open it and allow installation from the chosen
 browser/file manager if Android asks. Alternatively, enable USB debugging,
