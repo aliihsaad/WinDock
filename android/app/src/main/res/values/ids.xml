@@ -3,4 +3,7 @@
     <item name="dim_delay" type="id" />
     <item name="dim_level" type="id" />
     <item name="sleep_delay" type="id" />
+    <item name="update_status" type="id" />
+    <item name="update_check" type="id" />
+    <item name="update_download" type="id" />
 </resources>

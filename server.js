@@ -13,6 +13,7 @@ import { extname, join, normalize, resolve, sep } from "node:path";
 import { createProvider } from "./src/platform/index.js";
 import { validateControl, isDestructiveVerb, CONTROL_VERBS } from "./src/platform/contract.js";
 import { createConfigStore } from "./src/config.js";
+import { createUpdateService } from "./src/updates.js";
 import { createSyncHub } from "./src/sync.js";
 import { createInputHub } from "./src/input-hub.js";
 import { validateSignature } from "./src/input.js";
@@ -127,6 +128,7 @@ export async function createApp({
   allowDestructive = true,
   trustLoopback = true,
   hostAllowed = createHostCheck(),
+  updates = createUpdateService({ platform: provider.id }),
 } = {}) {
   if (!isValidPinShape(pin)) throw new Error("Pairing PIN must contain exactly six ASCII digits.");
   const state = { pin };
@@ -246,6 +248,13 @@ export async function createApp({
 
       const mutating = ["POST", "PUT", "PATCH", "DELETE"].includes(req.method);
       if (mutating && !sameOrigin(req)) return sendJson(res, 403, { error: "bad origin" });
+
+      if (path === "/api/updates" && req.method === "GET") return sendJson(res, 200, updates.state());
+      if (path === "/api/updates/check" && req.method === "POST") {
+        const body = await readJsonBody(req);
+        if (Object.keys(body).length) return sendJson(res, 400, { error: "update check takes no options" });
+        return sendJson(res, 200, await updates.check());
+      }
 
       if (path === "/api/state" && req.method === "GET") {
         return sendJson(res, 200, await dockState());

@@ -43,6 +43,7 @@ function response(body, status = 200) {
 export async function fetch(path, options = {}) {
   if (path === '/api/input') return response({ available: true, keyboard: true, signatureInsert: true, demo: true });
   if (['/api/signature', '/api/signature/insert'].includes(path) && options.method === 'POST') return response({ demo: true, path: 'Demo only · No file created or pasted' });
+  if (path === '/api/updates' || path === '/api/updates/check') return response({ status: 'unchecked', installedVersion: 'Website demo' });
   if (path === '/api/state') return response({ tiles, running: [], verbs, hostName: 'Preview PC', platformName: 'Windows', allowDestructive: false });
   if (path === '/api/apps/installed') return response({ apps });
   if (path === '/api/nowplaying') return response({ nowPlaying: null });

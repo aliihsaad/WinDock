@@ -33,4 +33,16 @@
     <string name="screen_resting">Screen resting. Tap to return to the dock.</string>
     <string-array name="dim_delays"><item>Never</item><item>After 15 seconds</item><item>After 30 seconds</item><item>After 1 minute</item><item>After 2 minutes</item></string-array>
     <string-array name="sleep_delays"><item>Use phone’s timeout</item><item>After 1 minute idle</item><item>After 2 minutes idle</item><item>After 5 minutes idle</item><item>After 10 minutes idle</item><item>Stay awake while dock is open</item></string-array>
+    <string name="app_updates">Updates</string>
+    <string name="installed_android_version">Installed on this phone: %1$s</string>
+    <string name="check_updates">Check for updates</string>
+    <string name="checking_updates">Checking for updates…</string>
+    <string name="up_to_date">You’re up to date.</string>
+    <string name="update_available">WinDock %1$s is available.</string>
+    <string name="updates_unchecked">Check for the latest Android release when you’re ready.</string>
+    <string name="update_failed">Couldn’t check for updates. Check your internet connection and try again.</string>
+    <string name="view_release">View release &amp; download</string>
+    <string name="android_update_install">Download the APK and open it to install. A matching signing key keeps your phone settings. Updates are installed manually.</string>
+    <string name="update_browser_missing">Open windock.vercel.app in a browser to download the update.</string>
+    <string name="close">Close</string>
 </resources>

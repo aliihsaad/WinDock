@@ -179,3 +179,23 @@ Reference documentation: [Android network security](https://developer.android.co
 [immersive system bars](https://developer.android.com/develop/ui/views/layout/immersive),
 [AGP 8.5 compatibility](https://developer.android.com/build/releases/agp-8-5-0-release-notes),
 and [Gradle wrapper checksums](https://docs.gradle.org/current/userguide/gradle_wrapper.html).
+
+## Update checks (development builds)
+
+Open **Updates** on the connection screen, or **Drawer → Updates → Check Android
+updates** while connected. The screen shows this phone's installed version and
+an explicit current, available or failed result. A newer APK opens the official
+release page in your browser; installation remains manual. A PC-only release
+with the same APK version code does not prompt a phone update. These controls
+are not in the published 0.2.4 APK yet.
+
+On an isolated emulator, run the native regression after installing the debug
+and instrumentation APKs:
+
+```powershell
+adb -s emulator-5556 shell am instrument -w -e class com.windock.app.UpdatesTest com.windock.app.test/androidx.test.runner.AndroidJUnitRunner
+```
+
+Expected: OK (4 tests). Start scripts/android-smoke-host.mjs for the connected
+dock test. The live-feed cases require internet access; the other
+cases use deterministic metadata and a simulated offline request.

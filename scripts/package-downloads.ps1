@@ -26,12 +26,25 @@ if ($ReleaseVersion) {
     if ($ReleaseVersion -notmatch '^\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?$') { throw 'Invalid release version.' }
     $version = $ReleaseVersion
 }
+# Read the version from the actual APK, including when reusing an older companion.
+$sdkRoot = if ($env:ANDROID_HOME) { $env:ANDROID_HOME } elseif ($env:ANDROID_SDK_ROOT) { $env:ANDROID_SDK_ROOT } else { Join-Path $env:LOCALAPPDATA 'Android\Sdk' }
+$aaptName = if ($env:OS -eq 'Windows_NT') { 'aapt.exe' } else { 'aapt' }
+$aapt = Get-ChildItem -LiteralPath (Join-Path $sdkRoot 'build-tools') -Directory | Sort-Object Name -Descending | ForEach-Object { Join-Path $_.FullName $aaptName } | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
+if (-not $aapt) { throw 'Android SDK aapt is required to read the packaged APK version.' }
+$badging = & $aapt dump badging $apkSource
+if ($LASTEXITCODE -ne 0) { throw 'Could not read APK metadata.' }
+$packageLine = $badging | Where-Object { $_ -match "^package: name='com.windock.app' " } | Select-Object -First 1
+$apkMetadata = [regex]::Match($packageLine, "(?:^| )versionCode='([0-9]+)' versionName='([^']+)'(?: |$)")
+if (-not $apkMetadata.Success) { throw 'WinDock APK version metadata is missing.' }
+$apkVersionCode = [int]$apkMetadata.Groups[1].Value
+$apkVersionName = $apkMetadata.Groups[2].Value
+if ($apkVersionCode -lt 1 -or $apkVersionName -cnotmatch '^\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?$') { throw 'WinDock APK version metadata is invalid.' }
 $manifest = [ordered]@{
     version = $version
     available = $true
     generatedAt = [DateTime]::UtcNow.ToString('o')
     windows = @{ url="$DownloadBase/WinDockSetup.exe"; bytes=$windowsFile.Length; sha256=$windowsHash }
-    android = @{ url="$DownloadBase/WinDock-android-debug.apk"; bytes=$androidFile.Length; sha256=$androidHash }
+    android = @{ versionCode=$apkVersionCode; versionName=$apkVersionName; url="$DownloadBase/WinDock-android-debug.apk"; bytes=$androidFile.Length; sha256=$androidHash }
     checksums = "$DownloadBase/SHA256SUMS.txt"
 }
 $utf8 = [Text.UTF8Encoding]::new($false)

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add an **Updates** screen in the dock drawer and Appearance, showing the
+  installed PC version, manual update checks, and current/available/offline states.
+- Add Android update checks from the connection screen and connected dock,
+  plus an update shortcut in the Windows connection window. Installation stays
+  manual. Android checks its own APK version code, including PC-only releases.
+
 - Add the first native iPhone companion source: remembered PC address, PIN pairing
   through the shared landscape dock, and reconnect/change-PC controls.
 - Add a GitHub macOS workflow for simulator tests, screenshots and unsigned iOS

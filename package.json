@@ -1,6 +1,7 @@
 {
   "name": "windock",
   "version": "0.2.4",
+  "releaseVersion": "0.2.4-preview.1",
   "private": true,
   "license": "MIT",
   "type": "module",
