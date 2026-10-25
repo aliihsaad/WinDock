@@ -93,6 +93,7 @@ class UpdatesTest {
             lateinit var web: WebView
             scenario.onActivity { web=it.findViewById(R.id.web) }
             awaitJs(web,"!!document.getElementById('drawer-updates')")
+            awaitJs(web,"!document.getElementById('pair').hidden || !document.getElementById('app').hidden")
             js(web,"if(!document.getElementById('pair').hidden){document.getElementById('pin').value='864213';document.getElementById('pair-form').requestSubmit()}")
             awaitJs(web,"document.getElementById('pair').hidden && !document.getElementById('app').hidden")
             js(web,"document.getElementById('drawer-open').click();document.getElementById('drawer-updates').click()")
