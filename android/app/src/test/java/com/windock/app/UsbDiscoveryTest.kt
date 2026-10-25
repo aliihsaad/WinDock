@@ -50,6 +50,20 @@ class UsbDiscoveryTest {
         assertFalse(Discovery.permitsRememberedEndpoint("https://example.com", false, links))
     }
 
+    @Test fun tailscaleEndpointsReconnectWithoutBecomingUsbEndpoints() {
+        val endpoint = "http://100.101.102.103:8620"
+        val links = listOf(LocalNetwork("192.168.1.20", "192.168.1.255", 24, false),
+            LocalNetwork("192.168.42.129", "192.168.42.255", 24, true))
+        assertTrue(Discovery.permitsRememberedEndpoint(endpoint, false, links))
+        assertTrue(Discovery.permitsRememberedEndpoint(endpoint, false, emptyList()))
+        assertFalse(Discovery.permitsRememberedEndpoint(endpoint, true, links))
+        assertFalse(Discovery.permitsRememberedEndpoint(endpoint, true, emptyList()))
+        assertFalse(Discovery.permitsRememberedEndpoint("http://100.128.0.1:8620", false, links))
+        // LAN discovery still uses the answering interface rather than an advertised VPN address.
+        assertEquals("http://192.168.1.40:8620", Discovery.parseReply(
+            "windock:here:v1:$endpoint", "192.168.1.40"))
+    }
+
     @Test fun startupReturnsToWifiAfterTheCableIsRemoved() {
         val wifi = LocalNetwork("192.168.1.20", "192.168.1.255", 24, false)
         val usb = LocalNetwork("192.168.42.129", "192.168.42.255", 24, true)

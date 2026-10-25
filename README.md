@@ -230,6 +230,15 @@ Names may include a port or a trailing DNS dot; `*.localhost` is not implicitly 
 host restarts. The website's interactive demo uses sample apps and simulated
 touchpad, typing, signature and capture actions; it never connects to your PC.
 
+### Tailscale (development Android build)
+
+The Android source now accepts the PC's numeric Tailscale IPv4 address for
+manual connections. The published `0.2.4-preview.1` APK does not include this
+fix yet. With both devices connected to Tailscale, enter the PC's VPN address
+in the app and pair normally; automatic discovery remains LAN-only.
+See the [Android Tailscale setup](android/README.md#tailscale-connection-development-build)
+for connection steps and firewall requirements.
+
 ## Current release
 
 [0.2.4-preview.1](https://github.com/aliihsaad/WinDock/releases/tag/v0.2.4-preview.1)

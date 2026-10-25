@@ -27,6 +27,31 @@ Connect. A bare IP defaults to port 8620. Back closes an open sheet; a second
 Back returns to the connection screen. Android's first fullscreen prompt needs
 one tap on Got it. System-edge swipes can temporarily reveal navigation bars.
 
+## Tailscale connection (development build)
+
+Development Android builds accept numeric addresses in Tailscale's
+`100.64.0.0/10` range. The published `0.2.4-preview.1` APK still rejects these
+addresses; this fix needs a new Android build.
+
+1. Connect the phone and PC to your Tailscale network and keep WinDock running
+   on the PC. Tailscale access rules and the PC firewall must allow the phone
+   to reach WinDock's TCP port (8620 by default).
+2. On the Android connection screen, use **Connect by Wi-Fi** if USB mode is
+   selected. Enter the PC's Tailscale IPv4 address, such as `100.101.102.103`
+   or `100.101.102.103:8620`, then tap **Use this address**.
+3. Pair using the PIN shown by the PC. After a successful connection, the app
+   remembers this address for the next launch.
+
+Automatic discovery remains LAN broadcast discovery; it does not find peers
+across Tailscale. Use the numeric address, not a MagicDNS hostname or IPv6
+address. Tailscale provides the encrypted VPN connection; entering a CGNAT
+address alone does not establish a VPN or make a host trusted. WinDock's
+health check, PIN pairing and same-origin restrictions still apply. Do not
+expose WinDock's port directly to the public internet.
+
+See [Tailscale's address documentation](https://tailscale.com/docs/concepts/tailscale-ip-addresses)
+for the shared address range.
+
 ## USB connection (development build)
 
 The new Android build supports USB networking through **USB tethering**. This
@@ -167,8 +192,9 @@ poller's automatic-update, inactive-state, timeout and concurrency regression.
 ## Transport and build decisions
 
 Android's network security XML matches domains, not private IP subnets. The
-transport allows HTTP, while `EndpointPolicy` limits selected hosts to private
-or loopback IPv4 addresses (plus localhost). Health checks reject redirects,
+transport allows HTTP, while `EndpointPolicy` limits selected hosts to private,
+loopback or shared CGNAT IPv4 addresses (plus localhost). Health checks reject
+redirects,
 limit response size/time and require WinDock's identity. The WebView permits
 only the selected origin, disables file/content access, and never overrides
 TLS certificate errors. PIN/session handling stays in the shared web UI.
