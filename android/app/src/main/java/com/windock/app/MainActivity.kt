@@ -87,6 +87,7 @@ class MainActivity : Activity() {
         findViewById<Button>(R.id.usb_connect).setOnClickListener { showUsbSetup() }
         findViewById<Button>(R.id.phone_options).setOnClickListener { showPhoneOptions() }
         address.setOnEditorActionListener { _, _, _ -> connectButton.performClick(); true }
+        showKnownHosts()
 
         web.setBackgroundColor(getColor(R.color.dock_background))
         web.settings.apply {
@@ -130,6 +131,35 @@ class MainActivity : Activity() {
         }
         hideSystemBars()
         connect(restoreOnStartup = true)
+    }
+
+    /** Recent PCs: one tap connects, a long press forgets. Hidden until there are any. */
+    private fun showKnownHosts() {
+        val hosts = ServerUrl.knownHosts(this)
+        val list = findViewById<LinearLayout>(R.id.known_hosts)
+        val title = findViewById<TextView>(R.id.known_hosts_title)
+        list.removeAllViews()
+        title.visibility = if (hosts.isEmpty()) View.GONE else View.VISIBLE
+        list.visibility = title.visibility
+        for (host in hosts) {
+            list.addView(Button(this).apply {
+                text = host.title
+                isAllCaps = false
+                setOnClickListener {
+                    if (connecting) return@setOnClickListener
+                    selectConnection(host.usb, host.endpoint)
+                    connect(host.endpoint)
+                }
+                setOnLongClickListener {
+                    AlertDialog.Builder(this@MainActivity)
+                        .setMessage(getString(R.string.forget_pc, host.title))
+                        .setPositiveButton(R.string.forget) { _, _ -> ServerUrl.forgetHost(this@MainActivity, host.endpoint); showKnownHosts() }
+                        .setNegativeButton(android.R.string.cancel, null)
+                        .show()
+                    true
+                }
+            })
+        }
     }
 
     private fun syncIdleDisplay() {
@@ -332,6 +362,8 @@ class MainActivity : Activity() {
                 } else {
                     endpoint = selected
                     ServerUrl.save(this, selected, useUsb)
+                    ServerUrl.rememberHost(this, selected, platforms[selected].orEmpty(), useUsb)
+                    showKnownHosts()
                     address.setText(selected)
                     status.setText(R.string.connecting)
                     loadFailed = false
@@ -343,6 +375,9 @@ class MainActivity : Activity() {
             }
         }
     }
+
+    /** The platform each reachable PC reported, for the Recent PCs labels. */
+    private val platforms = java.util.concurrent.ConcurrentHashMap<String, String>()
 
     private fun reachable(endpoint: String): Boolean {
         if (!ServerUrl.isValid(endpoint)) return false
@@ -361,7 +396,10 @@ class MainActivity : Activity() {
                     if (read == -1) break
                     count += read
                 }
-                count <= 4096 && JSONObject(String(body, 0, count)).optString("app") == "windock"
+                count <= 4096 && JSONObject(String(body, 0, count)).let { health ->
+                    platforms[endpoint] = KnownHosts.platformName(health.optString("platform"))
+                    health.optString("app") == "windock"
+                }
             }
         } catch (_: Exception) { false }
         finally { conn?.disconnect() }

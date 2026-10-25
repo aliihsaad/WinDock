@@ -27,6 +27,12 @@ Connect. A bare IP defaults to port 8620. Back closes an open sheet; a second
 Back returns to the connection screen. Android's first fullscreen prompt needs
 one tap on Got it. System-edge swipes can temporarily reveal navigation bars.
 
+Every PC the phone has reached is listed under **Recent PCs** on the connection
+screen, newest first and at most eight, with the platform it reported: tap one
+to connect over the transport it was last used with, hold it to forget it. The
+PIN and pairing cookie stay in the WebView as before, so a PC that restarted
+asks for its PIN again.
+
 ## USB connection (development build)
 
 The new Android build supports USB networking through **USB tethering**. This
