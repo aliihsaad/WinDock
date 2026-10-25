@@ -31,7 +31,7 @@ const provider = {
 const configStore = createConfigStore({ path: resolve(dir, 'config.json') });
 await configStore.save({ tiles: apps.map(app => ({ ...app, kind: 'app', label: app.name })) });
 await writeFile(resolve(dir, 'events.json'), '[]');
-const app = await createApp({ provider, configStore, pin: '8642', trustLoopback: false, allowDestructive: false });
+const app = await createApp({ provider, configStore, pin: '864213', trustLoopback: false, allowDestructive: false });
 const foreignHits = [];
 const servers = [
   [app.server, 18622],
@@ -46,4 +46,4 @@ const servers = [
   }), 18626],
 ];
 for (const [server, port] of servers) await new Promise(resolve => server.listen(port, '127.0.0.1', resolve));
-console.log('iOS simulator fixture ready on 18622; PIN 8642 (test provider only)');
+console.log('iOS simulator fixture ready on 18622; PIN 864213 (test provider only)');

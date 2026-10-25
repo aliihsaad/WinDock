@@ -10,7 +10,7 @@ import { createConfigStore } from "../src/config.js";
 import { originAllowed, snapshotMessage } from "../src/sync.js";
 
 const t = createChecker("sync");
-const PIN = "8888";
+const PIN = "888888";
 
 // ---- pure origin guard ----
 t.ok(originAllowed({ headers: {}, socket: {} }), "a native client with no Origin is allowed");

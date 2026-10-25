@@ -1,6 +1,6 @@
 [package]
 name = "windock-input"
-version = "0.2.3"
+version = "0.2.4"
 edition = "2024"
 license = "MIT"
 description = "WinDock Linux touchpad, phone keyboard and signature helper"

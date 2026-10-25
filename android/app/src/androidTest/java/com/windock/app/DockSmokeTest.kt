@@ -91,9 +91,9 @@ class DockSmokeTest {
             awaitJs(web, "!!document.getElementById('pin')")
             awaitJs(web, "!document.getElementById('pair').hidden || !document.getElementById('app').hidden")
             if (js(web, "!document.getElementById('pair').hidden") == "true") {
-                js(web, "document.getElementById('pin').value='0000'; document.querySelector('#pair-form button').click()")
+                js(web, "document.getElementById('pin').value='000000'; document.querySelector('#pair-form button').click()")
                 awaitJs(web, "document.getElementById('pair-error').textContent.length > 0")
-                js(web, "document.getElementById('pin').value='8642'; document.querySelector('#pair-form button').click()")
+                js(web, "document.getElementById('pin').value='864213'; document.querySelector('#pair-form button').click()")
             }
             awaitJs(web, "!document.getElementById('app').hidden && document.querySelectorAll('.tile').length === 5")
             awaitJs(web, "document.getElementById('conn').textContent === 'Connected'")

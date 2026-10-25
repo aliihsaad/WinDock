@@ -3,9 +3,11 @@ import { icon, controlIcon } from "./icons.js";
 import { addAppTile, addControlTile, removeTile, moveTile, toWireTiles, availableControls, tileKey } from "./tiles.js";
 import { normalizeLayout, renderPages, pageCount, moveToTile } from "./launcher.js";
 import { createInputPad } from "./input-pad.js";
+import { pairingError } from "./pairing.js";
 import { createNowPlayingPoller } from "./now-playing.js";
 
 const $ = (id) => document.getElementById(id);
+const performanceMode = window.WinDockPerformance;
 let state = { tiles: [], running: [], verbs: [] };
 let editing = false, paired = false, online = false, saving = false;
 let socket = null, reconnectTimer = null, installedApps = [], appsLoaded = false;
@@ -104,9 +106,7 @@ async function api(path, options = {}) {
   });
   if (res.status === 401 && path !== "/api/auth") { showPair("Enter the current PIN to reconnect."); throw new Error("unauthorized"); }
   if (!res.ok) {
-    const detail = (await res.json().catch(() => ({}))).error;
-    const messages = { "wrong pin": "That PIN doesn’t match. Try the PIN shown on your PC.", "invalid pin": "Enter all four digits.", locked: "Too many attempts. Wait a moment and try again.", "internal error": "Your PC couldn’t complete that action. Check the app or device and try again." };
-    throw new Error(messages[detail] || detail || "The request couldn’t be completed.");
+    throw new Error(pairingError(await res.json().catch(() => ({}))));
   }
   return res.json();
 }
@@ -147,9 +147,18 @@ function syncLayout() {
   $("show-labels").checked = layout.showLabels;
   $("show-labels").disabled = !layout.immersive;
   $("glass-theme").value = layout.theme;
+  syncPerformance();
   $("layout-summary").textContent = layout.perPage + " icons · " + layout.columns + " × 2";
   document.querySelectorAll("[data-per-page]").forEach((button) => button.setAttribute("aria-pressed", String(Number(button.dataset.perPage) === layout.perPage)));
   document.querySelectorAll("[data-background]").forEach((button) => { if (button.tagName === "BUTTON") button.setAttribute("aria-pressed", String(button.dataset.background === layout.background)); });
+}
+function syncPerformance() {
+  $("performance-mode").value = performanceMode.preference;
+  $("glass-theme").disabled = performanceMode.enabled;
+  $("glass-hint").hidden = !performanceMode.enabled;
+  $("performance-status").textContent = performanceMode.preference === "auto"
+    ? (performanceMode.enabled ? "Auto · On for this device. Fewer effects, instant page changes." : "Auto · Off. Turn on for fewer effects and instant page changes on older phones.")
+    : (performanceMode.enabled ? "On · Fewer effects and instant page changes on this device." : "Off · Your usual appearance is restored.");
 }
 function saveLayout(changes) {
   layout = normalizeLayout({ ...layout, ...changes });
@@ -183,7 +192,7 @@ function paint() {
 }
 function pageTo(page, smooth = true) {
   currentPage = Math.max(0, Math.min(pageCount(state.tiles, layout) - 1, page));
-  $("dock").scrollTo({ left: currentPage * $("dock").clientWidth, behavior: smooth ? "smooth" : "instant" });
+  $("dock").scrollTo({ left: currentPage * $("dock").clientWidth, behavior: performanceMode.scrollBehavior(smooth) });
   if (smooth) showPageHint();
 }
 function enterEditing() { if (saving) return; editing = true; paint(); }
@@ -483,6 +492,11 @@ document.querySelectorAll("button[data-background]").forEach((button) => button.
 $("immersive").addEventListener("change", () => saveLayout({ immersive: $("immersive").checked }));
 $("show-labels").addEventListener("change", () => saveLayout({ showLabels: $("show-labels").checked }));
 $("glass-theme").addEventListener("change", () => saveLayout({ theme: $("glass-theme").value }));
+$("performance-mode").addEventListener("change", () => {
+  performanceMode.setPreference($("performance-mode").value);
+  syncPerformance();
+  pageTo(currentPage, false);
+});
 async function toggleFullscreen() {
   try {
     if (document.fullscreenElement) { await document.exitFullscreen(); return; }

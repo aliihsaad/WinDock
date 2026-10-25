@@ -2,7 +2,8 @@
 
 Prebuilt packages for **x86-64 Hyprland desktops**. Node.js and the compiled
 input helper are bundled, so you do not need to install Node.js, npm or Rust.
-Use the existing WinDock Android companion.
+Update the Android companion for automatic low-RAM detection; existing clients
+can enable Performance mode manually. Pair using the new six-digit PIN.
 
 ### Omarchy / Arch
 
@@ -31,6 +32,9 @@ The package sets up the touchpad's udev rule. If the touchpad cannot start,
 log out and back in or reboot. Optional desktop tools for recording and
 brightness are listed in the [setup guide](https://github.com/aliihsaad/WinDock/blob/main/README.md#linux-preview).
 An active firewall may need TCP 8620 and UDP 41234 allowed from your trusted LAN.
+
+If pairing is paused for all devices, the PC-local recovery command is in the
+[development guide](https://github.com/aliihsaad/WinDock/blob/main/docs/DEVELOPMENT.md#pairing-recovery-and-older-clients).
 
 To update, quit WinDock and install the new package with the same command.
 To remove it, use `sudo pacman -R windock` or `sudo apt remove windock`.

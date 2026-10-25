@@ -15,7 +15,7 @@ assembleDebug` on Linux with those prerequisites.
 Output: `artifacts/WinDock-android-debug.apk`. It supports Android 7/API 24 and
 newer, targets API 34, and uses a local debug signing key. Updating requires the
 same signing key. Production signing and Play Store preparation are separate.
-The current development APK identifies as `0.2.2-preview.1` (version code 4);
+The current development APK identifies as `0.2.4-preview.1` (version code 5);
 it has not yet replaced the public download.
 
 Transfer the APK to the phone, open it and allow installation from the chosen
@@ -87,7 +87,7 @@ the real URL/discovery parser and same-origin request policy.
 
 For the emulator flow, start `node scripts/android-smoke-host.mjs` in another
 terminal. It listens only on loopback port 18622 and provides five fake apps,
-test PIN 8642, and an action log in `artifacts/android-smoke/events.json`.
+test PIN 864213, and an action log in `artifacts/android-smoke/events.json`.
 It never calls a Windows provider or reads the user's saved dock.
 
 With an Android emulator running, use the SDK's adb (specify `-s SERIAL` if

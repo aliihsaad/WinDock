@@ -86,7 +86,7 @@ const dir = await mkdtemp(join(tmpdir(), "windock-offline-"));
 const app = await createApp({
   provider,
   configStore: createConfigStore({ path: join(dir, "config.json") }),
-  pin: "5555",
+  pin: "555555",
 });
 await new Promise((r) => app.server.listen(0, "127.0.0.1", r));
 const base = `http://127.0.0.1:${app.server.address().port}`;

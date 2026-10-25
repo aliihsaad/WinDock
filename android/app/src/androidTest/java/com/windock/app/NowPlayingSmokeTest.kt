@@ -58,7 +58,7 @@ class NowPlayingSmokeTest {
             awaitJs(web, "!!document.getElementById('pin')", 15000)
             awaitJs(web, "!document.getElementById('pair').hidden || !document.getElementById('app').hidden")
             if (js(web, "!document.getElementById('pair').hidden") == "true") {
-                js(web, "document.getElementById('pin').value='8642'; document.querySelector('#pair-form button').click()")
+                js(web, "document.getElementById('pin').value='864213'; document.querySelector('#pair-form button').click()")
             }
             awaitJs(web, "document.getElementById('conn').textContent === 'Connected'", 15000)
             awaitJs(web, "document.querySelector('.np__title')?.textContent === 'Android first'")

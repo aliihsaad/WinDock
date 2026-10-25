@@ -25,7 +25,7 @@ const provider = {
   },
 };
 const app = await createApp({
-  provider, pin: "8642", trustLoopback: false, allowDestructive: false,
+  provider, pin: "864213", trustLoopback: false, allowDestructive: false,
   configStore: { load: async () => ({ tiles: [] }) },
 });
 const fixture = createServer(async (req, res) => {
@@ -43,5 +43,5 @@ const fixture = createServer(async (req, res) => {
   res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" });
   res.end(JSON.stringify({ media, requests, active, maxActive }));
 });
-app.server.listen(18623, "127.0.0.1", () => console.log("Media fixture app: http://127.0.0.1:18623 (PIN 8642)"));
+app.server.listen(18623, "127.0.0.1", () => console.log("Media fixture app: http://127.0.0.1:18623 (PIN 864213)"));
 fixture.listen(18624, "127.0.0.1", () => console.log("Media fixture control: http://127.0.0.1:18624/state"));
