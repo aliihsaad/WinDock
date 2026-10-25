@@ -57,7 +57,7 @@ export function safeEqual(a, b) {
  * or IP with an optional port before URL parsing, otherwise something like
  * "evil.example@localhost" would parse as login details plus "localhost".
  */
-const HOST_HEADER = /^(?:\[[0-9a-f:.]+\]|[a-z0-9.-]+)(?::\d{1,5})?$/i;
+const HOST_HEADER = /^(?:\[[0-9a-f:.]+\]|[a-z0-9._-]+)(?::\d{1,5})?$/i;
 export function hostName(header) {
   if (typeof header !== "string" || !HOST_HEADER.test(header)) return "";
   try {

@@ -162,6 +162,15 @@ t.ok(isLoopbackHost("localhost:1") && isLoopbackHost("[::1]:1") && isLoopbackHos
 t.ok(!isLoopbackHost("127.evil.example") && !isLoopbackHost("app.localhost") && !isLoopbackHost("192.168.1.4") && !isLoopbackHost("evil.example"), "other Host names are not loopback");
 t.ok(!isLoopbackHost("attacker.example@localhost"), "login details in a Host header can't pass as localhost");
 
+// Machine names and explicitly configured aliases may contain underscores.
+const underscoreHost = createHostCheck({ machine: "My_PC", extra: "MY_DOCK.home.arpa.:8620" });
+for (const good of ["my_pc:8620", "MY_PC.local.", "my_dock.home.arpa:8620"]) {
+  t.ok(underscoreHost(good), "underscored machine/allowlisted host is accepted: " + good);
+}
+for (const bad of ["other_pc", "my_pc.evil.example", "evil@my_pc", "my_pc/x", "my_pc?x", "my_pc#x"]) {
+  t.ok(!underscoreHost(bad), "untrusted underscored host stays refused: " + bad);
+}
+
 // ---- host-wide failure budget ----
 let gclock = 5_000_000;
 const glock = createLockout({ now: () => gclock });
