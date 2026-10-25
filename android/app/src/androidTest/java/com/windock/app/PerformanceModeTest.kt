@@ -75,7 +75,7 @@ class PerformanceModeTest {
             assertEquals(lowRam.toString(), js(web, "window.WinDockPerformance.autoEnabled"))
             assertEquals(endpoint, ServerUrl.load(context))
             awaitJs(web, "!document.getElementById('pair').hidden || !document.getElementById('app').hidden")
-            js(web, "if(!document.getElementById('pair').hidden){document.getElementById('pin').value='8642';document.getElementById('pin').form.requestSubmit()}")
+            js(web, "if(!document.getElementById('pair').hidden){document.getElementById('pin').value='864213';document.getElementById('pin').form.requestSubmit()}")
             awaitJs(web, "!document.getElementById('app').hidden && document.querySelectorAll('.tile').length===5")
             device.wait(Until.findObject(By.text("Got it")), 1000)?.click()
 
