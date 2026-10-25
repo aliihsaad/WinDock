@@ -59,6 +59,13 @@ Set idle dimming and screen rest under **This phone** on the connection screen
 or **Appearance → This phone · screen & sleep** in the dock. Android’s screen
 timeout may add a delay before the display turns off.
 
+In development: **Appearance → Performance mode** offers **Auto**, **On**, and
+**Off**. On removes glass blur, animated paging, and heavy touch effects for older
+phones. Auto uses the updated Android companion's low-RAM hint; browsers and older
+companions can select On manually. Your choice is remembered for this PC address
+on this device, and Off restores your selected glass style. This feature is not
+included in the current public 0.2.3 preview.
+
 ## Linux preview
 
 WinDock also runs on Linux, built for Hyprland. The same Android app connects

@@ -15,13 +15,14 @@ export async function buildWebsiteDemo() {
   html = replaceOnce(html, '<link rel="manifest" href="/manifest.webmanifest">', '');
   html = replaceOnce(html, 'href="/style.css"', 'href="./style.css"');
   html = replaceOnce(html, 'src="/app.js"', 'src="./app.js"');
+  html = replaceOnce(html, 'src="/performance.js"', 'src="./performance.js" data-memory-only');
   html = replaceOnce(html, '<title>WinDock</title>', '<title>WinDock interactive preview</title>');
   html = replaceOnce(html, 'Main monitor · Saved on your PC', 'Demo · Nothing is captured or saved');
   html = replaceOnce(html, 'Recordings stop after 60 minutes.<span', 'In the app, captures are saved to your PC.<span');
   html = replaceOnce(html, '<head>', `<head>
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'">`);
   await writeFile(resolve(destination, 'index.html'), html);
-  for (const file of ['style.css', 'icons.js', 'tiles.js', 'launcher.js', 'input-pad.js', 'touchpad-gestures.js', 'remote-keyboard.js', 'now-playing.js', 'pairing.js']) {
+  for (const file of ['style.css', 'performance.js', 'icons.js', 'tiles.js', 'launcher.js', 'input-pad.js', 'touchpad-gestures.js', 'remote-keyboard.js', 'now-playing.js', 'pairing.js']) {
     await copyFile(resolve(root, 'public', file), resolve(destination, file));
   }
   let dock = await readFile(resolve(root, 'public/dock.js'), 'utf8');

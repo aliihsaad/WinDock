@@ -423,3 +423,29 @@ body.is-immersive .empty .button .icon { width: 36px; height: 36px; }
 @media (max-height: 450px) { .input-pad { padding-top: 8px; padding-bottom: 8px; } .input-pad[open], .input-pad__pane { gap: 7px; } .input-pad__tabs button { padding: 7px 14px; } .input-pad__status { font-size: 10px; } }
 @media (max-width: 640px) { .input-pad__tools { gap: 8px; } .signature-tools button { padding: 8px 11px; } .touchpad-toolbar { gap: 8px; left: max(8px, env(safe-area-inset-left)); right: max(8px, env(safe-area-inset-right)); bottom: max(8px, env(safe-area-inset-bottom)); } .touchpad-toolbar button { padding-inline: 12px; font-size: 11px; } .touchpad-navigation { gap: 2px; } .touchpad-navigation button { padding: 0; width: 44px; } .mouse-buttons button { min-width: 66px; } .touchpad-hint { font-size: 10px; gap: 8px; } .pointer-options { width: 220px; } .drawer-actions { gap: 3px; } .drawer-actions button { font-size: 10px; padding-inline: 2px; } }
 @media (orientation: portrait) { .input-pad[open] { visibility: hidden; } }
+
+/* Optional low-cost rendering. Removing .perf restores the selected glass style. */
+html.perf .wallpaper {
+  background: radial-gradient(ellipse at 0 0, var(--scene-a), transparent 65%),
+    linear-gradient(145deg, var(--scene-base), var(--scene-b));
+}
+html.perf .wallpaper > span, html.perf .wallpaper::after { display: none; }
+html.perf body :is(.sheet, .options, .confirm, .glass-drawer, .tile--control .tile__glyph,
+  .empty .button, .edit-done, .pointer-options, .mouse-buttons) {
+  background: #17252d; backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: none;
+}
+html.perf body .recording-stop { background: #301b22; backdrop-filter: none; box-shadow: none; }
+html.perf body .tile.is-editing::after { background: #e5edf0; backdrop-filter: none; }
+html.perf dialog::backdrop { background: #050b1773; backdrop-filter: none; -webkit-backdrop-filter: none; }
+html.perf .input-pad::backdrop { background: #080b10; }
+html.perf body :is(.app-icon img, .drag-ghost) { filter: none; }
+html.perf .dock { scroll-behavior: auto; }
+html.perf :is(.tile.is-editing, .glass-drawer[open]) { animation: none; }
+html.perf body :is(button, .page-dots, .drawer-trigger > span, .switch, .touchpad-feedback > span, .touchpad-hint),
+html.perf :is(.page-dot::before, .switch::after) { transition: none; }
+html.perf .touchpad-feedback > span {
+  width: 24px; height: 24px; margin: -12px 0 0 -12px;
+  background: #a5e3ff66; border: 1px solid #a5e3ff; will-change: auto;
+}
+html.perf .touchpad-feedback > span::before, html.perf .touchpad-feedback > span::after { display: none; }
+.setting-row select:disabled { opacity: .5; cursor: not-allowed; }

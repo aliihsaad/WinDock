@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Add the first native iPhone companion source: remembered PC address, PIN pairing
+  through the shared landscape dock, and reconnect/change-PC controls.
+- Add a GitHub macOS workflow for simulator tests, screenshots and unsigned iOS
+  archives. This is not an installable iPhone release; signing and physical testing
+  are still pending. This is separate from the Windows and Android releases below.
+
+## [0.2.4-preview.1](https://github.com/aliihsaad/WinDock/releases/tag/v0.2.4-preview.1) — October 25, 2026
+
 - Security: refuse HTTP and WebSocket requests whose Host header isn't an IP
   address, `localhost`, this PC's own name (plain or `.local`), or a name listed
   in `WINDOCK_ALLOWED_HOSTS`. This closes a DNS rebinding hole where a web page
@@ -15,11 +23,20 @@
   **Allow pairing now** action clears the host-wide pause locally; individual
   device lockouts still apply. Older four-digit clients show upgrade instructions
   without consuming the failure budget.
-- Add the first native iPhone companion source: remembered PC address, PIN pairing
-  through the shared landscape dock, and reconnect/change-PC controls.
-- Add a GitHub macOS workflow for simulator tests, screenshots and unsigned iOS
-  archives. This is not an installable iPhone release; signing and physical testing
-  are still pending. This is separate from the Windows and Android releases below.
+- Add **Appearance → Performance mode** with Auto, On, and Off. Reduce blur,
+  shadows, animation, and touchpad effects; use instant dock paging while enabled.
+  Auto follows the updated Android companion's low-RAM hint, with a remembered
+  manual override. Off restores the existing background and glass preferences.
+  Thanks to [waly-git](https://github.com/waly-git) for the detailed
+  [Galaxy S4 report and prototype findings (#9)](https://github.com/aliihsaad/WinDock/issues/9).
+- Reject malformed request targets with HTTP 400 instead of crashing the host.
+- Thanks to [Ojas Sharma](https://github.com/ojaseminem) for the security contribution in [#10](https://github.com/aliihsaad/WinDock/pull/10).
+
+Update the PC host and Android companion (version code 5) for automatic low-RAM
+detection. The APK uses the same signing certificate as 0.2.2/0.2.3 and can update
+those public builds in place. Reopen the phone app after updating the host and
+pair with its new six-digit PIN. Older companions can enable Performance mode
+manually. Linux package updates preserve the PC configuration.
 
 ## [0.2.3-preview.1](https://github.com/aliihsaad/WinDock/releases/tag/v0.2.3-preview.1) — October 20, 2026
 

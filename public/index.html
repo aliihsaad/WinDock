@@ -7,6 +7,7 @@
 <meta name="color-scheme" content="dark">
 <title>WinDock</title>
 <link rel="manifest" href="/manifest.webmanifest">
+<script src="/performance.js"></script>
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -152,7 +153,10 @@
         <button type="button" data-background="ember" aria-pressed="false"><span class="swatch swatch--ember"></span><span>Ember</span></button>
         <button type="button" data-background="midnight" aria-pressed="false"><span class="swatch swatch--midnight"></span><span>Midnight</span></button>
       </div>
-      <label class="setting-row" for="glass-theme">Glass style<select id="glass-theme"><option value="glass">Clear</option><option value="frost">Frosted</option><option value="smoke">Smoked</option></select></label>
+      <label class="setting-row" for="performance-mode">Performance mode<select id="performance-mode" aria-describedby="performance-status"><option value="auto">Auto</option><option value="on">On</option><option value="off">Off</option></select></label>
+      <p id="performance-status" class="settings__tip" role="status"></p>
+      <label class="setting-row" for="glass-theme">Glass style<select id="glass-theme" aria-describedby="glass-hint"><option value="glass">Clear</option><option value="frost">Frosted</option><option value="smoke">Smoked</option></select></label>
+      <p id="glass-hint" class="settings__tip" hidden>Glass effects return when Performance mode is off.</p>
       <div class="settings__utilities"><button id="fullscreen" class="button" type="button"><span data-icon="monitor"></span>Fullscreen</button><button id="refresh" class="button" type="button"><span data-icon="refresh"></span>Refresh</button></div>
       <div class="settings__utilities" id="phone-options-row" hidden><button id="phone-options" class="button" type="button"><span data-icon="sun"></span>This phone · screen &amp; sleep</button></div>
     </section>
