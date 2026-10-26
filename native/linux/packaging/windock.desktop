@@ -8,3 +8,8 @@ Terminal=true
 Categories=Network;RemoteAccess;
 Keywords=phone;remote;dock;Hyprland;
 StartupNotify=false
+Actions=stop;
+
+[Desktop Action stop]
+Name=Stop WinDock
+Exec=windock stop

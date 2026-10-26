@@ -98,7 +98,29 @@ on other desktops the running-app list is empty and focus/close are refused.
 - Capture refuses to start while the display sleeps (screencopy produces no
   frames). `gpu-screen-recorder` startup errors count as a failed start because
   its KMS capture can run without producing frames.
-- Not yet on Linux: tray, packaging.
+- Not yet on Linux: tray icon, autostart.
+
+### Background service
+
+The packaged `windock` command (`src/platform/linux-cli.js`) runs the host as the
+systemd user service `windock.service` (`native/linux/packaging/windock.service`),
+so it outlives the terminal window that opened it.
+
+- Before starting the service, `windock` writes the session's display, Hyprland,
+  search-path and WinDock variables to `$XDG_RUNTIME_DIR/windock-session.env`.
+  A host started for another Hyprland instance is restarted for the current one.
+- The service entry (`src/platform/linux-service.js`) publishes the address and
+  PIN in `$XDG_RUNTIME_DIR/windock/host.json` (mode 0600). systemd removes it when
+  the service stops. `windock`, `windock status` and the connection window read it;
+  the journal gets the address but not the PIN.
+- Inside the service, apps start through `systemd-run --user --scope`, each in
+  its own scope, so stopping or restarting the host leaves them running.
+- `windock stop` stops the service; **S** in the connection window does the same.
+  A host already answering on the port in a terminal window blocks a second one.
+- Without a user manager or the installed unit, and with `windock --foreground`,
+  the host runs in the terminal as before.
+- Package upgrades restart each user's running service, and removal stops it
+  (`/usr/lib/windock/user-service`, called from the Debian and Arch scripts).
 
 ### Touchpad, keyboard and signatures
 

@@ -10,3 +10,7 @@ fi
 if command -v udevadm >/dev/null 2>&1; then
     udevadm trigger --subsystem-match=misc --sysname-match=uinput 2>/dev/null || true
 fi
+# A background host running the old version restarts with this one.
+if [ "$1" = configure ]; then
+    /usr/lib/windock/user-service restart
+fi

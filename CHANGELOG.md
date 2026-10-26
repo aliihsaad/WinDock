@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Linux: WinDock keeps running in the background after you close its window, as
+  the systemd user service `windock.service`, so the phone stays connected.
+  Opening WinDock from the menu shows the address and PIN, and so does
+  `windock status`. Press **S** in that window or run `windock stop` to stop it;
+  it also stops at logout. Apps opened from the phone keep running when WinDock
+  stops. Upgrading the package restarts a background WinDock with a new PIN, and
+  removing the package stops it. Without a systemd user session, the window runs
+  WinDock as before; `windock --foreground` does so on request.
 - Touchpad: add a collapsed **PC clipboard** panel for recent text history on
   Windows and Linux. Review or edit an item before explicitly pasting it into the
   selected PC field. History is fetched on demand and is cleared from the phone

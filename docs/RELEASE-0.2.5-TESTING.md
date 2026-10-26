@@ -28,10 +28,17 @@ settings. Re-pair with each PC's six-digit PIN if its host restarted.
    confirm the panel shows only the current clipboard with a notice, not an error.
    Paste changes the PC's current clipboard and sends Ctrl+V. A terminal or
    application that uses a different paste shortcut may not accept it.
-6. **Tailscale:** with both devices connected to your own tailnet, enter the PC's
+6. **Linux background host:** close any WinDock window from an older package
+   first. Open WinDock from the menu, pair, then close the window: the phone must
+   stay connected and apps must keep working. Open WinDock again and confirm the
+   same PIN, with no second host (`windock status` agrees). Open an app from the
+   phone, press S in the window, and confirm the phone disconnects while that app
+   stays open. Reinstall or upgrade the package while WinDock runs: it restarts with
+   a new PIN. Removing the package stops it.
+7. **Tailscale:** with both devices connected to your own tailnet, enter the PC's
    numeric 100.x address manually, pair and use the dock. Restart/reconnect. Check
    switching between the remembered VPN endpoint and a LAN PC. Discovery is LAN-only.
-7. **Regression:** app icons/layout, launch/focus, media, volume, touchpad, phone
+8. **Regression:** app icons/layout, launch/focus, media, volume, touchpad, phone
    keyboard, signatures, captures, performance mode and Wi-Fi/USB reconnect.
 
 Report the platform, installed version, steps, expected/actual behavior and any

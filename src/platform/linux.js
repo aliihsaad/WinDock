@@ -142,21 +142,23 @@ async function readInventory(appDirs) {
 /** A desktop id becomes one gtk-launch argument, so it may never look like an option. */
 const DESKTOP_ID = /^[A-Za-z0-9][A-Za-z0-9._+-]{0,254}$/;
 
+/** Gives one app its own transient scope in the user's systemd manager. */
+const SCOPE_ARGV = ["--user", "--scope", "--quiet", "--collect", "--"];
+
 /**
  * Start a GUI app without owning it. `exec` waits for the child to exit and
  * kills it at its timeout, which closed every launched app after 20 seconds.
  * A detached child with no inherited pipes outlives the request and the host.
  * With `wait`, the launcher's own exit code is reported: gtk-launch exits as
  * soon as the app has been spawned.
+ *
+ * Inside WinDock's systemd user service, every child belongs to the service
+ * and is stopped with it. With `scope`, each app starts in its own scope, as
+ * desktop launchers do, so it survives a stop, restart or package upgrade of
+ * the host. If systemd-run cannot reach the user manager, apps start directly.
  */
-export function createLauncher({ spawn = spawnProcess, waitMs = 10_000 } = {}) {
-  return function launch(file, args = [], { wait = false } = {}) {
-    if (typeof file !== "string" || !file) {
-      return Promise.reject(new Error("launch requires a file"));
-    }
-    if (!Array.isArray(args) || args.some((a) => typeof a !== "string")) {
-      return Promise.reject(new Error("launch requires string arguments"));
-    }
+export function createLauncher({ spawn = spawnProcess, waitMs = 10_000, scope = false } = {}) {
+  function run(file, args, wait) {
     return new Promise((resolve, reject) => {
       let child;
       try {
@@ -184,6 +186,22 @@ export function createLauncher({ spawn = spawnProcess, waitMs = 10_000 } = {}) {
         else reject(new Error(`${file} exited with code ${code}`));
       });
     });
+  }
+
+  let scopes = null;
+  function scopesWork() {
+    scopes ??= scope ? run("systemd-run", [...SCOPE_ARGV, "true"], true).then(() => true, () => false) : Promise.resolve(false);
+    return scopes;
+  }
+
+  return async function launch(file, args = [], { wait = false } = {}) {
+    if (typeof file !== "string" || !file) {
+      throw new Error("launch requires a file");
+    }
+    if (!Array.isArray(args) || args.some((a) => typeof a !== "string")) {
+      throw new Error("launch requires string arguments");
+    }
+    return (await scopesWork()) ? run("systemd-run", [...SCOPE_ARGV, file, ...args], wait) : run(file, args, wait);
   };
 }
 
@@ -383,7 +401,7 @@ const failure = (message, status) => Object.assign(new Error(message), { status 
 export function createLinuxProvider({
   exec,
   spawn = spawnProcess,
-  launch = createLauncher({ spawn }),
+  launch = createLauncher({ spawn, scope: process.env.WINDOCK_APP_SCOPES === "1" }),
   appDirs = APP_DIRS,
   backlightDir = "/sys/class/backlight",
   icons,

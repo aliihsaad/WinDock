@@ -1,0 +1,16 @@
+[Unit]
+Description=WinDock phone companion host
+Documentation=https://github.com/aliihsaad/WinDock#linux-preview
+# Ends with the desktop session when a session manager such as uwsm runs it.
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=exec
+# Written by the windock command from the desktop session that opened it.
+EnvironmentFile=-%t/windock-session.env
+# The host publishes its address and PIN here; apps it opens get their own scopes.
+Environment=WINDOCK_STATUS_FILE=%t/windock/host.json WINDOCK_APP_SCOPES=1
+ExecStart=/usr/lib/windock/node /usr/lib/windock/src/platform/linux-service.js
+RuntimeDirectory=windock
+RuntimeDirectoryMode=0700
