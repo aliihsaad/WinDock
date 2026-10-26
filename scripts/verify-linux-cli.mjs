@@ -169,9 +169,19 @@ t.equal(result.code, 1, "a host already open in a terminal window blocks a secon
 t.ok(result.stderr.includes("already open in another window") && result.stderr.includes("8620"), "the message says to close that window first");
 t.deepEqual(starts(oldWindow), [], "no background host is started next to it");
 const keys = Object.assign(new EventEmitter(), { raw: [], setRawMode(on) { this.raw.push(on); }, resume() {}, pause() {} });
+// Filesystem and port checks may take longer than a fixed sleep on a CI runner.
+// Emit the key only after the prompt has registered its input listener.
+const keyListenerReady = new Promise((resolve, reject) => {
+  const timer = setTimeout(() => reject(new Error("The error prompt did not start listening for a key")), 3000);
+  keys.once("newListener", (event) => {
+    clearTimeout(timer);
+    if (event === "data") resolve();
+    else reject(new Error(`Unexpected prompt listener: ${event}`));
+  });
+});
 let closed = false;
-const waiting = command([], { system: oldWindow, probe: async () => true, interactive: true, stdin: keys }).then((r) => { closed = true; return r; });
-await new Promise((r) => setTimeout(r, 20));
+const waiting = command([], { system: oldWindow, probe: async () => { await new Promise((resolve) => setTimeout(resolve, 75)); return true; }, interactive: true, stdin: keys }).then((r) => { closed = true; return r; });
+await keyListenerReady;
 t.ok(!closed, "opened from the menu, the window stays open so the message can be read");
 keys.emit("data", Buffer.from("x"));
 result = await waiting;
