@@ -61,7 +61,9 @@ export function createPcClipboard({ api, send, isReady, keyboard }) {
         });
         button.setAttribute("aria-pressed", "false"); list.append(button);
       }
-      setStatus(items.length ? (result.skipped ? "Recent text · Some items exceed the text limit." : "Choose a text item. Images and files are not shown.") : "No recent text in the PC clipboard history.");
+      // A Linux PC without a clipboard history manager offers its current clipboard alone.
+      if (result.status === "current-only") setStatus(items.length ? "No clipboard history manager is running on the PC, so only its current clipboard is shown." : "No clipboard history manager is running on the PC, and its clipboard has no text.");
+      else setStatus(items.length ? (result.skipped ? "Recent text · Some items exceed the text limit." : "Choose a text item. Images and files are not shown.") : "No recent text in the PC clipboard history.");
     } catch (error) {
       if (opened && ticket === generation && error.name !== "AbortError") setStatus(error.message || "Could not load PC clipboard.");
     }

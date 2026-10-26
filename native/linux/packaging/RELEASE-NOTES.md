@@ -5,8 +5,9 @@ input helper are bundled, so you do not need to install Node.js, npm or Rust.
 For the combined 0.2.5-preview.2 testing candidate (Linux package 0.2.5-2), update the Android companion too. The new
 **Switch PC** picker discovers running hosts and lets you choose one while keeping
 other hosts running. Pair with each PC’s own six-digit PIN. The touchpad also offers PC text clipboard
-history through Elephant (JSON query support required); paste uses wl-copy and
-Ctrl+V. The dock Updates screen checks public releases without installing them.
+history from the manager you already run (Omarchy's own, Elephant, cliphist,
+clipman, CopyQ or Klipper), or just the current clipboard without one; paste uses
+wl-copy and Ctrl+V. The dock Updates screen checks public releases without installing them.
 
 ### Omarchy / Arch
 

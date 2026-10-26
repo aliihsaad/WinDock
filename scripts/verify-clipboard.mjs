@@ -17,7 +17,7 @@ t.deepEqual(parseElephantHistory(elephant).items,[{text}],"Elephant NDJSON uses 
 t.deepEqual(parseElephantHistory("{}").items,[],"empty Elephant response is handled");
 t.throws(()=>parseElephantHistory("not json"),"invalid CLI response rejected");
 let command;
-const provider = createClipboardHistory({platform:"linux",execFile:(file,args,options,done)=>{command={file,args,options};done(null,elephant);}});
+const provider = createClipboardHistory({platform:"linux",processes:async()=>[{pid:1,comm:"elephant",argv:["elephant"]}],execFile:(file,args,options,done)=>{command={file,args,options};done(null,elephant);}});
 t.deepEqual((await provider.history()).items,[{text}],"Linux history parses the actual CLI schema");
 t.deepEqual(command.args,["query","--json","clipboard;;20"],"only the fixed clipboard query is executed");
 t.equal(command.options.shell,false,"no shell evaluates clipboard data");

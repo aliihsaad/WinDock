@@ -22,10 +22,12 @@ settings. Re-pair with each PC's six-digit PIN if its host restarted.
    focus a PC text field, and tap Paste to PC. Browsing alone must not type anything.
    Confirm the editor and Paste button remain above the Android keyboard. Collapse
    and reopen; then switch PCs and confirm only the new PC's history is shown.
-5. **Clipboard on Omarchy:** repeat with Elephant running. It needs the JSON query
-   interface; an unsupported/unavailable manager should show guidance, not break the
-   touchpad. Paste changes the PC's current clipboard and sends Ctrl+V. A terminal
-   or application that uses a different paste shortcut may not accept it.
+5. **Clipboard on Linux:** repeat on Omarchy 4; its own clipboard history is used,
+   with nothing extra installed. If you use another manager (cliphist, clipman,
+   CopyQ, Elephant or Klipper), test with it running. Then stop every manager and
+   confirm the panel shows only the current clipboard with a notice, not an error.
+   Paste changes the PC's current clipboard and sends Ctrl+V. A terminal or
+   application that uses a different paste shortcut may not accept it.
 6. **Tailscale:** with both devices connected to your own tailnet, enter the PC's
    numeric 100.x address manually, pair and use the dock. Restart/reconnect. Check
    switching between the remembered VPN endpoint and a LAN PC. Discovery is LAN-only.
