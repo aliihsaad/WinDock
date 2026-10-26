@@ -71,6 +71,16 @@ printf '%s\n' '#!/bin/sh' \
     'echo "Failed to connect to bus" >&2' \
     'exit 1' > /usr/local/bin/systemctl
 chmod 755 /usr/local/bin/systemctl
+# apt runs package scripts with PATH=/usr/sbin:/usr/bin:/sbin:/bin (its DPkg::Path),
+# which hides the stand-in, so let /usr/local through for the upgrade and removal.
+apt_stand_in=(-o DPkg::Path=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin)
+expect_call() {
+    if ! grep -qx "tester $tester_runtime --user $1" /tmp/windock-systemctl.log; then
+        echo "The package scripts did not run 'systemctl --user $1' as tester. They ran:" >&2
+        cat /tmp/windock-systemctl.log >&2
+        exit 1
+    fi
+}
 # Give a copy a higher package revision to exercise an actual upgrade.
 mkdir /tmp/windock-upgrade
 if [[ "$kind" = deb ]]; then
@@ -78,7 +88,7 @@ if [[ "$kind" = deb ]]; then
     dpkg-deb -R /packages/WinDock-linux-amd64.deb /tmp/windock-upgrade
     sed -i "s/^Version: .*/Version: $upgraded_version/" /tmp/windock-upgrade/DEBIAN/control
     dpkg-deb --root-owner-group --build /tmp/windock-upgrade /tmp/windock-upgrade.deb
-    apt-get install -y --no-install-recommends /tmp/windock-upgrade.deb
+    apt-get install -y --no-install-recommends "${apt_stand_in[@]}" /tmp/windock-upgrade.deb
     test "$(dpkg-query -W -f='${Version}' windock)" = "$upgraded_version"
 else
     upgraded_version="$(pacman -Q windock | cut -d ' ' -f2).1"
@@ -90,8 +100,8 @@ else
 fi
 test "$(sha256sum /home/tester/.config/windock/config.json | cut -d ' ' -f1)" = "$settings_hash"
 # The upgrade restarted the tester's background host with the new unit file, and stopped nothing.
-grep -qx "tester $tester_runtime --user daemon-reload" /tmp/windock-systemctl.log
-grep -qx "tester $tester_runtime --user try-restart windock.service" /tmp/windock-systemctl.log
+expect_call daemon-reload
+expect_call "try-restart windock.service"
 if grep -q 'stop windock.service' /tmp/windock-systemctl.log; then
     echo "An upgrade must restart the background host, not stop it" >&2
     exit 1
@@ -99,12 +109,12 @@ fi
 runuser -u tester -- /usr/lib/windock/node /tests/test-linux-installed.mjs
 test "$(sha256sum /home/tester/.config/windock/config.json.host-id | cut -d ' ' -f1)" = "$identity_hash"
 if [[ "$kind" = deb ]]; then
-    apt-get purge -y windock
+    apt-get purge -y "${apt_stand_in[@]}" windock
 else
     pacman -R --noconfirm windock
 fi
 # Removal stopped the background host while its files were still there.
-grep -qx "tester $tester_runtime --user stop windock.service" /tmp/windock-systemctl.log
+expect_call "stop windock.service"
 test ! -e /usr/bin/windock
 test ! -e /usr/lib/windock
 test ! -e /usr/lib/systemd/user/windock.service
