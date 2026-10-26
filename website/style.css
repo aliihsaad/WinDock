@@ -214,7 +214,7 @@ summary::-webkit-details-marker{display:none}
 .guide-intro{padding-block:70px 50px;max-width:950px}
 .guide-intro h1{font-size:clamp(48px,6vw,74px);letter-spacing:-3px;margin-top:22px}
 .guide-intro>p:not(.eyebrow){max-width:560px;font-size:17px;line-height:1.7;color:var(--muted);margin-block:25px}
-.guide-steps{max-width:950px;display:grid;gap:18px}
+.guide-steps{max-width:950px;display:grid;grid-template-columns:minmax(0,1fr);gap:18px}
 .guide-steps article{padding:32px;background:var(--surface);border:1px solid var(--line);border-radius:20px;scroll-margin-top:110px}
 .guide-steps article>span{display:block;color:var(--muted);margin-bottom:20px}
 .guide-steps h2{font-size:30px;letter-spacing:-1px}

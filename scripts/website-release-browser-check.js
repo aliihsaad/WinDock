@@ -140,6 +140,7 @@ async (page) => {
     await tab.locator('#mobile-menu a[href="./setup.html"]').click();
     await tab.waitForURL('**/setup.html');
     check(await tab.locator('#linux-help').count() === 1 && await tab.locator('.faq-list details').count() >= 10, 'Dedicated help page retains Linux setup and detailed FAQs');
+    check(await tab.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'Long Linux commands scroll within the guide on narrow phones');
     check(await tab.locator('#analytics-notice').isHidden(), 'Analytics choice persists across pages');
     check(await tab.locator('html').getAttribute('data-theme') === 'dark', 'Theme preference persists on the help page');
     await tab.goto('http://127.0.0.1:4173/releases.html');
