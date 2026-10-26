@@ -60,6 +60,29 @@ pub fn run(program: &str, args: &[&str], input: Option<&[u8]>, timeout: Duration
 
 const TIMEOUT: Duration = Duration::from_secs(5);
 
+/// A clipboard item may exceed a pipe buffer, so write concurrently with the
+/// timeout. No shell, arguments, output or diagnostics contain clipboard text.
+pub fn copy_text(text: &str) -> crate::Result<()> {
+    let path = find_program("wl-copy").ok_or("wl-copy is not installed")?;
+    let mut child = Command::new(path).args(["--type", "text/plain;charset=utf-8"])
+        .stdin(Stdio::piped()).stdout(Stdio::null()).stderr(Stdio::null()).spawn()?;
+    let mut input = child.stdin.take().ok_or("clipboard stdin unavailable")?;
+    let bytes = text.as_bytes().to_vec();
+    let writer = std::thread::spawn(move || input.write_all(&bytes));
+    let deadline = Instant::now() + Duration::from_secs(2);
+    loop {
+        if let Some(status) = child.try_wait()? {
+            if !status.success() { return Err("Clipboard copy failed.".into()); }
+            if writer.is_finished() { return writer.join().map_err(|_| "Clipboard write failed.")?.map_err(Into::into); }
+        }
+        if Instant::now() >= deadline {
+            let _ = child.kill(); let _ = child.wait();
+            return Err("Clipboard copy timed out.".into());
+        }
+        std::thread::sleep(Duration::from_millis(5));
+    }
+}
+
 fn wtype(args: &[&str], input: Option<&[u8]>) -> crate::Result<()> {
     run("wtype", args, input, TIMEOUT)
 }

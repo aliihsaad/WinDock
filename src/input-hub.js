@@ -4,7 +4,7 @@ import { validateInput } from "./input.js";
 
 /** Only one paired phone can own mouse buttons. Dock sync remains read-only. */
 export function createInputHub({ server, isAuthorized, input, leaseMs = 2000 }) {
-  const wss = new WebSocketServer({ noServer: true, maxPayload: 8192, perMessageDeflate: false });
+  const wss = new WebSocketServer({ noServer: true, maxPayload: 262144, perMessageDeflate: false });
   let owner = null;
   server.on("upgrade", (req, socket, head) => {
     if (req.url?.split("?")[0] !== "/input") return;
@@ -21,7 +21,7 @@ export function createInputHub({ server, isAuthorized, input, leaseMs = 2000 }) 
       ws.close(1008); return;
     }
     owner = ws;
-    let worker = null, closed = false, started = false, pendingFocus = null, lastSeen = Date.now(), count = 0, windowStart = lastSeen;
+    let worker = null, closed = false, started = false, pendingFocus = null, lastSeen = Date.now(), count = 0, windowStart = lastSeen, pasting = false, bytes = 0;
     const cleanup = () => {
       if (closed) return;
       closed = true; clearInterval(timer);
@@ -37,11 +37,16 @@ export function createInputHub({ server, isAuthorized, input, leaseMs = 2000 }) 
     ws.on("error", cleanup);
     ws.on("message", (data, binary) => {
       if (closed) return;
-      if (Date.now() - windowStart >= 1000) { windowStart = Date.now(); count = 0; }
-      if (++count > 240 || binary || !isAuthorized(req)) return fail("Touchpad session ended. Open it again to reconnect.");
+      if (Date.now() - windowStart >= 1000) { windowStart = Date.now(); count = bytes = 0; }
+      bytes += data.length;
+      if (++count > 240 || bytes > 524288 || binary || !isAuthorized(req)) return fail("Touchpad session ended. Open it again to reconnect.");
       let message;
       try { message = validateInput(JSON.parse(data.toString())); } catch { /* rejected below */ }
       if (!message) return fail("Invalid touchpad input.");
+      if (message.type === "paste") {
+        if (pasting) { reply({ type: "input-error", error: "A paste is already in progress." }); return; }
+        pasting = true;
+      }
       lastSeen = Date.now();
       if (!worker) return fail("Touchpad is still connecting.");
       try { worker.send(message); } catch { fail("Touchpad connection lost. Open it again to reconnect."); }
@@ -50,6 +55,7 @@ export function createInputHub({ server, isAuthorized, input, leaseMs = 2000 }) 
     try {
       worker = input.open(() => fail("Your PC could not continue the touchpad session."), (event) => {
         if (closed) return;
+        if (event.type === "paste-result" || event.type === "input-error") pasting = false;
         if (started) reply(event);
         else if (event.type === "focus") pendingFocus = event;
       });

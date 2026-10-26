@@ -26,6 +26,7 @@ const SHELL = [
   "/input-pad.js",
   "/touchpad-gestures.js",
   "/remote-keyboard.js",
+  "/pc-clipboard.js",
   "/manifest.webmanifest",
   "/icon-192.png",
   "/icon-512.png",

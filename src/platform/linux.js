@@ -15,6 +15,7 @@ import { validateControl } from "./contract.js";
 import { createIconLookup } from "./linux-icons.js";
 import { createLinuxCapture } from "./linux-capture.js";
 import { createLinuxInput } from "./linux-input.js";
+import { createClipboardHistory } from "./clipboard.js";
 import { dataDirs } from "./xdg.js";
 
 const APP_DIRS = dataDirs().map((dir) => join(dir, "applications"));
@@ -522,6 +523,7 @@ export function createLinuxProvider({
     displayName: "Linux",
     capture: capture ?? createLinuxCapture({ exec, spawn }),
     input: input === undefined ? createLinuxInput({ spawn }) : input,
+    clipboard: createClipboardHistory({ platform: "linux" }),
 
     async appIcon(app) {
       return iconLookup(app?.icon);

@@ -64,6 +64,22 @@ sendResults.Enqueue(1);
 try { typing.Text("a"); throw new Exception("Accepted partial text"); } catch (System.ComponentModel.Win32Exception) { checks++; }
 Check(batches[^1].Length == 1 && batches[^1][0].value.keyboard.flags == 6, "partial Unicode injection releases its packet");
 using var bitmap = Signature.Render(signature.RootElement);
+string? copied = null;
+typing.Paste("first\nsecond\t🙂", () => true, text => copied = text);
+Check(copied == "first\nsecond\t🙂", "clipboard paste preserves newlines, tabs and emoji without generating Enter presses");
+Check(batches[^2].Select(i => i.value.keyboard.key).SequenceEqual(new ushort[] {17, 86, 86, 17}), "paste sends Ctrl+V as one bounded batch");
+Check(batches[^1].All(i => i.value.keyboard.flags == 2), "paste always releases modifiers");
+var beforePaste = batches.Count; copied = null;
+try { typing.Paste("blocked", () => false, text => copied = text); throw new Exception("Accepted stale focus"); } catch (InvalidOperationException) { checks++; }
+Check(copied == null && batches.Count == beforePaste, "stale target neither copies nor types");
+var focusValid = true;
+try { typing.Paste("race", () => focusValid, _ => focusValid = false); throw new Exception("Accepted changed focus"); } catch (InvalidOperationException) { checks++; }
+Check(batches.Count == beforePaste, "focus is rechecked after clipboard work");
+foreach (var invalid in new[] { "", new string('x', 32769), "bad\0text" }) {
+    try { RemoteKeyboard.ValidatePaste(invalid); throw new Exception("Accepted invalid paste"); } catch (ArgumentException) { checks++; }
+}
+try { RemoteKeyboard.ValidatePaste("\ud800"); throw new Exception("Accepted broken paste surrogate"); } catch (System.Text.EncoderFallbackException) { checks++; }
+RemoteKeyboard.ValidatePaste(new string('x', 32768)); Check(true, "bounded large clipboard item is accepted");
 Check(bitmap.Width == 1600 && bitmap.Height == 600, "export dimensions are stable");
 Check(bitmap.GetPixel(0, 0).A == 0, "background is transparent");
 Check(bitmap.GetPixel(400, 120).A > 0 && bitmap.GetPixel(400, 120).B > bitmap.GetPixel(400, 120).R, "blue stroke renders at expected position");

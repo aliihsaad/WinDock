@@ -353,7 +353,12 @@ export async function createApp({
       }
 
       if (path === "/api/input" && req.method === "GET") {
-        return sendJson(res, 200, { available: Boolean(provider.input), keyboard: Boolean(provider.input), signatureInsert: Boolean(provider.input) });
+        return sendJson(res, 200, { available: Boolean(provider.input), keyboard: Boolean(provider.input), signatureInsert: Boolean(provider.input), clipboard: Boolean(provider.clipboard) });
+      }
+      if (path === "/api/clipboard/history" && req.method === "GET") {
+        if (!sameOrigin(req)) return sendJson(res, 403, { error: "bad origin" });
+        if (!provider.clipboard) return sendJson(res, 501, { error: "PC clipboard history needs an updated WinDock host." });
+        return sendJson(res, 200, await provider.clipboard.history(), { "cache-control": "no-store", "pragma": "no-cache" });
       }
       if (["/api/signature", "/api/signature/insert"].includes(path) && req.method === "POST") {
         const signature = validateSignature(await readJsonBody(req));

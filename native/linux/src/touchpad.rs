@@ -56,6 +56,13 @@ fn session<S: Sink>(pointer: &mut Pointer<S>, focus: &Focus) -> crate::Result<()
             Message::Text { target, text } => type_into(pointer, focus, &target, |pointer| {
                 keyboard::text(&text, |key| Ok(pointer.key(keyboard::keycode(key))?))
             }),
+            Message::Paste { target, text } => type_into(pointer, focus, &target, |pointer| {
+                keyboard::copy_text(&text)?;
+                if !focus.accepts(&target) { return Err("Focus changed.".into()); }
+                pointer.paste()?;
+                emit(&serde_json::json!({ "type": "paste-result" }));
+                Ok(())
+            }),
             Message::Key { target, key } => type_into(pointer, focus, &target, |pointer| Ok(pointer.key(keyboard::keycode(key))?)),
         }
     }

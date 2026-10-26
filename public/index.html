@@ -93,6 +93,15 @@
       <div id="touchpad-feedback" class="touchpad-feedback" aria-hidden="true"><span></span><span></span><span></span></div>
       <p id="touchpad-hint" class="touchpad-hint" aria-hidden="true">Tap to click <span>·</span> Two fingers to scroll <span>·</span> Pinch to zoom</p>
     </div>
+    <div class="pc-clipboard">
+      <button id="pc-clipboard-toggle" class="pc-clipboard__toggle" type="button" aria-expanded="false" aria-controls="pc-clipboard-panel" hidden><span data-icon="clipboard"></span>PC clipboard<span class="pc-clipboard__chevron" aria-hidden="true">⌄</span></button>
+      <section id="pc-clipboard-panel" class="pc-clipboard__panel" aria-label="PC clipboard history" hidden>
+        <div class="pc-clipboard__heading"><button id="pc-clipboard-back" type="button" aria-label="Back to clipboard history" hidden><span data-icon="left"></span></button><strong id="pc-clipboard-title">Recent clipboard</strong><button id="pc-clipboard-refresh" type="button" aria-label="Refresh PC clipboard"><span data-icon="refresh"></span></button><button id="pc-clipboard-close" type="button" aria-label="Collapse PC clipboard"><span data-icon="close"></span></button></div>
+        <p id="pc-clipboard-status" role="status"></p>
+        <div id="pc-clipboard-list" class="pc-clipboard__list" aria-label="Recent text items"></div>
+        <div id="pc-clipboard-editor" hidden><label for="pc-clipboard-text">Text to paste</label><textarea id="pc-clipboard-text" rows="3" maxlength="32768" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea><button id="pc-clipboard-paste" type="button" disabled>Paste to PC</button></div>
+      </section>
+    </div>
     <div class="touchpad-toolbar" aria-label="Touchpad controls">
       <div class="touchpad-navigation"><button type="button" data-close="input-pad" aria-label="Back to dock" title="Back to dock"><span data-icon="left"></span></button><button id="touchpad-signature" type="button" aria-label="Open signature pad" title="Signature"><span data-icon="edit"></span></button><button id="touchpad-keyboard" type="button" aria-label="Open phone keyboard" aria-pressed="false" title="Keyboard" hidden><span data-icon="keyboard"></span></button></div>
       <div class="mouse-buttons"><button id="mouse-left" type="button" disabled>Left click</button><button id="mouse-right" type="button" disabled>Right click</button><button id="mouse-drag" type="button" aria-pressed="false" disabled>Drag</button></div>

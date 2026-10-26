@@ -397,6 +397,35 @@ body.is-immersive .empty .button .icon { width: 36px; height: 36px; }
 .remote-keyboard input { min-width: 0; flex: 1; padding: 10px; font-size: 16px; border: 0; border-radius: 10px; background: #ffffff08; color: #e1e7f0; }
 .remote-keyboard button { min-width: 44px; height: 44px; padding: 8px; border: 0; border-radius: 10px; background: transparent; color: #a8c7ff; font-size: 20px; }
 .remote-keyboard .icon { width: 20px; height: 20px; }
+.pc-clipboard { position: absolute; z-index: 4; top: max(12px, env(safe-area-inset-top)); right: max(14px, env(safe-area-inset-right)); max-width: calc(100% - 28px); }
+.pc-clipboard button { min-height: 44px; border: 0; border-radius: 12px; color: #d5e1f1; background: #a8c7ff0b; touch-action: manipulation; }
+.pc-clipboard button:focus-visible { outline: 2px solid #a8c7ff; outline-offset: 2px; }
+.pc-clipboard .icon { width: 18px; height: 18px; flex: 0 0 auto; }
+.pc-clipboard__toggle { display: flex; align-items: center; gap: 9px; margin-left: auto; padding: 0 14px; font-size: 12px; backdrop-filter: blur(16px); }
+.pc-clipboard__chevron { color: #8498b3; }
+.pc-clipboard__toggle[aria-expanded="true"] .pc-clipboard__chevron { transform: rotate(180deg); }
+.pc-clipboard__panel { width: min(350px, calc(100vw - 28px)); max-height: calc(100vh - 136px); max-height: calc(100dvh - 136px); overflow: auto; overscroll-behavior: contain; margin-top: 8px; padding: 14px; border: 1px solid #c3d9ff19; border-radius: 20px; background: #151c29ed; box-shadow: 0 16px 45px #0006; backdrop-filter: blur(20px); }
+.pc-clipboard__heading { display: flex; align-items: center; gap: 4px; }
+.pc-clipboard__heading strong { margin-right: auto; font-size: 13px; font-weight: 500; }
+.pc-clipboard__heading button { display: grid; place-items: center; min-width: 44px; }
+#pc-clipboard-status { margin: 6px 0 12px; font-size: 11px; line-height: 1.5; color: #9baac0; }
+.pc-clipboard__list { display: grid; gap: 6px; max-height: 28vh; overflow-y: auto; overscroll-behavior: contain; }
+.pc-clipboard__item { width: 100%; padding: 10px 12px; text-align: left; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; white-space: pre-wrap; }
+.pc-clipboard__item[aria-pressed="true"] { background: #a8c7ff24; }
+#pc-clipboard-editor { margin-top: 12px; }
+#pc-clipboard-editor label { display: block; font-size: 11px; color: #9baac0; margin-bottom: 6px; }
+#pc-clipboard-text { display: block; width: 100%; min-height: 70px; max-height: 180px; padding: 10px; resize: vertical; font-family: inherit; border: 1px solid #a8c7ff25; border-radius: 12px; color: #e1e7f0; background: #080b1070; font-size: 16px; }
+#pc-clipboard-paste { width: 100%; margin-top: 8px; background: #a8c7ff22; font-size: 12px; }
+/* Editing has its own compact view, sized to the visible area above the IME. */
+.pc-clipboard__panel[data-editing="true"] { position: fixed; top: var(--clipboard-top, 8px); right: max(14px, env(safe-area-inset-right)); width: min(500px, calc(100vw - 28px)); height: min(300px, var(--clipboard-height, calc(100dvh - 16px))); max-height: none; margin: 0; padding: 8px; display: flex; flex-direction: column; overflow: auto; }
+.pc-clipboard__panel[data-editing="true"] .pc-clipboard__heading { flex-shrink: 0; }
+.pc-clipboard__panel[data-editing="true"] #pc-clipboard-status { margin: 4px 0; line-height: 14px; flex-shrink: 0; }
+.pc-clipboard__panel[data-editing="true"] .pc-clipboard__list { display: none; }
+.pc-clipboard__panel[data-editing="true"] #pc-clipboard-editor { display: flex; gap: 8px; flex: 1; min-height: 44px; margin: 0; }
+.pc-clipboard__panel[data-editing="true"] #pc-clipboard-editor label { display: none; }
+.pc-clipboard__panel[data-editing="true"] #pc-clipboard-text { flex: 1; min-width: 0; min-height: 44px; max-height: none; resize: none; }
+.pc-clipboard__panel[data-editing="true"] #pc-clipboard-paste { flex: 0 0 96px; width: auto; height: 44px; align-self: flex-end; margin: 0; }
+html.perf :is(.pc-clipboard__panel, .pc-clipboard__toggle) { backdrop-filter: none; background: #151c29; }
 .signature-actions { display: flex; gap: 8px; }
 .signature-actions .button { padding: 10px 14px; min-height: 42px; font-size: 12px; }
 .touchpad-options { position: relative; justify-self: end; pointer-events: auto; }

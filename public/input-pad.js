@@ -1,5 +1,6 @@
 import { TouchpadGestures } from "./touchpad-gestures.js";
 import { createRemoteKeyboard } from "./remote-keyboard.js";
+import { createPcClipboard } from "./pc-clipboard.js";
 
 export function createInputPad({ api, notify, WebSocketClass = WebSocket, storage = localStorage }) {
   const $ = (id) => document.getElementById(id), dialog = $("input-pad"), canvas = $("signature-canvas");
@@ -17,6 +18,7 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
   // The PC answered and has no touchpad support: retrying cannot change that.
   let unsupported = false;
   const keyboard = createRemoteKeyboard({ send: raw, isReady: () => ready && mode === "touchpad", onSignature: () => select("signature"), notify });
+  const clipboard = createPcClipboard({ api, send: raw, isReady: () => ready && mode === "touchpad", keyboard });
   try { const saved = Number(storage.getItem("windock-pointer-speed")); if (saved >= .5 && saved <= 3) speed = saved; } catch { /* optional preference */ }
   $("pointer-speed").value = speed;
   $("pointer-speed-value").value = speed + "×";
@@ -60,6 +62,7 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
     $("signature-save").textContent = saving ? "Saving…" : "Save to PC";
     $("signature-insert").disabled = !canInsertSignature || $("signature-save").disabled;
     keyboard.paint();
+    clipboard.paint();
     $("signature-undo").disabled = !strokes.length || saving;
     $("signature-clear").disabled = !strokes.length || saving;
     $("signature-color").disabled = saving;
@@ -67,7 +70,7 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
   }
   function raw(message) {
     if (!ready || !socket || socket.readyState !== WebSocketClass.OPEN) return false;
-    if (socket.bufferedAmount > 8192) { disconnect(); setStatus("Connection is slow. Reopen the touchpad to reconnect."); return false; }
+    if (socket.bufferedAmount > 262144) { disconnect(); setStatus("Connection is slow. Reopen the touchpad to reconnect."); return false; }
     try { socket.send(JSON.stringify(message)); return true; }
     catch { disconnect(); setStatus("PC disconnected. Reopen the touchpad to reconnect."); return false; }
   }
@@ -94,6 +97,7 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
     if (frame !== null) cancelAnimationFrame(frame); frame = null;
     pending = { move: [0, 0], scroll: [0, 0] };
     const previous = socket; socket = null; ready = false; connecting = false; dragging = false; gestures.reset(); clearContacts(); showOptions(false); keyboard.reset();
+    clipboard.reset();
     if (previous) { previous.onclose = previous.onmessage = previous.onerror = null; try { if (previous.readyState === WebSocketClass.OPEN) previous.send('{"type":"release"}'); previous.close(); } catch { /* host lease handles disconnect */ } }
     paint();
   }
@@ -108,6 +112,7 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
       available = status.available;
       canInsertSignature = Boolean(status.signatureInsert);
       keyboard.configure(status.keyboard);
+      clipboard.configure(status.clipboard);
       demo = Boolean(status.demo);
       if (demo) setStatus("Demo only · No cursor control or files saved.");
       if (!available) { connecting = false; unsupported = true; setStatus("Touchpad and signature saving need an updated WinDock on your PC."); paint(); return; }
@@ -121,7 +126,7 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
         if (socket !== ws) return;
         let message; try { message = JSON.parse(event.data); } catch { return; }
         if (message.type === "error") { disconnect(); setStatus(message.error); return; }
-        if (message.type === "focus" || message.type === "input-error") { keyboard.message(message); return; }
+        if (["focus", "input-error", "paste-result"].includes(message.type)) { keyboard.message(message); clipboard.message(message); return; }
         if (message.type === "ready") {
           clearTimeout(startup); ready = true; connecting = false;
           heartbeat = setInterval(() => raw({ type: "ping" }), 500);

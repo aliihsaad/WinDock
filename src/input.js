@@ -5,6 +5,9 @@ export function validateInput(message) {
   const delta = (n) => Number.isInteger(n) && Math.abs(n) <= 2048;
   if (["ping", "release", "focus"].includes(message.type) && exact("type")) return { type: message.type };
   const target = typeof message.target === "string" && /^[1-9][0-9]{0,15}$/.test(message.target);
+  if (message.type === "paste" && exact("type", "target", "text") && target && typeof message.text === "string" && message.text.length > 0 && message.text.length <= 32768 && message.text.isWellFormed() && !/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/.test(message.text)) {
+    return { type: "paste", target: message.target, text: message.text };
+  }
   if (message.type === "text" && exact("type", "target", "text") && target && typeof message.text === "string" && message.text.length > 0 && message.text.length <= 1024 && message.text.isWellFormed() && !/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/.test(message.text)) {
     return { type: "text", target: message.target, text: message.text };
   }
