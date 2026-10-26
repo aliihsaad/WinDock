@@ -67,6 +67,35 @@ async (page) => {
     check(await frameIdentity.evaluate(el => el === document.querySelector('.giscus-frame')) && requests.filter(url => url === 'https://giscus.app/client.js').length === 1, 'Retry after an iframe error reuses the existing Giscus client');
     check(errors.length === 0, 'No uncaught page or iframe errors');
 
+    // A transparent iframe can still be painted opaque by the browser when its
+    // color-scheme disagrees with the system. Compare rendered pixels, not CSS.
+    for (const systemTheme of ['light', 'dark']) {
+      for (const savedTheme of ['light', 'dark']) {
+        const appearanceContext = await createContext({ colorScheme: systemTheme, deviceScaleFactor: 1 });
+        await appearanceContext.addInitScript(theme => localStorage.setItem('windock-website-theme', theme), savedTheme);
+        const appearance = await appearanceContext.newPage();
+        await appearance.goto('http://127.0.0.1:4173/');
+        await appearance.getByRole('button', { name: 'No thanks', exact: true }).click();
+        await appearance.locator('#community-feedback summary').click();
+        await appearance.locator('#community-feedback[data-state="ready"]').waitFor();
+        await appearance.frameLocator('.giscus-frame').locator('.gsc-comment-box').waitFor();
+        const body = appearance.locator('.community-body');
+        const png = await body.screenshot({ path: `output/playwright/community-system-${systemTheme}-site-${savedTheme}.png` });
+        const bounds = await body.boundingBox(), frameBounds = await appearance.locator('.giscus-frame').boundingBox();
+        const pixels = await appearance.evaluate(async ({ png, x, y }) => {
+          const picture = new Image();
+          picture.src = 'data:image/png;base64,' + png;
+          await picture.decode();
+          const canvas = document.createElement('canvas');
+          canvas.width = picture.width; canvas.height = picture.height;
+          const drawing = canvas.getContext('2d');
+          drawing.drawImage(picture, 0, 0);
+          return { outside: [...drawing.getImageData(x - 6, y, 1, 1).data], inside: [...drawing.getImageData(x, y, 1, 1).data] };
+        }, { png: png.toString('base64'), x: Math.round(frameBounds.x - bounds.x + 2), y: Math.round(frameBounds.y - bounds.y + 3) });
+        check(pixels.inside.every((value, index) => Math.abs(value - pixels.outside[index]) <= 1), `Iframe stays transparent with ${systemTheme} system and ${savedTheme} website appearance`);
+      }
+    }
+
     const failedContext = await createContext(), failed = await failedContext.newPage();
     await failedContext.route('https://giscus.app/client.js', route => route.abort());
     await failed.goto('http://127.0.0.1:4173/');
