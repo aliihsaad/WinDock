@@ -46,9 +46,18 @@ export async function buildWebsiteDemo() {
     'src="../assets/${escapeHtml(encodeURIComponent(app.id))}.png"');
   await writeFile(resolve(destination, 'dock.js'), dock);
   let app = await readFile(resolve(root, 'public/app.js'), 'utf8');
-  app = `import { fetch, WebSocket, localStorage } from '../preview-transport.js';\n${app}`;
+  app = `import { fetch, WebSocket, localStorage, getPreviewPcs, selectPreviewPc, forgetPreviewPc } from '../preview-transport.js';
+// The Android picker is native. Its browser equivalent lives outside the dock
+// frame too, so it stays readable on phones instead of scaling with the dock.
+function showPreviewPcPicker() {
+  for (const dialog of document.querySelectorAll('dialog[open]')) dialog.close();
+  parent.postMessage({ type: 'windock-preview-pcs', pcs: getPreviewPcs(), open: true }, location.origin);
+}
+window.WinDockAndroid = { showPcPicker: showPreviewPcPicker };
+${app}`;
   // The preview must never install a worker that could outlive the frame.
   app = replaceOnce(app, 'if ("serviceWorker" in navigator) {', 'if (false) { // Service workers are disabled in the website preview.');
+  app = replaceOnce(app, 'try { await refresh(); showApp(); connect(); }', "try { await refresh(); showApp(); connect(); parent.postMessage({ type: 'windock-preview-ready' }, location.origin); }");
   for (const [from, to] of [
     ['Recording started · Tap Stop to save', 'Demo recording started · Tap Stop to finish'],
     ['Screenshot saved in Pictures / WinDock', 'Screenshot preview · No file created'],
@@ -60,8 +69,21 @@ export async function buildWebsiteDemo() {
   app += `
 // Small parent bridge; every setting still uses the real app's saveLayout.
 let clipboardObserver;
-window.addEventListener('message', (event) => {
+window.addEventListener('message', async (event) => {
   if (event.source !== parent || event.origin !== location.origin) return;
+  if (event.data?.type === 'windock-preview-ping' && paired) parent.postMessage({ type: 'windock-preview-ready' }, location.origin);
+  if (event.data?.type === 'windock-preview-pc-picker' && paired) showPreviewPcPicker();
+  if (event.data?.type === 'windock-preview-pc-action' && paired) {
+    const { action, id } = event.data;
+    if (!['select', 'forget', 'refresh'].includes(action)) return;
+    let selected = false;
+    if (action === 'select' && !saving && !gesture?.dragging) {
+      selected = selectPreviewPc(id);
+      if (selected) { editing = false; currentPage = 0; appsLoaded = false; await refresh(); }
+    }
+    if (action === 'forget') forgetPreviewPc(id);
+    parent.postMessage({ type: 'windock-preview-pcs', pcs: getPreviewPcs(), selected, action }, location.origin);
+  }
   if (event.data?.type === 'windock-preview-clipboard' && paired) {
     clipboardObserver?.disconnect();
     const dialog = document.getElementById('input-pad'), toggle = document.getElementById('pc-clipboard-toggle');

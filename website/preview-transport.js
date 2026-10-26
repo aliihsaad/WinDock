@@ -1,6 +1,7 @@
 // Only the generated iframe imports this adapter. No real fetch, WebSocket,
 // storage, or Windows APIs are used; CSP also blocks outgoing connections.
 import verbs from './demo/verbs.js';
+import { createPreviewPcs } from './preview-pcs.js';
 
 const apps = [
   ['chrome', 'Google Chrome'], ['vscode', 'Visual Studio Code'],
@@ -8,8 +9,25 @@ const apps = [
   ['chatgpt', 'ChatGPT'], ['edge', 'Microsoft Edge'], ['notepad', 'Notepad'],
 ].map(([id, name]) => ({ id, name, target: `preview:${id}`, args: '', icon: '' }));
 let tiles = apps.map(app => ({ ...app, kind: 'app', label: app.name }));
+const pcs = createPreviewPcs();
+const pcTiles = new Map();
+export const getPreviewPcs = () => pcs.list();
+export const forgetPreviewPc = id => pcs.forget(id);
+export function selectPreviewPc(id) {
+  const previous = pcs.current().id;
+  if (!pcs.select(id)) return false;
+  pcTiles.set(previous, tiles);
+  tiles = pcTiles.get(id) ?? apps.filter(app => id !== 'omarchy' || !['edge', 'notepad'].includes(app.id))
+    .map(app => ({ ...app, kind: 'app', label: app.name }));
+  return true;
+}
 const values = new Map([['windock-layout', JSON.stringify({ perPage: 6 })]]);
-let recordingStartedAt = null, lastCapture = null;
+const captures = new Map();
+function currentCapture() {
+  const id = pcs.current().id;
+  if (!captures.has(id)) captures.set(id, { recordingStartedAt: null, lastCapture: null });
+  return captures.get(id);
+}
 let typedText = '';
 // Fictional examples only. This adapter never reads either device's clipboard.
 const clipboardItems = [
@@ -22,13 +40,15 @@ window.addEventListener('message', event => {
   if (event.source === parent && event.origin === location.origin && event.data?.type === 'windock-preview-clear-text') { typedText = ''; showTyping(); }
 });
 
-function finishRecording() {
-  if (recordingStartedAt === null) return;
-  lastCapture = { kind: 'recording', name: 'Demo recording.mp4', path: 'Demo recording.mp4 · No file created', savedAt: Date.now() };
-  recordingStartedAt = null;
+function finishRecording(capture = currentCapture()) {
+  if (capture.recordingStartedAt === null) return;
+  capture.lastCapture = { kind: 'recording', name: 'Demo recording.mp4', path: 'Demo recording.mp4 · No file created', savedAt: Date.now() };
+  capture.recordingStartedAt = null;
 }
 function captureStatus() {
-  if (recordingStartedAt !== null && Date.now() - recordingStartedAt >= 60 * 60 * 1000) finishRecording();
+  const capture = currentCapture();
+  if (capture.recordingStartedAt !== null && Date.now() - capture.recordingStartedAt >= 60 * 60 * 1000) finishRecording(capture);
+  const { recordingStartedAt, lastCapture } = capture;
   return { available: true, phase: recordingStartedAt === null ? 'idle' : 'recording', startedAt: recordingStartedAt, elapsedMs: recordingStartedAt === null ? 0 : Date.now() - recordingStartedAt, lastCapture, error: null };
 }
 
@@ -51,13 +71,14 @@ export async function fetch(path, options = {}) {
   if (path === '/api/clipboard/history') return response({ status: 'ready', items: clipboardItems.map(text => ({ text })), skipped: 0 });
   if (['/api/signature', '/api/signature/insert'].includes(path) && options.method === 'POST') return response({ demo: true, path: 'Demo only · No file created or pasted' });
   if (path === '/api/updates' || path === '/api/updates/check') return response({ status: path.endsWith('/check') ? 'current' : 'unchecked', installedVersion: 'Website demo' });
-  if (path === '/api/state') return response({ tiles, running: [], verbs, hostName: 'Preview PC', platformName: 'Windows', allowDestructive: false });
-  if (path === '/api/apps/installed') return response({ apps });
+  if (path === '/api/state') return response({ tiles, running: [], verbs, hostName: pcs.current().name, platform: pcs.current().platformId, platformName: pcs.current().platform, allowDestructive: false });
+  if (path === '/api/apps/installed') return response({ apps: apps.filter(app => pcs.current().id !== 'omarchy' || !['edge', 'notepad'].includes(app.id)) });
   if (path === '/api/nowplaying') return response({ nowPlaying: null });
   if (path === '/api/capture' && (!options.method || options.method === 'GET')) return response(captureStatus());
   if (['/api/capture/screenshot', '/api/capture/start', '/api/capture/stop'].includes(path) && options.method === 'POST') {
-    if (path.endsWith('/screenshot')) lastCapture = { kind: 'screenshot', name: 'Demo screenshot.png', path: 'Demo screenshot.png · No file created', savedAt: Date.now() };
-    if (path.endsWith('/start') && recordingStartedAt === null) recordingStartedAt = Date.now();
+    const capture = currentCapture();
+    if (path.endsWith('/screenshot')) capture.lastCapture = { kind: 'screenshot', name: 'Demo screenshot.png', path: 'Demo screenshot.png · No file created', savedAt: Date.now() };
+    if (path.endsWith('/start') && capture.recordingStartedAt === null) capture.recordingStartedAt = Date.now();
     if (path.endsWith('/stop')) finishRecording();
     return response(captureStatus());
   }

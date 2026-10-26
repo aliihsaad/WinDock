@@ -1,136 +1,135 @@
 # WinDock website
 
-A static landing page with a small public download-count endpoint. No framework, build dependency,
-external fonts, or connection to the user's live dock. Bundled app icons are
-extracted from Windows; those product marks belong to their owners. The desk
-scene is an AI-generated product illustration, shared with the root README.
+A static product website with a small public download-count endpoint. No framework,
+external fonts, or connection to a visitor's PC. The published site is
+https://windock.vercel.app; pushes to `main` deploy through the existing Vercel integration.
 
-The visual direction uses an ivory canvas, blue and sage accents, large type,
-a floating navigation bar, and numbered sections. The hero uses WinDock's own
-SVG mark inside a clear glass tile. Pointer movement shifts the tile by at most
-five pixels in each direction, without rotation; reduced-motion and touch devices keep it still. The
-interactive phone preview retains the actual application's dark interface.
+## Structure and design
 
-The navigation briefly introduces its links on desktop, then folds into a bright
-52-pixel WinDock logo button at the left edge of the page content in either theme.
-Hover or keyboard focus expands it to the right;
-Escape closes it. Touch devices open a sliding curtain with section links,
-downloads, GitHub, and issue reporting. The menu contains keyboard focus, locks
-the background, and restores the previous scroll position when dismissed.
-Reduced motion skips the introduction and curtain animation.
+- `index.html`: the product introduction, interactive demo, current release highlights,
+  downloads, and a short setup overview.
+- `setup.html`: platform installation guides and the complete FAQ.
+- `releases.html`: the latest release stays visible; all earlier releases collapse,
+  including their full notes and contributor attribution.
+- `style.css`: the shared ivory/charcoal, blue and sage identity, glass surfaces,
+  typography, responsive layouts and accessible focus states.
+- `symbols.js`, `theme.js`, `navigation.js`: shared page controls. Desktop navigation
+  expands from the compact WinDock icon on hover or keyboard focus, then collapses
+  when leaving. Mobile uses a native modal with scroll locking and focus return.
+- `demo.js`: parent-side demo controls and the readable PC picker overlay.
+- `downloads.js`: validates the existing release manifest and displays public counts.
+- `community.js`: loads Giscus only after the community disclosure is opened and
+  synchronizes the embed with the website's light/dark appearance.
 
-The navigation's theme controls change the website between ivory and charcoal.
-It follows the device's color scheme until a visitor chooses a theme, then remembers
-that choice in `windock-website-theme` local storage. `theme.js` applies it before
-the stylesheet loads to avoid a bright flash. The phone demo keeps its own appearance.
+`/#history` and `/#candidate-release` bookmarks redirect to the release page.
 
-The desk illustration has two layers of scroll parallax: the rounded frame and
-caption travel together by up to 72 pixels in each direction, while the photo
-drifts inside the frame with enough zoom to cover its edges. Travel scales down
-on smaller screens. Passive scroll events schedule one animation frame at a time
-only near the viewport; reduced-motion preferences restore the full, still image.
+## Community feedback
+
+The homepage has one collapsed-by-default Giscus section. No Giscus script or iframe
+is requested until it opens. Closing/reopening retains the iframe and any draft.
+The website's light/dark switch updates Giscus without reloading it. A failed load
+offers a retry and the public GitHub link; JavaScript-disabled visitors can use
+that link directly. This feature does not change analytics consent.
+
+Giscus is free and open source. Comments, replies and reactions are stored publicly
+in GitHub Discussions; contributing requires GitHub sign-in. We do not maintain a
+review database, invent a rating score, or collect a separate WinDock login.
+
+Repository setup is `aliihsaad/WinDock` (`R_kgDOUfO7Ig`), Announcements category
+(`DIC_kwDOUfO7Is4DJr27`). Discussions must be enabled and the official Giscus GitHub
+App installed for this repository. Both were verified during implementation.
+The `number` mapping points to the existing [discussion #39](https://github.com/aliihsaad/WinDock/discussions/39),
+`WinDock community feedback`, which already contains the maintainer's welcome comment.
+Localhost, preview deployments and production share this conversation. Its backlink
+is always the production community section, and the fallback link opens the same
+discussion even when Giscus cannot load.
+
+`giscus.json` at the repository root restricts allowed origins to production, the
+local preview and this project's Vercel previews, and shows newest comments first.
+Giscus reads this configuration from the default branch, so these restrictions
+take effect when the PR is merged. The repository/category IDs are public metadata,
+not credentials. The embed uses Giscus's borderless light/transparent dark themes
+inside the site's glass panel, with source/origin checks on incoming messages.
+
+Reference: https://giscus.app/ and https://github.com/giscus/giscus/blob/main/ADVANCED-USAGE.md.
+The theme follows the device until the visitor chooses one; that choice is saved
+in `windock-website-theme`. `theme.js` applies it before styles load.
 
 ## Local review
 
-### Optional website analytics
-
-`analytics.js` asks before loading Vercel Web Analytics. **Allow analytics** and
-**No thanks** have equal prominence; neither is preselected. The versioned choice
-is saved in `windock-website-analytics-v1` local storage. **Analytics preferences**
-in the footer reopens the notice, including a way to turn analytics off. Storage
-failures leave the choice in memory for the current page only.
-
-Only `windock.vercel.app` loads the Vercel script; local and preview deployments
-show the consent UI without collecting visits. The official `beforeSend` hook
-checks consent for every event, stops future events immediately on withdrawal
-(including changes in another tab), and strips query strings and fragments from
-page URLs. The script is injected at most once after a successful load. Vercel
-Web Analytics must be enabled on the project before deployment. No package or
-framework integration is required for this static site.
-
-The notice links to Vercel's privacy information and explains the collected
-website statistics. This is separate from GitHub's public download counts and
-does not instrument the Windows app, Android app, or embedded dock demo.
-
-### Run the preview
-
-From the repository root:
-
 ```powershell
-npm run package:downloads
 npm run website
 ```
 
-Open http://127.0.0.1:4173. The server binds only to loopback, serves this
-directory, and maps three allowlisted download files from ignored
-`artifacts/website-downloads`. It never starts the Windows provider or launches
-apps. On startup it generates the hero preview from the shipping `public/`
-interface, so the drawer and full **Your space** settings stay in sync with the
-app. Layout, labels, backgrounds, glass styles, pages, and arranging apps use
-the real UI. A preview adapter supplies sample apps and keeps edits in memory;
-reloading resets them. Launch and control actions show a preview-only message.
-The Capture panel simulates screenshot feedback and the recording timer/Stop
-flow in memory, with explicit demo labels. It never reads the screen, writes
-media, or contacts the Windows host. **Try capture** opens it directly below
-the phone. Run `npm run build:website-demo` after changing the shipping UI while
-the local website server is already running, then reload the website.
-The preview registers no service worker and its CSP blocks network connections.
+Open http://127.0.0.1:4173. The server binds only to loopback and defaults to the
+tracked `website/downloads.json`, so the preview uses the published installers.
+Use `node scripts/website-server.mjs --local-downloads` only when deliberately
+reviewing the ignored `artifacts/website-downloads` manifest and packaged files.
+The server never starts the PC host or launches applications.
 
-`package:downloads` requires `artifacts/installer/WinDockSetup.exe` and the
-Android APK. Build the Windows runtime with `npm run build:windows`, then run
-`npm run build:installer` using Inno Setup 7. The installer bundles an allowlist
-of runtime files, excludes configuration/debug symbols/logs, and adds a Start
-menu entry, optional desktop shortcut/autostart, and a Windows uninstaller.
-Neither personal dock settings nor pairing credentials are included. The
-download command copies the EXE/APK and produces SHA-256 hashes.
+The startup build copies the shipping `public/` interface into ignored
+`website/demo/`. Run `npm run build:website-demo` after changing that source while
+the preview server is running. Do not edit generated demo files directly.
 
-The website reads `downloads.json`. The committed manifest points directly to
-the tested Windows and Android assets in a public GitHub Release. The local
-preview server substitutes its generated manifest to serve local builds.
-The Windows button downloads one setup EXE. Users do not extract an archive.
+## Demo isolation and PC switching
 
-## Vercel deployment
+`preview-transport.js` replaces fetch, WebSocket and storage with in-memory
+implementations. The iframe's CSP blocks outgoing connections and its service
+worker is disabled. Real app layout, arranging, backgrounds, drawer and input
+controls are reused. Capture, typing, signatures, clipboard and updates are
+explicit simulations; they do not read devices or create files.
 
-The root `vercel.json` builds the preview and publishes `website/` as a
-static site plus `api/download-stats.js` as a Node.js function. `.vercelignore` excludes local toolchains, packaged applications,
-native/Android sources, and personal configuration from CLI uploads. Use the
-linked WinDock project and its default Vercel domain; no custom domain is needed.
-The app host itself continues to run locally on Windows.
+Android's Switch PC picker is native, so copying the dock alone does not include
+it. `build-website-demo.mjs` supplies a narrowly scoped `showPcPicker` bridge.
+The parent renders that picker outside the scaled dock, keeping it readable on
+phones. `preview-pcs.js` provides fictional Windows/Linux hosts and documentation
+addresses; they are never probed. Switching updates the demo's actual host and
+app tiles. Each sample host retains its own tiles for the current page visit.
 
-The download section shows total, Windows, and Android downloads across public
-GitHub releases, including prereleases and repeat downloads. These are asset
-download counts, not unique users, installations, or active devices. The function
-reads the public GitHub API without credentials and counts only `WinDockSetup.exe`
-and `WinDock-android-debug.apk`, following release pagination. Vercel caches a
-successful response for one hour, with up to one day of stale data while it
-revalidates. Failures show unavailable counts without affecting download links.
-The local preview server exposes the same endpoint. Other static hosts need an
-equivalent endpoint for the counters; downloads still work without it.
+Forget removes a saved choice without disconnecting the current PC. A running
+forgotten PC remains available for explicit selection; Refresh does not save it
+again. Saved offline PCs can be forgotten and do not reappear on Refresh. Reload
+resets all sample state. Both sides check the message source and origin.
 
-The counter panel emphasizes the total alongside Windows and Android rows. Its
-1.4-second count-up starts once when the panel enters view; the animated total
-always equals the two platform counts. Screen readers receive the final values
-immediately. Reduced motion shows the final values without animation, and hiding
-the page completes any running animation. Loading and unavailable counts remain
-dashes rather than displaying a misleading zero.
+Run browser verification through Playwright CLI with the local server running:
 
-Production: [windock.vercel.app](https://windock.vercel.app). The Vercel project
-is connected to this repository, so pushes to `main` deploy the website.
+```powershell
+npx --yes --package @playwright/cli playwright-cli -s=website-check open http://127.0.0.1:4173
+npx --yes --package @playwright/cli playwright-cli -s=website-check run-code --filename scripts/website-release-browser-check.js
+npx --yes --package @playwright/cli playwright-cli -s=website-check run-code --filename scripts/website-community-browser-check.js
+npx --yes --package @playwright/cli playwright-cli -s=website-check close
+```
 
-`.github/workflows/build-release.yml` builds and tests Windows/Android on GitHub.
-Pushes to main produce build artifacts. Its manual **Create a draft GitHub
-release** option also produces `WinDockSetup.exe`, the APK, checksums, and a
-manifest with direct tagged release links. It never publishes a draft or changes
-repository visibility. Publish tested installers as public GitHub Release
-assets, then commit the generated direct-download manifest to `website/downloads.json`.
+Checks cover picker actions, existing clipboard/update simulations, download
+links, narrow layouts, navigation, theme/consent continuity and network isolation.
+Community checks additionally cover deferred loading, real Giscus rendering and
+theme changes, trusted messages, retry recovery, OAuth return handling and the
+JavaScript-disabled fallback. They never sign in, post comments or add reactions.
+Screenshots go to ignored `output/playwright/`.
 
-For a static host, run `npm run build:website-demo` and upload the HTML, CSS,
-JavaScript, and assets in this directory, including the generated `demo/` folder.
-That folder is ignored by Git because it is rebuilt from the app sources.
-Replace `downloads.json` with the release manifest after publishing the assets
-to an accessible release location. Verify the direct EXE, APK, and checksum URLs
-before deploying the manifest. Binary downloads stay outside Git history.
+## Optional analytics
 
-The page describes the current artifacts as early previews: an unsigned Windows
-x64 installer and debug-signed Android 7+. It does not claim Google Play
-availability, signed production builds, or completed focus/hardware acceptance.
+`analytics.js` asks before loading Vercel Web Analytics. **Allow analytics** and
+**No thanks** have equal prominence; neither is preselected. The choice is saved
+in `windock-website-analytics-v1`. **Analytics preferences** in every footer lets
+visitors change it. Storage failures keep the choice in memory for the page only.
+
+Only `windock.vercel.app` loads the analytics script; local and preview deployments
+show the controls without collecting visits. The `beforeSend` hook checks consent
+for every event, stops future events after withdrawal (including another tab),
+and strips query strings and fragments. Analytics does not instrument the dock,
+PC picker, Windows app or Android app.
+
+## Downloads and publication
+
+`downloads.json` is the verified public release manifest. Installer URLs, sizes
+and SHA-256 hashes must match published GitHub release assets before changing it.
+This design refresh does not change that feed or any installer.
+
+`/api/download-stats` serves cached public GitHub asset counts. These are download
+counts, not users or visits, and include repeats across releases. Loading and
+unavailable values remain dashes. The compact summary honors reduced motion.
+
+The bundled app icons are product marks belonging to their owners. The existing
+AI-generated desk illustration is retained as a repository asset but is no longer
+loaded by the homepage.

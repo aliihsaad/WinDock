@@ -1,22 +1,12 @@
 const header = document.querySelector('.header');
 const shell = header.querySelector('.nav-shell');
-const trigger = document.querySelector('#nav-toggle');
 const desktopContent = document.querySelector('#desktop-navigation');
 const menu = document.querySelector('#mobile-menu');
-const closeButton = menu.querySelector('.menu-close');
-const desktop = matchMedia('(min-width: 801px) and (hover: hover) and (pointer: fine)');
+const trigger = document.querySelector('#nav-toggle');
+const desktop = matchMedia('(min-width: 901px) and (hover: hover) and (pointer: fine)');
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-let introTimer, leaveTimer, menuAnimation, closingMenu;
-let restoringFocus = false;
+let introTimer, leaveTimer, restoringFocus = false;
 let menuScrollY = 0;
-
-function unlockPage() {
-  document.documentElement.classList.remove('menu-open');
-  document.documentElement.style.removeProperty('--nav-scroll-top');
-  window.scrollTo({ top: menuScrollY, behavior: 'instant' });
-}
-
-function stopIntro() { clearTimeout(introTimer); }
 function focusTrigger() {
   restoringFocus = true;
   trigger.focus({ preventScroll: true });
@@ -30,85 +20,54 @@ function setExpanded(expanded) {
   trigger.title = expanded ? 'Close navigation' : 'Open navigation';
 }
 function collapseDesktop(restoreFocus = false) {
-  stopIntro();
+  clearTimeout(introTimer);
   clearTimeout(leaveTimer);
   if (restoreFocus || desktopContent.contains(document.activeElement)) focusTrigger();
   setExpanded(false);
 }
-function animateMenu(opening) {
-  menuAnimation?.cancel();
-  if (reducedMotion.matches) return Promise.resolve();
-  menuAnimation = menu.animate([
-    { transform: `translateY(${opening ? '-102%' : '0'})`, borderRadius: opening ? '0 0 48px 48px' : '0' },
-    { transform: `translateY(${opening ? '0' : '-102%'})`, borderRadius: opening ? '0' : '0 0 48px 48px' },
-  ], { duration: opening ? 560 : 360, easing: 'cubic-bezier(.22,1,.36,1)' });
-  return menuAnimation.finished.catch(() => {});
-}
-function openMenu() {
-  if (menu.open || closingMenu) return;
-  stopIntro();
-  menuScrollY = scrollY;
-  document.documentElement.style.setProperty('--nav-scroll-top', `${-menuScrollY}px`);
-  document.documentElement.classList.add('menu-open');
-  menu.showModal();
-  setExpanded(true);
-  menu.dataset.visible = '';
-  animateMenu(true);
-}
-async function closeMenu(restoreFocus = true) {
-  if (closingMenu) return closingMenu;
+function closeMenu(restoreFocus = true) {
   if (!menu.open) return;
-  menu.removeAttribute('data-visible');
-  closingMenu = (async () => {
-    await animateMenu(false);
-    menu.close();
-    unlockPage();
-    setExpanded(false);
-    if (restoreFocus) focusTrigger();
-  })();
-  await closingMenu;
-  closingMenu = null;
+  menu.close();
+  document.documentElement.classList.remove('menu-open');
+  document.documentElement.style.removeProperty('--nav-scroll-top');
+  window.scrollTo({ top: menuScrollY, behavior: 'instant' });
+  setExpanded(false);
+  if (restoreFocus) focusTrigger();
 }
 function configureNavigation(intro = false) {
-  stopIntro();
+  clearTimeout(introTimer);
   clearTimeout(leaveTimer);
-  if (menu.open) {
-    menuAnimation?.cancel();
-    menu.close();
-    menu.removeAttribute('data-visible');
-    unlockPage();
-    focusTrigger();
-  }
+  if (menu.open) closeMenu();
   trigger.setAttribute('aria-controls', desktop.matches ? 'desktop-navigation' : 'mobile-menu');
   if (desktop.matches) trigger.removeAttribute('aria-haspopup');
   else trigger.setAttribute('aria-haspopup', 'dialog');
   const reveal = intro && desktop.matches && !reducedMotion.matches;
+  if (!reveal && desktopContent.contains(document.activeElement)) focusTrigger();
   setExpanded(reveal);
   if (reveal) introTimer = setTimeout(() => {
     if (!shell.matches(':hover') && !shell.contains(document.activeElement)) collapseDesktop();
   }, 1200);
 }
-
 trigger.hidden = false;
 header.dataset.navReady = '';
 configureNavigation(true);
-desktop.addEventListener('change', () => configureNavigation());
-reducedMotion.addEventListener('change', () => {
-  if (reducedMotion.matches) {
-    stopIntro();
-    menuAnimation?.finish();
-    if (!menu.open) collapseDesktop();
-  }
-});
 trigger.addEventListener('click', () => {
-  stopIntro();
-  if (!desktop.matches) return openMenu();
-  if (header.dataset.expanded === 'true') collapseDesktop(true);
-  else setExpanded(true);
+  clearTimeout(introTimer);
+  if (desktop.matches) {
+    if (header.dataset.expanded === 'true') collapseDesktop(true);
+    else setExpanded(true);
+    return;
+  }
+  if (menu.open) return closeMenu();
+  menuScrollY = scrollY;
+  document.documentElement.style.setProperty('--nav-scroll-top', `${-menuScrollY}px`);
+  document.documentElement.classList.add('menu-open');
+  menu.showModal();
+  setExpanded(true);
 });
 shell.addEventListener('pointerenter', event => {
   if (!desktop.matches || event.pointerType === 'touch') return;
-  stopIntro();
+  clearTimeout(introTimer);
   clearTimeout(leaveTimer);
   setExpanded(true);
 });
@@ -121,51 +80,42 @@ shell.addEventListener('pointerleave', () => {
 });
 shell.addEventListener('focusin', event => {
   if (desktop.matches && !restoringFocus && event.target.matches(':focus-visible')) {
-    stopIntro();
+    clearTimeout(introTimer);
     clearTimeout(leaveTimer);
     setExpanded(true);
   }
 });
-shell.addEventListener('focusout', () => {
-  requestAnimationFrame(() => {
-    if (desktop.matches && !shell.contains(document.activeElement) && !shell.matches(':hover')) collapseDesktop();
-  });
-});
+shell.addEventListener('focusout', () => requestAnimationFrame(() => {
+  if (desktop.matches && !shell.contains(document.activeElement) && !shell.matches(':hover')) collapseDesktop();
+}));
 header.addEventListener('keydown', event => {
   if (event.key === 'Escape' && desktop.matches) {
     event.preventDefault();
     collapseDesktop(true);
   }
 });
-closeButton.addEventListener('click', () => closeMenu());
+menu.querySelector('.menu-close').addEventListener('click', () => closeMenu());
 menu.addEventListener('cancel', event => { event.preventDefault(); closeMenu(); });
-menu.addEventListener('keydown', event => {
-  if (event.key !== 'Tab') return;
-  const controls = [...menu.querySelectorAll('a[href],button:not([disabled])')].filter(element => element.getClientRects().length);
-  const destination = event.shiftKey && document.activeElement === controls[0] ? controls.at(-1)
-    : !event.shiftKey && document.activeElement === controls.at(-1) ? controls[0] : null;
-  if (destination) { event.preventDefault(); destination.focus(); }
+desktop.addEventListener('change', () => configureNavigation());
+reducedMotion.addEventListener('change', () => {
+  if (reducedMotion.matches && desktop.matches) collapseDesktop();
 });
-
-// Finish the curtain before moving to a section, then hand keyboard focus to that section.
-async function navigate(event) {
+function navigate(event) {
   const link = event.target.closest('a');
-  if (!link) return;
-  const href = link.getAttribute('href');
-  if (!href.startsWith('#') || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-  const target = document.querySelector(href === '#' ? '#main' : href);
-  if (!target) return;
-  event.preventDefault();
-  if (menu.open) await closeMenu(false);
+  if (!link || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+  const url = new URL(link.href);
+  if (menu.open) closeMenu(false);
   else collapseDesktop();
-  history.pushState(null, '', href);
-  const hadTabIndex = target.hasAttribute('tabindex');
-  if (!hadTabIndex) {
+  if (url.origin === location.origin && url.pathname === location.pathname && url.hash) {
+    const target = document.getElementById(decodeURIComponent(url.hash.slice(1)));
+    if (!target) return;
+    event.preventDefault();
+    history.pushState(null, '', url.hash);
     target.tabIndex = -1;
+    target.focus({ preventScroll: true });
+    target.scrollIntoView({ block: 'start', behavior: 'instant' });
     target.addEventListener('blur', () => target.removeAttribute('tabindex'), { once: true });
   }
-  target.focus({ preventScroll: true });
-  target.scrollIntoView({ block: 'start', behavior: reducedMotion.matches ? 'instant' : 'smooth' });
 }
-desktopContent.addEventListener('click', navigate);
 menu.addEventListener('click', navigate);
+desktopContent.addEventListener('click', navigate);
