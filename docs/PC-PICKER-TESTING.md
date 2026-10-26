@@ -54,7 +54,10 @@ From the repository root:
 npm ci
 npm test
 $env:JAVA_HOME = 'C:\Program Files\Android\Android Studio\jbr'
-$env:ANDROID_HOME = 'C:\Users\Mini\AppData\Local\Android\Sdk'
+# Use your own SDK location if it is not the default Android Studio location.
+if (-not $env:ANDROID_HOME) {
+  $env:ANDROID_HOME = Join-Path $env:LOCALAPPDATA 'Android\Sdk'
+}
 Push-Location android
 .\gradlew.bat testDebugUnitTest assembleDebug assembleDebugAndroidTest lintDebug --no-daemon --console=plain
 Pop-Location
