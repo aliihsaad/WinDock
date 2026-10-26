@@ -8,6 +8,9 @@ import { GET as downloadStats } from '../api/download-stats.js';
 await buildWebsiteDemo();
 const websiteRoot = resolve(import.meta.dirname, '../website');
 const downloadRoot = resolve(import.meta.dirname, '../artifacts/website-downloads');
+// Reviewing the site must not silently substitute an older local build's feed.
+// Opt in only when intentionally testing locally packaged downloads.
+const localDownloads = process.argv.includes('--local-downloads');
 const mime = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.exe': 'application/octet-stream', '.apk': 'application/vnd.android.package-archive', '.zst': 'application/zstd', '.deb': 'application/vnd.debian.binary-package', '.txt': 'text/plain; charset=utf-8' };
 const downloads = new Set(['WinDockSetup.exe', 'WinDock-android-debug.apk', 'SHA256SUMS.txt', 'WinDock-linux-x64.pkg.tar.zst', 'WinDock-linux-amd64.deb', 'SHA256SUMS-linux.txt']);
 const server = createServer(async (req, res) => {
@@ -27,8 +30,7 @@ const server = createServer(async (req, res) => {
       file = resolve(downloadRoot, name);
       res.setHeader('Content-Disposition', `${name.endsWith('.txt') ? 'inline' : 'attachment'}; filename="${name}"`);
     } else if (path === '/downloads.json') {
-      file = resolve(downloadRoot, 'downloads.json');
-      try { await stat(file); } catch { file = resolve(websiteRoot, 'downloads.json'); }
+      file = resolve(localDownloads ? downloadRoot : websiteRoot, 'downloads.json');
     } else {
       file = resolve(websiteRoot, path === '/' ? 'index.html' : path.slice(1));
       if (!file.startsWith(websiteRoot + sep) || !mime[extname(file)] || /(?:^|[\\/])\./.test(path)) throw new Error('Invalid path');

@@ -2,8 +2,8 @@
 
 This branch builds on PR #20's validated, bounded saved-PC history. It adds live
 discovery and an in-app picker; it does not change the dock's app icon layout or
-the Windows/Linux control providers. Candidate packages use version 0.2.5-preview.2
-(Android version code 7). It is not part of the published APK yet.
+the Windows/Linux control providers. Candidate packages use version 0.2.5-preview.3
+(Android version code 8). It is not part of the published APK yet.
 
 ## Behavior
 

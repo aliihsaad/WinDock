@@ -1,6 +1,8 @@
 # Combined 0.2.5 candidate testing
 
-Candidate: **0.2.5-preview.2**, Android code **7**, Linux **0.2.5-2**.
+Candidate: **0.2.5-preview.3**, Android code **8**, Linux **0.2.5-3**.
+This revision includes the Linux clipboard-manager and background-host fixes.
+Earlier preview.2 packages were built before those fixes; use the new installers.
 The earlier preview.1 installers do not include update checks, Tailscale or clipboard.
 Install both the host and Android candidate. Preserve app data and existing pairing
 settings. Re-pair with each PC's six-digit PIN if its host restarted.
@@ -40,11 +42,19 @@ settings. Re-pair with each PC's six-digit PIN if its host restarted.
    switching between the remembered VPN endpoint and a LAN PC. Discovery is LAN-only.
 8. **Regression:** app icons/layout, launch/focus, media, volume, touchpad, phone
    keyboard, signatures, captures, performance mode and Wi-Fi/USB reconnect.
+9. **Website preview:** public downloads must still identify 0.2.4 while this
+   candidate is private. The dedicated section introduces the 0.2.5 features. In the demo,
+   expand PC clipboard, choose and edit a sample, and tap Try paste: only the
+   demo text below the phone changes. Browsing or choosing must not paste.
 
 Report the platform, installed version, steps, expected/actual behavior and any
 visible error. Do not include private clipboard text or pairing PINs.
 
 ## Publication boundary
+
+On October 26, the maintainer confirmed Omarchy testing of the Linux changes.
+Preview.3 packages those same changes with a distinct package version; no Linux
+runtime behavior was changed during this packaging and website pass.
 
 Keep the release draft and website downloads on the current public version until
 physical checks pass. Build artifacts must all identify the same release branch

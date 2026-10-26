@@ -27,6 +27,12 @@ async (page) => {
     check(await tab.locator("#pc-clipboard-text").inputValue()==="First line\nمرحبا 🙂\tSecond line","Selecting an item fills the editor with complete Unicode text");
     check((await control("/events")).events.length===before.events.length,"Selecting a history item does not paste yet");
     await tab.setViewportSize({width:800,height:150});
+    // Viewport resizing resolves before the visualViewport resize event paints
+    // the editor. Wait for the actual bounds, keeping the keyboard-fit assertion.
+    await tab.waitForFunction(()=>["pc-clipboard-text","pc-clipboard-paste"].every(id=>{
+      const r=document.getElementById(id).getBoundingClientRect();
+      return r.top>=0 && r.height>=44 && r.bottom<=innerHeight;
+    }),undefined,{timeout:3000});
     for (const id of ["pc-clipboard-text","pc-clipboard-paste"]) {
       const r=await tab.locator("#"+id).boundingBox();
       check(r.y>=0 && r.height>=44 && r.y+r.height<=150, id+" fits above a landscape keyboard");

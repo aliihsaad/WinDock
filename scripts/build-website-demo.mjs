@@ -19,12 +19,27 @@ export async function buildWebsiteDemo() {
   html = replaceOnce(html, '<title>WinDock</title>', '<title>WinDock interactive preview</title>');
   html = replaceOnce(html, 'Main monitor · Saved on your PC', 'Demo · Nothing is captured or saved');
   html = replaceOnce(html, 'Recordings stop after 60 minutes.<span', 'In the app, captures are saved to your PC.<span');
+  html = replaceOnce(html, '>Paste to PC</button>', '>Try paste</button>');
   html = replaceOnce(html, '<head>', `<head>
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'">`);
   await writeFile(resolve(destination, 'index.html'), html);
   for (const file of ['style.css', 'performance.js', 'icons.js', 'tiles.js', 'launcher.js', 'input-pad.js', 'touchpad-gestures.js', 'remote-keyboard.js', 'pc-clipboard.js', 'now-playing.js', 'pairing.js', 'updates.js']) {
     await copyFile(resolve(root, 'public', file), resolve(destination, file));
   }
+  let clipboard = await readFile(resolve(destination, 'pc-clipboard.js'), 'utf8');
+  for (const [from, to] of [
+    ['"Paste to PC"', '"Try paste"'],
+    ['"Recent clipboard"', '"Sample clipboard"'],
+    ['"Loading PC clipboard…"', '"Loading sample text…"'],
+    ['"Choose a text item. Images and files are not shown."', '"Sample text only. Your real clipboard is never read."'],
+    ['"Paste sent to the PC."', '"Added to the demo text below. Nothing was pasted on your PC."'],
+  ]) clipboard = replaceOnce(clipboard, from, to);
+  await writeFile(resolve(destination, 'pc-clipboard.js'), clipboard);
+  let updates = await readFile(resolve(destination, 'updates.js'), 'utf8');
+  updates = replaceOnce(updates, '"You’re up to date."', '"Demo check complete. Use the installed app to check your real version."');
+  updates = replaceOnce(updates, '"Check for the latest release when you’re ready."', '"Try a simulated update check. No release service is contacted."');
+  updates = replaceOnce(updates, '"Installed on your PC: "', '"Preview: "');
+  await writeFile(resolve(destination, 'updates.js'), updates);
   let dock = await readFile(resolve(root, 'public/dock.js'), 'utf8');
   dock = replaceOnce(dock,
     'src="/api/apps/icon?v=3&amp;id=${escapeHtml(encodeURIComponent(app.id))}"',
@@ -44,8 +59,26 @@ export async function buildWebsiteDemo() {
   ]) app = replaceOnce(app, from, to);
   app += `
 // Small parent bridge; every setting still uses the real app's saveLayout.
+let clipboardObserver;
 window.addEventListener('message', (event) => {
   if (event.source !== parent || event.origin !== location.origin) return;
+  if (event.data?.type === 'windock-preview-clipboard' && paired) {
+    clipboardObserver?.disconnect();
+    const dialog = document.getElementById('input-pad'), toggle = document.getElementById('pc-clipboard-toggle');
+    for (const other of document.querySelectorAll('dialog[open]')) if (other !== dialog) other.close();
+    inputPad.open('touchpad');
+    const showClipboard = () => {
+      if (!dialog.open) { clipboardObserver.disconnect(); return; }
+      if (dialog.dataset.ready === 'true' && !toggle.disabled) {
+        clipboardObserver.disconnect();
+        if (toggle.getAttribute('aria-expanded') !== 'true') toggle.click();
+      }
+    };
+    clipboardObserver = new MutationObserver(showClipboard);
+    clipboardObserver.observe(dialog, { attributes: true, attributeFilter: ['data-ready', 'open'] });
+    showClipboard();
+    parent.postMessage({ type: 'windock-preview-opened' }, location.origin);
+  }
   if (event.data?.type === 'windock-preview-input' && paired && ['touchpad', 'signature'].includes(event.data.mode)) {
     // Keep this dialog open while switching modes: its queued close event
     // would otherwise disconnect the newly opened demo touchpad.

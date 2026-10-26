@@ -2,7 +2,7 @@
 
 Prebuilt packages for **x86-64 Hyprland desktops**. Node.js and the compiled
 input helper are bundled, so you do not need to install Node.js, npm or Rust.
-For the combined 0.2.5-preview.2 testing candidate (Linux package 0.2.5-2), update the Android companion too. The new
+For the combined 0.2.5-preview.3 testing candidate (Linux package 0.2.5-3), update the Android companion too. The new
 **Switch PC** picker discovers running hosts and lets you choose one while keeping
 other hosts running. Pair with each PC’s own six-digit PIN. The touchpad also offers PC text clipboard
 history from the manager you already run (Omarchy's own, Elephant, cliphist,

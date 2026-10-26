@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Website: add a dedicated 0.2.5 feature section, updated setup and update-check
+  guidance, and a clipboard demo using fictional text. Simulated paste changes
+  only the page's demo output. Public download links change only at promotion.
+
 - Linux: WinDock keeps running in the background after you close its window, as
   the systemd user service `windock.service`, so the phone stays connected.
   Opening WinDock from the menu shows the address and PIN, and so does
