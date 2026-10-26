@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Android domain rules cannot represent IP ranges. Dynamic LAN HTTP hosts
-     require this transport permission. EndpointPolicy permits only numeric
-     private/loopback hosts; the WebView stays on the validated host's origin.
+<!-- Android domain rules cannot represent IP ranges. Dynamic LAN/VPN HTTP hosts
+     require this transport permission. EndpointPolicy permits numeric private,
+     loopback and shared (CGNAT) IPv4 hosts, plus localhost; the WebView stays
+     on the validated host's origin.
      No custom trust anchors or TLS certificate bypasses are installed. -->
 <network-security-config>
     <base-config cleartextTrafficPermitted="true" />

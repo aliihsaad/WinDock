@@ -17,6 +17,10 @@
   plus an update shortcut in the Windows connection window. Installation stays
   manual. Android checks its own APK version code, including PC-only releases.
 
+- Fix Android rejecting manual Tailscale/CGNAT addresses in `100.64.0.0/10`.
+  Keep strict URL validation, same-origin WebView access and PIN pairing;
+  add boundary/reconnect regression tests and manual VPN connection guidance.
+
 - Add the first native iPhone companion source: remembered PC address, PIN pairing
   through the shared landscape dock, and reconnect/change-PC controls.
 - Add a GitHub macOS workflow for simulator tests, screenshots and unsigned iOS

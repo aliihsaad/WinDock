@@ -2,12 +2,12 @@
 <resources>
     <string name="app_name">WinDock</string>
     <string name="searching">Looking for your PC on Wi-Fi…</string>
-    <string name="not_found">Keep WinDock running on your PC and connect both devices to the same network.\nTry again, or enter the address shown in the PC tray.</string>
+    <string name="not_found">Keep WinDock running on your PC and connect both devices to the same LAN or VPN.\nTry again, or enter the PC\'s LAN or Tailscale IPv4 address.</string>
     <string name="connecting">Opening your dock…</string>
     <string name="connection_lost">Could not reach your PC. Check the connection and try again.</string>
     <string name="choose_pc">Connect to your PC, or search for another one.</string>
     <string name="address_hint">PC address · 192.168.1.40:8620</string>
-    <string name="invalid_address">Enter the local IPv4 address shown in the WinDock tray.</string>
+    <string name="invalid_address">Enter your PC\'s LAN or Tailscale IPv4 address, optionally followed by :port.</string>
     <string name="retry">Connect by Wi-Fi</string>
     <string name="connect">Use this address</string>
     <string name="mode_wifi">Wi-Fi selected · Phone and PC on the same network</string>
