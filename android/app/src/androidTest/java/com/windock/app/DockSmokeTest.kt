@@ -17,6 +17,8 @@ import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import org.junit.Assert.*
 import org.junit.Test
+import org.junit.Assume.assumeTrue
+import android.os.Build
 import org.junit.runner.RunWith
 import java.io.File
 import java.util.concurrent.CountDownLatch
@@ -81,6 +83,8 @@ class DockSmokeTest {
     }
 
     @Test fun installedAppPairsRendersSwipesAndDispatchesActions() {
+        assumeTrue("isolated fixture must not change a personal phone", Build.MODEL.contains("sdk"))
+        PhonePreferences.setUsbOnly(context, false)
         ServerUrl.save(context, endpoint)
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             lateinit var web: WebView
@@ -99,6 +103,13 @@ class DockSmokeTest {
             awaitJs(web, "document.getElementById('conn').textContent === 'Connected'")
             // A fresh Android image explains immersive mode with a system overlay.
             UiDevice.getInstance(instrumentation).wait(Until.findObject(By.text("Got it")), 3000)?.click()
+            // The real shared dock can open and cancel the native picker without losing pairing.
+            assertEquals("true", js(web, "!document.getElementById('drawer-switch-pc').hidden"))
+            js(web, "document.getElementById('drawer-open').click(); document.getElementById('drawer-switch-pc').click()")
+            val device = UiDevice.getInstance(instrumentation)
+            assertTrue(device.wait(Until.hasObject(By.text("Switch PC")), 5000))
+            device.pressBack()
+            awaitJs(web, "!document.getElementById('app').hidden && !document.getElementById('drawer').open")
             assertEquals("true", js(web, "innerWidth > innerHeight && document.body.classList.contains('is-immersive')"))
             assertEquals("2", js(web, "document.querySelectorAll('.dock-page').length"))
             assertEquals("\"none\"", js(web, "getComputedStyle(document.querySelector('.bar')).display"))

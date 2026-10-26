@@ -51,6 +51,7 @@ if [[ "$kind" = arch ]]; then
 fi
 runuser -u tester -- /usr/lib/windock/node /tests/test-linux-installed.mjs
 settings_hash=$(sha256sum /home/tester/.config/windock/config.json | cut -d ' ' -f1)
+identity_hash=$(sha256sum /home/tester/.config/windock/config.json.host-id | cut -d ' ' -f1)
 # Give a copy a higher package revision to exercise an actual upgrade.
 mkdir /tmp/windock-upgrade
 if [[ "$kind" = deb ]]; then
@@ -70,6 +71,7 @@ else
 fi
 test "$(sha256sum /home/tester/.config/windock/config.json | cut -d ' ' -f1)" = "$settings_hash"
 runuser -u tester -- /usr/lib/windock/node /tests/test-linux-installed.mjs
+test "$(sha256sum /home/tester/.config/windock/config.json.host-id | cut -d ' ' -f1)" = "$identity_hash"
 if [[ "$kind" = deb ]]; then
     apt-get purge -y windock
 else
@@ -81,4 +83,5 @@ test ! -e /usr/share/applications/windock.desktop
 test ! -e /usr/lib/udev/rules.d/70-windock-uinput.rules
 test ! -e /usr/lib/modules-load.d/windock.conf
 test "$(sha256sum /home/tester/.config/windock/config.json | cut -d ' ' -f1)" = "$settings_hash"
+test "$(sha256sum /home/tester/.config/windock/config.json.host-id | cut -d ' ' -f1)" = "$identity_hash"
 echo "Linux $kind install, upgrade and uninstall PASS"

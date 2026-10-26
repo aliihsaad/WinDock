@@ -2,8 +2,9 @@
 
 Prebuilt packages for **x86-64 Hyprland desktops**. Node.js and the compiled
 input helper are bundled, so you do not need to install Node.js, npm or Rust.
-Update the Android companion for automatic low-RAM detection; existing clients
-can enable Performance mode manually. Pair using the new six-digit PIN.
+For the 0.2.5 testing candidate, update the Android companion too. The new
+**Switch PC** picker discovers running hosts and lets you choose one while keeping
+other hosts running. Pair with each PC’s own six-digit PIN.
 
 ### Omarchy / Arch
 
@@ -25,7 +26,7 @@ sudo apt install ./WinDock-linux-amd64.deb
 
 Open **WinDock** in your application menu, or run `windock` as your normal user.
 Keep its connection window open. On your phone, open WinDock and select
-**Connect by Wi-Fi → Find my PC**, then enter the PIN shown on the PC.
+**Switch PC**, then enter the PIN shown on the PC.
 Close the connection window or press Ctrl+C to stop the host.
 
 The package sets up the touchpad's udev rule. If the touchpad cannot start,

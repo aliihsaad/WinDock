@@ -29,8 +29,6 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.doOnLayout
 import org.json.JSONObject
 import java.io.ByteArrayInputStream
-import java.net.HttpURLConnection
-import java.net.URL
 import java.util.concurrent.Executors
 
 /** Native discovery/connection shell; the shared web UI owns pairing and the dock. */
@@ -51,6 +49,7 @@ class MainActivity : Activity() {
     private var connecting = false
     private lateinit var idleDisplay: IdleDisplayController
     private var phoneDialog: AlertDialog? = null
+    private var pcPicker: PcPicker? = null
     private var wakingGesture = false
     private val wakingKeys = mutableSetOf<Int>()
     private var usbOnly = false
@@ -87,6 +86,7 @@ class MainActivity : Activity() {
         findViewById<Button>(R.id.usb_connect).setOnClickListener { showUsbSetup() }
         findViewById<Button>(R.id.phone_options).setOnClickListener { showPhoneOptions() }
         address.setOnEditorActionListener { _, _, _ -> connectButton.performClick(); true }
+        findViewById<Button>(R.id.choose_pc).setOnClickListener { showPcPicker() }
 
         web.setBackgroundColor(getColor(R.color.dock_background))
         web.settings.apply {
@@ -132,6 +132,17 @@ class MainActivity : Activity() {
         connect(restoreOnStartup = true)
     }
 
+    private fun showPcPicker() {
+        if (phoneDialog != null || connecting) return
+        hideRemoteKeyboard()
+        val picker = PcPicker(this, endpoint.takeIf { web.visibility == View.VISIBLE && !loadFailed },
+            select = { host -> selectConnection(host.usb, host.endpoint); connect(host.endpoint) },
+            manual = { failConnection(R.string.choose_pc) })
+        pcPicker = picker
+        showPhoneDialog(picker.dialog) { picker.close(); if (pcPicker === picker) pcPicker = null }
+        picker.start()
+    }
+
     private fun syncIdleDisplay() {
         if (::idleDisplay.isInitialized) idleDisplay.setActive(resumed && !connecting && !loadFailed &&
             web.visibility == View.VISIBLE && phoneDialog == null)
@@ -149,10 +160,10 @@ class MainActivity : Activity() {
         })
     }
 
-    private fun showPhoneDialog(dialog: AlertDialog) {
+    private fun showPhoneDialog(dialog: AlertDialog, dismissed: () -> Unit = {}) {
         phoneDialog = dialog
         syncIdleDisplay()
-        dialog.setOnDismissListener { if (phoneDialog === dialog) phoneDialog = null; syncIdleDisplay() }
+        dialog.setOnDismissListener { dismissed(); if (phoneDialog === dialog) phoneDialog = null; syncIdleDisplay() }
         dialog.show()
     }
 
@@ -257,6 +268,7 @@ class MainActivity : Activity() {
             }
         }
         @JavascriptInterface fun hideKeyboard() { runOnUiThread { hideRemoteKeyboard() } }
+        @JavascriptInterface fun showPcPicker() { runOnUiThread { if (trustedKeyboardPage()) this@MainActivity.showPcPicker() } }
         @JavascriptInterface fun showPhoneSettings() { runOnUiThread { if (trustedKeyboardPage()) showPhoneOptions() } }
     }
 
@@ -278,6 +290,7 @@ class MainActivity : Activity() {
         connectButton.isEnabled = !busy
         retryButton.isEnabled = !busy
         address.isEnabled = !busy
+        findViewById<View>(R.id.choose_pc).isEnabled = !busy
         findViewById<View>(R.id.usb_connect).isEnabled = !busy
         findViewById<View>(R.id.progress).visibility = if (busy) View.VISIBLE else View.GONE
     }
@@ -306,6 +319,8 @@ class MainActivity : Activity() {
         (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager)
             .hideSoftInputFromWindow(address.windowToken, 0)
         web.stopLoading()
+        endpoint = null
+        loadFailed = true
         web.visibility = View.GONE
         syncIdleDisplay()
         connection.visibility = View.VISIBLE
@@ -322,6 +337,13 @@ class MainActivity : Activity() {
                     status.setText(if (requestedUsb && !useUsb) R.string.usb_disconnected else if (useUsb) R.string.usb_searching else R.string.searching)
                 }
             }
+            var identity: KnownHost? = null
+            fun reachable(candidate: String): Boolean {
+                if (manual == null && !ServerUrl.canAutoConnect(this, candidate)) return false
+                identity = HostProbe.read(candidate, useUsb)
+                    ?.takeIf { manual != null || ServerUrl.canAutoConnect(this, it) }
+                return identity != null
+            }
             val remembered = manual ?: ServerUrl.load(this, useUsb)
             val selected = remembered?.takeIf { Discovery.permitsRememberedEndpoint(it, useUsb, networks) && reachable(it) }
                 ?: if (manual == null) Discovery.find(::reachable, useUsb, networks) else null
@@ -332,6 +354,7 @@ class MainActivity : Activity() {
                 } else {
                     endpoint = selected
                     ServerUrl.save(this, selected, useUsb)
+                    identity?.let { ServerUrl.rememberHost(this, it) }
                     address.setText(selected)
                     status.setText(R.string.connecting)
                     loadFailed = false
@@ -342,29 +365,6 @@ class MainActivity : Activity() {
                 }
             }
         }
-    }
-
-    private fun reachable(endpoint: String): Boolean {
-        if (!ServerUrl.isValid(endpoint)) return false
-        var conn: HttpURLConnection? = null
-        return try {
-            conn = URL("$endpoint/health").openConnection() as HttpURLConnection
-            conn.connectTimeout = 1500
-            conn.readTimeout = 1500
-            conn.instanceFollowRedirects = false
-            conn.requestMethod = "GET"
-            conn.responseCode == 200 && conn.inputStream.bufferedReader().use { reader ->
-                val body = CharArray(4097)
-                var count = 0
-                while (count < body.size) {
-                    val read = reader.read(body, count, body.size - count)
-                    if (read == -1) break
-                    count += read
-                }
-                count <= 4096 && JSONObject(String(body, 0, count)).optString("app") == "windock"
-            }
-        } catch (_: Exception) { false }
-        finally { conn?.disconnect() }
     }
 
     @Deprecated("Activity back dispatch for the supported API 24+ range")
@@ -391,6 +391,7 @@ class MainActivity : Activity() {
     override fun onResume() { super.onResume(); resumed = true; if (::web.isInitialized) web.onResume(); syncIdleDisplay() }
     override fun onPause() { resumed = false; wakingGesture = false; wakingKeys.clear(); syncIdleDisplay(); hideRemoteKeyboard(); if (::web.isInitialized) web.onPause(); super.onPause() }
     override fun onDestroy() {
+        pcPicker?.close()
         phoneDialog?.setOnDismissListener(null)
         phoneDialog?.dismiss()
         idleDisplay.close()

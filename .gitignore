@@ -15,6 +15,7 @@ obj/
 
 # local host config
 config.json
+*.host-id
 
 # Local toolchains and packaged applications
 .tools/

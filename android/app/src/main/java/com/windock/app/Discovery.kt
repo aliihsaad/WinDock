@@ -50,20 +50,68 @@ object Discovery {
      * Runs on a background thread; never call from the main thread.
      */
     fun find(reachable: (String) -> Boolean, usbOnly: Boolean = false,
-             networks: List<LocalNetwork> = LocalNetwork.available()): String? {
+             networks: List<LocalNetwork> = LocalNetwork.available(), port: Int = PORT): String? {
         val links = networks.filter { it.wired == usbOnly }
         // USB mode never silently falls back to Wi-Fi. The wildcard broadcast
         // preserves discovery on phones which hide interface enumeration.
         val targets: List<LocalNetwork?> = if (usbOnly) links else links + listOf(null)
         for (link in targets) {
             if (Thread.currentThread().isInterrupted) return null
-            val found = findOnLink(link) { permitsRememberedEndpoint(it, usbOnly, networks) && reachable(it) }
+            val found = findOnLink(link, port) { permitsRememberedEndpoint(it, usbOnly, networks) && reachable(it) }
             if (found != null) return found
         }
         return null
     }
 
-    private fun findOnLink(link: LocalNetwork?, reachable: (String) -> Boolean): String? = try {
+    data class Candidate(val endpoint: String, val usb: Boolean)
+
+    /** Collect before health checks so a slow or offline PC cannot hide other replies. */
+    fun findAll(networks: List<LocalNetwork> = LocalNetwork.available(), port: Int = PORT): List<Candidate> {
+        val sockets = mutableListOf<Pair<LocalNetwork?, DatagramSocket>>()
+        val found = linkedMapOf<String, Candidate>()
+        try {
+            for (link in networks + listOf(null)) {
+                val socket = DatagramSocket(null)
+                try {
+                    socket.bind(InetSocketAddress(link?.let { InetAddress.getByName(it.address) }, 0))
+                    socket.broadcast = true
+                    socket.soTimeout = 25
+                    sockets.add(link to socket)
+                } catch (_: java.io.IOException) { socket.close() }
+            }
+            val deadline = System.nanoTime() + 1_200_000_000L
+            var nextProbe = 0L
+            val payload = PROBE.toByteArray()
+            while (sockets.isNotEmpty() && System.nanoTime() < deadline && !Thread.currentThread().isInterrupted) {
+                if (System.nanoTime() >= nextProbe) {
+                    sockets.forEach { (link, socket) ->
+                        try {
+                            socket.send(DatagramPacket(payload, payload.size,
+                                InetAddress.getByName(link?.broadcast ?: "255.255.255.255"), port))
+                        } catch (_: java.io.IOException) { /* Another link may still answer. */ }
+                    }
+                    nextProbe = System.nanoTime() + 500_000_000L
+                }
+                for ((link, socket) in sockets) {
+                    if (Thread.currentThread().isInterrupted || System.nanoTime() >= deadline) break
+                    try {
+                        val packet = DatagramPacket(ByteArray(256), 256)
+                        socket.receive(packet)
+                        val sender = packet.address.hostAddress ?: continue
+                        if (link != null && !link.contains(sender)) continue
+                        val endpoint = parseReply(String(packet.data, 0, packet.length), sender) ?: continue
+                        val usb = link?.wired ?: (networks.any { it.wired && it.contains(sender) } &&
+                            networks.none { !it.wired && it.contains(sender) })
+                        found.putIfAbsent(endpoint, Candidate(endpoint, usb))
+                        if (found.size == 24) return found.values.toList()
+                    } catch (_: java.io.IOException) { /* Timeout or unavailable interface. */ }
+                }
+            }
+            return found.values.toList()
+        } finally { sockets.forEach { it.second.close() } }
+    }
+
+    private fun findOnLink(link: LocalNetwork?, port: Int, reachable: (String) -> Boolean): String? = try {
         DatagramSocket(null).use { socket ->
             socket.bind(InetSocketAddress(link?.let { InetAddress.getByName(it.address) }, 0))
             socket.broadcast = true
@@ -73,7 +121,7 @@ object Discovery {
 
             repeat(ATTEMPTS) {
                 try {
-                    socket.send(DatagramPacket(payload, payload.size, broadcast, PORT))
+                    socket.send(DatagramPacket(payload, payload.size, broadcast, port))
                     val deadline = System.nanoTime() + TIMEOUT_MS * 1_000_000L
                     while (System.nanoTime() < deadline) {
                         socket.soTimeout = ((deadline - System.nanoTime()) / 1_000_000L).coerceIn(1, TIMEOUT_MS.toLong()).toInt()

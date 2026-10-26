@@ -16,6 +16,7 @@ Output: `artifacts/WinDock-android-debug.apk`. It supports Android 7/API 24 and
 newer, targets API 34, and uses a local debug signing key. Updating requires the
 same signing key. Production signing and Play Store preparation are separate.
 The current public APK is `0.2.4-preview.1` (version code 5).
+The unreleased testing candidate is `0.2.5-preview.1` (version code 6).
 
 Transfer the APK to the phone, open it and allow installation from the chosen
 browser/file manager if Android asks. Alternatively, enable USB debugging,
@@ -26,6 +27,15 @@ If discovery misses the PC, enter its full tray URL or IPv4 address/port and tap
 Connect. A bare IP defaults to port 8620. Back closes an open sheet; a second
 Back returns to the connection screen. Android's first fullscreen prompt needs
 one tap on Got it. System-edge swipes can temporarily reveal navigation bars.
+
+In the testing candidate, open **Switch PC** from the connection screen or the
+updated dock drawer. It discovers running PCs and checks up to eight saved PCs.
+Choose an available PC, retry a saved address, or tap **Forget** beside a saved
+entry to stop automatic reconnection. Forgetting does not revoke pairing, and
+explicitly choosing the PC saves it again. Updated hosts are grouped across
+their network addresses; older hosts are tracked by address. The PIN and pairing
+cookie stay in the WebView, so a PC that restarted asks for its PIN again.
+See [PC picker testing](../docs/PC-PICKER-TESTING.md) for compatibility and checks.
 
 ## USB connection (development build)
 

@@ -70,7 +70,7 @@ class UsbDiscoveryTest {
     private fun checkDatagram(usbOnly: Boolean) {
         val worker = Executors.newSingleThreadExecutor()
         try {
-            DatagramSocket(Discovery.PORT, InetAddress.getByName("127.0.0.1")).use { host ->
+            DatagramSocket(0, InetAddress.getByName("127.0.0.1")).use { host ->
                 host.soTimeout = 5000
                 val reply = worker.submit {
                     val packet = DatagramPacket(ByteArray(256), 256)
@@ -85,7 +85,7 @@ class UsbDiscoveryTest {
                 }
                 val checked = mutableListOf<String>()
                 val result = Discovery.find({ checked.add(it); it == "http://127.0.0.1:18622" }, usbOnly,
-                    listOf(LocalNetwork("127.0.0.1", "127.0.0.1", 8, usbOnly)))
+                    listOf(LocalNetwork("127.0.0.1", "127.0.0.1", 8, usbOnly)), host.localPort)
                 reply.get(5, TimeUnit.SECONDS)
                 assertEquals("http://127.0.0.1:18622", result)
                 assertEquals(listOf(result), checked)

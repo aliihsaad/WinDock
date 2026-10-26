@@ -13,6 +13,7 @@ import { extname, join, normalize, resolve, sep } from "node:path";
 import { createProvider } from "./src/platform/index.js";
 import { validateControl, isDestructiveVerb, CONTROL_VERBS } from "./src/platform/contract.js";
 import { createConfigStore } from "./src/config.js";
+import { hostIdentity } from "./src/host-identity.js";
 import { createSyncHub } from "./src/sync.js";
 import { createInputHub } from "./src/input-hub.js";
 import { validateSignature } from "./src/input.js";
@@ -127,8 +128,10 @@ export async function createApp({
   allowDestructive = true,
   trustLoopback = true,
   hostAllowed = createHostCheck(),
+  hostName = hostname(),
 } = {}) {
   if (!isValidPinShape(pin)) throw new Error("Pairing PIN must contain exactly six ASCII digits.");
+  const hostId = await hostIdentity(configStore.path);
   const state = { pin };
   const appIcon = createIconCache(provider);
   let inventoryPromise;
@@ -153,7 +156,7 @@ export async function createApp({
     return {
       platform: provider.id,
       platformName: provider.displayName,
-      hostName: hostname(),
+      hostName,
       tiles: config.tiles.map((tile) =>
         tile.kind === "app" ? { ...tile, running: runningIds.has(tile.id) } : tile,
       ),
@@ -177,7 +180,7 @@ export async function createApp({
 
     try {
       if (path === "/health") {
-        sendJson(res, 200, { ok: true, app: "windock", platform: provider.id });
+        sendJson(res, 200, { ok: true, app: "windock", platform: provider.id, hostName, hostId });
         return;
       }
 

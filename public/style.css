@@ -290,7 +290,10 @@ body.is-immersive .empty .button .icon { width: 36px; height: 36px; }
 .drawer-actions button > [data-icon] { width: 29px; height: 29px; }
 .drawer-actions .icon { width: 27px; height: 27px; }
 .drawer-actions button:hover, .drawer-actions button:focus-visible { background: #ffffff12; }
-.drawer-connection { display: flex; justify-content: space-between; gap: 15px; border-top: 1px solid #ffffff12; padding: 12px 3px 15px; font-size: 10px; color: #d2dedbb3; }
+.drawer-connection { display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between; gap: 10px; border-top: 1px solid #ffffff12; padding: 12px 3px 15px; font-size: 10px; color: #d2dedbb3; }
+#drawer-host { overflow-wrap: anywhere; flex: 1; min-width: 0; }
+#drawer-switch-pc { min-height: 44px; padding: 8px 14px; border: 1px solid #ffffff20; border-radius: 12px; background: #ffffff08; color: #eef6f5; font: inherit; font-size: 12px; }
+#drawer-switch-pc:hover, #drawer-switch-pc:focus-visible { background: #ffffff18; }
 #drawer-conn { display: inline-flex; align-items: center; gap: 6px; }
 #drawer-conn::before { content: ""; width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
 #drawer-conn[data-state="on"] { color: var(--live); }

@@ -40,6 +40,11 @@ Windows may show a publisher warning. An APK signed with a different key can
 require uninstalling an earlier Android build before installing the new one.
 See the [release notes and checksums](https://github.com/aliihsaad/WinDock/releases/tag/v0.2.4-preview.1).
 
+**In development:** the Android **Switch PC** picker discovers running WinDock
+hosts and keeps up to eight recently reached addresses. It is available on the
+connection screen and, with the updated host, in the dock drawer. This is not in
+the download above yet. See [PC picker testing](docs/PC-PICKER-TESTING.md).
+
 **Updating:** quit WinDock from the Windows tray and run the latest installer;
 your dock settings are kept. Reconnect the phone app to load the updated dock.
 Install the new Android APK for automatic low-RAM detection. It updates public

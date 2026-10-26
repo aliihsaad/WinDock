@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Android: add **Switch PC** in the dock drawer and connection screen. Scan for
+  running hosts on local networks, check saved addresses, and choose a PC by name,
+  platform and address. Keep the current dock open while choosing. Built on the
+  saved-PC history contribution in PR #20 by Foxtrot Kreators.
+- Android: forgetting a PC clears matching last-used addresses and prevents
+  automatic reconnection, including after restart. A running forgotten PC remains
+  available for explicit selection; forgetting does not revoke pairing.
+- Include the PC name and a persistent public identifier in the health response
+  to label PCs, group multiple addresses, and preserve Forget across address changes.
 - Add the first native iPhone companion source: remembered PC address, PIN pairing
   through the shared landscape dock, and reconnect/change-PC controls.
 - Add a GitHub macOS workflow for simulator tests, screenshots and unsigned iOS
