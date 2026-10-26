@@ -272,7 +272,11 @@ summary::-webkit-details-marker{display:none}
 .faq-list summary span{color:var(--muted);font-size:20px}
 .faq-list details[open] summary span{transform:rotate(45deg)}
 .faq-list p{font-size:13px;line-height:1.8;color:var(--muted);padding-bottom:22px}
-.footer{padding-block:32px;border-top:1px solid var(--line)}
+.footer{padding-block:0 32px;border-top:1px solid var(--line)}
+.footer-wordmark{font-size:clamp(100px,16vw,205px);font-weight:750;letter-spacing:-.09em;line-height:1.35;color:#d9dfd2;white-space:nowrap;margin-bottom:24px}
+.footer-wordmark span{font-size:.2em;vertical-align:top;display:inline-block;line-height:3.5;letter-spacing:0;margin-left:.25em;color:#819578}
+:root[data-theme="dark"] .footer-wordmark{color:#2e4033}
+:root[data-theme="dark"] .footer-wordmark span{color:#8ca181}
 .footer-top,.footer-bottom{display:flex;align-items:center;justify-content:space-between;gap:25px}
 .footer-top>p{font-size:13px;color:var(--muted)}
 .footer-bottom{margin-top:30px;padding-top:22px;border-top:1px solid var(--line);font-size:11px;color:var(--muted)}
@@ -336,7 +340,7 @@ summary::-webkit-details-marker{display:none}
   .count-total-panel dd{font-size:72px;letter-spacing:-3px}.count-platform{flex-direction:column;align-items:flex-start;gap:10px;padding:20px 0 0;border-top:0}.count-platform dt{font-size:11px;gap:5px}.count-platform dd{font-size:30px}
   .stats-platform-icon{width:22px;height:26px;border-radius:7px}.stats-platform-icon svg{width:15px;height:15px}.stats-footer{display:block}.stats-footer>p+p{margin-top:7px}
   .help-strip{flex-direction:column;align-items:start;gap:25px;padding-block:45px}.help-strip h2{font-size:30px}
-  .footer-top{gap:18px}.footer-top .text-link{font-size:11px}.footer-bottom{flex-direction:column;align-items:start;gap:12px}.footer-links{gap:16px;font-size:10px}
+  .footer-wordmark{font-size:20vw;line-height:1.55;margin-bottom:18px}.footer-top{gap:18px}.footer-top .text-link{font-size:11px}.footer-bottom{flex-direction:column;align-items:start;gap:12px}.footer-links{gap:16px;font-size:10px}
   .guide-intro{padding-block:44px 35px}.guide-intro h1{font-size:49px;letter-spacing:-2.5px}.guide-intro>p:not(.eyebrow){font-size:15px}.guide-steps article{padding:24px}.guide-steps h2{font-size:28px}
   .release-heading{flex-wrap:wrap;gap:10px}.release-date{display:block;margin:7px 0 0}.release-earlier summary h3{font-size:19px}.history{padding-top:45px}
   .pc-demo-picker{padding:20px;border-radius:20px}.picker-heading h2{font-size:28px}.picker-heading .eyebrow{font-size:8px}.pc-demo-select{padding:9px}.pc-demo-select span{font-size:11px}.pc-demo-select small{font-size:10px}.pc-demo-forget{font-size:11px;padding:8px}
