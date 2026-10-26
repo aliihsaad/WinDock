@@ -45,6 +45,26 @@ class KnownHostsTest {
         assertEquals(emptyList<KnownHost>(), KnownHosts.parse(""))
     }
 
+    @Test fun supportsLegacyHistoryAndKeepsFriendlyNamesSeparateFromPlatforms() {
+        val legacy = KnownHosts.parse("http://192.168.1.40:8620|Windows|wifi|100").single()
+        assertEquals("Windows", legacy.name)
+        assertEquals("", legacy.platform)
+        val host = desk.copy(label = "Ali’s desktop", platform = "Windows")
+        assertEquals(host, KnownHosts.parse(KnownHosts.serialize(listOf(host))).single())
+        assertEquals("Desk PC", KnownHosts.cleanLabel("Desk\u202ePC"))
+        assertEquals("Desk PC", KnownHosts.cleanLabel("Desk\u2028PC"))
+    }
+
+    @Test fun onePcKeepsItsIdentityAcrossNetworkAddresses() {
+        val host = desk.copy(hostId = "12345678-1234-1234-1234-123456789abc")
+        val moved = host.copy(endpoint = "http://192.168.1.80:8620")
+        assertEquals(listOf(moved), KnownHosts.remember(listOf(host), moved))
+        assertEquals(listOf(host), KnownHosts.parse(KnownHosts.serialize(listOf(host, moved))))
+        assertEquals(listOf(host), KnownHosts.parse(KnownHosts.serialize(listOf(host))))
+        assertEquals("", KnownHosts.cleanId("untrusted\nidentity"))
+        assertNotEquals("same labels cannot collapse distinct PCs", host.identity, host.copy(hostId = "").identity)
+    }
+
     @Test fun ignoresWhatItCannotTrust() {
         val text = listOf(
             "http://192.168.1.40:8620|Windows|wifi|100",

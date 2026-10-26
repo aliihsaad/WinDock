@@ -28,8 +28,7 @@ screen — all over your local network, with no account or cloud service.
 1. **Install on your PC.** Open `WinDockSetup.exe`. It includes the required
    runtimes and adds WinDock to your Start menu and system tray.
 2. **Install on your phone.** Open the Android APK and allow installation from
-   your browser or file manager when prompted. Every PC you connect to is kept
-   under Recent PCs, so switching between two of them is one tap.
+   your browser or file manager when prompted.
 3. **Connect.** Keep both devices on the same trusted network. Open WinDock on
    your phone, select your PC, and enter the PIN from **Show connection info**
    in the Windows tray menu. Enter the tray address manually if discovery misses it.
@@ -40,6 +39,11 @@ The Windows installer is currently unsigned and the Android APK is debug-signed.
 Windows may show a publisher warning. An APK signed with a different key can
 require uninstalling an earlier Android build before installing the new one.
 See the [release notes and checksums](https://github.com/aliihsaad/WinDock/releases/tag/v0.2.4-preview.1).
+
+**In development:** the Android **Switch PC** picker discovers running WinDock
+hosts and keeps up to eight recently reached addresses. It is available on the
+connection screen and, with the updated host, in the dock drawer. This is not in
+the download above yet. See [PC picker testing](docs/PC-PICKER-TESTING.md).
 
 **Updating:** quit WinDock from the Windows tray and run the latest installer;
 your dock settings are kept. Reconnect the phone app to load the updated dock.

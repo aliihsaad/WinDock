@@ -42,13 +42,9 @@
                     android:layout_height="wrap_content" android:layout_marginStart="12dp"
                     android:text="@string/phone_options" android:textAllCaps="false" />
             </LinearLayout>
-            <TextView android:id="@+id/known_hosts_title" android:layout_width="wrap_content"
-                android:layout_height="wrap_content" android:layout_marginTop="20dp" android:gravity="center"
-                android:text="@string/recent_pcs" android:textColor="#AABBC8" android:textSize="13sp"
-                android:visibility="gone" />
-            <LinearLayout android:id="@+id/known_hosts" android:layout_width="360dp"
-                android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center"
-                android:visibility="gone" />
+            <Button android:id="@+id/choose_pc" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:layout_marginTop="12dp"
+                android:text="@string/switch_pc" android:textAllCaps="false" />
         </LinearLayout>
     </ScrollView>
     <View android:id="@+id/idle_cover" android:layout_width="match_parent" android:layout_height="match_parent"

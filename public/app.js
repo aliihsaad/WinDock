@@ -27,6 +27,13 @@ const nowPlaying = createNowPlayingPoller({
 let layout;
 try { layout = normalizeLayout(JSON.parse(localStorage.getItem("windock-layout"))); } catch { layout = normalizeLayout(); }
 document.querySelectorAll("[data-icon]").forEach((el) => { el.innerHTML = icon(el.dataset.icon); });
+if (typeof window.WinDockAndroid?.showPcPicker === "function") {
+  $("drawer-switch-pc").hidden = false;
+  $("drawer-switch-pc").addEventListener("click", () => {
+    $("drawer").close();
+    window.WinDockAndroid.showPcPicker();
+  });
+}
 if (typeof window.WinDockAndroid?.showPhoneSettings === "function") {
   $("phone-options-row").hidden = false;
   $("phone-options").addEventListener("click", () => window.WinDockAndroid.showPhoneSettings());

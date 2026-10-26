@@ -67,7 +67,8 @@ t.equal(
 // ---- the app must only use routes the host serves ----
 const server = readFileSync(join(root, "server.js"), "utf8");
 const main = read("app/src/main/java/com/windock/app/MainActivity.kt");
-const routes = [...main.matchAll(/"\$endpoint(\/[a-z/]+)"/g)].map((m) => m[1]);
+const probe = read("app/src/main/java/com/windock/app/HostProbe.kt");
+const routes = [...probe.matchAll(/"\$endpoint(\/[a-z/]+)"/g)].map((m) => m[1]);
 t.ok(routes.length > 0, `the app references at least one host route (${routes.join(", ")})`);
 for (const route of routes) {
   t.ok(server.includes(`"${route}"`), `host serves the route the app calls: ${route}`);
@@ -75,7 +76,7 @@ for (const route of routes) {
 // /health is the only unauthenticated route, so a reachability probe must use it.
 t.ok(routes.includes("/health"), "the app probes /health, the only public route");
 t.ok(
-  main.includes('optString("app") == "windock"'),
+  probe.includes('optString("app") == "windock"'),
   "the app verifies the host identity, not just a 200",
 );
 
@@ -103,7 +104,7 @@ function stripComments(source) {
   return source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
 }
 const kotlinCode = stripComments(
-  [disco, main, read("app/src/main/java/com/windock/app/ServerUrl.kt")].join("\n"),
+  [disco, main, probe, read("app/src/main/java/com/windock/app/ServerUrl.kt")].join("\n"),
 );
 for (const word of ["pin", "cookie", "token"]) {
   t.ok(

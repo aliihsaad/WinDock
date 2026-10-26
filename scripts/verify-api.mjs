@@ -1,5 +1,5 @@
 /** G9: the HTTP API serves its documented routes under a live server. */
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { request, Agent } from "node:http";
@@ -8,6 +8,7 @@ import { createApp } from "../server.js";
 import { createWindowsProvider } from "../src/platform/windows.js";
 import { createConfigStore } from "../src/config.js";
 import { createLockout } from "../src/auth.js";
+import { hostIdentity } from "../src/host-identity.js";
 
 const t = createChecker("api");
 const PIN = "432187";
@@ -43,7 +44,7 @@ const configStore = createConfigStore({ path: join(dir, "config.json") });
 // originate from 127.0.0.1. Disabling it makes the entire suite below exercise
 // the real pairing + session path; loopback trust itself is verified separately
 // at the end of this file.
-const app = await createApp({ provider, configStore, pin: PIN, trustLoopback: false });
+const app = await createApp({ provider, configStore, pin: PIN, trustLoopback: false, hostName: "Test Desk PC" });
 await new Promise((r) => app.server.listen(0, "127.0.0.1", r));
 const port = app.server.address().port;
 const base = `http://127.0.0.1:${port}`;
@@ -75,7 +76,20 @@ async function call(path, { method = "GET", body, origin = base, withCookie = tr
 const health = await call("/health");
 t.equal(health.status, 200, "GET /health is public and returns 200");
 t.equal(health.json.ok, true, "health reports ok");
+t.equal(health.json.app, "windock", "health identifies WinDock to discovery clients");
+t.equal(health.json.hostName, "Test Desk PC", "public health exposes a friendly PC name before pairing");
 t.equal(health.json.platform, "windows", "health names the active provider");
+t.ok(/^[0-9a-f-]{36}$/.test(health.json.hostId), "health publishes a non-secret host identity");
+t.equal(await hostIdentity(configStore.path), health.json.hostId, "identity survives host recreation");
+await configStore.save({ tiles: [] });
+t.equal(await hostIdentity(configStore.path), health.json.hostId, "dock edits do not replace the host identity");
+const otherPath = join(dir, "other.json");
+const parallelIds = await Promise.all(Array.from({ length: 5 }, () => hostIdentity(otherPath)));
+t.ok(parallelIds.every(id => id === parallelIds[0]), "concurrent starts agree on one persistent identity");
+t.ok(parallelIds[0] !== health.json.hostId, "different installations have different identities");
+await writeFile(`${otherPath}.host-id`, "invalid\n");
+t.ok(/^[0-9a-f-]{36}$/.test(await hostIdentity(otherPath)), "malformed identity file does not break host startup");
+t.ok(/^[0-9a-f-]{36}$/.test(await hostIdentity(join(otherPath + '.host-id', 'not-a-directory'))), "unwritable identity storage falls back for this run");
 
 // ---- static ----
 const index = await call("/");
