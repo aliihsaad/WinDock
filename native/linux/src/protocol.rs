@@ -5,7 +5,7 @@ use serde::Deserialize;
 use std::os::fd::RawFd;
 use std::time::{Duration, Instant};
 
-pub const MAX_LINE: usize = 8192;
+pub const MAX_LINE: usize = 262144;
 
 #[derive(Debug, PartialEq, Eq, Deserialize, Clone, Copy)]
 #[serde(rename_all = "lowercase")]
@@ -43,6 +43,7 @@ pub enum Message {
     Zoom { steps: i32 },
     Button { button: Button, down: bool },
     Text { target: String, text: String },
+    Paste { target: String, text: String },
     Key { target: String, key: Key },
 }
 
@@ -51,9 +52,9 @@ pub fn valid_target(target: &str) -> bool {
     (1..=16).contains(&bytes.len()) && bytes[0] != b'0' && bytes.iter().all(u8::is_ascii_digit)
 }
 
-fn valid_text(text: &str) -> bool {
+fn valid_text(text: &str, max: usize) -> bool {
     let units = text.encode_utf16().count();
-    (1..=1024).contains(&units)
+    (1..=max).contains(&units)
         && !text.chars().any(|c| c.is_control() && c <= '\u{7f}' && !matches!(c, '\t' | '\n' | '\r'))
 }
 
@@ -64,7 +65,8 @@ pub fn parse(line: &str) -> crate::Result<Message> {
         Message::Ping {} | Message::Release {} | Message::Focus {} | Message::Button { .. } => true,
         Message::Move { dx, dy } | Message::Scroll { dx, dy } => delta(*dx) && delta(*dy),
         Message::Zoom { steps } => (1..=8).contains(&steps.unsigned_abs()),
-        Message::Text { target, text } => valid_target(target) && valid_text(text),
+        Message::Text { target, text } => valid_target(target) && valid_text(text, 1024),
+        Message::Paste { target, text } => valid_target(target) && valid_text(text, 32768),
         Message::Key { target, .. } => valid_target(target),
     };
     if ok { Ok(message) } else { Err("Invalid input.".into()) }
@@ -163,6 +165,18 @@ mod tests {
         assert_eq!(parse(r#"{"type":"focus"}"#).unwrap(), Message::Focus {});
         let emoji = format!(r#"{{"type":"text","target":"1","text":"{}"}}"#, "🙂".repeat(512));
         assert!(parse(&emoji).is_ok(), "1024 UTF-16 units");
+    }
+
+    #[test]
+    fn clipboard_paste_preserves_text_and_bounds() {
+        let message = serde_json::json!({"type":"paste","target":"12","text":"line one\nمرحبا 🙂\ttwo"});
+        assert_eq!(parse(&message.to_string()).unwrap(), Message::Paste { target:"12".into(), text:"line one\nمرحبا 🙂\ttwo".into() });
+        let maximum = serde_json::json!({"type":"paste","target":"1","text":"🙂".repeat(16384)});
+        assert!(parse(&maximum.to_string()).is_ok());
+        for text in [String::new(), "x".repeat(32769), "bad\0text".into()] {
+            assert!(parse(&serde_json::json!({"type":"paste","target":"1","text":text}).to_string()).is_err());
+        }
+        assert!(parse(r#"{"type":"paste","target":"0","text":"hello"}"#).is_err());
     }
 
     #[test]

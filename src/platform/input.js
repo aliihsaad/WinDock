@@ -71,14 +71,17 @@ export function createHelperInput({
             if (event.type === "ready") { clearTimeout(startup); resolveReady(); }
             else if (event.type === "focus" && /^[1-9][0-9]{0,15}$/.test(event.target) && typeof event.editable === "boolean" && typeof event.password === "boolean") onEvent({ type: "focus", target: event.target, editable: event.editable, password: event.password });
             else if (event.type === "input-error") onEvent({ type: "input-error", error: "PC focus changed or input was blocked. Select the PC field and reopen the keyboard." });
+            else if (event.type === "paste-result") onEvent({ type: "paste-result" });
           }
           catch { onFailure(); close(); }
         }
       });
       return { ready, close, send(message) {
         const checked = validateInput(message);
-        if (!checked || closed || child.stdin.writableLength > 8192) throw new Error("Input unavailable");
-        if (!child.stdin.write(JSON.stringify(checked) + "\n")) throw new Error("Input is falling behind");
+        if (!checked || closed || child.stdin.writableLength > 262144) throw new Error("Input unavailable");
+        // A bounded paste can exceed the pipe high-water mark. write(false)
+        // means it was queued, not rejected; subsequent writes stay bounded.
+        child.stdin.write(JSON.stringify(checked) + "\n");
       } };
     },
     async saveSignature(body, insert = false) {

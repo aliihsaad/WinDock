@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Touchpad: add a collapsed **PC clipboard** panel for recent text history on
+  Windows and Omarchy with Elephant. Review or edit an item before explicitly
+  pasting it into the selected PC field. History is fetched on demand and is
+  cleared from the phone when the panel closes.
 - Android: add **Switch PC** in the dock drawer and connection screen. Scan for
   running hosts on local networks, check saved addresses, and choose a PC by name,
   platform and address. Keep the current dock open while choosing. Built on the

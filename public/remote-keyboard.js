@@ -2,7 +2,7 @@
 export function createRemoteKeyboard({ send, isReady, onSignature, notify }) {
   const $ = id => document.getElementById(id);
   const panel = $("remote-keyboard"), field = $("remote-keyboard-text"), button = $("touchpad-keyboard");
-  let focus = null, supported = false, opened = false, requested = false, composing = false;
+  let focus = null, supported = false, opened = false, requested = false, composing = false, suspended = false;
   const native = () => typeof window.WinDockAndroid?.showKeyboard === "function";
   function close() {
     opened = requested = composing = false;
@@ -20,7 +20,7 @@ export function createRemoteKeyboard({ send, isReady, onSignature, notify }) {
     if (text && !composing && transmit({ type: "text", text })) field.value = "";
   }
   function open() {
-    if (!supported || !isReady()) return;
+    if (suspended || !supported || !isReady()) return;
     if (!focus) { requested = true; send({ type: "focus" }); return; }
     opened = true; requested = false;
     $("input-pad").dataset.keyboard = "true";
@@ -64,6 +64,8 @@ export function createRemoteKeyboard({ send, isReady, onSignature, notify }) {
     if (event.detail?.action === "signature") onSignature();
   });
   return {
+    target() { return focus?.target ?? null; },
+    suspend(value) { suspended = Boolean(value); if (suspended) close(); },
     configure(value) { supported = Boolean(value); button.hidden = !supported; },
     paint() { button.disabled = !isReady(); },
     message(event) {
@@ -75,7 +77,7 @@ export function createRemoteKeyboard({ send, isReady, onSignature, notify }) {
       button.classList.toggle("has-text-focus", event.editable);
       if (manual || (changed && event.editable && native())) open();
     },
-    reset() { close(); focus = null; button.classList.remove("has-text-focus"); },
+    reset() { close(); focus = null; suspended = false; button.classList.remove("has-text-focus"); },
     close,
   };
 }

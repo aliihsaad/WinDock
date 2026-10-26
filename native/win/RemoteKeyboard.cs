@@ -41,6 +41,41 @@ internal sealed class RemoteKeyboard(Func<Touchpad.Input[], uint> send, Func<int
         };
         Send([Key(key), Key(key, true)]);
     }
+
+    internal static void ValidatePaste(string text)
+    {
+        if (text.Length is < 1 or > 32768 || text.Any(c => (c < 32 || c == 127) && c is not ('\r' or '\n' or '\t')))
+            throw new ArgumentException("Invalid clipboard text.");
+        _ = new UnicodeEncoding(false, false, true).GetBytes(text);
+    }
+
+    internal void Paste(string text, Func<bool> accepts, Action<string>? copyText = null)
+    {
+        ValidatePaste(text);
+        if (!accepts()) throw new InvalidOperationException("Focus changed.");
+        if (copyText != null) copyText(text);
+        else CopyClipboard(text, accepts);
+        if (!accepts()) throw new InvalidOperationException("Focus changed.");
+        try { Send([Key(0x11), Key(0x56), Key(0x56, true), Key(0x11, true)]); }
+        finally { send([Key(0x56, true), Key(0x11, true)]); }
+    }
+
+    private static void CopyClipboard(string text, Func<bool> accepts)
+    {
+        Exception? failure = null;
+        // The input loop resumes on a pool thread. Clipboard writes require STA.
+        var thread = new Thread(() => {
+            try {
+                if (!accepts()) throw new InvalidOperationException("Focus changed.");
+                var data = new System.Windows.Forms.DataObject();
+                data.SetData(System.Windows.Forms.DataFormats.UnicodeText, text);
+                System.Windows.Forms.Clipboard.SetDataObject(data, true, 3, 50);
+            } catch (Exception error) { failure = error; }
+        }) { IsBackground = true, Name = "WinDock clipboard paste" };
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        if (!thread.Join(2000) || failure != null) throw new InvalidOperationException("Clipboard unavailable.");
+    }
 }
 
 /** Metadata only: never reads a field value, selection text, or password. */

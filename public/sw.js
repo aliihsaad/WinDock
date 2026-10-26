@@ -9,7 +9,7 @@
  *    worse, replay a control action from cache. Neither is acceptable.
  */
 
-const VERSION = "windock-v16-pc-switcher-0.2.5";
+const VERSION = "windock-v17-pc-clipboard";
 const SHELL = [
   "/",
   "/index.html",
@@ -25,6 +25,7 @@ const SHELL = [
   "/input-pad.js",
   "/touchpad-gestures.js",
   "/remote-keyboard.js",
+  "/pc-clipboard.js",
   "/manifest.webmanifest",
   "/icon-192.png",
   "/icon-512.png",

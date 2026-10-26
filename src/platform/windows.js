@@ -23,6 +23,7 @@ import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { createWindowsCapture } from "./capture.js";
 import { createWindowsInput } from "./input.js";
+import { createClipboardHistory } from "./clipboard.js";
 
 /** Constant PowerShell: classic shortcuts and the Windows packaged-app catalog. */
 export const INVENTORY_PS = [
@@ -263,6 +264,7 @@ export function createWindowsProvider({ exec, helperPath = process.env.WINDOCK_H
     displayName: "Windows",
     capture: createWindowsCapture({ helperPath }),
     input: createWindowsInput({ helperPath }),
+    clipboard: createClipboardHistory({ platform: "windows", helperPath }),
 
     async appIcon(app) {
       const aumid = packagedAppId(app.target);

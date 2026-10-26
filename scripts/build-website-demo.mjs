@@ -22,7 +22,7 @@ export async function buildWebsiteDemo() {
   html = replaceOnce(html, '<head>', `<head>
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'">`);
   await writeFile(resolve(destination, 'index.html'), html);
-  for (const file of ['style.css', 'performance.js', 'icons.js', 'tiles.js', 'launcher.js', 'input-pad.js', 'touchpad-gestures.js', 'remote-keyboard.js', 'now-playing.js', 'pairing.js']) {
+  for (const file of ['style.css', 'performance.js', 'icons.js', 'tiles.js', 'launcher.js', 'input-pad.js', 'touchpad-gestures.js', 'remote-keyboard.js', 'pc-clipboard.js', 'now-playing.js', 'pairing.js']) {
     await copyFile(resolve(root, 'public', file), resolve(destination, file));
   }
   let dock = await readFile(resolve(root, 'public/dock.js'), 'utf8');
