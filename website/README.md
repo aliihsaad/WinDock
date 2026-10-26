@@ -50,6 +50,8 @@ Giscus reads this configuration from the default branch, so these restrictions
 take effect when the PR is merged. The repository/category IDs are public metadata,
 not credentials. The embed uses Giscus's borderless light/transparent dark themes
 inside the site's glass panel, with source/origin checks on incoming messages.
+The iframe supports both CSS color schemes so its transparent background remains
+transparent even when the system appearance and saved website theme differ.
 
 Reference: https://giscus.app/ and https://github.com/giscus/giscus/blob/main/ADVANCED-USAGE.md.
 The theme follows the device until the visitor chooses one; that choice is saved
@@ -104,7 +106,8 @@ Checks cover picker actions, existing clipboard/update simulations, download
 links, narrow layouts, navigation, theme/consent continuity and network isolation.
 Community checks additionally cover deferred loading, real Giscus rendering and
 theme changes, trusted messages, retry recovery, OAuth return handling and the
-JavaScript-disabled fallback. They never sign in, post comments or add reactions.
+JavaScript-disabled fallback. Rendered-pixel checks cover all four system/website
+appearance combinations. They never sign in, post comments or add reactions.
 Screenshots go to ignored `output/playwright/`.
 
 ## Optional analytics
