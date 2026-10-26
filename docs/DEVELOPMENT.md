@@ -265,6 +265,8 @@ for the known focus-smoke failure and other hardware acceptance evidence.
 | --- | --- | --- |
 | GET | `/health` | Public health check |
 | POST | `/api/auth` | Exchange PIN for a session |
+| GET | `/api/updates` | Installed PC version and last update-check result; no external request |
+| POST | `/api/updates/check` | Check the fixed public HTTPS release feed; empty JSON body, paired and same-origin |
 | GET | `/api/state` | Tiles, running apps, available verbs |
 | GET | `/api/apps/installed` | Installed-app inventory |
 | GET | `/api/apps/icon` | App icon by validated ID |
@@ -331,3 +333,31 @@ Custom WINDOCK_ALLOWED_HOSTS entries are comma-separated names, optionally with
 a port or trailing DNS dot. Unknown names receive HTTP 421 with configuration
 guidance. Only exact localhost has implicit name-based loopback trust;
 subdomains require explicit allowlisting and still require pairing.
+
+### Update screens (development builds)
+
+The dock drawer and Appearance both open Updates. PC checks use the paired
+host API; opening the screen only reads local status. A manual check fetches
+https://windock.vercel.app/downloads.json with a 12-second deadline, a 64 KiB
+limit, no redirects and no pairing credentials. Concurrent requests share one
+fetch; successful results are reused for 30 seconds. Failures remain explicit
+and can be retried. Windows startup notifications and the tray check still work;
+the connection window now also offers Check for updates.
+
+Android's native Updates screen is available before connecting, and through the
+dock after connecting. It uses the same HTTPS feed with its own bounded request
+and opens only this repository's release pages in an external browser. The feed's
+android.versionCode and android.versionName describe the actual APK, separately
+from the overall release tag. Without those fields, only a feed matching the
+installed release can confirm current status; newer releases fail closed.
+The packager extracts both fields from the APK with Android SDK aapt, including
+when an existing APK is reused. Set ANDROID_HOME or ANDROID_SDK_ROOT if needed.
+
+Keep package.json releaseVersion aligned with the Windows tray's
+InformationalVersion when preparing a release. Native Android versionCode must
+increase whenever shipping a changed APK. Published 0.2.4 binaries do not contain
+these new screens; building the branch is required until the next release.
+
+npm test includes update feed/authentication/network/UI-state regressions.
+Android UpdatesTest exercises the native current/available/failure/retry states
+and a live check on an emulator. All downloads and installations remain manual.

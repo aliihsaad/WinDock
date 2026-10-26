@@ -51,6 +51,8 @@ internal sealed partial class TrayApp : ApplicationContext
     private bool _checkingUpdates, _startupCheckScheduled;
     private UpdateResult? _availableUpdate;
     private Uri? _balloonRelease;
+    private Form? _connectionWindow;
+    private Button? _connectionUpdates;
 
     [GeneratedRegex(@"open:\s*(\S+)")] private static partial Regex EndpointLine();
     [GeneratedRegex(@"PIN:\s*(\d{4,8})")] private static partial Regex PinLine();
@@ -202,9 +204,36 @@ internal sealed partial class TrayApp : ApplicationContext
         }
     }
 
-    private void ShowInfo() => MessageBox.Show(
-        $"WinDock {UpdateChecker.InstalledVersion}\n\nOpen this address on your phone:\n\n{_endpoint}\n\nPairing PIN: {_pin}\n\nBoth devices must be on the same network.",
-        "WinDock", MessageBoxButtons.OK, MessageBoxIcon.Information);
+    private void ShowInfo()
+    {
+        if (_connectionWindow is { IsDisposed: false }) { _connectionWindow.Activate(); return; }
+        var form = new Form { Text = "WinDock", AutoScaleMode = AutoScaleMode.Dpi,
+            ClientSize = new Size(480, 310), MinimumSize = new Size(440, 330),
+            StartPosition = FormStartPosition.CenterScreen, MaximizeBox = false };
+        var panel = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(24), ColumnCount = 1, RowCount = 4 };
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        panel.Controls.Add(new Label { Text = "WinDock " + UpdateChecker.InstalledVersion, AutoSize = true,
+            Font = new Font(SystemFonts.MessageBoxFont!, FontStyle.Bold), Margin = new Padding(0, 0, 0, 16) });
+        panel.Controls.Add(new Label { Text = $"Open this address on your phone:\n{_endpoint}\n\nPairing PIN: {_pin}\n\nBoth devices must be on the same network.",
+            AutoSize = true, Dock = DockStyle.Fill });
+        var updates = new Button { Text = "Check for updates…", AutoSize = true, Padding = new Padding(8), Anchor = AnchorStyles.Left };
+        updates.Enabled = !_checkingUpdates;
+        if (_checkingUpdates) updates.Text = "Checking for updates…";
+        _connectionUpdates = updates;
+        updates.Click += async (_, _) => {
+            updates.Enabled = false;
+            try { await CheckUpdates(true); }
+            finally { if (!updates.IsDisposed) updates.Enabled = true; }
+        };
+        panel.Controls.Add(updates);
+        var close = new Button { Text = "Close", AutoSize = true, Anchor = AnchorStyles.Right, DialogResult = DialogResult.Cancel };
+        close.Click += (_, _) => form.Close(); panel.Controls.Add(close); form.CancelButton = close;
+        form.Controls.Add(panel); form.FormClosed += (_, _) => { _connectionWindow = null; _connectionUpdates = null; };
+        _connectionWindow = form; form.Show();
+    }
 
     private void ShowBalloon(string title, string text, Uri? release = null)
     {
@@ -218,6 +247,7 @@ internal sealed partial class TrayApp : ApplicationContext
         if (_checkingUpdates || _stopping) return;
         _checkingUpdates = true;
         _checkUpdates.Enabled = false;
+        if (_connectionUpdates is { IsDisposed: false }) { _connectionUpdates.Enabled = false; _connectionUpdates.Text = "Checking for updates…"; }
         _checkUpdates.Text = "Checking for updates…";
         try
         {
@@ -244,7 +274,10 @@ internal sealed partial class TrayApp : ApplicationContext
         finally
         {
             _checkingUpdates = false;
-            if (!_stopping) { _checkUpdates.Enabled = true; _checkUpdates.Text = "Check for updates…"; }
+            if (!_stopping) {
+                _checkUpdates.Enabled = true; _checkUpdates.Text = "Check for updates…";
+                if (_connectionUpdates is { IsDisposed: false }) { _connectionUpdates.Enabled = true; _connectionUpdates.Text = "Check for updates…"; }
+            }
         }
     }
 
@@ -312,6 +345,7 @@ internal sealed partial class TrayApp : ApplicationContext
         if (disposing && !_stopping)
         {
             _stopping = true;
+            _connectionWindow?.Close();
             _updateTimer.Dispose();
             _shutdown.Cancel();
             _updateHttp.Dispose();

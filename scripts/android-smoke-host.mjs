@@ -1,5 +1,6 @@
 // Isolated emulator fixture. No Windows provider and no user configuration.
 import { createApp } from '../server.js';
+import { createUpdateService } from '../src/updates.js';
 import { createConfigStore } from '../src/config.js';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
@@ -41,5 +42,5 @@ const configStore = createConfigStore({ path: resolve(dir, 'config.json') });
 await configStore.save({ tiles: apps.map(app => ({ ...app, kind: 'app', label: app.name })) });
 await writeFile(resolve(dir, 'events.json'), '[]');
 await writeFile(resolve(dir, 'input-events.json'), '[]');
-const app = await createApp({ provider, configStore, pin: '864213', trustLoopback: false, allowDestructive: false });
+const app = await createApp({ provider, configStore, updates: createUpdateService({ platform: 'windows' }), pin: '864213', trustLoopback: false, allowDestructive: false });
 app.server.listen(18622, '127.0.0.1', () => console.log('Android emulator fixture ready on 18622'));

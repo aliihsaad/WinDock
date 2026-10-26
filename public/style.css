@@ -285,7 +285,7 @@ body.is-immersive .empty .button .icon { width: 36px; height: 36px; }
 .glass-drawer[open] { animation: drawer-in .25s cubic-bezier(.2,.7,.2,1); }
 .drawer-grip { display: block; width: 100%; min-height: 29px; padding: 10px; background: none; border: 0; touch-action: none; }
 .drawer-grip > span { display: block; width: 33px; height: 3px; margin: auto; border-radius: 3px; background: #ebf5f44d; }
-.drawer-actions { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 7px; padding: 6px 0 16px; }
+.drawer-actions { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 7px; padding: 6px 0 16px; }
 .drawer-actions button { display: flex; flex-direction: column; align-items: center; gap: 12px; border: 0; border-radius: 18px; padding: 15px 6px 13px; min-height: 88px; background: #ffffff06; font-size: 11px; color: #eef6f5; }
 .drawer-actions button > [data-icon] { width: 29px; height: 29px; }
 .drawer-actions .icon { width: 27px; height: 27px; }
@@ -452,3 +452,9 @@ html.perf .touchpad-feedback > span {
 }
 html.perf .touchpad-feedback > span::before, html.perf .touchpad-feedback > span::after { display: none; }
 .setting-row select:disabled { opacity: .5; cursor: not-allowed; }
+
+.updates-content { overflow-y: auto; padding: 0 24px 24px; display: grid; gap: 16px; }
+.updates-content p { line-height: 1.5; overflow-wrap: anywhere; }
+.updates-content .settings__utilities { flex-wrap: wrap; }
+.updates-content a { text-decoration: none; }
+@media (max-width: 650px) { .drawer-actions { grid-template-columns: repeat(4, minmax(0, 1fr)); } }

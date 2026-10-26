@@ -60,6 +60,7 @@
     <button id="drawer-capture" type="button"><span data-icon="camera"></span><span>Capture</span></button>
     <button id="drawer-input" type="button"><span data-icon="touchpad"></span><span>Touch & sign</span></button>
     <button id="drawer-settings" type="button"><span data-icon="sun"></span><span>Appearance</span></button>
+    <button id="drawer-updates" type="button"><span data-icon="refresh"></span><span>Updates</span></button>
     <button id="drawer-edit" type="button"><span data-icon="edit"></span><span>Arrange</span></button>
     <button id="drawer-fullscreen" type="button"><span data-icon="monitor"></span><span>Fullscreen</span></button>
   </div>
@@ -158,8 +159,21 @@
       <label class="setting-row" for="glass-theme">Glass style<select id="glass-theme" aria-describedby="glass-hint"><option value="glass">Clear</option><option value="frost">Frosted</option><option value="smoke">Smoked</option></select></label>
       <p id="glass-hint" class="settings__tip" hidden>Glass effects return when Performance mode is off.</p>
       <div class="settings__utilities"><button id="fullscreen" class="button" type="button"><span data-icon="monitor"></span>Fullscreen</button><button id="refresh" class="button" type="button"><span data-icon="refresh"></span>Refresh</button></div>
+      <div class="settings__utilities"><button id="settings-updates" class="button" type="button"><span data-icon="refresh"></span>Updates</button></div>
       <div class="settings__utilities" id="phone-options-row" hidden><button id="phone-options" class="button" type="button"><span data-icon="sun"></span>This phone · screen &amp; sleep</button></div>
     </section>
+  </div>
+</dialog>
+
+<dialog id="updates" class="sheet" aria-labelledby="updates-title">
+  <div class="sheet-handle"></div>
+  <div class="sheet__heading"><div><p class="eyebrow">KEEP THINGS CURRENT</p><h2 id="updates-title">Updates</h2></div><button class="icon-button" type="button" data-close="updates" aria-label="Close updates"><span data-icon="close"></span></button></div>
+  <div class="updates-content">
+    <section class="settings__card"><h3>Your PC</h3><p id="updates-version">Reading installed version…</p><p id="updates-status" role="status" aria-live="polite"></p>
+      <div class="settings__utilities"><button id="updates-check" class="button" type="button">Check for updates</button><a id="updates-download" class="button button--primary" href="https://github.com/aliihsaad/WinDock/releases" target="_blank" rel="noopener noreferrer" hidden>View release &amp; download</a></div>
+      <p class="settings__tip">Download and install on your PC. Your dock settings are kept.</p>
+    </section>
+    <section id="updates-android" class="settings__card" hidden><h3>This Android phone</h3><p id="updates-android-version"></p><button id="updates-android-check" class="button" type="button">Check Android updates</button><p class="settings__tip">Android updates are installed separately from the PC app.</p></section>
   </div>
 </dialog>
 
