@@ -180,6 +180,9 @@ document.querySelectorAll('[data-density-choice]').forEach(button => button.addE
 document.querySelector('#preview-drawer').addEventListener('click', () => {
   frame.contentWindow.postMessage({ type: 'windock-preview-drawer' }, location.origin);
 });
+document.querySelectorAll('[data-preview-clipboard]').forEach(link => link.addEventListener('click', () => {
+  frame.contentWindow.postMessage({ type: 'windock-preview-clipboard' }, location.origin);
+}));
 document.querySelector('#preview-capture').addEventListener('click', () => {
   frame.contentWindow.postMessage({ type: 'windock-preview-capture' }, location.origin);
 });

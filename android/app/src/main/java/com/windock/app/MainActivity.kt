@@ -50,6 +50,7 @@ class MainActivity : Activity() {
     private lateinit var idleDisplay: IdleDisplayController
     private var phoneDialog: AlertDialog? = null
     private var pcPicker: PcPicker? = null
+    private lateinit var appUpdates: AppUpdates
     private var wakingGesture = false
     private val wakingKeys = mutableSetOf<Int>()
     private var usbOnly = false
@@ -73,6 +74,8 @@ class MainActivity : Activity() {
         ServerUrl.migrate(this)
         usbOnly = PhonePreferences.usbOnly(this)
         idleDisplay = IdleDisplayController(this, findViewById(R.id.idle_cover), onRest = { hideRemoteKeyboard() })
+        appUpdates = AppUpdates(this)
+        findViewById<Button>(R.id.app_updates).setOnClickListener { showUpdates() }
         setupRemoteKeyboard()
         address.setText(ServerUrl.load(this).orEmpty())
         connectButton.setOnClickListener {
@@ -146,6 +149,10 @@ class MainActivity : Activity() {
     private fun syncIdleDisplay() {
         if (::idleDisplay.isInitialized) idleDisplay.setActive(resumed && !connecting && !loadFailed &&
             web.visibility == View.VISIBLE && phoneDialog == null)
+    }
+
+    private fun showUpdates() {
+        if (phoneDialog == null) showPhoneDialog(appUpdates.dialog())
     }
 
     private fun showPhoneOptions() {
@@ -269,6 +276,9 @@ class MainActivity : Activity() {
         }
         @JavascriptInterface fun hideKeyboard() { runOnUiThread { hideRemoteKeyboard() } }
         @JavascriptInterface fun showPcPicker() { runOnUiThread { if (trustedKeyboardPage()) this@MainActivity.showPcPicker() } }
+        @JavascriptInterface fun getAppVersion(): String = BuildConfig.VERSION_NAME
+        @JavascriptInterface fun showUpdates() { runOnUiThread { if (trustedKeyboardPage()) this@MainActivity.showUpdates() } }
+        @JavascriptInterface fun openPcRelease(version: String) { runOnUiThread { if (trustedKeyboardPage()) appUpdates.openPcRelease(version) } }
         @JavascriptInterface fun showPhoneSettings() { runOnUiThread { if (trustedKeyboardPage()) showPhoneOptions() } }
     }
 
@@ -394,6 +404,7 @@ class MainActivity : Activity() {
         pcPicker?.close()
         phoneDialog?.setOnDismissListener(null)
         phoneDialog?.dismiss()
+        appUpdates.close()
         idleDisplay.close()
         io.shutdownNow()
         web.removeCallbacks(loadTimeout)

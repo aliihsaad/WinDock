@@ -14,6 +14,7 @@ import { createProvider } from "./src/platform/index.js";
 import { validateControl, isDestructiveVerb, CONTROL_VERBS } from "./src/platform/contract.js";
 import { createConfigStore } from "./src/config.js";
 import { hostIdentity } from "./src/host-identity.js";
+import { createUpdateService } from "./src/updates.js";
 import { createSyncHub } from "./src/sync.js";
 import { createInputHub } from "./src/input-hub.js";
 import { validateSignature } from "./src/input.js";
@@ -129,6 +130,7 @@ export async function createApp({
   trustLoopback = true,
   hostAllowed = createHostCheck(),
   hostName = hostname(),
+  updates = createUpdateService({ platform: provider.id }),
 } = {}) {
   if (!isValidPinShape(pin)) throw new Error("Pairing PIN must contain exactly six ASCII digits.");
   const hostId = await hostIdentity(configStore.path);
@@ -250,6 +252,13 @@ export async function createApp({
       const mutating = ["POST", "PUT", "PATCH", "DELETE"].includes(req.method);
       if (mutating && !sameOrigin(req)) return sendJson(res, 403, { error: "bad origin" });
 
+      if (path === "/api/updates" && req.method === "GET") return sendJson(res, 200, updates.state());
+      if (path === "/api/updates/check" && req.method === "POST") {
+        const body = await readJsonBody(req);
+        if (Object.keys(body).length) return sendJson(res, 400, { error: "update check takes no options" });
+        return sendJson(res, 200, await updates.check());
+      }
+
       if (path === "/api/state" && req.method === "GET") {
         return sendJson(res, 200, await dockState());
       }
@@ -344,7 +353,12 @@ export async function createApp({
       }
 
       if (path === "/api/input" && req.method === "GET") {
-        return sendJson(res, 200, { available: Boolean(provider.input), keyboard: Boolean(provider.input), signatureInsert: Boolean(provider.input) });
+        return sendJson(res, 200, { available: Boolean(provider.input), keyboard: Boolean(provider.input), signatureInsert: Boolean(provider.input), clipboard: Boolean(provider.clipboard) });
+      }
+      if (path === "/api/clipboard/history" && req.method === "GET") {
+        if (!sameOrigin(req)) return sendJson(res, 403, { error: "bad origin" });
+        if (!provider.clipboard) return sendJson(res, 501, { error: "PC clipboard history needs an updated WinDock host." });
+        return sendJson(res, 200, await provider.clipboard.history(), { "cache-control": "no-store", "pragma": "no-cache" });
       }
       if (["/api/signature", "/api/signature/insert"].includes(path) && req.method === "POST") {
         const signature = validateSignature(await readJsonBody(req));
@@ -395,13 +409,16 @@ export async function start({ port = Number(process.env.PORT) || DEFAULT_PORT, h
   return { ...app, endpoint, discovery, port };
 }
 
+/** Printed once the host is listening. The Windows tray reads the address and PIN from it. */
+export function readyMessage({ endpoint, state, provider }) {
+  return `WinDock host ready\n  provider: ${provider.displayName}\n  open:     ${endpoint}\n  PIN:      ${state.pin}\n`;
+}
+
 const isMain = process.argv[1] && resolve(process.argv[1]) === resolve(import.meta.filename);
 if (isMain) {
   start()
-    .then(({ endpoint, state, provider }) => {
-      process.stdout.write(
-        `WinDock host ready\n  provider: ${provider.displayName}\n  open:     ${endpoint}\n  PIN:      ${state.pin}\n`,
-      );
+    .then((host) => {
+      process.stdout.write(readyMessage(host));
     })
     .catch((err) => {
       process.stderr.write(`WinDock failed to start: ${err.message}\n`);

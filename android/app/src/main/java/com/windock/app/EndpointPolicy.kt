@@ -2,7 +2,7 @@ package com.windock.app
 
 import java.net.URI
 
-/** Numeric LAN addresses avoid DNS rebinding and ambiguous URL parsing. */
+/** Numeric private, loopback and shared IPv4 addresses avoid DNS rebinding and ambiguous URL parsing. */
 object EndpointPolicy {
     fun normalize(input: String?): String? {
         if (input.isNullOrBlank() || input.length > 200) return null
@@ -11,7 +11,7 @@ object EndpointPolicy {
             val uri = URI(value)
             val scheme = uri.scheme?.lowercase() ?: return null
             val host = uri.host?.lowercase() ?: return null
-            if (scheme !in listOf("http", "https") || !isLocalHost(host)) return null
+            if (scheme !in listOf("http", "https") || !isAllowedHost(host)) return null
             if (uri.rawUserInfo != null || uri.rawQuery != null || uri.rawFragment != null) return null
             if (!uri.rawPath.isNullOrEmpty() && uri.rawPath != "/") return null
             if (uri.port != -1 && uri.port !in 1..65535) return null
@@ -21,7 +21,7 @@ object EndpointPolicy {
         } catch (_: Exception) { null }
     }
 
-    private fun isLocalHost(host: String): Boolean {
+    private fun isAllowedHost(host: String): Boolean {
         if (host == "localhost") return true
         val parts = host.split('.')
         if (parts.size != 4 || parts.any { !it.matches(Regex("0|[1-9][0-9]{0,2}")) }) return false
@@ -29,7 +29,9 @@ object EndpointPolicy {
         if (octets.any { it !in 0..255 }) return false
         return octets[0] == 10 || octets[0] == 127 ||
             (octets[0] == 192 && octets[1] == 168) ||
-            (octets[0] == 172 && octets[1] in 16..31)
+            (octets[0] == 172 && octets[1] in 16..31) ||
+            // RFC 6598 shared address space, also used by Tailscale. This does not establish VPN trust.
+            (octets[0] == 100 && octets[1] in 64..127)
     }
 
     fun allowsRequest(endpoint: String?, request: String?): Boolean = try {

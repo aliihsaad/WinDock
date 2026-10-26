@@ -37,6 +37,31 @@ their network addresses; older hosts are tracked by address. The PIN and pairing
 cookie stay in the WebView, so a PC that restarted asks for its PIN again.
 See [PC picker testing](../docs/PC-PICKER-TESTING.md) for compatibility and checks.
 
+## Tailscale connection (development build)
+
+Development Android builds accept numeric addresses in Tailscale's
+`100.64.0.0/10` range. The published `0.2.4-preview.1` APK still rejects these
+addresses; this fix needs a new Android build.
+
+1. Connect the phone and PC to your Tailscale network and keep WinDock running
+   on the PC. Tailscale access rules and the PC firewall must allow the phone
+   to reach WinDock's TCP port (8620 by default).
+2. On the Android connection screen, use **Connect by Wi-Fi** if USB mode is
+   selected. Enter the PC's Tailscale IPv4 address, such as `100.101.102.103`
+   or `100.101.102.103:8620`, then tap **Use this address**.
+3. Pair using the PIN shown by the PC. After a successful connection, the app
+   remembers this address for the next launch.
+
+Automatic discovery remains LAN broadcast discovery; it does not find peers
+across Tailscale. Use the numeric address, not a MagicDNS hostname or IPv6
+address. Tailscale provides the encrypted VPN connection; entering a CGNAT
+address alone does not establish a VPN or make a host trusted. WinDock's
+health check, PIN pairing and same-origin restrictions still apply. Do not
+expose WinDock's port directly to the public internet.
+
+See [Tailscale's address documentation](https://tailscale.com/docs/concepts/tailscale-ip-addresses)
+for the shared address range.
+
 ## USB connection (development build)
 
 The new Android build supports USB networking through **USB tethering**. This
@@ -177,8 +202,9 @@ poller's automatic-update, inactive-state, timeout and concurrency regression.
 ## Transport and build decisions
 
 Android's network security XML matches domains, not private IP subnets. The
-transport allows HTTP, while `EndpointPolicy` limits selected hosts to private
-or loopback IPv4 addresses (plus localhost). Health checks reject redirects,
+transport allows HTTP, while `EndpointPolicy` limits selected hosts to private,
+loopback or shared CGNAT IPv4 addresses (plus localhost). Health checks reject
+redirects,
 limit response size/time and require WinDock's identity. The WebView permits
 only the selected origin, disables file/content access, and never overrides
 TLS certificate errors. PIN/session handling stays in the shared web UI.
@@ -189,3 +215,23 @@ Reference documentation: [Android network security](https://developer.android.co
 [immersive system bars](https://developer.android.com/develop/ui/views/layout/immersive),
 [AGP 8.5 compatibility](https://developer.android.com/build/releases/agp-8-5-0-release-notes),
 and [Gradle wrapper checksums](https://docs.gradle.org/current/userguide/gradle_wrapper.html).
+
+## Update checks (development builds)
+
+Open **Updates** on the connection screen, or **Drawer → Updates → Check Android
+updates** while connected. The screen shows this phone's installed version and
+an explicit current, available or failed result. A newer APK opens the official
+release page in your browser; installation remains manual. A PC-only release
+with the same APK version code does not prompt a phone update. These controls
+are not in the published 0.2.4 APK yet.
+
+On an isolated emulator, run the native regression after installing the debug
+and instrumentation APKs:
+
+```powershell
+adb -s emulator-5556 shell am instrument -w -e class com.windock.app.UpdatesTest com.windock.app.test/androidx.test.runner.AndroidJUnitRunner
+```
+
+Expected: OK (4 tests). Start scripts/android-smoke-host.mjs for the connected
+dock test. The live-feed cases require internet access; the other
+cases use deterministic metadata and a simulated offline request.

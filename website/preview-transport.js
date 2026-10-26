@@ -11,6 +11,12 @@ let tiles = apps.map(app => ({ ...app, kind: 'app', label: app.name }));
 const values = new Map([['windock-layout', JSON.stringify({ perPage: 6 })]]);
 let recordingStartedAt = null, lastCapture = null;
 let typedText = '';
+// Fictional examples only. This adapter never reads either device's clipboard.
+const clipboardItems = [
+  'A note from the demo PC',
+  'Shopping list\nCoffee\nBread\nSomething sweet 🙂',
+  'A useful link: https://example.com',
+];
 const showTyping = () => parent.postMessage({ type: 'windock-preview-typed', text: typedText }, location.origin);
 window.addEventListener('message', event => {
   if (event.source === parent && event.origin === location.origin && event.data?.type === 'windock-preview-clear-text') { typedText = ''; showTyping(); }
@@ -41,8 +47,10 @@ function response(body, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 }
 export async function fetch(path, options = {}) {
-  if (path === '/api/input') return response({ available: true, keyboard: true, signatureInsert: true, demo: true });
+  if (path === '/api/input') return response({ available: true, keyboard: true, signatureInsert: true, clipboard: true, demo: true });
+  if (path === '/api/clipboard/history') return response({ status: 'ready', items: clipboardItems.map(text => ({ text })), skipped: 0 });
   if (['/api/signature', '/api/signature/insert'].includes(path) && options.method === 'POST') return response({ demo: true, path: 'Demo only · No file created or pasted' });
+  if (path === '/api/updates' || path === '/api/updates/check') return response({ status: path.endsWith('/check') ? 'current' : 'unchecked', installedVersion: 'Website demo' });
   if (path === '/api/state') return response({ tiles, running: [], verbs, hostName: 'Preview PC', platformName: 'Windows', allowDestructive: false });
   if (path === '/api/apps/installed') return response({ apps });
   if (path === '/api/nowplaying') return response({ nowPlaying: null });
@@ -71,13 +79,33 @@ export class WebSocket {
   static CLOSED = 3;
   readyState = WebSocket.CONNECTING;
   constructor(url = '') {
-    queueMicrotask(() => { if (this.readyState !== WebSocket.CLOSED) { this.readyState = WebSocket.OPEN; this.onopen?.(); if (url.endsWith('/input')) this.onmessage?.({ data: JSON.stringify({ type: 'ready' }) }); } });
+    queueMicrotask(() => {
+      if (this.readyState === WebSocket.CLOSED) return;
+      this.readyState = WebSocket.OPEN;
+      this.onopen?.();
+      if (url.endsWith('/input')) {
+        this.onmessage?.({ data: JSON.stringify({ type: 'ready' }) });
+        // The real helper announces focus when it connects. Give the sample
+        // editor a fictional target so clipboard paste works without opening IME.
+        this.onmessage?.({ data: JSON.stringify({ type: 'focus', target: '1', editable: true, password: false }) });
+      }
+    });
   }
   bufferedAmount = 0;
   send(payload) { // Simulated input never leaves this page.
     const message = JSON.parse(payload);
     if (message.type === 'focus') queueMicrotask(() => { if (this.readyState === WebSocket.OPEN) this.onmessage?.({ data: JSON.stringify({ type: 'focus', target: '1', editable: true, password: false }) }); });
     if (message.type === 'text') { typedText = (typedText + message.text).slice(-500); showTyping(); }
+    if (message.type === 'paste') {
+      // A paste changes only the visible demo output, never the OS clipboard.
+      if (message.target !== '1' || typeof message.text !== 'string' || !message.text || message.text.length > 32768) {
+        queueMicrotask(() => { if (this.readyState === WebSocket.OPEN) this.onmessage?.({ data: JSON.stringify({ type: 'input-error' }) }); });
+        return;
+      }
+      typedText = (typedText + message.text).slice(-500);
+      showTyping();
+      queueMicrotask(() => { if (this.readyState === WebSocket.OPEN) this.onmessage?.({ data: JSON.stringify({ type: 'paste-result' }) }); });
+    }
     if (message.type === 'key') {
       if (message.key === 'Backspace') typedText = Array.from(typedText).slice(0, -1).join('');
       if (message.key === 'Enter') typedText = (typedText + '\n').slice(-500);

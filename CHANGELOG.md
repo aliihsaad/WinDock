@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+- Website: add a dedicated 0.2.5 feature section, updated setup and update-check
+  guidance, and a clipboard demo using fictional text. Simulated paste changes
+  only the page's demo output. Public download links change only at promotion.
+
+- Linux: WinDock keeps running in the background after you close its window, as
+  the systemd user service `windock.service`, so the phone stays connected.
+  Opening WinDock from the menu shows the address and PIN, and so does
+  `windock status`. Press **S** in that window or run `windock stop` to stop it;
+  it also stops at logout. Apps opened from the phone keep running when WinDock
+  stops. Upgrading the package restarts a background WinDock with a new PIN, and
+  removing the package stops it. Without a systemd user session, the window runs
+  WinDock as before; `windock --foreground` does so on request.
+- Touchpad: add a collapsed **PC clipboard** panel for recent text history on
+  Windows and Linux. Review or edit an item before explicitly pasting it into the
+  selected PC field. History is fetched on demand and is cleared from the phone
+  when the panel closes. Linux reads the history manager that is already running
+  (Omarchy's own, Elephant, cliphist, clipman, CopyQ or Klipper); without one, the
+  panel offers the PC's current clipboard.
 - Android: add **Switch PC** in the dock drawer and connection screen. Scan for
   running hosts on local networks, check saved addresses, and choose a PC by name,
   platform and address. Keep the current dock open while choosing. Built on the
@@ -11,6 +29,16 @@
   available for explicit selection; forgetting does not revoke pairing.
 - Include the PC name and a persistent public identifier in the health response
   to label PCs, group multiple addresses, and preserve Forget across address changes.
+- Add an **Updates** screen in the dock drawer and Appearance, showing the
+  installed PC version, manual update checks, and current/available/offline states.
+- Add Android update checks from the connection screen and connected dock,
+  plus an update shortcut in the Windows connection window. Installation stays
+  manual. Android checks its own APK version code, including PC-only releases.
+
+- Fix Android rejecting manual Tailscale/CGNAT addresses in `100.64.0.0/10`.
+  Keep strict URL validation, same-origin WebView access and PIN pairing;
+  add boundary/reconnect regression tests and manual VPN connection guidance.
+
 - Add the first native iPhone companion source: remembered PC address, PIN pairing
   through the shared landscape dock, and reconnect/change-PC controls.
 - Add a GitHub macOS workflow for simulator tests, screenshots and unsigned iOS

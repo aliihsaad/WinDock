@@ -4,6 +4,7 @@ import { addAppTile, addControlTile, removeTile, moveTile, toWireTiles, availabl
 import { normalizeLayout, renderPages, pageCount, moveToTile } from "./launcher.js";
 import { createInputPad } from "./input-pad.js";
 import { pairingError } from "./pairing.js";
+import { createUpdates } from "./updates.js";
 import { createNowPlayingPoller } from "./now-playing.js";
 
 const $ = (id) => document.getElementById(id);
@@ -518,6 +519,9 @@ $("fullscreen").addEventListener("click", toggleFullscreen);
 $("drawer-fullscreen").addEventListener("click", toggleFullscreen);
 $("drawer-open").addEventListener("click", openDrawer);
 $("drawer-close").addEventListener("click", () => $("drawer").close());
+const updatesScreen = createUpdates({ api });
+$("drawer-updates").addEventListener("click", () => updatesScreen.open());
+$("settings-updates").addEventListener("click", () => updatesScreen.open());
 $("drawer-settings").addEventListener("click", openSettings);
 $("drawer-apps").addEventListener("click", () => { $("drawer").close(); openPicker(); });
 $("drawer-controls").addEventListener("click", () => { $("drawer").close(); $("controls-grid").innerHTML = renderControls(state.verbs, state.allowDestructive); $("controls").showModal(); });

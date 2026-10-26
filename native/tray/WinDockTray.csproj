@@ -8,7 +8,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>WinDockTray</AssemblyName>
     <Version>0.2.5</Version>
-    <InformationalVersion>0.2.5-preview.1</InformationalVersion>
+    <InformationalVersion>0.2.5-preview.3</InformationalVersion>
     <RootNamespace>WinDock.Tray</RootNamespace>
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>false</SelfContained>

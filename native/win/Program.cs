@@ -45,6 +45,7 @@ internal static class Program
                 "brightness" => ReadBrightness(args),
                 "capture" => ScreenCapture.Run(args),
                 "touchpad" when args.Length == 1 => Touchpad.Run(),
+                "clipboard-history" when args.Length == 1 => ClipboardHistory.Read(),
                 "signature" when args.Length == 1 => Signature.Save(),
                 "signature-insert" when args.Length == 1 => Signature.Save(insert: true),
                 "icon" => ReadIcon(args),

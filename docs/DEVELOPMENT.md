@@ -98,7 +98,29 @@ on other desktops the running-app list is empty and focus/close are refused.
 - Capture refuses to start while the display sleeps (screencopy produces no
   frames). `gpu-screen-recorder` startup errors count as a failed start because
   its KMS capture can run without producing frames.
-- Not yet on Linux: tray, packaging.
+- Not yet on Linux: tray icon, autostart.
+
+### Background service
+
+The packaged `windock` command (`src/platform/linux-cli.js`) runs the host as the
+systemd user service `windock.service` (`native/linux/packaging/windock.service`),
+so it outlives the terminal window that opened it.
+
+- Before starting the service, `windock` writes the session's display, Hyprland,
+  search-path and WinDock variables to `$XDG_RUNTIME_DIR/windock-session.env`.
+  A host started for another Hyprland instance is restarted for the current one.
+- The service entry (`src/platform/linux-service.js`) publishes the address and
+  PIN in `$XDG_RUNTIME_DIR/windock/host.json` (mode 0600). systemd removes it when
+  the service stops. `windock`, `windock status` and the connection window read it;
+  the journal gets the address but not the PIN.
+- Inside the service, apps start through `systemd-run --user --scope`, each in
+  its own scope, so stopping or restarting the host leaves them running.
+- `windock stop` stops the service; **S** in the connection window does the same.
+  A host already answering on the port in a terminal window blocks a second one.
+- Without a user manager or the installed unit, and with `windock --foreground`,
+  the host runs in the terminal as before.
+- Package upgrades restart each user's running service, and removal stops it
+  (`/usr/lib/windock/user-service`, called from the Debian and Arch scripts).
 
 ### Touchpad, keyboard and signatures
 
@@ -265,6 +287,8 @@ for the known focus-smoke failure and other hardware acceptance evidence.
 | --- | --- | --- |
 | GET | `/health` | Public health check |
 | POST | `/api/auth` | Exchange PIN for a session |
+| GET | `/api/updates` | Installed PC version and last update-check result; no external request |
+| POST | `/api/updates/check` | Check the fixed public HTTPS release feed; empty JSON body, paired and same-origin |
 | GET | `/api/state` | Tiles, running apps, available verbs |
 | GET | `/api/apps/installed` | Installed-app inventory |
 | GET | `/api/apps/icon` | App icon by validated ID |
@@ -331,3 +355,31 @@ Custom WINDOCK_ALLOWED_HOSTS entries are comma-separated names, optionally with
 a port or trailing DNS dot. Unknown names receive HTTP 421 with configuration
 guidance. Only exact localhost has implicit name-based loopback trust;
 subdomains require explicit allowlisting and still require pairing.
+
+### Update screens (development builds)
+
+The dock drawer and Appearance both open Updates. PC checks use the paired
+host API; opening the screen only reads local status. A manual check fetches
+https://windock.vercel.app/downloads.json with a 12-second deadline, a 64 KiB
+limit, no redirects and no pairing credentials. Concurrent requests share one
+fetch; successful results are reused for 30 seconds. Failures remain explicit
+and can be retried. Windows startup notifications and the tray check still work;
+the connection window now also offers Check for updates.
+
+Android's native Updates screen is available before connecting, and through the
+dock after connecting. It uses the same HTTPS feed with its own bounded request
+and opens only this repository's release pages in an external browser. The feed's
+android.versionCode and android.versionName describe the actual APK, separately
+from the overall release tag. Without those fields, only a feed matching the
+installed release can confirm current status; newer releases fail closed.
+The packager extracts both fields from the APK with Android SDK aapt, including
+when an existing APK is reused. Set ANDROID_HOME or ANDROID_SDK_ROOT if needed.
+
+Keep package.json releaseVersion aligned with the Windows tray's
+InformationalVersion when preparing a release. Native Android versionCode must
+increase whenever shipping a changed APK. Published 0.2.4 binaries do not contain
+these new screens; building the branch is required until the next release.
+
+npm test includes update feed/authentication/network/UI-state regressions.
+Android UpdatesTest exercises the native current/available/failure/retry states
+and a live check on an emulator. All downloads and installations remain manual.

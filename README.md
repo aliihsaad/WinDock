@@ -97,19 +97,29 @@ sudo apt install ./WinDock-linux-amd64.deb
 ```
 
 Open **WinDock** from your application menu, or run `windock` without sudo.
-Keep its connection window open: it shows the address and pairing PIN.
+WinDock starts in the background, and its window shows the address and pairing PIN.
 On Android, choose **Connect by Wi-Fi → Find my PC**, then enter that PIN.
+You can close the window; the phone stays connected. To see the PIN again, open
+WinDock again or run `windock status`. To stop WinDock, press **S** in its window
+or run `windock stop`. It also stops when you log out.
 No terminal commands to compile the app, Node.js installation or Rust SDK are needed.
 
-This is a **Hyprland preview**, not GNOME/KDE support. It requires glibc 2.36+
-and a terminal emulator. There is no tray icon, autostart or automatic updater yet.
+This is a **Hyprland preview**, not GNOME/KDE support. It requires glibc 2.36+,
+a terminal emulator and a systemd user session. Without a user session, WinDock
+runs in its window as in earlier versions; `windock --foreground` does the same on
+request. There is no tray icon, autostart or automatic updater yet.
 For recording and brightness, install the optional `wf-recorder`, `brightnessctl`
-and/or `ddcutil` packages. If touchpad access is unavailable immediately after
-installation, log out and back in (or reboot) so your session picks up the udev rule.
+and/or `ddcutil` packages. With `notify-send` (`libnotify`) installed, a desktop
+notification also shows the PIN when WinDock starts in the background. If touchpad
+access is unavailable immediately after installation, log out and back in (or
+reboot) so your session picks up the udev rule.
 
-To update, close WinDock, install the newer package with the same command, then
-reopen it. Your dock configuration and captures are kept. To remove it, use
-`sudo pacman -R windock` on Arch or `sudo apt remove windock` on Debian/Ubuntu.
+To update, install the newer package with the same command. A WinDock running in
+the background restarts with the update and gets a new PIN, so pair your phone
+again. If a WinDock window from an older version is still open, close it, then
+open WinDock again. Your dock configuration and captures are kept. To remove it, use
+`sudo pacman -R windock` on Arch or `sudo apt remove windock` on Debian/Ubuntu;
+this also stops a background WinDock.
 Only the package files are removed; personal settings and captures remain.
 Checksums are published as `SHA256SUMS-linux.txt` alongside the packages.
 
@@ -234,6 +244,15 @@ addresses, exact `localhost` and the PC's own name (plain or `.local`) are accep
 Names may include a port or a trailing DNS dot; `*.localhost` is not implicitly trusted. Sessions reset when the PC
 host restarts. The website's interactive demo uses sample apps and simulated
 touchpad, typing, signature and capture actions; it never connects to your PC.
+
+### Tailscale (development Android build)
+
+The Android source now accepts the PC's numeric Tailscale IPv4 address for
+manual connections. The published `0.2.4-preview.1` APK does not include this
+fix yet. With both devices connected to Tailscale, enter the PC's VPN address
+in the app and pair normally; automatic discovery remains LAN-only.
+See the [Android Tailscale setup](android/README.md#tailscale-connection-development-build)
+for connection steps and firewall requirements.
 
 ## Current release
 

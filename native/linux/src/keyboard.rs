@@ -60,6 +60,48 @@ pub fn run(program: &str, args: &[&str], input: Option<&[u8]>, timeout: Duration
 
 const TIMEOUT: Duration = Duration::from_secs(5);
 
+/// Clipboard writers to try, in order: wl-copy on Wayland (and when no display
+/// is named, as before X11 support), then xclip or xsel on X11. Each keeps
+/// serving the clipboard in the background after reading stdin.
+pub fn clipboard_writers(wayland: bool, x11: bool) -> Vec<(&'static str, &'static [&'static str])> {
+    let mut writers: Vec<(&'static str, &'static [&'static str])> = Vec::new();
+    if wayland || !x11 {
+        writers.push(("wl-copy", &["--type", "text/plain;charset=utf-8"]));
+    }
+    if x11 {
+        writers.push(("xclip", &["-selection", "clipboard", "-target", "UTF8_STRING", "-in"]));
+        writers.push(("xsel", &["--clipboard", "--input"]));
+    }
+    writers
+}
+
+/// A clipboard item may exceed a pipe buffer, so write concurrently with the
+/// timeout. No shell, arguments, output or diagnostics contain clipboard text.
+pub fn copy_text(text: &str) -> crate::Result<()> {
+    let wayland = std::env::var_os("WAYLAND_DISPLAY").is_some();
+    let x11 = std::env::var_os("DISPLAY").is_some();
+    let (path, args) = clipboard_writers(wayland, x11).into_iter()
+        .find_map(|(name, args)| find_program(name).map(|path| (path, args)))
+        .ok_or("No clipboard tool is installed (wl-copy, xclip or xsel).")?;
+    let mut child = Command::new(path).args(args)
+        .stdin(Stdio::piped()).stdout(Stdio::null()).stderr(Stdio::null()).spawn()?;
+    let mut input = child.stdin.take().ok_or("clipboard stdin unavailable")?;
+    let bytes = text.as_bytes().to_vec();
+    let writer = std::thread::spawn(move || input.write_all(&bytes));
+    let deadline = Instant::now() + Duration::from_secs(2);
+    loop {
+        if let Some(status) = child.try_wait()? {
+            if !status.success() { return Err("Clipboard copy failed.".into()); }
+            if writer.is_finished() { return writer.join().map_err(|_| "Clipboard write failed.")?.map_err(Into::into); }
+        }
+        if Instant::now() >= deadline {
+            let _ = child.kill(); let _ = child.wait();
+            return Err("Clipboard copy timed out.".into());
+        }
+        std::thread::sleep(Duration::from_millis(5));
+    }
+}
+
 fn wtype(args: &[&str], input: Option<&[u8]>) -> crate::Result<()> {
     run("wtype", args, input, TIMEOUT)
 }
@@ -143,6 +185,16 @@ mod tests {
         assert_eq!(segments("Hello 🙂"), vec![T("Hello 🙂")]);
         assert_eq!(segments("a\r\nb\tc\n"), vec![T("a"), K(Key::Enter), T("b"), K(Key::Tab), T("c"), K(Key::Enter)]);
         assert_eq!(segments("\r\r\n"), vec![K(Key::Enter), K(Key::Enter)]);
+    }
+
+    #[test]
+    fn clipboard_writer_follows_the_session() {
+        let names = |wayland, x11| clipboard_writers(wayland, x11).into_iter().map(|(name, _)| name).collect::<Vec<_>>();
+        assert_eq!(names(true, false), ["wl-copy"]);
+        assert_eq!(names(false, false), ["wl-copy"]);
+        assert_eq!(names(false, true), ["xclip", "xsel"]);
+        assert_eq!(names(true, true), ["wl-copy", "xclip", "xsel"]);
+        assert!(clipboard_writers(false, true).iter().all(|(_, args)| args.contains(&"clipboard") || args.contains(&"--clipboard")));
     }
 
     #[test]

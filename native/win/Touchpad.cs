@@ -119,18 +119,24 @@ internal static class Touchpad
                 // Also releases buttons if Node crashes or stops forwarding the phone heartbeat.
                 var line = await input.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(2));
                 if (line is null) break;
-                if (line.Length > 8192) throw new ArgumentException("Input too large.");
+                if (line.Length > 262144) throw new ArgumentException("Input too large.");
                 using var message = JsonDocument.Parse(line);
                 var root = message.RootElement;
                 var type = root.GetProperty("type").GetString();
                 if (type == "focus") { focus.Refresh(); continue; }
-                if (type is "text" or "key")
+                if (type is "text" or "key" or "paste")
                 {
                     try
                     {
                         if (!focus.Accepts(root.GetProperty("target").GetString() ?? "")) throw new InvalidOperationException("Focus changed.");
                         session.Release();
                         if (type == "text") keyboard.Text(root.GetProperty("text").GetString() ?? "");
+                        else if (type == "paste")
+                        {
+                            var target = root.GetProperty("target").GetString() ?? "";
+                            keyboard.Paste(root.GetProperty("text").GetString() ?? "", () => focus.Accepts(target));
+                            Emit(new { type = "paste-result" });
+                        }
                         else keyboard.Press(root.GetProperty("key").GetString() ?? "");
                     }
                     catch { Emit(new { type = "input-error" }); focus.Refresh(); }

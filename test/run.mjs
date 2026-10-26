@@ -28,6 +28,7 @@ const EXPECTED = {
   "verify-sync.mjs": "sync verification passed",
   "verify-pwa.mjs": "pwa verification passed",
   "verify-performance.mjs": "performance verification passed",
+  "verify-updates.mjs": "updates verification passed",
   "verify-now-playing.mjs": "now-playing verification passed",
   "verify-download-stats.mjs": "download-stats verification passed",
   "verify-editing.mjs": "editing verification passed",
@@ -36,7 +37,10 @@ const EXPECTED = {
   "verify-launcher.mjs": "launcher verification passed",
   "verify-capture.mjs": "capture verification passed",
   "verify-input.mjs": "input verification passed",
+  "verify-clipboard.mjs": "clipboard verification passed",
+  "verify-linux-clipboard.mjs": "linux-clipboard verification passed",
   "verify-linux.mjs": "linux verification passed",
+  "verify-linux-cli.mjs": "linux-cli verification passed",
   "verify-linux-input.mjs": "linux-input verification passed",
   "verify-linux-downloads.mjs": "linux-downloads verification passed",
 };
