@@ -87,11 +87,13 @@ service.stdout.on("data", (b) => { journal += b; });
 service.stderr.on("data", (b) => { journal += b; });
 const serviceExited = once(service, "exit");
 try {
+  // The host answers on its port a moment before it publishes the PIN; status
+  // calls that moment "a terminal window", so wait for the published details.
   let shown;
   for (let i = 0; i < 100; i++) {
     assert.equal(service.exitCode, null, journal);
     shown = spawnSync("windock", ["status"], { env: serviceEnv, encoding: "utf8" });
-    if (shown.status === 0) break;
+    if (shown.status === 0 && /running in the background/.test(shown.stdout)) break;
     await new Promise((r) => setTimeout(r, 100));
   }
   assert.equal(shown.status, 0, `${shown.stdout}${shown.stderr}${journal}`);
