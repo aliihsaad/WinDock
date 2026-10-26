@@ -2,9 +2,17 @@
 
 ## Unreleased
 
+- Add the first native iPhone companion source: remembered PC address, PIN pairing
+  through the shared landscape dock, and reconnect/change-PC controls.
+- Add a GitHub macOS workflow for simulator tests, screenshots and unsigned iOS
+  archives. This is not an installable iPhone release; signing and physical testing
+  are still pending. This is separate from the Windows and Android releases below.
+
+## [0.2.5](https://github.com/aliihsaad/WinDock/releases/tag/v0.2.5-preview.3) — October 26, 2026
+
 - Website: add a dedicated 0.2.5 feature section, updated setup and update-check
   guidance, and a clipboard demo using fictional text. Simulated paste changes
-  only the page's demo output. Public download links change only at promotion.
+  only the page's demo output. Downloads now point to the verified 0.2.5 installers.
 
 - Linux: WinDock keeps running in the background after you close its window, as
   the systemd user service `windock.service`, so the phone stays connected.
@@ -38,12 +46,6 @@
 - Fix Android rejecting manual Tailscale/CGNAT addresses in `100.64.0.0/10`.
   Keep strict URL validation, same-origin WebView access and PIN pairing;
   add boundary/reconnect regression tests and manual VPN connection guidance.
-
-- Add the first native iPhone companion source: remembered PC address, PIN pairing
-  through the shared landscape dock, and reconnect/change-PC controls.
-- Add a GitHub macOS workflow for simulator tests, screenshots and unsigned iOS
-  archives. This is not an installable iPhone release; signing and physical testing
-  are still pending. This is separate from the Windows and Android releases below.
 
 ## [0.2.4-preview.1](https://github.com/aliihsaad/WinDock/releases/tag/v0.2.4-preview.1) — October 25, 2026
 

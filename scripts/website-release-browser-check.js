@@ -25,7 +25,7 @@ async (page) => {
     check(!(await tab.locator('#next-release').innerText()).includes('IN TESTING'), 'Release section introduces 0.2.5 without a testing label');
     await tab.locator('#download-windows:not([aria-disabled="true"])').waitFor();
     for (const id of ['download-windows', 'download-android', 'download-linux-arch', 'download-linux-deb']) {
-      check((await tab.locator('#' + id).getAttribute('href')).includes('/v0.2.4-preview.1/'), id + ' preserves the current public download');
+      check((await tab.locator('#' + id).getAttribute('href')).includes('/v0.2.5-preview.3/'), id + ' points to the verified 0.2.5 release');
     }
     await tab.locator('[data-preview-clipboard]').click();
     await demo.locator('.pc-clipboard__item').first().waitFor();
