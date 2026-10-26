@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
 import { once } from "node:events";
 import { readFile, mkdir, writeFile } from "node:fs/promises";
-import { homedir } from "node:os";
+import { homedir, hostname } from "node:os";
 
 assert.notEqual(process.getuid(), 0, "test the app without root");
 for (const tool of ["node", "npm", "cargo", "rustc"]) {
@@ -42,7 +42,13 @@ try {
   const pin = output.match(/PIN:\s+(\d{6})\b/)?.[1];
   assert.ok(pin, "launcher displays a pairing PIN");
   const base = "http://127.0.0.1:18620";
-  assert.deepEqual(await (await fetch(`${base}/health`)).json(), { ok: true, app: "windock", platform: "linux" });
+  const health = await (await fetch(`${base}/health`)).json();
+  assert.deepEqual({ ok: health.ok, app: health.app, platform: health.platform },
+    { ok: true, app: "windock", platform: "linux" });
+  assert.equal(health.hostName, hostname(), "discovery reports this PC's name");
+  assert.match(health.hostId, /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+  assert.equal((await readFile(`${configDir}/config.json.host-id`, "utf8")).trim(), health.hostId,
+    "normal-user startup persists the public PC identity beside its config");
   const page = await fetch(base);
   assert.equal(page.status, 200);
   assert.match(await page.text(), /WinDock/);
