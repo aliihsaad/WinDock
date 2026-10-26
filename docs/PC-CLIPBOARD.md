@@ -1,7 +1,7 @@
 # PC clipboard history in the touchpad
 
-This feature is under development on `touchpad-pc-clipboard`. The existing
-0.2.5 testing release does not include it.
+This feature is included in the combined `0.2.5-preview.2` testing candidate.
+The earlier `0.2.5-preview.1` PC-switching candidate does not include it.
 
 The **PC clipboard** control starts collapsed at the top of the touchpad. Open
 it to read recent text copied on the connected PC. Choose an item to load its

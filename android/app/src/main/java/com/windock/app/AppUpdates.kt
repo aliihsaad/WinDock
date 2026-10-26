@@ -117,8 +117,11 @@ internal class AppUpdates(private val activity: Activity, private val load: (() 
             require(json.opt("available") == true)
             val release = json.get("version") as String
             val apk = json.getJSONObject("android")
-            if (!apk.has("versionCode") && !apk.has("versionName") && release == BuildConfig.VERSION_NAME) {
-                return UpdatePolicy.evaluate(release, release, installedCode, apk.get("url") as String, installedCode)
+            if (!apk.has("versionCode") && !apk.has("versionName")) {
+                // The published 0.2.4 feed predates APK metadata; that release shipped code 5.
+                // Do not guess the APK version for any other release.
+                require(release == "0.2.4-preview.1")
+                return UpdatePolicy.evaluate(release, release, 5, apk.get("url") as String, installedCode)
             }
             val code = apk.get("versionCode") as Number
             require(code.toLong() in 1..Int.MAX_VALUE.toLong() && code.toDouble() == code.toInt().toDouble())

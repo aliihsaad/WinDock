@@ -53,6 +53,7 @@ internal sealed partial class TrayApp : ApplicationContext
     private Uri? _balloonRelease;
     private Form? _connectionWindow;
     private Button? _connectionUpdates;
+    private Label? _connectionDetails;
 
     [GeneratedRegex(@"open:\s*(\S+)")] private static partial Regex EndpointLine();
     [GeneratedRegex(@"PIN:\s*(\d{4,8})")] private static partial Regex PinLine();
@@ -169,10 +170,11 @@ internal sealed partial class TrayApp : ApplicationContext
     {
         if (string.IsNullOrWhiteSpace(line)) return;
         var endpoint = EndpointLine().Match(line);
-        if (endpoint.Success) _endpoint = endpoint.Groups[1].Value;
+        if (endpoint.Success) { _endpoint = endpoint.Groups[1].Value; RefreshConnectionInfo(); }
         var pin = PinLine().Match(line);
         if (!pin.Success) return;
         _pin = pin.Groups[1].Value;
+        RefreshConnectionInfo();
         _icon.Text = "WinDock — running";
         if (!_smoke)
         {
@@ -204,9 +206,15 @@ internal sealed partial class TrayApp : ApplicationContext
         }
     }
 
+    private void RefreshConnectionInfo()
+    {
+        if (_connectionDetails is { IsDisposed: false })
+            _connectionDetails.Text = $"Open this address on your phone:\n{_endpoint}\n\nPairing PIN: {_pin}\n\nBoth devices must be on the same network.";
+    }
+
     private void ShowInfo()
     {
-        if (_connectionWindow is { IsDisposed: false }) { _connectionWindow.Activate(); return; }
+        if (_connectionWindow is { IsDisposed: false }) { RefreshConnectionInfo(); _connectionWindow.Activate(); return; }
         var form = new Form { Text = "WinDock", AutoScaleMode = AutoScaleMode.Dpi,
             ClientSize = new Size(480, 310), MinimumSize = new Size(440, 330),
             StartPosition = FormStartPosition.CenterScreen, MaximizeBox = false };
@@ -217,8 +225,8 @@ internal sealed partial class TrayApp : ApplicationContext
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.Controls.Add(new Label { Text = "WinDock " + UpdateChecker.InstalledVersion, AutoSize = true,
             Font = new Font(SystemFonts.MessageBoxFont!, FontStyle.Bold), Margin = new Padding(0, 0, 0, 16) });
-        panel.Controls.Add(new Label { Text = $"Open this address on your phone:\n{_endpoint}\n\nPairing PIN: {_pin}\n\nBoth devices must be on the same network.",
-            AutoSize = true, Dock = DockStyle.Fill });
+        _connectionDetails = new Label { AutoSize = true, Dock = DockStyle.Fill };
+        RefreshConnectionInfo(); panel.Controls.Add(_connectionDetails);
         var updates = new Button { Text = "Check for updates…", AutoSize = true, Padding = new Padding(8), Anchor = AnchorStyles.Left };
         updates.Enabled = !_checkingUpdates;
         if (_checkingUpdates) updates.Text = "Checking for updates…";
@@ -231,7 +239,7 @@ internal sealed partial class TrayApp : ApplicationContext
         panel.Controls.Add(updates);
         var close = new Button { Text = "Close", AutoSize = true, Anchor = AnchorStyles.Right, DialogResult = DialogResult.Cancel };
         close.Click += (_, _) => form.Close(); panel.Controls.Add(close); form.CancelButton = close;
-        form.Controls.Add(panel); form.FormClosed += (_, _) => { _connectionWindow = null; _connectionUpdates = null; };
+        form.Controls.Add(panel); form.FormClosed += (_, _) => { _connectionWindow = null; _connectionUpdates = null; _connectionDetails = null; };
         _connectionWindow = form; form.Show();
     }
 

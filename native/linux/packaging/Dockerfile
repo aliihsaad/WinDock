@@ -21,7 +21,7 @@ COPY scripts scripts
 COPY native/linux/70-windock-uinput.rules native/linux/
 COPY native/linux/packaging native/linux/packaging
 ARG PACKAGE_VERSION
-ARG PACKAGE_RELEASE=1
+ARG PACKAGE_RELEASE=2
 RUN shellcheck native/linux/packaging/windock native/linux/packaging/postinst native/linux/packaging/postrm scripts/package-linux.sh scripts/test-linux-package.sh \
     && desktop-file-validate native/linux/packaging/windock.desktop \
     && NODE_LICENSE=/opt/node-LICENSE bash scripts/package-linux.sh "$PACKAGE_VERSION" "$PACKAGE_RELEASE"

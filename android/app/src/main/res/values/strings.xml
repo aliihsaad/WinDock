@@ -21,7 +21,6 @@
     <string name="usb_searching">Looking for your PC over USB…</string>
     <string name="usb_not_found">No USB PC found. Check the cable, USB tethering, and WinDock on Windows. For wireless, tap Connect by Wi-Fi above. You can also enter the PC’s USB IPv4 address below.</string>
     <string name="switch_pc">Switch PC</string>
-    <string name="close">Close</string>
     <string name="enter_address">Enter address</string>
     <string name="refresh">Refresh</string>
     <string name="pc_scanning">Looking for PCs running WinDock on your network…</string>

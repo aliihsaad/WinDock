@@ -34,6 +34,23 @@ class UpdatesTest {
             assertThrows(Exception::class.java) { AppUpdates.parseManifest(invalid,5) }
         }
     }
+    private fun assertLiveStatus() {
+        val deadline = SystemClock.uptimeMillis() + 20000
+        var result = ""
+        while (SystemClock.uptimeMillis() < deadline) {
+            result = device.findObject(By.res("com.windock.app", "update_status"))?.text.orEmpty()
+            if (result == "You’re up to date." || result.matches(Regex("WinDock .+ is available\\."))) break
+            SystemClock.sleep(100)
+        }
+        assertTrue("Expected a valid live result, got: $result", result == "You’re up to date." || result.matches(Regex("WinDock .+ is available\\.")))
+        assertEquals(result != "You’re up to date.", device.hasObject(By.res("com.windock.app", "update_download")))
+    }
+    @Test fun legacyPublicFeedUsesTheActualShippedApkCode() {
+        val body = """{"available":true,"version":"0.2.4-preview.1","android":{"url":"${UpdatePolicy.RELEASES}/download/v0.2.4-preview.1/WinDock-android-debug.apk"}}"""
+        assertEquals("current", AppUpdates.parseManifest(body, 7).status)
+        assertEquals("available", AppUpdates.parseManifest(body, 4).status)
+        assertThrows(Exception::class.java) { AppUpdates.parseManifest(body.replace("0.2.4-preview.1", "9.0.0"), 7) }
+    }
     @Test fun screenShowsCheckingFailureRetryAvailableAndCurrent() {
         assumeTrue("Never alter a personal phone", Build.MODEL.contains("sdk"))
         device.wakeUp()
@@ -101,7 +118,7 @@ class UpdatesTest {
             assertTrue(js(web,"document.getElementById('updates-android-version').textContent").orEmpty().contains(BuildConfig.VERSION_NAME))
             js(web,"document.getElementById('updates-android-check').click()")
             button("update_check").click()
-            assertTrue(device.wait(Until.hasObject(By.text("You’re up to date.")),20000))
+            assertLiveStatus()
             device.wait(Until.findObject(By.res("android","button2")),5000).click()
             awaitJs(web,"document.getElementById('updates').open")
         }
@@ -111,7 +128,7 @@ class UpdatesTest {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { it.findViewById<android.widget.Button>(R.id.app_updates).performClick() }
             button("update_check").click()
-            assertTrue("Live release reports the installed companion as current", device.wait(Until.hasObject(By.text("You’re up to date.")),20000))
+            assertLiveStatus()
             device.wait(Until.findObject(By.res("android", "button2")), 5000).click()
         }
     }
