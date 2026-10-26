@@ -18,8 +18,40 @@ https://windock.vercel.app; pushes to `main` deploy through the existing Vercel 
   when leaving. Mobile uses a native modal with scroll locking and focus return.
 - `demo.js`: parent-side demo controls and the readable PC picker overlay.
 - `downloads.js`: validates the existing release manifest and displays public counts.
+- `community.js`: loads Giscus only after the community disclosure is opened and
+  synchronizes the embed with the website's light/dark appearance.
 
 `/#history` and `/#candidate-release` bookmarks redirect to the release page.
+
+## Community feedback
+
+The homepage has one collapsed-by-default Giscus section. No Giscus script or iframe
+is requested until it opens. Closing/reopening retains the iframe and any draft.
+The website's light/dark switch updates Giscus without reloading it. A failed load
+offers a retry and the public GitHub link; JavaScript-disabled visitors can use
+that link directly. This feature does not change analytics consent.
+
+Giscus is free and open source. Comments, replies and reactions are stored publicly
+in GitHub Discussions; contributing requires GitHub sign-in. We do not maintain a
+review database, invent a rating score, or collect a separate WinDock login.
+
+Repository setup is `aliihsaad/WinDock` (`R_kgDOUfO7Ig`), Announcements category
+(`DIC_kwDOUfO7Is4DJr27`). Discussions must be enabled and the official Giscus GitHub
+App installed for this repository. Both were verified during implementation.
+The `number` mapping points to the existing [discussion #39](https://github.com/aliihsaad/WinDock/discussions/39),
+`WinDock community feedback`, which already contains the maintainer's welcome comment.
+Localhost, preview deployments and production share this conversation. Its backlink
+is always the production community section, and the fallback link opens the same
+discussion even when Giscus cannot load.
+
+`giscus.json` at the repository root restricts allowed origins to production, the
+local preview and this project's Vercel previews, and shows newest comments first.
+Giscus reads this configuration from the default branch, so these restrictions
+take effect when the PR is merged. The repository/category IDs are public metadata,
+not credentials. The embed uses Giscus's borderless light/transparent dark themes
+inside the site's glass panel, with source/origin checks on incoming messages.
+
+Reference: https://giscus.app/ and https://github.com/giscus/giscus/blob/main/ADVANCED-USAGE.md.
 The theme follows the device until the visitor chooses one; that choice is saved
 in `windock-website-theme`. `theme.js` applies it before styles load.
 
@@ -64,11 +96,15 @@ Run browser verification through Playwright CLI with the local server running:
 ```powershell
 npx --yes --package @playwright/cli playwright-cli -s=website-check open http://127.0.0.1:4173
 npx --yes --package @playwright/cli playwright-cli -s=website-check run-code --filename scripts/website-release-browser-check.js
+npx --yes --package @playwright/cli playwright-cli -s=website-check run-code --filename scripts/website-community-browser-check.js
 npx --yes --package @playwright/cli playwright-cli -s=website-check close
 ```
 
 Checks cover picker actions, existing clipboard/update simulations, download
 links, narrow layouts, navigation, theme/consent continuity and network isolation.
+Community checks additionally cover deferred loading, real Giscus rendering and
+theme changes, trusted messages, retry recovery, OAuth return handling and the
+JavaScript-disabled fallback. They never sign in, post comments or add reactions.
 Screenshots go to ignored `output/playwright/`.
 
 ## Optional analytics

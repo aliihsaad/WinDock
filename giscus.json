@@ -1,0 +1,11 @@
+{
+  "origins": [
+    "https://windock.vercel.app",
+    "http://127.0.0.1:4173",
+    "http://localhost:4173"
+  ],
+  "originsRegex": [
+    "^https://windock-[a-z0-9-]+-alis-projects-310d9f5c\\.vercel\\.app$"
+  ],
+  "defaultCommentOrder": "newest"
+}
