@@ -2,11 +2,15 @@ post_install() {
     udevadm control --reload-rules 2>/dev/null || true
     modprobe uinput 2>/dev/null || true
     udevadm trigger --subsystem-match=misc --sysname-match=uinput 2>/dev/null || true
-    echo "Open WinDock from your Hyprland application menu. Keep its connection window open."
+    /usr/lib/windock/user-service restart
+    echo "Open WinDock from your Hyprland application menu. It keeps running in the background after you close its window."
 }
 post_upgrade() {
     post_install
-    echo "Restart WinDock to use the update. Your settings are kept."
+    echo "If an older WinDock window is still open, close it and open WinDock again. Your settings are kept."
+}
+pre_remove() {
+    /usr/lib/windock/user-service stop
 }
 post_remove() {
     udevadm control --reload-rules 2>/dev/null || true

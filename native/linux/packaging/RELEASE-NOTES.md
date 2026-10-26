@@ -8,6 +8,8 @@ other hosts running. Pair with each PC’s own six-digit PIN. The touchpad also 
 history from the manager you already run (Omarchy's own, Elephant, cliphist,
 clipman, CopyQ or Klipper), or just the current clipboard without one; paste uses
 wl-copy and Ctrl+V. The dock Updates screen checks public releases without installing them.
+WinDock now keeps running in the background after you close its window, so the
+phone stays connected.
 
 ### Omarchy / Arch
 
@@ -28,9 +30,11 @@ sudo apt install ./WinDock-linux-amd64.deb
 ### Connect
 
 Open **WinDock** in your application menu, or run `windock` as your normal user.
-Keep its connection window open. On your phone, open WinDock and select
-**Switch PC**, then enter the PIN shown on the PC.
-Close the connection window or press Ctrl+C to stop the host.
+WinDock starts in the background and its window shows the address and PIN. On
+your phone, open WinDock and select **Switch PC**, then enter that PIN.
+You can close the window. To see the PIN again, open WinDock again or run
+`windock status`. To stop WinDock, press **S** in its window or run `windock stop`;
+it also stops when you log out.
 
 The package sets up the touchpad's udev rule. If the touchpad cannot start,
 log out and back in or reboot. Optional desktop tools for recording and
@@ -40,14 +44,18 @@ An active firewall may need TCP 8620 and UDP 41234 allowed from your trusted LAN
 If pairing is paused for all devices, the PC-local recovery command is in the
 [development guide](https://github.com/aliihsaad/WinDock/blob/main/docs/DEVELOPMENT.md#pairing-recovery-and-older-clients).
 
-To update, quit WinDock and install the new package with the same command.
-To remove it, use `sudo pacman -R windock` or `sudo apt remove windock`.
-Your personal dock configuration and captures are preserved.
+To update, install the new package with the same command. A background WinDock
+restarts with the update and shows a new PIN. If a WinDock window from an older
+version is still open, close it first, then open WinDock again.
+To remove it, use `sudo pacman -R windock` or `sudo apt remove windock`; this
+also stops a background WinDock. Your personal dock configuration and captures are preserved.
 
 ### Preview scope
 
 - Hyprland, x86-64, glibc 2.36 or newer. GNOME/KDE and ARM builds are not supported.
-- No tray icon, autostart or automatic updater yet; keep the connection window open.
+- No tray icon, autostart or automatic updater yet. The background host is the
+  systemd user service `windock.service`; without a systemd user session, WinDock
+  runs in its window as before.
 - Container checks cover packaging, startup, pairing, signature rendering,
   upgrade and uninstall on Debian 12, Ubuntu 24.04 and Arch. On a physical
   Omarchy desktop with an Android phone, installation, menu launch, pairing,

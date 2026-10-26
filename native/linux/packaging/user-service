@@ -1,0 +1,32 @@
+#!/bin/sh
+# Package scripts run as root, while each user's WinDock runs in that user's
+# own systemd manager. Restart (after an upgrade) or stop (before removal)
+# every running one. A host in a terminal window is left alone.
+set -u
+action=${1:-}
+case "$action" in
+    restart|stop) ;;
+    *) echo "Usage: $0 restart|stop" >&2; exit 2 ;;
+esac
+as_user() {
+    timeout 30 runuser -u "$user" -- env XDG_RUNTIME_DIR="$dir" systemctl --user "$@" >/dev/null 2>&1
+}
+for dir in /run/user/*; do
+    uid=${dir##*/}
+    if [ "$uid" = 0 ] || [ ! -e "$dir/systemd/private" ]; then
+        continue
+    fi
+    user=$(getent passwd "$uid" | cut -d: -f1)
+    [ -n "$user" ] || continue
+    if [ "$action" = restart ]; then
+        # Load the new unit file before restarting with it.
+        as_user daemon-reload || true
+        as_user is-active --quiet windock.service || continue
+        as_user try-restart windock.service \
+            && echo "Restarted WinDock for $user. Open WinDock to see its new PIN."
+    else
+        as_user is-active --quiet windock.service || continue
+        as_user stop windock.service && echo "Stopped WinDock for $user."
+    fi
+done
+exit 0

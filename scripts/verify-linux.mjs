@@ -202,6 +202,32 @@ await createLauncher({ spawn: (file, args, options) => {
 } })("app", []);
 t.deepEqual(spawned[0], { detached: true, stdio: "ignore", shell: false }, "apps are detached, inherit no pipes, and never use a shell");
 
+// In the background service, each app gets its own systemd scope so it outlives the host.
+function scopedLaunches(systemdRunWorks) {
+  const calls = [];
+  const launchScoped = createLauncher({ scope: true, spawn: (file, args) => {
+    calls.push([file, ...args]);
+    const child = new EventEmitter();
+    child.unref = () => {};
+    queueMicrotask(() => {
+      child.emit("spawn");
+      child.emit("exit", file === "systemd-run" && args.at(-1) === "true" && !systemdRunWorks ? 1 : 0);
+    });
+    return child;
+  } });
+  return { calls, launchScoped };
+}
+const scoped = scopedLaunches(true);
+await scoped.launchScoped("gtk-launch", ["firefox"], { wait: true });
+await scoped.launchScoped("/usr/bin/foot", []);
+const SCOPE = ["systemd-run", "--user", "--scope", "--quiet", "--collect", "--"];
+t.deepEqual(scoped.calls, [[...SCOPE, "true"], [...SCOPE, "gtk-launch", "firefox"], [...SCOPE, "/usr/bin/foot"]],
+  "scoped launches check systemd-run once, then wrap each app's own argv after --");
+const unscoped = scopedLaunches(false);
+await unscoped.launchScoped("gtk-launch", ["firefox"], { wait: true });
+t.deepEqual(unscoped.calls.slice(1), [["gtk-launch", "firefox"]], "without a reachable user manager, apps start directly");
+await t.rejects(() => scoped.launchScoped("-rf", 7), "scoped launches still validate their arguments");
+
 // ---- capture ----
 t.ok(/^WinDock-\d{4}-\d{2}-\d{2}-\d{6}-\d{3}-[0-9a-f]{6}\.png$/.test(captureName("screenshot")), "capture names match the Windows helper");
 const [wfCommand, wfArgs] = recorderArgv("wf-recorder", "DP-2", "/v/x.mp4");

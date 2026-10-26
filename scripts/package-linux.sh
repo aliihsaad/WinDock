@@ -14,7 +14,7 @@ root="$stage/root"
 app="$root/usr/lib/windock"
 mkdir -p "$app" "$root/usr/bin" "$root/usr/share/applications" \
     "$root/usr/share/icons/hicolor/512x512/apps" "$root/usr/lib/udev/rules.d" \
-    "$root/usr/lib/modules-load.d" "$root/usr/share/licenses/windock" artifacts/linux
+    "$root/usr/lib/modules-load.d" "$root/usr/lib/systemd/user" "$root/usr/share/licenses/windock" artifacts/linux
 cp server.js package.json package-lock.json "$app/"
 cp -R src public "$app/"
 # A checkout on a Windows drive marks every file executable; ship data as 0644.
@@ -23,8 +23,10 @@ find "$app" -type f -exec chmod 644 {} +
 npm ci --prefix "$app" --omit=dev --ignore-scripts --no-audit --no-fund
 install -m 755 "$(command -v node)" "$app/node"
 install -m 755 native/linux/target/release/windock-input "$app/windock-input"
+install -m 755 native/linux/packaging/user-service "$app/user-service"
 install -m 755 native/linux/packaging/windock "$root/usr/bin/windock"
 install -m 644 native/linux/packaging/windock.desktop "$root/usr/share/applications/"
+install -m 644 native/linux/packaging/windock.service "$root/usr/lib/systemd/user/"
 install -m 644 public/icon-512.png "$root/usr/share/icons/hicolor/512x512/apps/windock.png"
 install -m 644 native/linux/70-windock-uinput.rules "$root/usr/lib/udev/rules.d/"
 printf 'uinput\n' > "$root/usr/lib/modules-load.d/windock.conf"
@@ -49,13 +51,15 @@ Maintainer: Ali Saad <aliihsaad@users.noreply.github.com>
 Homepage: https://windock.vercel.app
 Installed-Size: $du_kib
 Depends: libc6 (>= 2.36), libstdc++6, libgcc-s1, libgtk-3-bin, grim, wl-clipboard, wtype, pulseaudio-utils, systemd, udev, kmod, x-terminal-emulator
-Recommends: brightnessctl, ddcutil, wf-recorder
+Recommends: brightnessctl, ddcutil, wf-recorder, libnotify-bin
 Description: Phone companion for a Hyprland desktop (preview)
  Includes the Node.js runtime and native input helper; no compilation needed.
  A running Hyprland session is required. Open WinDock from the application
- menu and keep its connection window open. GNOME and KDE are not supported.
+ menu; it keeps running in the background as a systemd user service after
+ its window closes. GNOME and KDE are not supported.
 EOF
 install -m 755 native/linux/packaging/postinst "$root/DEBIAN/postinst"
+install -m 755 native/linux/packaging/prerm "$root/DEBIAN/prerm"
 install -m 755 native/linux/packaging/postrm "$root/DEBIAN/postrm"
 dpkg-deb --root-owner-group --build "$root" artifacts/linux/WinDock-linux-amd64.deb
 # Arch uses the same payload, with native dependency names and install hooks.
@@ -83,6 +87,7 @@ depend = kmod
 optdepend = brightnessctl: laptop panel brightness
 optdepend = ddcutil: external monitor brightness
 optdepend = wf-recorder: screen recording
+optdepend = libnotify: notification when WinDock starts in the background
 optdepend = hyprland: supported desktop session
 optdepend = xterm: fallback terminal for the connection window
 EOF

@@ -409,13 +409,16 @@ export async function start({ port = Number(process.env.PORT) || DEFAULT_PORT, h
   return { ...app, endpoint, discovery, port };
 }
 
+/** Printed once the host is listening. The Windows tray reads the address and PIN from it. */
+export function readyMessage({ endpoint, state, provider }) {
+  return `WinDock host ready\n  provider: ${provider.displayName}\n  open:     ${endpoint}\n  PIN:      ${state.pin}\n`;
+}
+
 const isMain = process.argv[1] && resolve(process.argv[1]) === resolve(import.meta.filename);
 if (isMain) {
   start()
-    .then(({ endpoint, state, provider }) => {
-      process.stdout.write(
-        `WinDock host ready\n  provider: ${provider.displayName}\n  open:     ${endpoint}\n  PIN:      ${state.pin}\n`,
-      );
+    .then((host) => {
+      process.stdout.write(readyMessage(host));
     })
     .catch((err) => {
       process.stderr.write(`WinDock failed to start: ${err.message}\n`);
