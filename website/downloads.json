@@ -1,31 +1,31 @@
 {
-  "version": "0.2.4-preview.1",
+  "version": "0.2.5-preview.3",
   "available": true,
-  "generatedAt": "2026-10-25T17:57:02.0028040Z",
+  "generatedAt": "2026-10-26T16:44:13.8298928Z",
   "windows": {
-    "url": "https://github.com/aliihsaad/WinDock/releases/download/v0.2.4-preview.1/WinDockSetup.exe",
-    "bytes": 123317800,
-    "sha256": "9515886504d4950bd65d20fbd44882d5471fe0ffa6bfbb93435a9dde26904506"
+    "url": "https://github.com/aliihsaad/WinDock/releases/download/v0.2.5-preview.3/WinDockSetup.exe",
+    "sha256": "306d997d1c164ebc798751d3439624cba578c2f7da0a3037dba957da49f15eba",
+    "bytes": 123335400
   },
   "android": {
-    "url": "https://github.com/aliihsaad/WinDock/releases/download/v0.2.4-preview.1/WinDock-android-debug.apk",
-    "bytes": 2103005,
-    "sha256": "e89ca85e0572ec9ad1bf34222f7d81572d7b4a3e728c9a0c5fbd73305c75fb2f",
-    "versionName": "0.2.4-preview.1",
-    "versionCode": 5
+    "versionName": "0.2.5-preview.3",
+    "url": "https://github.com/aliihsaad/WinDock/releases/download/v0.2.5-preview.3/WinDock-android-debug.apk",
+    "versionCode": 8,
+    "sha256": "78de34581fb63c9fb4f8f20419baa67a50c2c6123700ffded7ec263eb255ea43",
+    "bytes": 2144173
   },
-  "checksums": "https://github.com/aliihsaad/WinDock/releases/download/v0.2.4-preview.1/SHA256SUMS.txt",
+  "checksums": "https://github.com/aliihsaad/WinDock/releases/download/v0.2.5-preview.3/SHA256SUMS.txt",
   "linux": {
     "arch": {
-      "url": "https://github.com/aliihsaad/WinDock/releases/download/v0.2.4-preview.1/WinDock-linux-x64.pkg.tar.zst",
-      "bytes": 43821811,
-      "sha256": "81d35d6354e837db0ea35a3d90997108171a847ee107f2bb8c48104076c340e3"
+      "url": "https://github.com/aliihsaad/WinDock/releases/download/v0.2.5-preview.3/WinDock-linux-x64.pkg.tar.zst",
+      "bytes": 43848419,
+      "sha256": "df4824dbf17a2174cb2580dbdff3eda091a236822526b46b54a5de9897f59df0"
     },
     "debian": {
-      "url": "https://github.com/aliihsaad/WinDock/releases/download/v0.2.4-preview.1/WinDock-linux-amd64.deb",
-      "bytes": 31022912,
-      "sha256": "308e0c8ae9153b8687a2afe94039bdd63375f748b0c641ec48530a1ab2e54644"
+      "url": "https://github.com/aliihsaad/WinDock/releases/download/v0.2.5-preview.3/WinDock-linux-amd64.deb",
+      "bytes": 31041452,
+      "sha256": "5694cc8ee498a4326483be798fce135106b0e5b9658ed9d4509bb7ebf49b119d"
     },
-    "checksums": "https://github.com/aliihsaad/WinDock/releases/download/v0.2.4-preview.1/SHA256SUMS-linux.txt"
+    "checksums": "https://github.com/aliihsaad/WinDock/releases/download/v0.2.5-preview.3/SHA256SUMS-linux.txt"
   }
 }
