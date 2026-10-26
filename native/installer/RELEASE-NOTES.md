@@ -14,9 +14,11 @@ the website downloads. The earlier preview.1 candidate contains only PC switchin
   must already be on your Tailscale network. Automatic discovery stays LAN-only.
 - **PC clipboard:** expand the touchpad panel for recent text, choose an item,
   edit it, then explicitly Paste to PC. The editor stays above Android's keyboard.
-  Windows uses existing Windows + V history. Omarchy uses Elephant JSON queries
-  and wl-copy. Text only; images/files are not shown. No background recorder or
-  stored phone history is added.
+  Windows uses existing Windows + V history. Linux reads the history manager
+  already running (Omarchy's own, Elephant, cliphist, clipman, CopyQ or Klipper)
+  and otherwise offers the current clipboard; paste uses wl-copy. Text only;
+  images/files are not shown. No background recorder or stored phone history is
+  added.
 
 Built on the saved-PC contribution by Foxtrot Kreators / @ghustanov in PR #20.
 Integration retains PR #30 update checks, #31 Tailscale, merged #32 PC discovery,

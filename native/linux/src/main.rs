@@ -73,6 +73,7 @@ fn check() -> Result<()> {
         "uinput": uinput,
         "wtype": keyboard::find_program("wtype").is_some(),
         "wlCopy": keyboard::find_program("wl-copy").is_some(),
+        "x11Copy": keyboard::find_program("xclip").or_else(|| keyboard::find_program("xsel")).is_some(),
         "hyprland": hyprland::Hyprland::detect().is_some_and(|h| h.active_window().is_ok()),
         "atspi": atspi::bus_address().is_ok(),
     }));

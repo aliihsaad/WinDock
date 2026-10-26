@@ -1,7 +1,8 @@
 /**
  * Linux touchpad, phone keyboard and signatures through `windock-input`
  * (native/linux), which speaks the Windows helper's JSON protocol: a uinput
- * pointer, wtype for text, AT-SPI focus tokens, and wl-copy for pasting.
+ * pointer, wtype for text, AT-SPI focus tokens, and wl-copy (xclip or xsel
+ * on X11) for pasting.
  */
 
 import { spawn as spawnProcess } from "node:child_process";

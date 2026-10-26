@@ -43,6 +43,9 @@ async (page) => {
     await control("/mode?value=disabled");await tab.locator("#pc-clipboard-toggle").click();
     await tab.waitForFunction(()=>document.getElementById("pc-clipboard-status").textContent.includes("Windows + V"));
     check(await tab.locator(".pc-clipboard__item").count()===0,"Disabled Windows history has clear setup guidance");
+    await control("/mode?value=current-only");await tab.locator("#pc-clipboard-refresh").click();
+    await tab.waitForFunction(()=>document.getElementById("pc-clipboard-status").textContent.includes("only its current clipboard"));
+    check(await tab.locator(".pc-clipboard__item").count()===1,"A Linux PC without a history manager offers its current clipboard alone");
     await control("/mode?value=ready");await tab.locator("#pc-clipboard-refresh").click();await tab.locator(".pc-clipboard__item").first().waitFor();
     await tab.screenshot({path:"output/playwright/clipboard-phone.png"});
     let bounds=await tab.locator("#pc-clipboard-panel").boundingBox();

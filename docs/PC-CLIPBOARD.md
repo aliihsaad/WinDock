@@ -12,11 +12,30 @@ The selected text becomes the PC's current clipboard content.
 
 Windows uses the existing Windows clipboard history. Enable it on the PC with
 **Windows + V** if it is disabled; WinDock never enables it automatically.
-Omarchy/Hyprland uses the running **Elephant** clipboard manager via its
-`query --json` interface and **wl-copy** for pasting. Other Linux history
-managers are not supported by this first implementation. It does not replace
-or reconfigure the PC's clipboard manager. Only text is supported; images,
-files and rich formatting are outside this text-input feature.
+Linux has no system clipboard history, so WinDock reads the history manager
+the user already runs. It finds managers by their running processes, never by
+distro or desktop, and uses the first one it finds in this order:
+
+| Manager | Found by | Read with |
+|---|---|---|
+| Omarchy 4 clipboard | `wl-paste --watch …/shell/plugins/clipboard/capture.sh` | `~/.local/state/omarchy/clipboard-history.json` |
+| Elephant (walker, Omarchy 3) | an `elephant` process | `elephant query --json "clipboard;;20"` |
+| cliphist | `wl-paste --watch cliphist store` | `cliphist list`, then `cliphist decode` per entry |
+| clipman | `wl-paste --watch clipman store` (not `-P`) | its `--histpath` file, default `~/.local/share/clipman.json` |
+| CopyQ | a `copyq` process | one `copyq eval` script reading `text/plain` |
+| Klipper (KDE) | a `klipper` or `plasmashell` process | `busctl --user --auto-start=no` → `getClipboardHistoryMenu` |
+
+A manager that fails is skipped for the next one. A history file whose recorder
+is not running is never read, so stale history is not shown. With no manager,
+the panel offers only the PC's **current clipboard** (`wl-paste`, or `xclip` /
+`xsel` on X11) and says so. A clipboard marked by a password manager
+(`x-kde-passwordManagerHint`) is not read. GPaste is not supported yet; its
+GNOME users get the current clipboard.
+
+WinDock never starts, configures or writes to a clipboard manager, and only
+reads files and commands that belong to the manager it found. Pasting uses
+**wl-copy**, or `xclip`/`xsel` on an X11 session. Only text is supported;
+images, files and rich formatting are outside this text-input feature.
 
 Up to 20 recent text entries are shown, with a maximum of 32,768 UTF-16 units
 per entry and 131,072 across a response. Oversized entries are skipped with a
@@ -56,8 +75,8 @@ and package build, 18 browser checks, and an Android WebView instrumentation
 test that asserts the editor and Paste button are above the open software
 keyboard. UI tests use synthetic history and simulated desktop input.
 
-Before release, test Windows history and the user's installed Elephant version
-on Omarchy, paste multiline text into an ordinary editor, and verify keyboard,
+Before release, test Windows history, Omarchy 4's own clipboard, at least one
+other Linux history manager, and a Linux PC with no manager running, paste multiline text into an ordinary editor, and verify keyboard,
 touchpad, pairing and switching between PCs. A successful paste acknowledgement
 means input was dispatched; applications may still reject a paste.
 
