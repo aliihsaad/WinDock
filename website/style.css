@@ -35,9 +35,19 @@ h3{font-size:22px;line-height:1.2;letter-spacing:-.6px}
 .skip-link{position:fixed;left:20px;top:10px;padding:12px;background:var(--mint);color:var(--bg);z-index:100;transform:translateY(-200%)}
 .skip-link:focus{transform:none}
 
-/* Clear, persistent navigation. */
-.header{position:sticky;top:14px;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:68px;margin-top:14px;padding:10px 18px;border:1px solid #ffffff80;border-radius:18px;background:#fafbf8cc;backdrop-filter:blur(20px);box-shadow:0 6px 25px #263a3e07}
-:root[data-theme="dark"] .header{background:#18211cd9;border-color:var(--line)}
+/* The familiar glass navigation expands from the WinDock icon. */
+.header{position:sticky;top:14px;z-index:20;height:52px;margin-top:14px;pointer-events:none}
+.nav-shell{position:relative;width:min(820px,100%);height:52px;padding:3px;border:1px solid #ffffffb3;border-radius:26px;background:#fafbf8e6;backdrop-filter:blur(24px);box-shadow:0 8px 30px #263a3e14;pointer-events:auto;overflow:hidden}
+.header[data-nav-ready] .nav-shell{width:52px;border-radius:18px;transition:width .68s cubic-bezier(.22,1,.36,1),border-radius .68s cubic-bezier(.22,1,.36,1)}
+:root[data-theme="dark"] .nav-shell{background:#18211ceb;border-color:var(--line);box-shadow:0 8px 30px #0005}
+.nav-content{position:absolute;inset:3px 8px 3px 64px;display:flex;align-items:center;justify-content:space-between;gap:20px;white-space:nowrap}
+.header:not([data-nav-ready]) .nav-content{left:18px}
+.header[data-nav-ready] .nav-content{opacity:0;visibility:hidden;transform:translateX(-12px);pointer-events:none;transition:opacity .18s,transform .35s,visibility 0s .35s}
+@media(min-width:901px) and (hover:hover) and (pointer:fine){
+  .header[data-expanded="true"] .nav-shell{width:min(820px,100%);border-radius:26px}
+  .header[data-expanded="true"] .nav-content{opacity:1;visibility:visible;transform:none;pointer-events:auto;transition:opacity .35s .12s,transform .5s .08s,visibility 0s}
+}
+.header :is(button,a):focus-visible{outline-offset:-2px}
 .brand{display:inline-flex;align-items:center;gap:10px;font-size:21px;font-weight:700;letter-spacing:-.8px;white-space:nowrap}
 .desktop-nav{display:flex;align-items:center;gap:25px;margin-left:auto}
 .desktop-nav a{display:inline-flex;align-items:center;min-height:44px;font-size:12px;color:var(--muted)}
@@ -50,7 +60,8 @@ h3{font-size:22px;line-height:1.2;letter-spacing:-.6px}
 .theme-sun{display:none}
 :root[data-theme="dark"] .theme-sun{display:block}
 :root[data-theme="dark"] .theme-moon{display:none}
-.nav-toggle{display:none}
+.nav-toggle{display:grid;width:44px;height:44px;padding:6px;border-radius:14px}
+.nav-toggle img{width:32px;height:32px;max-width:none}
 html.menu-open{overflow:hidden}
 .menu-open body{position:fixed;inset-inline:0;top:var(--nav-scroll-top,0px)}
 .mobile-menu{inset:16px;margin:0 0 auto auto;width:min(420px,calc(100% - 32px));max-height:calc(100dvh - 32px);padding:24px;border:1px solid var(--line);border-radius:22px;background:var(--solid);color:var(--fg);overflow-y:auto}
@@ -60,6 +71,11 @@ dialog::backdrop{background:#0d181980;backdrop-filter:blur(8px)}
 .menu-links a{display:flex;align-items:center;justify-content:space-between;min-height:62px;border-bottom:1px solid var(--line);font-size:22px;letter-spacing:-.6px}
 .menu-links a span{color:var(--muted);font-size:16px}
 .mobile-menu>.button{width:100%}
+.menu-theme{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:48px;margin-top:14px;font-size:13px}
+.theme-switch{width:36px;height:22px;padding:3px;border-radius:20px;background:var(--line)}
+.theme-switch::after{content:"";display:block;width:16px;height:16px;border-radius:50%;background:var(--muted);transition:transform .2s}
+.menu-theme[aria-pressed="true"] .theme-switch{background:var(--mint)}
+.menu-theme[aria-pressed="true"] .theme-switch::after{background:var(--bg);transform:translateX(14px)}
 
 /* Hero and the live product demonstration. */
 .hero{display:grid;grid-template-columns:1.2fr 1fr;gap:70px;align-items:end;padding-block:68px 56px}
@@ -210,6 +226,7 @@ summary::-webkit-details-marker{display:none}
 .release-summary{display:block;color:var(--muted);font-size:13px;font-weight:400;letter-spacing:0;margin-top:7px;line-height:1.5}
 .release-date{margin-left:8px;white-space:nowrap}
 .release-earlier[open]{padding-bottom:18px}
+.release-earlier[open]>summary>span{transform:rotate(45deg)}
 .history-feedback{margin-top:24px;font-size:14px}
 .guide-intro{padding-block:70px 50px;max-width:950px}
 .guide-intro h1{font-size:clamp(48px,6vw,74px);letter-spacing:-3px;margin-top:22px}
@@ -270,7 +287,7 @@ summary::-webkit-details-marker{display:none}
 }
 @media(max-width:600px){
   :root{scroll-padding-top:95px}.wrap{width:calc(100% - 36px)}.section{padding-block:50px}
-  .header{top:8px;min-height:60px;margin-top:8px;padding:7px 12px;border-radius:15px;gap:12px}.brand{font-size:19px;gap:8px}.brand img{width:28px;height:28px}.nav-download{display:none}.header-actions{gap:3px}
+  .header{top:8px;margin-top:8px}.brand{font-size:19px;gap:8px}.brand img{width:28px;height:28px}.header-actions{gap:3px}
   .hero{padding-block:35px 30px;gap:23px}h1{font-size:clamp(58px,14.8vw,82px);letter-spacing:-3.6px}
   .release-link{gap:7px;font-size:10px;margin-bottom:20px}.release-link>span:last-child{font-size:10px;padding-left:7px}
   .hero-copy>p:not(.eyebrow):not(.hero-note){font-size:16px;line-height:1.65}.hero-actions{gap:20px}.hero-actions .button{padding-inline:18px}

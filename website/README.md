@@ -9,11 +9,13 @@ https://windock.vercel.app; pushes to `main` deploy through the existing Vercel 
 - `index.html`: the product introduction, interactive demo, current release highlights,
   downloads, and a short setup overview.
 - `setup.html`: platform installation guides and the complete FAQ.
-- `releases.html`: the full release history, including contributor attribution.
+- `releases.html`: the latest release stays visible; all earlier releases collapse,
+  including their full notes and contributor attribution.
 - `style.css`: the shared ivory/charcoal, blue and sage identity, glass surfaces,
   typography, responsive layouts and accessible focus states.
 - `symbols.js`, `theme.js`, `navigation.js`: shared page controls. Desktop navigation
-  stays visible; mobile uses a native modal with scroll locking and focus return.
+  expands from the compact WinDock icon on hover or keyboard focus, then collapses
+  when leaving. Mobile uses a native modal with scroll locking and focus return.
 - `demo.js`: parent-side demo controls and the readable PC picker overlay.
 - `downloads.js`: validates the existing release manifest and displays public counts.
 

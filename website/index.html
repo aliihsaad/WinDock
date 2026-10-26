@@ -6,16 +6,22 @@
   <script type="module" src="./app.js"></script><script type="module" src="./navigation.js"></script><script type="module" src="./analytics.js"></script>
 </head><body><a class="skip-link" href="#main">Skip to content</a>
   <header class="header wrap">
-    <a class="brand" href="./" aria-label="WinDock home"><img src="./assets/windock.svg" width="32" height="32" alt="">WinDock</a>
-    <nav class="desktop-nav" aria-label="Main navigation">
+    <div class="nav-shell">
+      <button class="nav-toggle" id="nav-toggle" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="desktop-navigation" title="Open navigation" hidden><img src="./assets/windock.svg" width="32" height="32" alt=""></button>
+      <div class="nav-content" id="desktop-navigation">
+        <a class="brand" href="./" aria-label="WinDock home">WinDock</a>
+        <nav class="desktop-nav" aria-label="Main navigation">
       <a href="#experience">Demo</a><a href="#next-release">What’s new</a><a href="./setup.html">Setup & help</a><a href="./releases.html">Releases</a>
     </nav>
-    <div class="header-actions"><button class="theme-toggle" id="theme-toggle" data-theme-toggle type="button" aria-label="Dark mode" aria-pressed="false" title="Switch to dark mode" hidden><svg class="theme-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 13.4A8.5 8.5 0 0 1 10.6 3.5a8.5 8.5 0 1 0 9.9 9.9Z"/></svg><svg class="theme-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1 1m12 12 1 1M5 19l1-1M18 6l1-1"/></svg></button><a class="nav-download" href="#download">Get WinDock <span aria-hidden="true">↗</span></a><button id="nav-toggle" class="nav-toggle" type="button" aria-label="Open navigation" aria-controls="mobile-menu" aria-expanded="false" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></div>
+        <div class="header-actions"><button class="theme-toggle" id="theme-toggle" data-theme-toggle type="button" aria-label="Dark mode" aria-pressed="false" title="Switch to dark mode" hidden><svg class="theme-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 13.4A8.5 8.5 0 0 1 10.6 3.5a8.5 8.5 0 1 0 9.9 9.9Z"/></svg><svg class="theme-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1 1m12 12 1 1M5 19l1-1M18 6l1-1"/></svg></button><a class="nav-download" href="#download">Get WinDock <span aria-hidden="true">↗</span></a></div>
+      </div>
+    </div>
   </header>
   <dialog class="mobile-menu" id="mobile-menu" aria-label="WinDock navigation">
     <div class="menu-top"><a class="brand" href="./"><img src="./assets/windock.svg" width="30" height="30" alt="">WinDock</a><button class="menu-close icon-button" type="button" aria-label="Close navigation" autofocus><span data-symbol="close"></span></button></div>
     <nav class="menu-links" aria-label="Explore WinDock"><a href="#experience">Try the demo <span>↗</span></a><a href="#next-release">What’s new <span>↗</span></a><a href="./setup.html">Setup & help <span>↗</span></a><a href="./releases.html">Release notes <span>↗</span></a><a href="https://github.com/aliihsaad/WinDock" target="_blank" rel="noopener noreferrer">GitHub <span>↗</span></a></nav>
     <a class="button button-primary" href="#download">Get WinDock <span data-symbol="download"></span></a>
+    <button class="menu-theme" id="mobile-theme-toggle" data-theme-toggle type="button" aria-label="Dark mode" aria-pressed="false" hidden><span>Dark mode</span><span class="theme-switch" aria-hidden="true"></span></button>
   </dialog><main id="main">
   <section class="hero wrap" aria-labelledby="hero-title">
     <div><a class="release-link" href="#next-release"><span class="live-dot"></span> New in 0.2.5 <span>Meet your other PC ↗</span></a><h1 id="hero-title">Your PC.<br><span>Within reach.</span></h1></div>
