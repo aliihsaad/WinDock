@@ -72,6 +72,27 @@ phones. Auto uses the updated Android companion's low-RAM hint; browsers and old
 companions can select On manually. Your choice is remembered for this PC address
 on this device, and Off restores your selected glass style.
 
+## Server port recovery (in development)
+
+WinDock normally uses TCP port **8620**. If that default is reserved by Windows
+or already in use, the host automatically binds an available port. **Show connection
+info**, **Copy URL**, and phone discovery use the actual address. Find your PC
+again on the phone after a port change; a manually entered address must include
+the new port. Browser preferences belong to each address, so they may need to be
+set again after a port change.
+
+On Windows, **Server port…** in the tray menu lets you save **Automatic** or a
+custom port (1–65535). A change takes effect after quitting and reopening WinDock;
+if startup failed, saving retries immediately. A custom port never silently changes.
+If startup fails, the tray stays available so you can correct the setting.
+
+Existing `PORT` environment settings continue to work until you save a tray
+setting. The saved tray choice then takes precedence for the Windows app, including
+Automatic. Command-line hosts can set `PORT` to choose a fixed port, or remove it
+to restore automatic selection. If you use port-specific firewall or VPN rules,
+allow the displayed TCP port or choose a fixed available port. UDP discovery
+continues to use port **41234**.
+
 ## Linux preview
 
 WinDock also runs on Linux, built for Hyprland. The same Android app connects
