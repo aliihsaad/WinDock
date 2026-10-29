@@ -28,6 +28,7 @@ const EXPECTED = {
   "verify-sync.mjs": "sync verification passed",
   "verify-pwa.mjs": "pwa verification passed",
   "verify-performance.mjs": "performance verification passed",
+  "verify-appearance.mjs": "appearance verification passed",
   "verify-updates.mjs": "updates verification passed",
   "verify-now-playing.mjs": "now-playing verification passed",
   "verify-download-stats.mjs": "download-stats verification passed",

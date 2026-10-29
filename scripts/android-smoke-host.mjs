@@ -43,4 +43,6 @@ await configStore.save({ tiles: apps.map(app => ({ ...app, kind: 'app', label: a
 await writeFile(resolve(dir, 'events.json'), '[]');
 await writeFile(resolve(dir, 'input-events.json'), '[]');
 const app = await createApp({ provider, configStore, updates: createUpdateService({ platform: 'windows' }), pin: '864213', trustLoopback: false, allowDestructive: false });
-app.server.listen(18622, '127.0.0.1', () => console.log('Android emulator fixture ready on 18622'));
+const port = Number(process.env.WINDOCK_SMOKE_PORT || 18622);
+if (![18622, 18623].includes(port)) throw new Error('Use an isolated emulator fixture port');
+app.server.listen(port, '127.0.0.1', () => console.log(`Android emulator fixture ready on ${port}`));

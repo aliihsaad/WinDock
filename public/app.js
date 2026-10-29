@@ -26,7 +26,7 @@ const nowPlaying = createNowPlayingPoller({
   },
 });
 let layout;
-try { layout = normalizeLayout(JSON.parse(localStorage.getItem("windock-layout"))); } catch { layout = normalizeLayout(); }
+try { layout = normalizeLayout(JSON.parse((window.WinDockPreferences || localStorage).getItem("windock-layout"))); } catch { layout = normalizeLayout(); }
 document.querySelectorAll("[data-icon]").forEach((el) => { el.innerHTML = icon(el.dataset.icon); });
 if (typeof window.WinDockAndroid?.showPcPicker === "function") {
   $("drawer-switch-pc").hidden = false;
@@ -170,7 +170,7 @@ function syncPerformance() {
 }
 function saveLayout(changes) {
   layout = normalizeLayout({ ...layout, ...changes });
-  try { localStorage.setItem("windock-layout", JSON.stringify(layout)); } catch { /* Device preferences are optional. */ }
+  try { (window.WinDockPreferences || localStorage).setItem("windock-layout", JSON.stringify(layout)); } catch { /* Device preferences are optional. */ }
   currentPage = 0; syncLayout(); paint();
 }
 function showPageHint() {
