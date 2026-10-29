@@ -32,7 +32,8 @@ import {
   isLocalPairingRecovery,
 } from "./src/auth.js";
 
-export const DEFAULT_PORT = 8620;
+import { serverPortChoice, listenWithPortFallback } from "./src/server-port.js";
+export { DEFAULT_PORT } from "./src/server-port.js";
 export const BODY_MAX_BYTES = 64 * 1024;
 const PUBLIC_DIR = resolve(import.meta.dirname, "public");
 
@@ -395,23 +396,27 @@ export async function createApp({
   return { server, hub, inputHub, provider, configStore, dockState, state, sessions, lockout };
 }
 
-export async function start({ port = Number(process.env.PORT) || DEFAULT_PORT, host = process.env.WINDOCK_HOST || "" } = {}) {
+export async function start({ port, host = process.env.WINDOCK_HOST || "", discoveryPort = DISCOVERY_PORT, ...appOptions } = {}) {
+  const choice = serverPortChoice(port);
   const address = primaryAddress(undefined, host);
-  const app = await createApp();
-  await new Promise((resolve, reject) => {
-    app.server.once("error", reject);
-    app.server.listen(port, () => { app.server.off("error", reject); resolve(); });
-  });
+  const app = await createApp(appOptions);
+  let binding;
+  try { binding = await listenWithPortFallback(app.server, choice); }
+  catch (error) {
+    await Promise.all([app.hub.close(), app.inputHub.close()]);
+    app.server.close();
+    throw error;
+  }
 
-  port = app.server.address().port;
+  port = binding.port;
   const endpoint = address ? `http://${address}:${port}` : `http://localhost:${port}`;
-  const discovery = startDiscovery({ endpoint, port: DISCOVERY_PORT });
-  return { ...app, endpoint, discovery, port };
+  const discovery = startDiscovery({ endpoint, port: discoveryPort });
+  return { ...app, endpoint, discovery, port, portNotice: binding.portNotice };
 }
 
 /** Printed once the host is listening. The Windows tray reads the address and PIN from it. */
-export function readyMessage({ endpoint, state, provider }) {
-  return `WinDock host ready\n  provider: ${provider.displayName}\n  open:     ${endpoint}\n  PIN:      ${state.pin}\n`;
+export function readyMessage({ endpoint, state, provider, portNotice = "" }) {
+  return `WinDock host ready\n${portNotice ? `  note:     ${portNotice}\n` : ""}  provider: ${provider.displayName}\n  open:     ${endpoint}\n  PIN:      ${state.pin}\n`;
 }
 
 const isMain = process.argv[1] && resolve(process.argv[1]) === resolve(import.meta.filename);

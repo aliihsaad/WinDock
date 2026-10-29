@@ -58,6 +58,10 @@ jobs:
         run: dotnet run --project native/input-tests/WinDockInputTests.csproj -c Release
       - name: Verify update checks and startup notification policy
         run: dotnet run --project native/update-tests/WinDockUpdateTests.csproj -c Release
+      - name: Verify saved server port settings
+        run: dotnet run --project native/port-tests/WinDockPortTests.csproj -c Release
+      - name: Build the Windows tray
+        run: dotnet build native/tray/WinDockTray.csproj -c Release
 
   macos:
     name: macOS tests

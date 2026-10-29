@@ -38,6 +38,7 @@ internal sealed partial class TrayApp : ApplicationContext
     private string _endpoint = "starting…";
     private string _pin = "----";
     private string _lastError = "";
+    private string _portNotice = "";
     private readonly HttpClient _captureHttp = new() { Timeout = TimeSpan.FromSeconds(35) };
     private readonly System.Windows.Forms.Timer _captureTimer = new() { Interval = 2000 };
     private ToolStripMenuItem _stopRecording = null!;
@@ -57,6 +58,7 @@ internal sealed partial class TrayApp : ApplicationContext
 
     [GeneratedRegex(@"open:\s*(\S+)")] private static partial Regex EndpointLine();
     [GeneratedRegex(@"PIN:\s*(\d{4,8})")] private static partial Regex PinLine();
+    [GeneratedRegex(@"note:\s*(.+)")] private static partial Regex NoteLine();
 
     public TrayApp(bool smoke)
     {
@@ -72,6 +74,7 @@ internal sealed partial class TrayApp : ApplicationContext
         };
         _icon.ContextMenuStrip.Items.Add("Show connection info", null, (_, _) => ShowInfo());
         _icon.ContextMenuStrip.Items.Add("Copy URL", null, (_, _) => CopyUrl());
+        _icon.ContextMenuStrip.Items.Add("Server port…", null, (_, _) => ConfigureServerPort());
         _icon.ContextMenuStrip.Items.Add("Allow pairing now", null, async (_, _) => await AllowPairing());
         _stopRecording = new ToolStripMenuItem("Stop recording", null, async (_, _) => await StopRecording());
         _stopRecording.Enabled = false;
@@ -131,6 +134,13 @@ internal sealed partial class TrayApp : ApplicationContext
 
     private void StartServer()
     {
+        _server?.Dispose();
+        _server = null;
+        _lastError = "";
+        _portNotice = "";
+        _endpoint = "starting…";
+        _pin = "----";
+        RefreshConnectionInfo();
         var root = AppContext.BaseDirectory;
         var bundledNode = Path.Combine(root, "node.exe");
         var psi = new ProcessStartInfo
@@ -142,12 +152,26 @@ internal sealed partial class TrayApp : ApplicationContext
             RedirectStandardError = true,
             WorkingDirectory = root,
         };
+        try { ServerPortSettings.Load(ServerPortSettings.SettingsPath)?.Apply(psi); }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or JsonException)
+        { OnUi(() => Fail("Could not read the server port setting: " + ex.Message)); return; }
         psi.ArgumentList.Add(Path.Combine(root, "server.js"));
         var proc = new Process { StartInfo = psi, EnableRaisingEvents = true };
         _server = proc;
-        proc.OutputDataReceived += (_, e) => OnUi(() => ReadBanner(e.Data));
-        proc.ErrorDataReceived += (_, e) => { if (e.Data is not null) OnUi(() => _lastError = e.Data); };
-        proc.Exited += (_, _) => OnUi(() => Fail($"Server exited with code {proc.ExitCode}. {_lastError}"));
+        proc.OutputDataReceived += (_, e) => OnUi(() => { if (_server == proc) ReadBanner(e.Data); });
+        proc.ErrorDataReceived += (_, e) => { if (_server == proc && e.Data is not null) _lastError = e.Data; };
+        proc.Exited += (_, _) => {
+            // Wait for redirected stderr to drain before showing the failure reason.
+            _ = Task.Run(() => {
+                try
+                {
+                    proc.WaitForExit();
+                    var message = $"Server exited with code {proc.ExitCode}. {_lastError}";
+                    OnUi(() => { if (_server == proc) Fail(message); });
+                }
+                catch (InvalidOperationException) { /* disposed during shutdown */ }
+            });
+        };
         try
         {
             proc.Start();
@@ -159,16 +183,32 @@ internal sealed partial class TrayApp : ApplicationContext
 
     private void Fail(string message)
     {
-        Environment.ExitCode = 1;
-        if (_smoke) Console.Error.WriteLine($"TRAY FAILED: {message}");
-        else MessageBox.Show($"WinDock could not run its server.\n\n{message}",
-            "WinDock", MessageBoxButtons.OK, MessageBoxIcon.Error);
-        ExitThread();
+        if (_smoke) { Environment.ExitCode = 1; Console.Error.WriteLine($"TRAY FAILED: {message}"); ExitThread(); return; }
+        _endpoint = "not running";
+        _pin = "----";
+        _portNotice = "";
+        _recording = false;
+        _stopRecording.Enabled = false;
+        _icon.Text = "WinDock — not running";
+        _captureTimer.Stop();
+        RefreshConnectionInfo();
+        if (MessageBox.Show($"WinDock could not run its server.\n\n{message}\n\nOpen Server port settings? You can also open them later from the tray menu.",
+            "WinDock", MessageBoxButtons.YesNo, MessageBoxIcon.Error) == DialogResult.Yes) ConfigureServerPort();
+    }
+
+    private void ConfigureServerPort()
+    {
+        if (!ServerPortDialog.Show()) return;
+        if (_server is null || _endpoint == "not running") { StartServer(); return; }
+        MessageBox.Show("Port setting saved. Quit WinDock from its tray menu and reopen it to apply the change, then find your PC again on the phone.",
+            "WinDock", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
     private void ReadBanner(string? line)
     {
         if (string.IsNullOrWhiteSpace(line)) return;
+        var note = NoteLine().Match(line);
+        if (note.Success) _portNotice = note.Groups[1].Value;
         var endpoint = EndpointLine().Match(line);
         if (endpoint.Success) { _endpoint = endpoint.Groups[1].Value; RefreshConnectionInfo(); }
         var pin = PinLine().Match(line);
@@ -176,6 +216,7 @@ internal sealed partial class TrayApp : ApplicationContext
         _pin = pin.Groups[1].Value;
         RefreshConnectionInfo();
         _icon.Text = "WinDock — running";
+        if (!_smoke) _captureTimer.Start();
         if (!_smoke)
         {
             ShowBalloon("WinDock is running", $"{_endpoint}\nPIN {_pin}");
@@ -209,14 +250,14 @@ internal sealed partial class TrayApp : ApplicationContext
     private void RefreshConnectionInfo()
     {
         if (_connectionDetails is { IsDisposed: false })
-            _connectionDetails.Text = $"Open this address on your phone:\n{_endpoint}\n\nPairing PIN: {_pin}\n\nBoth devices must be on the same network.";
+            _connectionDetails.Text = $"Open this address on your phone:\n{_endpoint}\n\nPairing PIN: {_pin}\n\n{(_portNotice.Length > 0 ? _portNotice + "\n\n" : "")}Both devices must be on the same network.";
     }
 
     private void ShowInfo()
     {
         if (_connectionWindow is { IsDisposed: false }) { RefreshConnectionInfo(); _connectionWindow.Activate(); return; }
         var form = new Form { Text = "WinDock", AutoScaleMode = AutoScaleMode.Dpi,
-            ClientSize = new Size(480, 310), MinimumSize = new Size(440, 330),
+            ClientSize = new Size(520, 400), MinimumSize = new Size(520, 420),
             StartPosition = FormStartPosition.CenterScreen, MaximizeBox = false };
         var panel = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(24), ColumnCount = 1, RowCount = 4 };
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -311,7 +352,7 @@ internal sealed partial class TrayApp : ApplicationContext
         try
         {
             var json = await _captureHttp.GetStringAsync(endpoint);
-            if (_stopping) return;
+            if (_stopping || CaptureEndpoint() != endpoint) return;
             using var document = JsonDocument.Parse(json);
             var phase = document.RootElement.GetProperty("phase").GetString();
             var active = phase is "starting" or "recording" or "stopping";
