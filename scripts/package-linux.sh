@@ -4,7 +4,7 @@ set -euo pipefail
 umask 022
 cd "$(dirname "$0")/.."
 version=${1:-$(node -p "require('./package.json').version")}
-release=${2:-3}
+release=${2:-1}
 [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Invalid package version" >&2; exit 1; }
 [[ "$release" =~ ^[1-9][0-9]*$ ]] || { echo "Invalid package release" >&2; exit 1; }
 [[ "$(uname -m)" = x86_64 ]] || { echo "Build on Linux x86-64" >&2; exit 1; }
