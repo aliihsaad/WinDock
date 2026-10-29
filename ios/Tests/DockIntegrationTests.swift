@@ -9,6 +9,7 @@ import WebKit
 final class DockIntegrationTests: XCTestCase {
     private var controller: DockViewController!
     private var defaults: UserDefaults!
+    private var warmupWebView: WKWebView?
     private let endpoint = "http://127.0.0.1:18622"
 
     override func setUp() async throws {
@@ -16,11 +17,22 @@ final class DockIntegrationTests: XCTestCase {
         defaults.removePersistentDomain(forName: "WinDockSimulatorTests")
         let store = WKWebsiteDataStore.default()
         await store.removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), modifiedSince: .distantPast)
+        // Cold hosted CI simulators can spend the app's entire load timeout
+        // starting WebKit processes. Warm those processes before timing the
+        // real connection flow; production timeouts and assertions stay intact.
+        let warmup = WKWebView(frame: .zero)
+        warmupWebView = warmup
+        warmup.loadHTMLString("<html><body id='test-ready'></body></html>", baseURL: nil)
+        try await waitUntil("WebKit simulator startup", seconds: 90) {
+            (try? await warmup.evaluateJavaScript("document.readyState === 'complete' && document.body?.id === 'test-ready'")) as? Bool == true
+        }
         installController(autoConnect: false)
     }
 
     override func tearDown() async throws {
         controller.showConnection()
+        warmupWebView?.stopLoading()
+        warmupWebView = nil
         defaults.removePersistentDomain(forName: "WinDockSimulatorTests")
     }
 

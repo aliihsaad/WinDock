@@ -10,7 +10,7 @@ on:
       release_tag:
         description: New release tag (used only when creating a draft)
         type: string
-        default: v0.2.5-preview.3
+        default: v0.2.6-preview.1
   push:
     branches: [main]
     paths:
@@ -50,6 +50,8 @@ jobs:
         run: dotnet run --project native/input-tests/WinDockInputTests.csproj -c Release
       - name: Verify update checks and startup notification policy
         run: dotnet run --project native/update-tests/WinDockUpdateTests.csproj -c Release
+      - name: Verify saved server port policy
+        run: dotnet run --project native/port-tests/WinDockPortTests.csproj -c Release
       - name: Build bundled Windows app
         shell: pwsh
         run: ./scripts/build-windows.ps1

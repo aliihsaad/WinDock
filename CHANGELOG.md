@@ -8,6 +8,17 @@
   archives. This is not an installable iPhone release; signing and physical testing
   are still pending. This is separate from the Windows and Android releases below.
 
+## [0.2.6](https://github.com/aliihsaad/WinDock/releases/tag/v0.2.6-preview.1) — October 29, 2026
+
+- Android: preserve Performance mode, layout, app labels and theme across restarts
+  and PC address changes using durable per-PC settings. Migrate existing preferences.
+- Auto Performance mode also enables on devices with at most 2 GiB of usable RAM,
+  including ROMs that do not report low-RAM status. Manual On/Off takes priority.
+- Windows: recover when the default port is reserved or occupied. Add a saved
+  server-port setting; explicitly configured ports retain clear failure behavior.
+- Update both the PC host and Android companion. The APK keeps the existing signing
+  certificate and increases to version code 9 so it upgrades without clearing data.
+
 ## [0.2.5](https://github.com/aliihsaad/WinDock/releases/tag/v0.2.5-preview.3) — October 26, 2026
 
 - Website: add a dedicated 0.2.5 feature section, updated setup and update-check
