@@ -71,13 +71,22 @@ class PerformanceModeTest {
             lateinit var web: WebView
             scenario.onActivity { web = it.findViewById(R.id.web) }
             awaitJs(web, "!!window.WinDockPerformance && !!document.getElementById('performance-mode')")
-            val lowRam = (context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).isLowRamDevice
+            val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+            val memory = ActivityManager.MemoryInfo()
+            manager.getMemoryInfo(memory)
+            val lowRam = PerformancePolicy.autoEnabled(manager.isLowRamDevice, memory.totalMem)
+            InstrumentationRegistry.getArguments().getString("expectedAuto")?.let {
+                assertEquals("Auto on configured emulator (${memory.totalMem} bytes, ROM flag=${manager.isLowRamDevice})", it, lowRam.toString())
+                assertFalse("Exercise the RAM fallback without the ROM flag", manager.isLowRamDevice)
+            }
             assertEquals(lowRam.toString(), js(web, "window.WinDockPerformance.autoEnabled"))
             assertEquals(endpoint, ServerUrl.load(context))
             awaitJs(web, "!document.getElementById('pair').hidden || !document.getElementById('app').hidden")
             js(web, "if(!document.getElementById('pair').hidden){document.getElementById('pin').value='864213';document.getElementById('pin').form.requestSubmit()}")
             awaitJs(web, "!document.getElementById('app').hidden && document.querySelectorAll('.tile').length===5")
             device.wait(Until.findObject(By.text("Got it")), 1000)?.click()
+            // Keep paging assertions independent of a previous appearance test's 8-icon layout.
+            js(web, "document.querySelector('[data-per-page=\"4\"]').click()")
 
             for (mode in listOf("on", "off")) {
                 click(web, "drawer-open")
@@ -127,8 +136,9 @@ class PerformanceModeTest {
                 SystemClock.sleep(100)
             }
             // A manual Off must survive both reload and a new low-RAM hint.
+            js(web, "window.performanceTestBeforeNavigation=true")
             scenario.onActivity { web.loadUrl(PerformancePolicy.pageUrl(endpoint, true)) }
-            awaitJs(web, "window.WinDockPerformance?.autoEnabled===true && document.readyState==='complete'")
+            awaitJs(web, "!window.performanceTestBeforeNavigation && window.WinDockPerformance?.autoEnabled===true && document.readyState==='complete'")
             assertEquals("false", js(web, "window.WinDockPerformance.enabled"))
             click(web, "drawer-open")
             click(web, "drawer-settings")
@@ -138,7 +148,7 @@ class PerformanceModeTest {
             scenario.onActivity { web.reload() }
             awaitJs(web, "!window.performanceTestBeforeReload && document.readyState==='complete' && window.WinDockPerformance?.preference==='auto' && window.WinDockPerformance.enabled")
             // Reset this test device's preference without changing a personal device.
-            js(web, "localStorage.removeItem('windock-performance')")
+            js(web, "window.WinDockPerformance.setPreference('auto')")
         }
     }
 }

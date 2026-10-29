@@ -68,9 +68,16 @@ timeout may add a delay before the display turns off.
 
 **Appearance → Performance mode** offers **Auto**, **On**, and
 **Off**. On removes glass blur, animated paging, and heavy touch effects for older
-phones. Auto uses the updated Android companion's low-RAM hint; browsers and older
-companions can select On manually. Your choice is remembered for this PC address
-on this device, and Off restores your selected glass style.
+phones. Auto enables it when Android reports a low-RAM device or at most 2 GiB of
+total usable RAM; browsers and older companions can select On manually. Manual
+On/Off always wins over Auto, and Off restores your selected glass style.
+
+The updated Android companion saves performance mode and appearance on the phone,
+per PC identity, so layout, labels and theme survive app/PC restarts and changes to
+the PC's address or port. Existing web preferences migrate on first connection.
+This requires the updated PC web UI too. Browsers and older companions keep using
+storage for the current PC address; older hosts without an identity also fall back
+to that address.
 
 ## Linux preview
 

@@ -51,6 +51,7 @@ class MainActivity : Activity() {
     private var phoneDialog: AlertDialog? = null
     private var pcPicker: PcPicker? = null
     private lateinit var appUpdates: AppUpdates
+    private lateinit var appearance: AppearancePreferences
     private var wakingGesture = false
     private val wakingKeys = mutableSetOf<Int>()
     private var usbOnly = false
@@ -75,6 +76,7 @@ class MainActivity : Activity() {
         usbOnly = PhonePreferences.usbOnly(this)
         idleDisplay = IdleDisplayController(this, findViewById(R.id.idle_cover), onRest = { hideRemoteKeyboard() })
         appUpdates = AppUpdates(this)
+        appearance = AppearancePreferences(getSharedPreferences("appearance", MODE_PRIVATE))
         findViewById<Button>(R.id.app_updates).setOnClickListener { showUpdates() }
         setupRemoteKeyboard()
         address.setText(ServerUrl.load(this).orEmpty())
@@ -261,6 +263,9 @@ class MainActivity : Activity() {
     }
 
     private inner class KeyboardBridge {
+        @JavascriptInterface fun getAppearance(origin: String, legacy: String): String? = appearance.snapshot(origin, legacy)
+        @JavascriptInterface fun saveAppearance(origin: String, scope: String, key: String, value: String): Boolean =
+            appearance.save(origin, scope, key, value)
         @JavascriptInterface fun showKeyboard(target: String, password: Boolean) {
             if (!target.matches(Regex("[1-9][0-9]{0,15}"))) return
             runOnUiThread {
@@ -330,6 +335,7 @@ class MainActivity : Activity() {
             .hideSoftInputFromWindow(address.windowToken, 0)
         web.stopLoading()
         endpoint = null
+        appearance.select(null)
         loadFailed = true
         web.visibility = View.GONE
         syncIdleDisplay()
@@ -363,14 +369,18 @@ class MainActivity : Activity() {
                     failConnection(if (useUsb) R.string.usb_not_found else R.string.not_found)
                 } else {
                     endpoint = selected
+                    appearance.select(selected, identity?.hostId)
                     ServerUrl.save(this, selected, useUsb)
                     identity?.let { ServerUrl.rememberHost(this, it) }
                     address.setText(selected)
                     status.setText(R.string.connecting)
                     loadFailed = false
                     // Only the page URL carries the hint; discovery and saved endpoints stay clean.
-                    val lowRam = (getSystemService(ACTIVITY_SERVICE) as ActivityManager).isLowRamDevice
-                    web.loadUrl(PerformancePolicy.pageUrl(selected, lowRam))
+                    val activityManager = getSystemService(ACTIVITY_SERVICE) as ActivityManager
+                    val memory = ActivityManager.MemoryInfo()
+                    activityManager.getMemoryInfo(memory)
+                    val automatic = PerformancePolicy.autoEnabled(activityManager.isLowRamDevice, memory.totalMem)
+                    web.loadUrl(PerformancePolicy.pageUrl(selected, automatic))
                     web.postDelayed(loadTimeout, 15000)
                 }
             }
@@ -401,6 +411,7 @@ class MainActivity : Activity() {
     override fun onResume() { super.onResume(); resumed = true; if (::web.isInitialized) web.onResume(); syncIdleDisplay() }
     override fun onPause() { resumed = false; wakingGesture = false; wakingKeys.clear(); syncIdleDisplay(); hideRemoteKeyboard(); if (::web.isInitialized) web.onPause(); super.onPause() }
     override fun onDestroy() {
+        appearance.select(null)
         pcPicker?.close()
         phoneDialog?.setOnDismissListener(null)
         phoneDialog?.dismiss()
