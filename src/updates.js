@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 
+export const DOWNLOADS_PAGE_URL = "https://windock.vercel.app/#download";
 export const RELEASES_URL = "https://github.com/aliihsaad/WinDock/releases";
 export const MANIFEST_URL = "https://windock.vercel.app/downloads.json";
 export const INSTALLED_VERSION = JSON.parse(readFileSync(new URL("../package.json", import.meta.url))).releaseVersion;
@@ -37,7 +38,7 @@ export function parseUpdateManifest(manifest, installedVersion, platform) {
         manifest.linux?.debian?.url !== base + "WinDock-linux-amd64.deb") throw new Error("Unexpected package");
   } else throw new Error("Unsupported platform");
   return { status: compareVersions(version, installedVersion) > 0 ? "available" : "current",
-    installedVersion, latestVersion: version, releasePage: RELEASES_URL + "/tag/v" + version };
+    installedVersion, latestVersion: version, releasePage: DOWNLOADS_PAGE_URL };
 }
 
 // One bounded request per host, shared by concurrent clients. Only a manual check

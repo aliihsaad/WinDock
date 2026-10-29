@@ -56,7 +56,7 @@
     <string name="update_available">WinDock %1$s is available.</string>
     <string name="updates_unchecked">Check for the latest Android release when you’re ready.</string>
     <string name="update_failed">Couldn’t check for updates. Check your internet connection and try again.</string>
-    <string name="view_release">View release &amp; download</string>
+    <string name="view_release">Open download page</string>
     <string name="android_update_install">Download the APK and open it to install. A matching signing key keeps your phone settings. Updates are installed manually.</string>
     <string name="update_browser_missing">Open windock.vercel.app in a browser to download the update.</string>
     <string name="close">Close</string>
