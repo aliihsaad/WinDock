@@ -20,8 +20,8 @@ screen — all over your local network, with no account or cloud service.
 
 | Platform | Availability |
 | --- | --- |
-| Windows 10 / 11, x64 | [Download the installer](https://github.com/aliihsaad/WinDock/releases/download/v0.2.4-preview.1/WinDockSetup.exe) |
-| Android 7.0+ | [Download the APK](https://github.com/aliihsaad/WinDock/releases/download/v0.2.4-preview.1/WinDock-android-debug.apk) |
+| Windows 10 / 11, x64 | [Download the installer](https://github.com/aliihsaad/WinDock/releases/download/v0.2.6-preview.1/WinDockSetup.exe) |
+| Android 7.0+ | [Download the APK](https://github.com/aliihsaad/WinDock/releases/download/v0.2.6-preview.1/WinDock-android-debug.apk) |
 | Linux (Hyprland), x86-64 | [Arch/Omarchy and Debian/Ubuntu installer preview](#linux-preview) |
 | iOS | Coming soon — [native companion development & GitHub builds](ios/README.md); no installable public release yet. |
 
@@ -38,12 +38,11 @@ screen — all over your local network, with no account or cloud service.
 The Windows installer is currently unsigned and the Android APK is debug-signed.
 Windows may show a publisher warning. An APK signed with a different key can
 require uninstalling an earlier Android build before installing the new one.
-See the [release notes and checksums](https://github.com/aliihsaad/WinDock/releases/tag/v0.2.4-preview.1).
+See the [release notes and checksums](https://github.com/aliihsaad/WinDock/releases/tag/v0.2.6-preview.1).
 
-**In development:** the Android **Switch PC** picker discovers running WinDock
+The Android **Switch PC** picker discovers running WinDock
 hosts and keeps up to eight recently reached addresses. It is available on the
-connection screen and, with the updated host, in the dock drawer. This is not in
-the download above yet. See [PC picker testing](docs/PC-PICKER-TESTING.md).
+connection screen and, with the updated host, in the dock drawer. See [PC picker testing](docs/PC-PICKER-TESTING.md).
 
 **Updating:** quit WinDock from the Windows tray and run the latest installer;
 your dock settings are kept. Reconnect the phone app to load the updated dock.
@@ -108,7 +107,7 @@ to it, with the touchpad, phone keyboard and signatures.
 ### Install a package (no build tools needed)
 
 Download the package for your **x86-64** machine from the
-[current release](https://github.com/aliihsaad/WinDock/releases/tag/v0.2.4-preview.1).
+[current release](https://github.com/aliihsaad/WinDock/releases/tag/v0.2.6-preview.1).
 The Node.js runtime and compiled input helper are included. Your package
 manager installs the desktop dependencies and configures touchpad permissions.
 
@@ -273,21 +272,21 @@ Names may include a port or a trailing DNS dot; `*.localhost` is not implicitly 
 host restarts. The website's interactive demo uses sample apps and simulated
 touchpad, typing, signature and capture actions; it never connects to your PC.
 
-### Tailscale (development Android build)
+### Tailscale
 
 The Android source now accepts the PC's numeric Tailscale IPv4 address for
-manual connections. The published `0.2.4-preview.1` APK does not include this
-fix yet. With both devices connected to Tailscale, enter the PC's VPN address
+manual connections. With both devices connected to Tailscale, enter the PC's VPN address
 in the app and pair normally; automatic discovery remains LAN-only.
 See the [Android Tailscale setup](android/README.md#tailscale-connection-development-build)
 for connection steps and firewall requirements.
 
 ## Current release
 
-[0.2.4-preview.1](https://github.com/aliihsaad/WinDock/releases/tag/v0.2.4-preview.1)
-bundles Performance mode for older phones with stronger six-digit pairing,
-DNS rebinding protection and PC-local pairing recovery. Windows and Linux hosts
-include both changes; Android version code 5 adds automatic low-RAM detection.
+[0.2.6-preview.1](https://github.com/aliihsaad/WinDock/releases/tag/v0.2.6-preview.1)
+fixes Android appearance settings persistence, improves Performance mode Auto
+detection, and recovers Windows startup when the default server port is unavailable.
+Update both the PC host and Android companion. Android version code 9 preserves
+the existing signing certificate for in-place upgrades.
 See the [version history](CHANGELOG.md) for changes and upgrade notes.
 
 The Windows installer, Android APK and Linux packages are built from this source.

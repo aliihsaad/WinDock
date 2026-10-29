@@ -42,7 +42,7 @@ async (page) => {
     check(!(await tab.locator('#next-release').innerText()).includes('IN TESTING'), 'Release section introduces 0.2.5 without a testing label');
     await tab.locator('#download-windows:not([aria-disabled="true"])').waitFor();
     for (const id of ['download-windows', 'download-android', 'download-linux-arch', 'download-linux-deb']) {
-      check((await tab.locator('#' + id).getAttribute('href')).includes('/v0.2.5-preview.3/'), id + ' points to the verified 0.2.5 release');
+      check((await tab.locator('#' + id).getAttribute('href')).includes('/v0.2.6-preview.1/'), id + ' points to the verified 0.2.6 release');
     }
     // The real dock button must work too, not just the marketing shortcut.
     await tab.locator('#preview-drawer').click();
@@ -161,7 +161,7 @@ async (page) => {
     check(await tab.locator('article.release-entry').count() === 1 && await tab.locator('#candidate-release ul').isVisible() && await tab.locator('details.release-entry[open]').count() === 0, 'Only the latest release is expanded by default');
     const previousRelease = tab.locator('details.release-entry').first();
     await previousRelease.locator('summary').click();
-    check(await previousRelease.locator('ul').isVisible() && (await previousRelease.locator('.release-version').textContent()) === '0.2.4-preview.1', 'The previous release opens to show its complete notes');
+    check(await previousRelease.locator('ul').isVisible() && (await previousRelease.locator('.release-version').textContent()) === '0.2.5-preview.3', 'The previous release opens to show its complete notes');
     await previousRelease.locator('summary').focus();
     await tab.keyboard.press('Space');
     check(await previousRelease.locator('ul').isHidden(), 'The previous release can also be collapsed using the keyboard');
