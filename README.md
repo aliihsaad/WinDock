@@ -1,20 +1,45 @@
-# WinDock
+<p align="center">
+  <a href="https://github.com/aliihsaad/WinDock/releases"><img src="https://img.shields.io/github/v/release/aliihsaad/WinDock?include_prereleases&amp;label=release&amp;color=2563eb" alt="Latest release"></a>
+  <a href="https://github.com/aliihsaad/WinDock/actions/workflows/ci.yml"><img src="https://github.com/aliihsaad/WinDock/actions/workflows/ci.yml/badge.svg?branch=main" alt="Build and tests"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-69dacb" alt="MIT license"></a>
+  <a href="https://hub.xerj.org/contributors/aliihsaad"><img src="https://hub.xerj.org/contributors/aliihsaad/badge.svg" alt="XERJ Corpus Hub contributor"></a>
+</p>
 
-**Your Windows PC. Within reach.**
+<p align="center">
+  <a href="https://windock.vercel.app"><img src="website/assets/windock.svg" alt="WinDock logo" width="112" height="112"></a>
+</p>
 
-Turn an Android phone into a personal app dock for your Windows PC. Keep it
-beside your keyboard, tap to launch apps, control your music, and capture your
-screen — all over your local network, with no account or cloud service.
+<h1 align="center">WinDock</h1>
 
-[Website & interactive demo](https://windock.vercel.app) ·
-[Downloads](https://windock.vercel.app/#download) ·
-[Releases](https://github.com/aliihsaad/WinDock/releases) ·
-[Version history](CHANGELOG.md) ·
-[MIT license](LICENSE)
+<p align="center"><strong>Your PC. Within reach.</strong></p>
+
+<p align="center">
+  Turn an Android phone into a personal app dock for your Windows or Linux PC.<br>
+  Launch apps, control music, and capture your screen over Wi-Fi or USB tethering.<br>
+  No account. No cloud service.
+</p>
+
+<p align="center">
+  <a href="https://windock.vercel.app">Website &amp; demo</a> &nbsp;·&nbsp;
+  <a href="https://windock.vercel.app/#download">Download</a> &nbsp;·&nbsp;
+  <a href="#get-started">Get started</a> &nbsp;·&nbsp;
+  <a href="https://github.com/aliihsaad/WinDock/releases">Releases</a> &nbsp;·&nbsp;
+  <a href="CHANGELOG.md">Changelog</a>
+</p>
+
+---
 
 ![A Windows desktop with WinDock running on a landscape phone beside the keyboard.](website/assets/windock-desktop.png)
 
 *WinDock at your desk — an AI-generated product illustration.*
+
+## Recognition
+
+WinDock's Linux installer and download-tracking implementation was selected for
+[the XERJ Corpus Hub](https://hub.xerj.org/contributors/aliihsaad), a searchable
+reference library for AI coding agents. Included with the author's permission
+under the MIT license, the listing credits Ali Saad and links to the
+[selected contribution](https://github.com/aliihsaad/WinDock/commit/fc897dcad2266be67d486548306bb69f7f893e60).
 
 ## Get started
 
