@@ -51,6 +51,7 @@ internal sealed record UpdateResult(UpdateStatus Status, string? Version = null,
 internal sealed class UpdateChecker(HttpClient http, string installedVersion)
 {
     internal const string ManifestUrl = "https://windock.vercel.app/downloads.json";
+    internal const string DownloadsPageUrl = "https://windock.vercel.app/#download";
     internal const string ReleasesUrl = "https://github.com/aliihsaad/WinDock/releases";
     internal static string InstalledVersion => (typeof(UpdateChecker).Assembly
         .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
@@ -86,7 +87,7 @@ internal sealed class UpdateChecker(HttpClient http, string installedVersion)
             throw new InvalidDataException("No published Windows update information.");
         var latest = ReleaseVersion.Parse(version.GetString()!);
         // The feed can only announce this repository's tagged Windows installer.
-        var releasePage = ReleasesUrl + "/tag/v" + latest.Text;
+        var releasePage = DownloadsPageUrl;
         if (url.GetString() != ReleasesUrl + "/download/v" + latest.Text + "/WinDockSetup.exe")
             throw new InvalidDataException("Unexpected download location.");
         return latest.CompareTo(ReleaseVersion.Parse(installedVersion)) > 0

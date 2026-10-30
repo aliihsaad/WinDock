@@ -63,7 +63,7 @@ class UpdatesTest {
                 updates=AppUpdates(activity) {
                     when (++calls) {
                         1 -> { finish.await(5,TimeUnit.SECONDS); throw IllegalStateException("Offline") }
-                        2 -> AppUpdateResult("available","0.2.5-preview.1",UpdatePolicy.RELEASES+"/tag/v0.2.5-preview.1")
+                        2 -> AppUpdateResult("available","0.2.5-preview.1",UpdatePolicy.releasePage("0.2.5-preview.1"))
                         else -> AppUpdateResult("current")
                     }
                 }

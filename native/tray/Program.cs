@@ -311,13 +311,13 @@ internal sealed partial class TrayApp : ApplicationContext
             if (!result.ShouldNotify(interactive)) return;
             if (result.Status == UpdateStatus.Available)
             {
-                if (!interactive) ShowBalloon("WinDock update available", $"Version {result.Version} is ready. Click to view the release and download it.", result.ReleasePage);
-                else if (MessageBox.Show($"WinDock {result.Version} is available.\nYou have {UpdateChecker.InstalledVersion}.\n\nOpen the release page? Download the installer, quit WinDock, then run it. Your dock settings are kept.",
+                if (!interactive) ShowBalloon("WinDock update available", $"Version {result.Version} is ready. Click to open the WinDock download page.", result.ReleasePage);
+                else if (MessageBox.Show($"WinDock {result.Version} is available.\nYou have {UpdateChecker.InstalledVersion}.\n\nOpen the WinDock download page? Download the installer, quit WinDock, then run it. Your dock settings are kept.",
                     "WinDock update", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes) OpenRelease(result.ReleasePage);
             }
             else MessageBox.Show(result.Status == UpdateStatus.Current
                 ? $"You’re up to date.\nInstalled version: {UpdateChecker.InstalledVersion}"
-                : "Couldn’t check for updates. Check your internet connection and try again. You can also find releases at github.com/aliihsaad/WinDock/releases.",
+                : "Couldn’t check for updates. Check your internet connection and try again. You can also find downloads at windock.vercel.app/#download.",
                 "WinDock updates", MessageBoxButtons.OK, result.Status == UpdateStatus.Current ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
         }
         finally
