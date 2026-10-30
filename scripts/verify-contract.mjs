@@ -10,6 +10,7 @@ const ids = Object.keys(PROVIDERS);
 t.ok(ids.length >= 2, `expected at least two providers, found ${ids.length}`);
 t.ok(ids.includes("win32"), "win32 provider is registered");
 t.ok(ids.includes("linux"), "linux provider is registered");
+t.ok(ids.includes("darwin"), "darwin provider is registered");
 
 for (const os of ids) {
   const provider = createProvider({ os, exec });

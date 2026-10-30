@@ -48,6 +48,7 @@ under the MIT license, the listing credits Ali Saad and links to the
 | Windows 10 / 11, x64 | [Download the installer](https://github.com/aliihsaad/WinDock/releases/download/v0.2.6-preview.1/WinDockSetup.exe) |
 | Android 7.0+ | [Download the APK](https://github.com/aliihsaad/WinDock/releases/download/v0.2.6-preview.1/WinDock-android-debug.apk) |
 | Linux (Hyprland), x86-64 | [Arch/Omarchy and Debian/Ubuntu installer preview](#linux-preview) |
+| macOS 13 or newer (tested on 27) | [Run from source (preview)](#macos-preview) |
 | iOS | Coming soon — [native companion development & GitHub builds](ios/README.md); no installable public release yet. |
 
 1. **Install on your PC.** Open `WinDockSetup.exe`. It includes the required
@@ -221,6 +222,77 @@ On Linux:
 
 See the [developer reference](docs/DEVELOPMENT.md#linux-host) for how each
 feature works.
+
+## macOS preview
+
+WinDock can also host a dock from a Mac. The same Android app connects to it,
+with the app library and real icons, launching, bringing apps forward and
+quitting them, volume and mute, play/pause and track skipping in Spotify or
+Music, "now playing", brightness of the built-in display, sleep, lock and
+power actions, PNG screenshots and silent MP4 recordings, the touchpad, the
+phone keyboard and signatures. External monitors cannot be dimmed yet.
+
+You need **Node.js 20.11+** (for example `brew install node`) and the Xcode
+Command Line Tools (`xcode-select --install`) for `swiftc`, which builds the
+small input helper. Everything else ships with macOS. In this repository:
+
+```bash
+npm ci
+npm run build:macos
+npm start
+```
+
+Keep the terminal open: it prints the address and pairing PIN for your phone.
+macOS asks for three permissions on behalf of the app that runs WinDock (your
+terminal), each the first time it is needed: **Automation** for System Events
+when the dock lists running apps, **Screen Recording** for the first capture,
+and **Accessibility** for the touchpad and keyboard. The touchpad refuses to
+start until Accessibility is granted and WinDock's output says so.
+**Lock** turns the display off, which locks the Mac when *Require password
+after screen saver begins or display is turned off* is set to immediately in
+System Settings → Lock Screen (the default). Pinch zoom sends ⌘+ and ⌘−, which
+zoom browsers, editors and documents.
+
+Screenshots and signatures go to Pictures/WinDock, recordings to
+Movies/WinDock. A recording is finalized as a QuickTime movie and converted to
+H.264 MP4 within 1920x1080; if the conversion fails the movie is kept.
+Spotify and Music are the media players this phase understands.
+
+### Menu bar app and start at login
+
+Instead of keeping a terminal open, build the menu bar companion once and
+install it in your Applications folder:
+
+```bash
+npm run build:macos-app
+npm run install:macos-app
+open ~/Applications/WinDock.app
+```
+
+WinDock then lives in the menu bar, like the Windows tray: **Show connection
+info** has the address and PIN, **Open saved files** opens the capture and
+signature folders, and **Start at login** registers it as a login item so the
+dock is ready whenever the Mac is. Quitting finalizes a running recording
+first. The app starts `server.js` from this repository with the newest Node 20+
+it finds (your shell's, nvm, Homebrew or the installer), so keep the
+repository where it was when you built the app, or build again after moving
+it. macOS asks the permissions above in WinDock's name instead of the
+terminal's. The bundle is signed ad hoc, not notarized.
+
+### Packaged app
+
+`npm run package:macos` builds a self-contained `WinDock.app` that carries
+the host, the input helper and the Node runtime of the Mac that builds it,
+and wraps it in `artifacts/WinDock-macos-<version>.dmg` with a checksum in
+`SHA256SUMS-macos.txt`. A Mac that installs it needs neither Node nor this
+repository: open the DMG, drag WinDock to Applications, and open it with a
+right-click → Open the first time, because the bundle is not notarized.
+
+To ship a notarized release, sign the bundle with a Developer ID certificate
+before packaging (`codesign --deep --options runtime --sign "Developer ID
+Application: …"`), then `xcrun notarytool submit <dmg> --wait` with an Apple
+Developer account and `xcrun stapler staple <dmg>`. That account is the only
+thing this repository cannot provide.
 
 ## What you can do
 
