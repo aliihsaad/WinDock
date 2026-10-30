@@ -293,6 +293,12 @@ summary::-webkit-details-marker{display:none}
 /* Both schemes preserve iframe transparency when the system and site differ. */
 .community-body .giscus-frame{width:100%;border:0;color-scheme:light dark}
 .community-panel[data-state="unavailable"] .giscus{display:none}
+.recognition{display:flex;align-items:center;justify-content:space-between;gap:32px;margin-top:28px;padding-top:28px;border-top:1px solid var(--line)}
+.recognition>div{max-width:760px;min-width:0}
+.recognition p{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.8}
+.recognition-link{display:flex;flex-direction:column;align-items:start;gap:10px;flex-shrink:0;padding-block:8px;color:var(--mint);font-size:12px}
+.recognition-link>span{text-decoration:underline;text-underline-offset:3px}
+@media(max-width:600px){.recognition{flex-direction:column;align-items:start;gap:14px}.recognition p{font-size:13px}}
 .footer{padding-block:0 32px;border-top:1px solid var(--line)}
 .footer-wordmark{font-size:clamp(100px,16vw,205px);font-weight:750;letter-spacing:-.09em;line-height:1.35;color:#d9dfd2;white-space:nowrap;margin-bottom:24px}
 .footer-wordmark span{font-size:.2em;vertical-align:top;display:inline-block;line-height:3.5;letter-spacing:0;margin-left:.25em;color:#819578}
