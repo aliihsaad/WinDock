@@ -1,5 +1,18 @@
 # GitHub 0.3.0 final preparation review — November 6, 2026
 
+## Publication correction
+
+The fresh publication CI run exposed a missed Windows tray metadata mismatch:
+`InformationalVersion` still said `0.3.0-preview.1`. The review below describes
+the earlier preparation and does not supersede this finding. The tray metadata
+and its update-check fallback were corrected to `0.3.0`; the Windows installer
+was rebuilt from the previously tested package with the corrected tray.
+The rebuilt executable reports stable `0.3.0`, isolated tray startup passes,
+42 native update checks pass, and all 36 source suites pass. Android and Linux
+binaries are unchanged. The Windows checksum and download feed are refreshed.
+
+## Original preparation review
+
 The prepared stable GitHub release is ready for the owner's publication decision.
 No new release-blocking finding was identified in this release-focused review.
 No commit, push, tag, upload, GitHub draft, publication or deployment was performed.

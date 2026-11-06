@@ -1,5 +1,12 @@
 # GitHub 0.3.0 release preparation
 
+Publication update: stable v0.3.0 and its website went live on November 6.
+Post-push CI exposed an overlooked Windows tray preview version label. The
+tray metadata and fallback were corrected to stable `0.3.0`; the Windows
+installer and checksum were refreshed. Its isolated startup, 42 native update
+checks and all 36 source suites passed. Android and Linux package identities
+are unchanged. See GITHUB_RELEASE_0.3.0_REVIEW.md for the correction record.
+
 Owner chose stable **v0.3.0** on 6 November 2026 and subsequently authorized
 publication with “Go ahead” after the final review. This covers the source commit,
 GitHub tag/release and verified assets, followed by the website/demo/download feed.
