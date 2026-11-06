@@ -24,6 +24,13 @@ const directory=await mkdtemp(join(tmpdir(),'windock-files-test-'));
 const receivers=[];let app;
 async function receiver(options={}) { const r=await createTransfers({destination:join(directory,id()),...options});receivers.push(r);return r; }
 async function deliver(r,batch,bytes) { await r.begin(owner,batch);const uploaded=await r.upload(owner,batch.id,batch.files[0].id,Readable.from([bytes]));equal(uploaded.sha256,hash(bytes));return r.complete(owner,batch.id,batch.files[0].id,{bytes:bytes.length,sha256:hash(bytes)}); }
+async function waitForReceiving(r,batch) {
+  const deadline=Date.now()+10000;
+  while(r.status(owner,batch.id).files[0].bytes===0) {
+    assert.ok(Date.now()<deadline,'Upload must receive data before an in-flight interruption');
+    await new Promise(done=>setTimeout(done,10));
+  }
+}
 try {
   // Interactive file managers must be visible; launch failures must reach the caller.
   for(const platform of ['win32','linux']) {
@@ -72,12 +79,12 @@ try {
   equal(r.status(owner,many.id).completed,true);
   const interrupted=metadata('interrupted');await r.begin(owner,interrupted);const stream=new PassThrough();
   const writing=r.upload(owner,interrupted.id,interrupted.files[0].id,stream).catch(e=>e);stream.write(bytes);
-  await new Promise(done=>setTimeout(done,40));stream.destroy(new Error('lost connection'));ok((await writing) instanceof Error);
+  await waitForReceiving(r,interrupted);stream.destroy(new Error('lost connection'));ok((await writing) instanceof Error);
   equal(r.status(owner,interrupted.id).files[0].status,'failed');
   equal((await deliver(r,interrupted,bytes)).completed,true);
   const cancelled=metadata('cancelled');await r.begin(owner,cancelled);const cancelStream=new PassThrough();
   const cancelWrite=r.upload(owner,cancelled.id,cancelled.files[0].id,cancelStream).catch(e=>e);cancelStream.write(bytes);
-  await new Promise(done=>setTimeout(done,40));await r.cancel(owner,cancelled.id);ok((await cancelWrite) instanceof Error);equal(r.status(owner,cancelled.id).files[0].status,'cancelled');
+  await waitForReceiving(r,cancelled);await r.cancel(owner,cancelled.id);ok((await cancelWrite) instanceof Error);equal(r.status(owner,cancelled.id).files[0].status,'cancelled');
   const sizeMismatch=metadata('changed',20);await r.begin(owner,sizeMismatch);
   await rejects(()=>r.upload(owner,sizeMismatch.id,sizeMismatch.files[0].id,Readable.from([bytes])),/changed size/);
   const noSpace=await receiver({diskSpace:async()=>0});await rejects(()=>noSpace.begin(owner,metadata('x',1)),/insufficient storage/);
@@ -87,11 +94,11 @@ try {
   const disabled=await receiver();await disabled.configure({enabled:false});await rejects(()=>disabled.begin(owner,metadata('x')),/disabled/);
   const liveReceiver=await receiver();const liveBatch=metadata('revoked-in-flight');await liveReceiver.begin(owner,liveBatch);
   let authorized=true;const liveStream=new PassThrough();const liveWrite=liveReceiver.upload(owner,liveBatch.id,liveBatch.files[0].id,liveStream,()=>authorized).catch(e=>e);
-  liveStream.write(bytes);await new Promise(done=>setTimeout(done,40));authorized=false;liveStream.end(bytes);
+  liveStream.write(bytes);await waitForReceiving(liveReceiver,liveBatch);authorized=false;liveStream.end(bytes);
   ok((await liveWrite) instanceof Error);ok(!(await readdir(liveReceiver.local().destination)).includes('revoked-in-flight'));
   const offBatch=metadata('disabled-in-flight');await liveReceiver.begin(owner,offBatch);const offStream=new PassThrough();
   const offWrite=liveReceiver.upload(owner,offBatch.id,offBatch.files[0].id,offStream).catch(e=>e);offStream.write(bytes);
-  await new Promise(done=>setTimeout(done,40));await liveReceiver.configure({enabled:false});ok((await offWrite) instanceof Error);
+  await waitForReceiving(liveReceiver,offBatch);await liveReceiver.configure({enabled:false});ok((await offWrite) instanceof Error);
   equal(liveReceiver.status(owner,offBatch.id).files[0].status,'cancelled');
   await rejects(()=>disabled.configure({destination:'../outside'}),/Invalid/);
   await rejects(()=>disabled.configure({enabled:'yes'}),/Invalid/);
