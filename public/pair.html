@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pair a phone · WinDock</title><link rel="stylesheet" href="/pair.css"></head>
+<body><main><h1>Pair your phone</h1><p>Open WinDock on your phone and choose <strong>Scan computer code</strong>.</p>
+<p>Keep both devices on the same Wi-Fi, or connect USB and enable USB tethering.</p>
+<button id="create">Show pairing code</button><p id="status" role="status">Only scan a code displayed on your own computer.</p>
+<details id="network"><summary>Phone finds this PC but cannot connect?</summary><p>Check the connection ports and get firewall instructions for the network shared with your phone.</p><button id="check-network" type="button">Check connection</button><div id="network-result" aria-live="polite"></div></details>
+<dialog id="qr-dialog" aria-labelledby="qr-heading"><header><h2 id="qr-heading">Scan with WinDock on your phone</h2><button id="close-qr" type="button" aria-label="Close QR code">Close</button></header><p id="qr-status" role="status"></p><div id="qr" aria-label="Pairing QR code"></div><button id="refresh-qr" type="button">Show a new code</button></dialog>
+<details id="manual" hidden><summary>Can't use the camera?</summary><p>Copy this pairing text into WinDock's “Enter pairing text” option. It expires in two minutes. Share it only with your own device.</p><textarea id="invitation" readonly aria-label="Pairing text"></textarea></details>
+<p>You only need to pair once. WinDock keeps this computer's identity when it restarts or updates.</p>
+<button id="forget">Forget paired phones</button><p>This signs out all HTTPS clients. Each phone will need to pair again.</p>
+<details><summary>Connection diagnostics</summary><button id="diagnose">Show diagnostics</button><pre id="diagnostics"></pre></details>
+</main><script src="/pair.js"></script></body></html>

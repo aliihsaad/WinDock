@@ -11,6 +11,41 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
 class PcScannerTest {
+    @Test fun secureScanRejectsLegacyCandidatesBeforeAnyProbeWithoutChangingSavedHosts() {
+        val saved = listOf(KnownHost("http://192.168.1.40:8620", "Old PC", false, 1))
+        val checked = mutableListOf<String>()
+        val secure = "https://192.168.1.40:8621"
+        val result = PcScanner.scan(saved, emptyList(), secureOnly = true,
+            discover = { listOf(Discovery.Candidate(saved.single().endpoint, false), Discovery.Candidate(secure, false)) },
+            probe = { endpoint, usb -> checked.add(endpoint); KnownHost(endpoint, "Secure PC", usb, 2) })
+        assertEquals(listOf(secure), checked)
+        assertEquals(secure, result.single().endpoint)
+        assertEquals("http://192.168.1.40:8620", saved.single().endpoint)
+    }
+
+    @Test fun secureDiscoveryPreservesUsbSourceAddressAndRejectsDowngrades() {
+        DatagramSocket(0, InetAddress.getByName("127.0.0.1")).use { server ->
+            server.soTimeout = 3000
+            val worker = Executors.newSingleThreadExecutor()
+            try {
+                val reply = worker.submit {
+                    val request = DatagramPacket(ByteArray(256), 256)
+                    server.receive(request)
+                    assertEquals(Discovery.SECURE_PROBE, String(request.data, 0, request.length))
+                    for (body in listOf("${Discovery.REPLY_PREFIX}http://192.168.1.4:8620",
+                        "${Discovery.SECURE_REPLY_PREFIX}http://192.168.1.4:8621",
+                        "${Discovery.SECURE_REPLY_PREFIX}https://192.168.1.4:9001")) {
+                        val bytes = body.toByteArray()
+                        server.send(DatagramPacket(bytes, bytes.size, request.address, request.port))
+                    }
+                }
+                val found = Discovery.findAll(listOf(LocalNetwork("127.0.0.1", "127.0.0.1", 8, true)), server.localPort, true)
+                reply.get(3, TimeUnit.SECONDS)
+                assertEquals(listOf("https://127.0.0.1:9001"), found.map { it.endpoint })
+                assertTrue(found.single().usb)
+            } finally { worker.shutdownNow() }
+        }
+    }
     @Test fun collectsMultipleRepliesAndDeduplicatesWithoutProbingInsideReceiveLoop() {
         DatagramSocket(0, InetAddress.getByName("127.0.0.1")).use { server ->
             server.soTimeout = 3000
@@ -20,7 +55,9 @@ class PcScannerTest {
                     val request = DatagramPacket(ByteArray(256), 256)
                     server.receive(request)
                     assertEquals(Discovery.PROBE, String(request.data, 0, request.length))
-                    for (body in listOf("unrelated", "${Discovery.REPLY_PREFIX}http://8.8.8.8:9000",
+                    // Malformed advertisements are rejected; valid numeric advertisements
+                    // are routed through the admitted packet source, never their advertised IP.
+                    for (body in listOf("unrelated", "${Discovery.REPLY_PREFIX}http://user@8.8.8.8:9000",
                         "${Discovery.REPLY_PREFIX}http://192.168.1.4:9001",
                         "${Discovery.REPLY_PREFIX}http://192.168.1.4:9001",
                         "${Discovery.REPLY_PREFIX}http://192.168.1.5:9002")) {

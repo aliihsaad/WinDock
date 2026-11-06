@@ -58,6 +58,7 @@ fi
 runuser -u tester -- /usr/lib/windock/node /tests/test-linux-installed.mjs
 settings_hash=$(sha256sum /home/tester/.config/windock/config.json | cut -d ' ' -f1)
 identity_hash=$(sha256sum /home/tester/.config/windock/config.json.host-id | cut -d ' ' -f1)
+secure_hash=$(sha256sum /home/tester/.config/windock/config.json.secure/identity.json | cut -d ' ' -f1)
 # The container runs no systemd. A stand-in for the tester's user manager records
 # what the package scripts ask of it, and reports the background host as running.
 tester_runtime="/run/user/$(id -u tester)"
@@ -108,6 +109,7 @@ if grep -q 'stop windock.service' /tmp/windock-systemctl.log; then
 fi
 runuser -u tester -- /usr/lib/windock/node /tests/test-linux-installed.mjs
 test "$(sha256sum /home/tester/.config/windock/config.json.host-id | cut -d ' ' -f1)" = "$identity_hash"
+test "$(sha256sum /home/tester/.config/windock/config.json.secure/identity.json | cut -d ' ' -f1)" = "$secure_hash"
 if [[ "$kind" = deb ]]; then
     apt-get purge -y "${apt_stand_in[@]}" windock
 else

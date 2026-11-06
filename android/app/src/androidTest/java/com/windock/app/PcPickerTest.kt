@@ -157,7 +157,14 @@ class PcPickerTest {
                     it.findViewById<EditText>(R.id.address).setText(sameLink)
                     it.findViewById<Button>(R.id.connect).performClick()
                 }
-                await("manual recovery") { js(web, "document.title === 'Desk Windows'") == "true" }
+                await("manual recovery") {
+                    // A hidden WebView is still navigating from the failed host;
+                    // its JS callback can be discarded by that navigation. Wait
+                    // for onPageFinished to expose the new page before querying it.
+                    var visible = false
+                    scenario.onActivity { visible = web.visibility == View.VISIBLE }
+                    visible && js(web, "document.title === 'Desk Windows'") == "true"
+                }
                 assertTrue(ServerUrl.canAutoConnect(context, ServerUrl.knownHosts(context).first()))
             }
         }

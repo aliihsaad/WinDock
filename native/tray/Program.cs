@@ -36,6 +36,9 @@ internal sealed partial class TrayApp : ApplicationContext
     private Process? _server;
     private bool _stopping;
     private string _endpoint = "starting…";
+    private string? _secureEndpoint;
+    private string? _securePin;
+    private string? _pairUrl;
     private string _pin = "----";
     private string _lastError = "";
     private string _portNotice = "";
@@ -53,6 +56,10 @@ internal sealed partial class TrayApp : ApplicationContext
     private UpdateResult? _availableUpdate;
     private Uri? _balloonRelease;
     private Form? _connectionWindow;
+    private PairingWindow? _pairingWindow;
+    private TransferWindow? _transferWindow;
+    private long _transferSequence;
+    private bool _checkingTransfers, _balloonFiles;
     private Button? _connectionUpdates;
     private Label? _connectionDetails;
 
@@ -73,6 +80,8 @@ internal sealed partial class TrayApp : ApplicationContext
             ContextMenuStrip = new ContextMenuStrip(),
         };
         _icon.ContextMenuStrip.Items.Add("Show connection info", null, (_, _) => ShowInfo());
+        _icon.ContextMenuStrip.Items.Add("Pair a phone securely", null, (_, _) => OpenPairing());
+        _icon.ContextMenuStrip.Items.Add("Files & Media…", null, (_, _) => OpenTransfers());
         _icon.ContextMenuStrip.Items.Add("Copy URL", null, (_, _) => CopyUrl());
         _icon.ContextMenuStrip.Items.Add("Server port…", null, (_, _) => ConfigureServerPort());
         _icon.ContextMenuStrip.Items.Add("Allow pairing now", null, async (_, _) => await AllowPairing());
@@ -91,9 +100,10 @@ internal sealed partial class TrayApp : ApplicationContext
         _icon.ContextMenuStrip.Items.Add(_downloadUpdate);
         _icon.ContextMenuStrip.Items.Add("Quit WinDock", null, async (_, _) => { if (await StopRecording()) ExitThread(); });
         _icon.DoubleClick += (_, _) => ShowInfo();
-        _icon.BalloonTipClicked += (_, _) => { if (_balloonRelease is { } page) OpenRelease(page); };
+        _icon.BalloonTipClicked += (_, _) => { if (_balloonFiles) OpenTransfers(); else if (_balloonRelease is { } page) OpenRelease(page); };
         _updateTimer.Tick += async (_, _) => { _updateTimer.Stop(); await CheckUpdates(false); };
         _captureTimer.Tick += async (_, _) => await CheckCapture();
+        _captureTimer.Tick += async (_, _) => await CheckTransfers();
         if (!smoke) _captureTimer.Start();
 
         if (smoke)
@@ -134,11 +144,16 @@ internal sealed partial class TrayApp : ApplicationContext
 
     private void StartServer()
     {
+        _transferSequence = 0;
+        _pairingWindow?.Close();
         _server?.Dispose();
         _server = null;
         _lastError = "";
         _portNotice = "";
         _endpoint = "starting…";
+        _secureEndpoint = null;
+        _securePin = null;
+        _pairUrl = null;
         _pin = "----";
         RefreshConnectionInfo();
         var root = AppContext.BaseDirectory;
@@ -183,8 +198,12 @@ internal sealed partial class TrayApp : ApplicationContext
 
     private void Fail(string message)
     {
+        _pairingWindow?.Close();
         if (_smoke) { Environment.ExitCode = 1; Console.Error.WriteLine($"TRAY FAILED: {message}"); ExitThread(); return; }
         _endpoint = "not running";
+        _secureEndpoint = null;
+        _securePin = null;
+        _pairUrl = null;
         _pin = "----";
         _portNotice = "";
         _recording = false;
@@ -207,6 +226,9 @@ internal sealed partial class TrayApp : ApplicationContext
     private void ReadBanner(string? line)
     {
         if (string.IsNullOrWhiteSpace(line)) return;
+        if (line.TrimStart().StartsWith("pair:")) { _pairUrl = line.Split("pair:", 2)[1].Trim(); RefreshConnectionInfo(); return; }
+        if (line.TrimStart().StartsWith("secure:")) { _secureEndpoint = line.Split("secure:", 2)[1].Trim(); RefreshConnectionInfo(); return; }
+        if (line.TrimStart().StartsWith("secure-code:")) { _securePin = line.Split("secure-code:", 2)[1].Trim(); RefreshConnectionInfo(); return; }
         var note = NoteLine().Match(line);
         if (note.Success) _portNotice = note.Groups[1].Value;
         var endpoint = EndpointLine().Match(line);
@@ -250,24 +272,51 @@ internal sealed partial class TrayApp : ApplicationContext
     private void RefreshConnectionInfo()
     {
         if (_connectionDetails is { IsDisposed: false })
-            _connectionDetails.Text = $"Open this address on your phone:\n{_endpoint}\n\nPairing PIN: {_pin}\n\n{(_portNotice.Length > 0 ? _portNotice + "\n\n" : "")}Both devices must be on the same network.";
+            _connectionDetails.Text = $"Browser / preview:\n{_endpoint}\nPairing PIN: {_pin}\n\n" +
+                (_pairUrl is not null ? "Android: choose 'Pair a phone securely' in the tray menu, then scan the code.\n\n" : "") +
+                (_secureEndpoint is null ? "" :
+                    $"Play app (HTTPS):\n{_secureEndpoint}\nSecure pairing PIN: {_securePin}\n\n") +
+                $"{(_portNotice.Length > 0 ? _portNotice + "\n\n" : "")}Both devices must be on the same network. USB tethering is also supported.";
+    }
+
+    private void OpenPairing()
+    {
+        if (_pairingWindow is { IsDisposed: false })
+        {
+            if (_pairingWindow.WindowState == FormWindowState.Minimized) _pairingWindow.WindowState = FormWindowState.Normal;
+            _pairingWindow.Activate(); return;
+        }
+        if (Uri.TryCreate(_pairUrl, UriKind.Absolute, out var uri) && PairingClient.IsLocalPairPage(uri))
+        {
+            var form = new PairingWindow(new PairingClient(uri), () => {
+                // Keep the existing local management tools available on explicit request.
+                try { Process.Start(new ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true }); }
+                catch (Exception) { MessageBox.Show("Couldn't open the local connection tools. Try again in a moment.", "WinDock"); }
+            }) { Icon = _trayImage };
+            form.FormClosed += (_, _) => _pairingWindow = null;
+            _pairingWindow = form; form.Show();
+        }
+        else MessageBox.Show("Secure pairing is starting. Try again in a moment. If it stays unavailable, check WinDock's connection diagnostics.", "WinDock");
     }
 
     private void ShowInfo()
     {
         if (_connectionWindow is { IsDisposed: false }) { RefreshConnectionInfo(); _connectionWindow.Activate(); return; }
         var form = new Form { Text = "WinDock", AutoScaleMode = AutoScaleMode.Dpi,
-            ClientSize = new Size(520, 400), MinimumSize = new Size(520, 420),
+            ClientSize = new Size(520, 480), MinimumSize = new Size(520, 500),
             StartPosition = FormStartPosition.CenterScreen, MaximizeBox = false };
-        var panel = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(24), ColumnCount = 1, RowCount = 4 };
+        var panel = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(24), ColumnCount = 1, RowCount = 5 };
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.Controls.Add(new Label { Text = "WinDock " + UpdateChecker.InstalledVersion, AutoSize = true,
             Font = new Font(SystemFonts.MessageBoxFont!, FontStyle.Bold), Margin = new Padding(0, 0, 0, 16) });
         _connectionDetails = new Label { AutoSize = true, Dock = DockStyle.Fill };
         RefreshConnectionInfo(); panel.Controls.Add(_connectionDetails);
+        var pair = new Button { Text = "Pair a phone securely", AutoSize = true, Padding = new Padding(8), Anchor = AnchorStyles.Left };
+        pair.Click += (_, _) => OpenPairing(); panel.Controls.Add(pair);
         var updates = new Button { Text = "Check for updates…", AutoSize = true, Padding = new Padding(8), Anchor = AnchorStyles.Left };
         updates.Enabled = !_checkingUpdates;
         if (_checkingUpdates) updates.Text = "Checking for updates…";
@@ -286,8 +335,35 @@ internal sealed partial class TrayApp : ApplicationContext
 
     private void ShowBalloon(string title, string text, Uri? release = null)
     {
+        _balloonFiles = false;
         _balloonRelease = release;
         _icon.ShowBalloonTip(8000, title, text, ToolTipIcon.Info);
+    }
+
+    private Uri? TransferEndpoint() => Uri.TryCreate(_endpoint,UriKind.Absolute,out var value) && value.Scheme=="http"
+        ? new Uri($"http://127.0.0.1:{value.Port}/api/transfers/local") : null;
+    private void OpenTransfers()
+    {
+        if(TransferEndpoint() is not { } endpoint)return;
+        if(_transferWindow is { IsDisposed:false }) { _transferWindow.Show(); _transferWindow.Activate(); return; }
+        _transferWindow=new TransferWindow(endpoint); _transferWindow.Show();
+    }
+    private async Task CheckTransfers()
+    {
+        if(_checkingTransfers||_stopping||TransferEndpoint() is not { } endpoint)return;
+        _checkingTransfers=true;
+        try {
+            using var request=new HttpRequestMessage(HttpMethod.Get,endpoint); request.Headers.Add("x-windock-files","local");
+            using var response=await _captureHttp.SendAsync(request); if(!response.IsSuccessStatusCode)return;
+            using var document=JsonDocument.Parse(await response.Content.ReadAsStringAsync()); if(_stopping)return;
+            foreach(var item in document.RootElement.GetProperty("events").EnumerateArray()) {
+                var sequence=item.GetProperty("sequence").GetInt64(); if(sequence<=_transferSequence)continue; _transferSequence=sequence;
+                var phase=item.GetProperty("phase").GetString();
+                if(phase is not ("incoming" or "completed" or "failed"))continue;
+                ShowBalloon(phase=="incoming"?"Receiving files":phase=="completed"?"Files received":"Transfer interrupted",$"{item.GetProperty("count").GetInt32()} selected file(s). Click for Files & Media."); _balloonFiles=true;
+            }
+        } catch(Exception ex) when(ex is HttpRequestException or TaskCanceledException or JsonException) { }
+        finally { _checkingTransfers=false; }
     }
 
     private async Task CheckUpdates(bool interactive)
@@ -395,6 +471,8 @@ internal sealed partial class TrayApp : ApplicationContext
         {
             _stopping = true;
             _connectionWindow?.Close();
+            _pairingWindow?.Close();
+            _transferWindow?.Close();
             _updateTimer.Dispose();
             _shutdown.Cancel();
             _updateHttp.Dispose();

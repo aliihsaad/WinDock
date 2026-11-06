@@ -1,7 +1,7 @@
 {
   "name": "windock",
-  "version": "0.2.6",
-  "releaseVersion": "0.2.6-preview.1",
+  "version": "0.3.0",
+  "releaseVersion": "0.3.0",
   "private": true,
   "license": "MIT",
   "type": "module",
@@ -26,6 +26,9 @@
     "node": ">=20"
   },
   "dependencies": {
+    "@peculiar/x509": "2.2.0",
+    "qrcode-generator": "2.0.4",
+    "reflect-metadata": "0.2.2",
     "ws": "^8.21.1"
   }
 }

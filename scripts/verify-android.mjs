@@ -97,7 +97,7 @@ t.ok(netcfg.includes('cleartextTrafficPermitted="true"'), "cleartext is permitte
 t.ok(!netcfg.includes("<domain"), "network policy does not mistake IP literals for subnets");
 t.ok(main.includes("EndpointPolicy.allowsRequest"), "WebView requests are scoped to the selected origin");
 
-// ---- pairing credentials stay in the WebView; the remote IME may mask PC typing ----
+// ---- legacy keyboard bridge remains separate from secure native pairing ----
 /** Strip comments: the invariant is about code, and documenting the boundary
  *  in prose must not fail the check that enforces it. */
 function stripComments(source) {
@@ -106,12 +106,15 @@ function stripComments(source) {
 const kotlinCode = stripComments(
   [disco, main, probe, read("app/src/main/java/com/windock/app/ServerUrl.kt")].join("\n"),
 );
-for (const word of ["pin", "cookie", "token"]) {
+for (const word of ["cookie", "token"]) {
   t.ok(
     !new RegExp(`\\b${word}\\b`, "i").test(kotlinCode),
-    `the native layer never handles ${word} in code (pairing stays in the WebView)`,
+    `the connection/keyboard shell does not expose ${word} credentials`,
   );
 }
+const secureTransport = read("app/src/main/java/com/windock/app/SecureTransport.kt");
+t.ok(secureTransport.includes("TrustManagerFactory.getInstance") && !secureTransport.includes(".hostnameVerifier("),
+  "managed transport uses certificate-chain validation and the standard hostname verifier");
 t.ok(!/CookieManager|\/api\/pair/.test(kotlinCode), "native keyboard does not bypass WebView pairing");
 // Positive control: the stripper must not simply blank the source, or the
 // assertions above would pass for any file at all.

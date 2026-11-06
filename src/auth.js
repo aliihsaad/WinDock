@@ -27,6 +27,7 @@ export const GLOBAL_WINDOW_MS = 10 * 60_000;
 export const GLOBAL_LOCK_MS = 10 * 60_000;
 export const SESSION_TTL_MS = 180 * 24 * 60 * 60 * 1000; // 180 days
 export const COOKIE_NAME = "windock_session";
+export const SECURE_COOKIE_NAME = "__Host-windock_session";
 
 /** Cryptographically uniform PIN; avoids the modulo bias of randomBytes % 10. */
 export function newPin(length = PIN_LENGTH) {
@@ -226,12 +227,12 @@ export function parseCookies(header) {
 }
 
 export function tokenFromRequest(req) {
-  return parseCookies(req?.headers?.cookie)[COOKIE_NAME] || "";
+  return parseCookies(req?.headers?.cookie)[req?.socket?.encrypted ? SECURE_COOKIE_NAME : COOKIE_NAME] || "";
 }
 
 export function sessionCookie(token, { secure = false, maxAgeMs = SESSION_TTL_MS } = {}) {
   const parts = [
-    `${COOKIE_NAME}=${encodeURIComponent(token)}`,
+    `${secure ? SECURE_COOKIE_NAME : COOKIE_NAME}=${encodeURIComponent(token)}`,
     "Path=/",
     "HttpOnly",
     "SameSite=Lax",

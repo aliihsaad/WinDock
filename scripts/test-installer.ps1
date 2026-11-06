@@ -33,8 +33,16 @@ try {
     $env:PORT = '18625'
     $env:WINDOCK_CONFIG = Join-Path $installRoot 'smoke-config.json'
     $tray = Start-Process -FilePath (Join-Path $installRoot 'WinDockTray.exe') -ArgumentList '--smoke-test' -WorkingDirectory $installRoot -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $artifactsRoot 'installer-smoke-tray.stdout.log') -RedirectStandardError (Join-Path $artifactsRoot 'installer-smoke-tray.stderr.log')
+    # Windows PowerShell 5.1 can lose ExitCode for redirected Start-Process
+    # unless the process handle is retained before waiting for termination.
+    $null = $tray.Handle
     if (-not $tray.WaitForExit(35000)) { throw 'Installed tray smoke test timed out.' }
-    if ($tray.ExitCode -ne 0) { throw 'Installed tray smoke test failed; see artifacts/installer-smoke-tray.stderr.log.' }
+    $tray.WaitForExit() # Finish draining redirected output after termination.
+    $trayExitCode = $tray.ExitCode
+    $tray.Dispose()
+    $exitLabel = if ($null -eq $trayExitCode) { 'unavailable' } else { "$trayExitCode" }
+    Write-Output "Installed tray exit code: $exitLabel"
+    if ($null -eq $trayExitCode -or $trayExitCode -ne 0) { throw "Installed tray smoke test failed (exit code $exitLabel); see artifacts/installer-smoke-tray.stderr.log." }
     if ((Get-Content -LiteralPath (Join-Path $artifactsRoot 'installer-smoke-tray.stdout.log') -Raw) -notmatch 'TRAY OK') { throw 'Installed host readiness was not verified.' }
     Write-Output 'PASS installed app launches its bundled server, receives URL/PIN, and exits.'
     [IO.File]::WriteAllText((Join-Path $installRoot 'preserve-test.txt'), 'upgrade sentinel')

@@ -11,7 +11,7 @@ export function dataDirs(env = process.env, home = homedir()) {
   return [...new Set([user, ...system])].filter((dir) => dir.startsWith("/"));
 }
 
-const USER_DIR_DEFAULTS = Object.freeze({ PICTURES: "Pictures", VIDEOS: "Videos" });
+const USER_DIR_DEFAULTS = Object.freeze({ PICTURES: "Pictures", VIDEOS: "Videos", DOWNLOAD: "Downloads" });
 
 /**
  * A localized user directory such as Pictures, read from user-dirs.dirs the

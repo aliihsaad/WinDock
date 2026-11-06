@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Synthetic fixtures exist only in the instrumentation APK, never the distributed app. -->
+    <application>
+        <provider android:name="com.windock.app.FilesFixtureProvider" android:authorities="com.windock.app.test.files" android:exported="false" android:grantUriPermissions="true" />
+        <activity android:name="com.windock.app.FilesShareFixtureActivity" android:exported="true" />
+    </application>
+</manifest>

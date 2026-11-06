@@ -90,6 +90,7 @@ function fakeSystem({ load = "loaded", active = "inactive", manager = true, star
   const system = { load, active, calls: [], pid: null, journal: "" };
   system.run = async (file, args) => {
     system.calls.push([file, ...args].join(" "));
+    if (file === "xdg-open") return { code: 0, stdout: "", stderr: "" };
     if (file === "journalctl") return { code: 0, stdout: system.journal, stderr: "" };
     if (!manager) return { code: 1, stdout: "", stderr: "Failed to connect to bus" };
     const [, verb] = args;
@@ -154,12 +155,25 @@ result = await command(["status"], { system: fresh });
 t.equal(result.code, 0, "status succeeds while the host runs");
 t.ok(result.stdout.includes("Address:  http://192.168.1.20:8620") && result.stdout.includes("PIN:      105001"), "status prints the address and PIN");
 t.equal(fresh.calls.length, before, "status only reads the published details");
+result = await command(["files"], { system: fresh });
+t.equal(result.code, 0, "Files & Media opens for a running Linux host");
+t.equal(fresh.calls.at(-1), "xdg-open http://127.0.0.1:8620/files", "receive controls always open on loopback, never the published network address");
+result = await command(["network"], { system: fresh });
+t.equal(result.code, 0, "connection checks open without changing firewall rules");
+t.equal(fresh.calls.at(-1), "xdg-open http://127.0.0.1:8620/pair#network", "network setup always opens on the computer itself");
+const savedStatus=await readFile(paths.status,"utf8");
+await writeFile(paths.status,JSON.stringify({...JSON.parse(savedStatus),endpoint:"not a URL"}));
+result=await command(["files"],{system:fresh});
+t.ok(result.code===1 && result.stderr.includes("saved address is invalid"),"malformed status fails with an actionable message");
+await writeFile(paths.status,savedStatus);
 
 result = await command(["stop"], { system: fresh });
 t.equal(fresh.calls.at(-1), `systemctl --user stop ${UNIT}`, "stop stops the user service");
 t.ok(result.code === 0 && result.stdout.includes("WinDock stopped."), "stop confirms");
 result = await command(["status"], { system: fresh });
 t.equal(result.code, 3, "status reports a stopped host with the conventional exit code");
+result=await command(["files"],{system:fresh});
+t.ok(result.code===3 && result.stderr.includes("Start WinDock"),"files explains when the host is stopped");
 result = await command(["stop"], { system: fresh });
 t.ok(result.code === 0 && result.stdout.includes("not running in the background"), "stopping a stopped host is harmless");
 

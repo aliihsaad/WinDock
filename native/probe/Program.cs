@@ -9,9 +9,11 @@ internal sealed class ProbeWindow : Form
 internal static class Program
 {
     [STAThread]
-    private static void Main(string[] args)
+    private static int Main(string[] args)
     {
-        if (args.Length < 1) return;
+        if (args.Length > 0 && args[0] == "--focus-debug-control")
+            return FocusDebugControl.Run(args);
+        if (args.Length < 1) return 0;
         ApplicationConfiguration.Initialize();
         using var form = new ProbeWindow
         {
@@ -28,10 +30,12 @@ internal static class Program
             handle = form.Handle.ToInt64(),
         }));
         form.FormClosed += (_, _) => File.WriteAllText(args[0] + ".closed", "closed");
+        form.Activated += (_, _) => File.WriteAllText(args[0] + ".activated", "activated");
         // Bound the fixture's lifetime even if the verification runner crashes.
         using var timeout = new System.Windows.Forms.Timer { Interval = 30000 };
         timeout.Tick += (_, _) => form.Close();
         timeout.Start();
         Application.Run(form);
+        return 0;
     }
 }

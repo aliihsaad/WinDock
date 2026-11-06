@@ -6,6 +6,7 @@ $installerSource = Join-Path $projectRoot 'artifacts\installer\WinDockSetup.exe'
 $apkSource = Join-Path $projectRoot 'artifacts\WinDock-android-debug.apk'
 if (-not (Test-Path -LiteralPath $installerSource -PathType Leaf)) { throw 'Build the Windows installer first: npm run build:installer' }
 if (-not (Test-Path -LiteralPath $apkSource -PathType Leaf)) { throw 'Build the Android APK first: npm run build:android' }
+& (Join-Path $PSScriptRoot 'verify-github-apk.ps1') -Apk $apkSource | Out-Host
 if ($DownloadBase -ne './downloads' -and $DownloadBase -notmatch '^https://[^\s]+$') { throw 'DownloadBase must be ./downloads or an HTTPS release-asset base URL.' }
 $DownloadBase = $DownloadBase.TrimEnd('/')
 New-Item -ItemType Directory -Path $downloadRoot -Force | Out-Null

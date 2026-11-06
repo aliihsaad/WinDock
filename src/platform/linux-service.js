@@ -31,10 +31,11 @@ try {
     pid: process.pid,
     endpoint: host.endpoint,
     pin: host.state.pin,
+    pairUrl: host.pairUrl,
     session: sessionOf(process.env),
     startedAt: new Date().toISOString(),
   });
-  process.stdout.write(`WinDock host ready in the background\n  provider: ${host.provider.displayName}\n  open:     ${host.endpoint}\n`);
+  process.stdout.write(`WinDock host ready in the background\n  provider: ${host.provider.displayName}\n  open:     ${host.endpoint}\n` + (host.pairUrl ? `  Pair a phone on this computer: ${host.pairUrl}\n` : ""));
   notifyReady(host);
 } catch (error) {
   process.stderr.write(`WinDock failed to start: ${error.message}\n`);

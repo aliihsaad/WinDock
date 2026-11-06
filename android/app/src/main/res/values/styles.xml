@@ -1,11 +1,23 @@
 <resources>
     <style name="AppTheme" parent="android:style/Theme.Material.NoActionBar">
-        <item name="android:fontFamily">sans</item>
+        <!-- Resolve through the resource table: API 24 can misread an inline theme
+             string's pool when inflating a Button with an explicit widget style. -->
+        <item name="android:fontFamily">@string/native_font_family</item>
         <item name="android:colorAccent">#88E9C4</item>
         <item name="android:windowBackground">@color/dock_background</item>
         <item name="android:windowLightStatusBar">false</item>
         <!-- Insets hide the system bars; legacy fullscreen prevents IME resizing. -->
         <item name="android:windowFullscreen">false</item>
         <item name="android:windowActionModeOverlay">true</item>
+    </style>
+    <style name="ConnectionButton" parent="android:style/Widget.Material.Button">
+        <item name="android:backgroundTint">#1D3139</item>
+        <item name="android:textColor">#E6F4F1</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:minHeight">48dp</item>
+    </style>
+    <style name="ConnectionButton.Primary">
+        <item name="android:backgroundTint">#88E9C4</item>
+        <item name="android:textColor">#10251F</item>
     </style>
 </resources>

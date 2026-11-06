@@ -9,12 +9,13 @@
  *    worse, replay a control action from cache. Neither is acceptable.
  */
 
-const VERSION = "windock-v19-appearance-persistence";
+const VERSION = "windock-v28-connection-navigation";
 const SHELL = [
   "/",
   "/index.html",
   "/style.css",
   "/app.js",
+  "/native-transport.js",
   "/pairing.js",
   "/updates.js",
   "/performance.js",
@@ -23,6 +24,8 @@ const SHELL = [
   "/dock.js",
   "/tiles.js",
   "/icons.js",
+  "/folder.svg",
+  "/link.svg",
   "/launcher.js",
   "/input-pad.js",
   "/touchpad-gestures.js",

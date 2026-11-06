@@ -68,7 +68,7 @@ class KnownHostsTest {
     @Test fun ignoresWhatItCannotTrust() {
         val text = listOf(
             "http://192.168.1.40:8620|Windows|wifi|100",
-            "http://8.8.8.8:8620|Evil|wifi|100",
+            "http://user@8.8.8.8:8620|Evil|wifi|100",
             "http://192.168.1.41:8620|Broken|cable|100",
             "http://192.168.1.42:8620|Negative|usb|-1",
             "not|enough",

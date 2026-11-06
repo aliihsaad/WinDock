@@ -11,6 +11,7 @@ const apps = [
 let tiles = apps.map(app => ({ ...app, kind: 'app', label: app.name }));
 const pcs = createPreviewPcs();
 const pcTiles = new Map();
+const previewLinks = new Map();
 export const getPreviewPcs = () => pcs.list();
 export const forgetPreviewPc = id => pcs.forget(id);
 export function selectPreviewPc(id) {
@@ -71,7 +72,16 @@ export async function fetch(path, options = {}) {
   if (path === '/api/clipboard/history') return response({ status: 'ready', items: clipboardItems.map(text => ({ text })), skipped: 0 });
   if (['/api/signature', '/api/signature/insert'].includes(path) && options.method === 'POST') return response({ demo: true, path: 'Demo only · No file created or pasted' });
   if (path === '/api/updates' || path === '/api/updates/check') return response({ status: path.endsWith('/check') ? 'current' : 'unchecked', installedVersion: 'Website demo' });
-  if (path === '/api/state') return response({ tiles, running: [], verbs, hostName: pcs.current().name, platform: pcs.current().platformId, platformName: pcs.current().platform, allowDestructive: false });
+  if (path === '/api/state') return response({ tiles, running: [], verbs, hostName: pcs.current().name, platform: pcs.current().platformId, platformName: pcs.current().platform, allowDestructive: false, canPickFolders: pcs.current().platformId === 'windows', canAddLinks: true });
+  if (path === '/api/folders/pick' && options.method === 'POST') return response({ app: { id: 'folder:' + 'a'.repeat(64), name: 'Sample documents', target: 'demo:folder', args: '', icon: '' } });
+  if (path === '/api/links' && options.method === 'POST') {
+    const body = JSON.parse(options.body);
+    let url;
+    try { url = new URL(body.url); } catch { return response({ error: 'Enter a full http:// or https:// address.' }, 400); }
+    if (!['http:', 'https:'].includes(url.protocol)) return response({ error: 'Use an http:// or https:// address.' }, 400);
+    if (!previewLinks.has(url.href)) previewLinks.set(url.href, (previewLinks.size + 1).toString(16).padStart(64, '0'));
+    return response({ app: { id: 'link:' + previewLinks.get(url.href), name: body.name || url.hostname, target: 'demo:link', args: '', icon: '' } });
+  }
   if (path === '/api/apps/installed') return response({ apps: apps.filter(app => pcs.current().id !== 'omarchy' || !['edge', 'notepad'].includes(app.id)) });
   if (path === '/api/nowplaying') return response({ nowPlaying: null });
   if (path === '/api/capture' && (!options.method || options.method === 'GET')) return response(captureStatus());

@@ -1,3 +1,4 @@
+param([switch]$FocusDebugControl)
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $dotnetPath = Join-Path $projectRoot '.tools\dotnet\dotnet.exe'
@@ -9,7 +10,9 @@ Push-Location $projectRoot
 try {
     & $dotnetPath publish native\probe\WinDockProbe.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o artifacts\probe --nologo
     if ($LASTEXITCODE -ne 0) { throw 'Native probe build failed' }
-    & node scripts\smoke-windows.mjs
+    $smokeArgs = @('scripts\smoke-windows.mjs')
+    if ($FocusDebugControl) { $smokeArgs += '--focus-debug-control' }
+    & node @smokeArgs
     if ($LASTEXITCODE -ne 0) { throw 'Windows smoke checks failed' }
 }
 finally { Pop-Location }

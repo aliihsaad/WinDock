@@ -41,7 +41,9 @@ export function glyphFor(tile) {
 }
 
 export function renderAppIcon(app, lazy = false) {
+  if (/^link:[a-f0-9]{64}$/.test(app.id)) return '<span class="app-icon"><img src="/link.svg" alt="" width="48" height="48" decoding="async"></span>';
   const initial = glyphFor({ ...app, label: app.name || app.label });
+  if (/^folder:[a-f0-9]{64}$/.test(app.id)) return '<span class="app-icon"><img src="/folder.svg" alt="" width="48" height="48" decoding="async"></span>';
   return `<span class="app-icon"><span class="app-icon__fallback">${escapeHtml(initial)}</span><img src="/api/apps/icon?v=3&amp;id=${escapeHtml(encodeURIComponent(app.id))}" alt="" width="48" height="48" decoding="async"${lazy ? ' loading="lazy"' : ""}></span>`;
 }
 
@@ -70,7 +72,7 @@ export function renderTile(tile, { editing = false, first = false, last = false,
   const body = [
     `<span class="tile__glyph" aria-hidden="true">${tile.kind === "app" ? renderAppIcon(tile) : controlIcon(tile.verb)}</span>`,
     `<span class="tile__label">${escapeHtml(tile.label)}</span>`,
-    !editing ? `<span class="tile__hint">${tile.kind === "app" ? running ? "Running" : "Open app" : "Quick action"}</span>` : "",
+    !editing ? `<span class="tile__hint">${tile.kind === "app" ? running ? "Running" : String(tile.id).startsWith("link:") ? "Open website" : String(tile.id).startsWith("folder:") ? "Open folder" : "Open app" : "Quick action"}</span>` : "",
     running && !editing ? '<span class="tile__dot" aria-hidden="true"></span>' : "",
   ].join("");
 
@@ -144,16 +146,16 @@ export function renderNowPlaying(np) {
   ].join("");
 }
 
-export function renderControls(verbs, allowDestructive = true) {
+export function renderControls(verbs, allowDestructive = true, powerOnly = false) {
   const groups = [
     { title: "Sound", hint: "A little louder. A little quieter.", symbol: "volume", items: [["volume-down", "Quieter"], ["mute-toggle", "Mute"], ["volume-up", "Louder"]] },
     { title: "Playback", hint: "Keep the good stuff playing.", symbol: "music", items: [["media-previous", "Previous"], ["media-play-pause", "Play / pause"], ["media-next", "Next"]] },
-    { title: "Display", hint: "Set your built-in screen brightness.", symbol: "sun", items: [["brightness-set", "25%", 25], ["brightness-set", "50%", 50], ["brightness-set", "100%", 100]] },
+    { title: "Display", hint: "Brightness on supported displays.", symbol: "sun", items: [["brightness-set", "25%", 25], ["brightness-set", "50%", 50], ["brightness-set", "100%", 100]] },
     { title: "Your PC", hint: "Power actions ask before continuing.", symbol: "monitor", items: [["lock", "Lock"], ["sleep", "Sleep"], ["restart", "Restart"], ["shutdown", "Shut down"]] },
   ];
-  return groups.map((group) => {
+  return groups.filter(group => (group.symbol === "monitor") === powerOnly).map((group) => {
     const items = group.items.filter(([verb]) => verbs.includes(verb) && (allowDestructive || !["sleep", "restart", "shutdown"].includes(verb)));
     if (!items.length) return "";
-    return `<section class="control-card"><div class="control-card__heading"><span class="control-card__symbol">${icon(group.symbol)}</span><div><h3>${group.title}</h3><p>${group.hint}</p></div></div><div class="control-card__actions">${items.map(([verb, label, value]) => `<button type="button" data-action="control" data-key="${verb}"${value === undefined ? "" : ` data-value="${value}"`}>${controlIcon(verb)}<span>${label}</span></button>`).join("")}</div></section>`;
+    return `<section class="control-card" data-control-group="${group.symbol}"><div class="control-card__heading"><span class="control-card__symbol">${icon(group.symbol)}</span><div><h3>${group.title}</h3><p>${group.hint}</p></div></div><div class="control-card__actions">${items.map(([verb, label, value]) => `<button type="button" data-action="control" data-key="${verb}"${value === undefined ? "" : ` data-value="${value}"`}>${controlIcon(verb)}<span>${label}</span></button>`).join("")}</div></section>`;
   }).join("");
 }

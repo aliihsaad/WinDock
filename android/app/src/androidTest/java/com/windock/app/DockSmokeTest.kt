@@ -101,14 +101,29 @@ class DockSmokeTest {
             }
             awaitJs(web, "!document.getElementById('app').hidden && document.querySelectorAll('.tile').length === 5")
             awaitJs(web, "document.getElementById('conn').textContent === 'Connected'")
+            // Appearance is deliberately persistent across runs. Establish the layout
+            // this gesture test requires through the real settings handlers.
+            js(web, """
+                document.querySelector('[data-per-page="4"]').click();
+                const labels = document.getElementById('show-labels');
+                labels.checked = false; labels.dispatchEvent(new Event('change'));
+            """.trimIndent())
+            awaitJs(web, "document.querySelectorAll('.dock-page').length === 2")
             // A fresh Android image explains immersive mode with a system overlay.
             UiDevice.getInstance(instrumentation).wait(Until.findObject(By.text("Got it")), 3000)?.click()
-            // The real shared dock can open and cancel the native picker without losing pairing.
-            assertEquals("true", js(web, "!document.getElementById('drawer-switch-pc').hidden"))
-            js(web, "document.getElementById('drawer-open').click(); document.getElementById('drawer-switch-pc').click()")
+            // Connection is explicit; PC selection remains available without losing the legacy PIN cookie.
+            assertEquals("true", js(web, "!document.getElementById('connection-open').hidden && document.getElementById('drawer-switch-pc').hidden"))
+            js(web, "document.getElementById('connection-open').click()")
             val device = UiDevice.getInstance(instrumentation)
+            device.wait(Until.findObject(By.text("Saved & nearby PCs")), 5000).click()
             assertTrue(device.wait(Until.hasObject(By.text("Switch PC")), 5000))
             device.pressBack()
+            js(web, "window.navigationTestMarker='old'")
+            device.wait(Until.findObject(By.text("Return to saved PC")), 5000).click()
+            // A reload can discard JavaScript callbacks issued against the old page.
+            // Wait for onPageFinished to expose the new page before querying its state.
+            awaitUi(scenario) { it.findViewById<WebView>(R.id.web).visibility == View.VISIBLE }
+            awaitJs(web, "window.navigationTestMarker === undefined && document.getElementById('conn')?.textContent === 'Connected'")
             awaitJs(web, "!document.getElementById('app').hidden && !document.getElementById('drawer').open")
             assertEquals("true", js(web, "innerWidth > innerHeight && document.body.classList.contains('is-immersive')"))
             assertEquals("2", js(web, "document.querySelectorAll('.dock-page').length"))

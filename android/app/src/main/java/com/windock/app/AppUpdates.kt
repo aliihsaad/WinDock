@@ -27,6 +27,13 @@ internal class AppUpdates(private val activity: Activity, private val load: (() 
     private var render: (() -> Unit)? = null
 
     fun dialog(): AlertDialog {
+        // Play installs are updated by Play. Retain the existing manual updater for previews.
+        if (BuildConfig.PLAY_DISTRIBUTION) return AlertDialog.Builder(activity)
+            .setTitle(R.string.app_updates)
+            .setMessage(activity.getString(R.string.installed_android_version, BuildConfig.VERSION_NAME) +
+                "\n\n" + activity.getString(R.string.play_update_install))
+            .setPositiveButton(R.string.open_google_play) { _, _ -> openPage(UpdatePolicy.PLAY_PAGE) }
+            .setNegativeButton(R.string.close, null).create()
         val dp = activity.resources.displayMetrics.density
         val content = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL

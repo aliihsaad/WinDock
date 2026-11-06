@@ -1,7 +1,7 @@
-param([string]$Dotnet = '')
+param([string]$Dotnet = '', [string]$OutputDirectory = 'artifacts\WinDock-win-x64', [switch]$SkipCheckoutHelper)
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$outputPath = Join-Path $projectRoot 'artifacts\WinDock-win-x64'
+$outputPath = Join-Path $projectRoot $OutputDirectory
 if (-not $Dotnet) {
     $localSdk = Join-Path $projectRoot '.tools\dotnet\dotnet.exe'
     $Dotnet = if (Test-Path -LiteralPath $localSdk) { $localSdk } else { (Get-Command dotnet -ErrorAction Stop).Source }
@@ -18,6 +18,12 @@ try {
         if ($LASTEXITCODE -ne 0) { throw "Publish failed: $project" }
     }
     Copy-Item -LiteralPath 'server.js','package.json','package-lock.json' -Destination $outputPath -Force
+    # Ship the HTTPS setup helper and instructions, never generated certificates/keys.
+    foreach ($file in @('scripts\create-local-tls.ps1','docs\PLAY_RELEASE.md','docs\SECURE_CONNECTIONS.md')) {
+        $destination = Join-Path $outputPath $file
+        New-Item -ItemType Directory -Path (Split-Path -Parent $destination) -Force | Out-Null
+        Copy-Item -LiteralPath $file -Destination $destination -Force
+    }
     # Copy directory contents explicitly so repeated builds do not nest folders.
     foreach ($directory in @('src','public')) {
         $destination = Join-Path $outputPath $directory
@@ -28,7 +34,7 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Packaged dependency installation failed' }
     Copy-Item -LiteralPath (Get-Command node.exe -ErrorAction Stop).Source -Destination (Join-Path $outputPath 'node.exe') -Force
     # Also enable npm start in the development checkout.
-    Copy-Item -LiteralPath (Join-Path $outputPath 'WinDockHelper.exe') -Destination $projectRoot -Force
+    if (-not $SkipCheckoutHelper) { Copy-Item -LiteralPath (Join-Path $outputPath 'WinDockHelper.exe') -Destination $projectRoot -Force }
     Write-Output "WINDOWS BUILD OK: $outputPath\WinDockTray.exe"
 }
 finally { Pop-Location }

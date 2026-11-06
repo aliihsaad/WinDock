@@ -41,11 +41,12 @@ export function originAllowed(req) {
  * @param {(req:import('node:http').IncomingMessage)=>boolean} opts.isAuthorized
  * @param {()=>Promise<object>} opts.getState
  */
-export function createSyncHub({ server, isAuthorized, getState, heartbeatMs = HEARTBEAT_MS }) {
+export function createSyncHub({ server, servers = [server], isAuthorized, getState, heartbeatMs = HEARTBEAT_MS }) {
   const wss = new WebSocketServer({ noServer: true });
   const alive = new WeakMap();
+  const requests = new WeakMap();
 
-  server.on("upgrade", (req, socket, head) => {
+  for (const listener of servers) listener.on("upgrade", (req, socket, head) => {
     if (req.url?.split("?")[0] === "/input") return; // Separate bounded input channel.
     if (!originAllowed(req) || !isAuthorized(req)) {
       socket.write("HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n");
@@ -55,7 +56,8 @@ export function createSyncHub({ server, isAuthorized, getState, heartbeatMs = HE
     wss.handleUpgrade(req, socket, head, (ws) => wss.emit("connection", ws, req));
   });
 
-  wss.on("connection", async (ws) => {
+  wss.on("connection", async (ws, req) => {
+    requests.set(ws, req);
     alive.set(ws, true);
     ws.on("pong", () => alive.set(ws, true));
     ws.on("error", () => {});
@@ -68,7 +70,7 @@ export function createSyncHub({ server, isAuthorized, getState, heartbeatMs = HE
 
   const timer = setInterval(() => {
     for (const ws of wss.clients) {
-      if (alive.get(ws) === false) {
+      if (alive.get(ws) === false || !isAuthorized(requests.get(ws))) {
         ws.terminate();
         continue;
       }
@@ -84,6 +86,7 @@ export function createSyncHub({ server, isAuthorized, getState, heartbeatMs = HE
 
   return {
     wss,
+    revalidate() { for (const ws of wss.clients) if (!isAuthorized(requests.get(ws))) ws.terminate(); },
     get clientCount() {
       return wss.clients.size;
     },
@@ -93,6 +96,7 @@ export function createSyncHub({ server, isAuthorized, getState, heartbeatMs = HE
       let sent = 0;
       for (const ws of wss.clients) {
         if (ws.readyState !== ws.OPEN) continue;
+        if (!isAuthorized(requests.get(ws))) { ws.terminate(); continue; }
         try {
           ws.send(payload);
           sent += 1;

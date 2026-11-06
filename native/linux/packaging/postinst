@@ -13,4 +13,5 @@ fi
 # A background host running the old version restarts with this one.
 if [ "$1" = configure ]; then
     /usr/lib/windock/user-service restart
+    echo 'Open WinDock, then run windock network for connection and firewall checks. No firewall rules were changed.'
 fi

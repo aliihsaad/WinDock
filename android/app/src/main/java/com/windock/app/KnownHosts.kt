@@ -9,7 +9,7 @@ package com.windock.app
  * text, and the PIN and session cookie stay in the WebView as before.
  */
 data class KnownHost(val endpoint: String, val label: String, val usb: Boolean, val lastSeen: Long,
-                     val platform: String = "", val hostId: String = "") {
+                     val platform: String = "", val hostId: String = "", val requiresPairing: Boolean = false) {
     val name: String get() = label.ifBlank { platform.ifBlank { endpoint.removePrefix("http://") } }
     val identity: String get() = hostId.ifBlank { endpoint }
     val title: String get() = if (label.isBlank()) endpoint.removePrefix("http://") else "$label · ${endpoint.removePrefix("http://")}"
@@ -20,14 +20,14 @@ object KnownHosts {
     private const val MAX_LABEL = 40
 
     /** Put [host] first, replacing an older entry for the same endpoint, and keep at most [LIMIT]. */
-    fun remember(hosts: List<KnownHost>, host: KnownHost): List<KnownHost> {
-        val endpoint = EndpointPolicy.normalize(host.endpoint) ?: return hosts
+    fun remember(hosts: List<KnownHost>, host: KnownHost, networks: List<LocalNetwork>? = null): List<KnownHost> {
+        val endpoint = EndpointPolicy.normalize(host.endpoint, networks) ?: return hosts
         val clean = host.copy(endpoint = endpoint, label = cleanLabel(host.label), platform = cleanLabel(host.platform), hostId = cleanId(host.hostId))
         return (listOf(clean) + hosts.filter { it.endpoint != endpoint && it.identity != clean.identity }).take(LIMIT)
     }
 
     fun forget(hosts: List<KnownHost>, endpoint: String): List<KnownHost> {
-        val target = EndpointPolicy.normalize(endpoint) ?: return hosts
+        val target = EndpointPolicy.canonicalize(endpoint) ?: return hosts
         return hosts.filter { it.endpoint != target }
     }
 
@@ -58,7 +58,8 @@ object KnownHosts {
             val parts = line.split('|')
             // Four fields were used by the original #20 history model.
             if (parts.size !in 4..6) continue
-            val endpoint = EndpointPolicy.normalize(parts[0]) ?: continue
+            // A saved PC must survive leaving its network. Admission is rechecked by the scanner.
+            val endpoint = EndpointPolicy.canonicalize(parts[0]) ?: continue
             val usb = when (parts[2]) { "usb" -> true; "wifi" -> false; else -> continue }
             val lastSeen = parts[3].toLongOrNull()?.takeIf { it >= 0 } ?: continue
             val host = KnownHost(endpoint, cleanLabel(parts[1]), usb, lastSeen, cleanLabel(parts.getOrNull(4)), cleanId(parts.getOrNull(5)))

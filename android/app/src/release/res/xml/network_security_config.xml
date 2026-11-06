@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+            <!-- Private LAN certificates may use a CA explicitly installed by the device owner.
+                 Hostname/IP matching and ordinary TLS validation still apply. -->
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

@@ -7,11 +7,14 @@ import java.util.concurrent.TimeUnit
 /** One bounded scan. No periodic polling or saved-history writes. */
 object PcScanner {
     fun scan(saved: List<KnownHost>, networks: List<LocalNetwork> = LocalNetwork.available(),
-             discover: () -> List<Discovery.Candidate> = { Discovery.findAll(networks) },
+             secureOnly: Boolean = false,
+             discover: () -> List<Discovery.Candidate> = { Discovery.findAll(networks, secureOnly = secureOnly) },
              probe: (String, Boolean) -> KnownHost? = HostProbe::read): List<KnownHost> {
         val candidates = (discover() + saved.filter {
             Discovery.permitsRememberedEndpoint(it.endpoint, it.usb, networks)
-        }.map { Discovery.Candidate(it.endpoint, it.usb) }).distinctBy { it.endpoint }.take(32)
+        }.map { Discovery.Candidate(it.endpoint, it.usb) })
+            .filter { Discovery.permitsRememberedEndpoint(it.endpoint, it.usb, networks) &&
+                (!secureOnly || EndpointPolicy.isSecure(it.endpoint, networks)) }.distinctBy { it.endpoint }.take(32)
         if (Thread.currentThread().isInterrupted || candidates.isEmpty()) return emptyList()
         val workers = Executors.newFixedThreadPool(4)
         val completed = ExecutorCompletionService<KnownHost?>(workers)

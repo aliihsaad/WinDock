@@ -15,6 +15,10 @@ import { isIPv4 } from "node:net";
 export const DISCOVERY_PORT = 41234;
 export const PROBE = "windock:discover:v1";
 export const REPLY_PREFIX = "windock:here:v1:";
+export const SECURE_PROBE = "windock:discover:v2";
+export const SECURE_REPLY_PREFIX = "windock:here:v2:";
+export const MANAGED_PROBE = "windock:discover:v3";
+export const MANAGED_REPLY_PREFIX = "windock:here:v3:";
 export const MAX_PROBE_BYTES = 64;
 
 /** Prefer a physical LAN adapter over VPNs and VM/container networks. */
@@ -47,11 +51,14 @@ export function primaryAddress(interfaces = networkInterfaces(), preferred = "")
  * Oversized or unrecognized traffic is ignored so the socket cannot be used as
  * an amplifier or a reflection target.
  */
-export function replyFor(message, endpoint) {
+export function replyFor(message, endpoint, secureEndpoint = null) {
   if (!Buffer.isBuffer(message) && typeof message !== "string") return null;
   const buf = Buffer.isBuffer(message) ? message : Buffer.from(message, "utf8");
   if (buf.length === 0 || buf.length > MAX_PROBE_BYTES) return null;
-  if (buf.toString("utf8").trim() !== PROBE) return null;
+  const probe = buf.toString("utf8").trim();
+  if (probe === SECURE_PROBE) return typeof secureEndpoint === "string" && secureEndpoint.startsWith("https://")
+    ? `${SECURE_REPLY_PREFIX}${secureEndpoint}` : null;
+  if (probe !== PROBE) return null;
   if (typeof endpoint !== "string" || !endpoint) return null;
   return `${REPLY_PREFIX}${endpoint}`;
 }
@@ -67,11 +74,13 @@ export function parseReply(message) {
  * Start the responder.
  * @returns {{close:()=>Promise<void>, port:number}}
  */
-export function startDiscovery({ port = DISCOVERY_PORT, endpoint, socket } = {}) {
+export function startDiscovery({ port = DISCOVERY_PORT, endpoint, secureEndpoint = null, managedEndpoint = null, hostId = "", socket } = {}) {
   const sock = socket || createSocket({ type: "udp4", reuseAddr: true });
 
   sock.on("message", (msg, rinfo) => {
-    const reply = replyFor(msg, typeof endpoint === "function" ? endpoint() : endpoint);
+    const reply = msg.length <= MAX_PROBE_BYTES && msg.toString("utf8").trim() === MANAGED_PROBE && managedEndpoint
+      ? `${MANAGED_REPLY_PREFIX}${JSON.stringify({ endpoint: managedEndpoint, hostId })}`
+      : replyFor(msg, typeof endpoint === "function" ? endpoint() : endpoint, secureEndpoint);
     if (!reply) return;
     sock.send(reply, rinfo.port, rinfo.address, () => {});
   });

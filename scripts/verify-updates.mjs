@@ -18,7 +18,8 @@ for (const bad of ["1.2.3\n","01.2.3","1.2","1.2.3-preview.01","1.2.3/evil",null
   t.throws(() => compareVersions(bad,INSTALLED_VERSION),"reject invalid version");
 for (const platform of ["windows","linux"]) {
   t.equal(parseUpdateManifest(manifest(),INSTALLED_VERSION,platform).status,"current",platform + " current");
-  t.equal(parseUpdateManifest(manifest("0.3.0-preview.1"),INSTALLED_VERSION,platform).status,"available",platform + " newer");
+  const nextMajor = Number(INSTALLED_VERSION.split(".")[0]) + 1;
+  t.equal(parseUpdateManifest(manifest(`${nextMajor}.0.0-preview.1`),INSTALLED_VERSION,platform).status,"available",platform + " newer");
 }
 t.throws(() => parseUpdateManifest({...manifest(),available:false},INSTALLED_VERSION,"windows"),"unpublished feed rejected");
 t.throws(() => parseUpdateManifest({...manifest(),windows:{url:"https://evil.example/a.exe"}},INSTALLED_VERSION,"windows"),"arbitrary executable URL rejected");

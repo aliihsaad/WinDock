@@ -1,0 +1,5 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Files & Media · WinDock</title><link rel="stylesheet" href="/files.css"></head>
+<body><main><p class="eyebrow">WINDOCK · THIS COMPUTER</p><h1>Files &amp; Media</h1><p>Send selected files from your paired phone. Files stay here until you remove them.</p>
+<section><label class="toggle"><input id="enabled" type="checkbox"> Allow securely paired phones to send files</label><label for="destination">Receive folder</label><div class="settings"><input id="destination" type="text" maxlength="2048" autocomplete="off" spellcheck="false"><button id="save" type="button">Save folder</button><button id="open" type="button">Open folder</button></div><p class="hint">Default: Downloads / WinDock. Existing files are never overwritten.</p></section>
+<p id="status" role="status" aria-live="polite">Connecting…</p><section><h2>Recent transfers</h2><div id="batches"></div><p class="hint">Receipts expire after 24 hours. Received files are kept.</p></section></main><script type="module" src="/files-desktop.js"></script></body></html>

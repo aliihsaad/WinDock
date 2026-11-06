@@ -7,16 +7,25 @@ import { join, resolve } from "node:path";
 import { createWindowsProvider } from "../src/platform/windows.js";
 import { createExec } from "../src/platform/index.js";
 import { primaryAddress } from "../src/discovery.js";
+import { createServer } from "node:net";
 
 assert.equal(process.platform, "win32", "run this hardware check on Windows");
 const root = resolve(import.meta.dirname, "..");
 const packageDir = join(root, "artifacts", "WinDock-win-x64");
 const helperPath = join(packageDir, "WinDockHelper.exe");
 const fixturePath = join(root, "artifacts", "probe", "WinDockProbe.exe");
+const focusDebugControl = process.argv.includes("--focus-debug-control");
 const exec = createExec();
 const provider = createWindowsProvider({ exec, helperPath });
 const temp = await mkdtemp(join(tmpdir(), "windock-native-"));
 const signal = join(temp, "probe.json");
+async function testPort() {
+  const listener = createServer();
+  await new Promise(resolve => listener.listen(0, "127.0.0.1", resolve));
+  const port = listener.address().port;
+  await new Promise(resolve => listener.close(resolve));
+  return String(port);
+}
 let probe;
 async function waitForFile(path) {
   for (let i = 0; i < 100; i++) {
@@ -29,10 +38,23 @@ try {
   probe = JSON.parse(await waitForFile(signal));
   assert.deepEqual(probe.arguments, ["Work Space", "x&y"]);
   assert.ok((await provider.listRunningApps()).some(app => app.pid === probe.pid));
-  await provider.focusApp(probe);
+  try {
+    if (focusDebugControl) {
+      const result = JSON.parse((await exec(fixturePath, ["--focus-debug-control", helperPath, String(probe.pid)])).stdout);
+      assert.equal(result.helperExit, 0);
+      assert.equal(result.foregroundPid, probe.pid);
+    } else await provider.focusApp(probe);
+    await waitForFile(signal + ".activated");
+  } catch (error) {
+    console.error("Focus check failed. Windows may deny background activation even when AttachThreadInput succeeds. " +
+      "Run from an eligible interactive foreground session, or use test-windows.ps1 -FocusDebugControl for an explicitly labelled positive control. " +
+      "Do not change the system foreground-lock timeout. See docs/WINDOWS_FOCUS_TEST.md.");
+    throw error;
+  }
   await provider.closeApp(probe);
   await waitForFile(signal + ".closed");
   console.log("PASS native launch arguments, enumeration, focus and polite close");
+  if (focusDebugControl) console.log("FOCUS MODE: debugger positive control; ordinary foreground-policy acceptance remains separate");
 
   // Preserve the user's setting: write the existing scalar, not a new level.
   // The integer control interface rounds to percent, so only test its setter
@@ -55,11 +77,12 @@ try {
 
   const result = await promisify(execFile)(join(packageDir, "WinDockTray.exe"), ["--smoke-test"], {
     cwd: temp, windowsHide: true, timeout: 30000,
-    env: { ...process.env, PORT: "18620", WINDOCK_CONFIG: join(temp, "config.json") },
+    // Let the OS choose test ports; a fixed port can collide with another local fixture.
+    env: { ...process.env, PORT: await testPort(), WINDOCK_MANAGED_TLS_PORT: await testPort(), WINDOCK_CONFIG: join(temp, "config.json") },
   });
   assert.match(result.stdout, /TRAY OK/);
   console.log("PASS packaged tray starts bundled Node from a different working directory and stops its server");
-  console.log(`WINDOWS SMOKE OK; LAN address ${primaryAddress()}`);
+  console.log(`WINDOWS SMOKE OK${focusDebugControl ? " (focus debugger positive control)" : ""}; LAN address ${primaryAddress()}`);
 } finally {
   if (probe) {
     try { await readFile(signal + ".closed"); }

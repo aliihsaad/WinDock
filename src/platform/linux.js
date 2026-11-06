@@ -17,6 +17,7 @@ import { createLinuxCapture } from "./linux-capture.js";
 import { createLinuxInput } from "./linux-input.js";
 import { createClipboardHistory } from "./clipboard.js";
 import { dataDirs } from "./xdg.js";
+import { linkApp } from "../links.js";
 
 const APP_DIRS = dataDirs().map((dir) => join(dir, "applications"));
 
@@ -560,6 +561,13 @@ export function createLinuxProvider({
       }
       const apps = await installed().catch(() => []);
       return parseHyprClients(stdout, createAppMatcher(apps));
+    },
+
+    async openLink(app) {
+      const checked = linkApp(app?.target);
+      if (!checked || checked.id !== app.id || app.args) throw failure("Invalid website shortcut.", 400);
+      try { await launch("xdg-open", [checked.target], { wait: true }); }
+      catch { throw failure("Could not open the website. Check your default browser and xdg-open installation.", 422); }
     },
 
     async launchApp(app) {

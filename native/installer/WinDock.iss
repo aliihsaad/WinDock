@@ -13,7 +13,7 @@
 AppId={{A5613067-949D-4D26-B81D-8FD6328D8A7A}
 AppName=WinDock
 AppVersion={#AppVersion}
-AppPublisher=WinDock
+AppPublisher=AliDevLab
 AppPublisherURL=https://github.com/aliihsaad/WinDock
 AppSupportURL=https://github.com/aliihsaad/WinDock/issues
 DefaultDirName={localappdata}\Programs\WinDock
@@ -51,9 +51,13 @@ Source: "{#PackageDir}\node.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#PackageDir}\server.js"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#PackageDir}\package.json"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#PackageDir}\package-lock.json"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#PackageDir}\scripts\create-local-tls.ps1"; DestDir: "{app}\scripts"; Flags: ignoreversion
+Source: "{#PackageDir}\docs\PLAY_RELEASE.md"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "{#PackageDir}\docs\SECURE_CONNECTIONS.md"; DestDir: "{app}\docs"; Flags: ignoreversion
 Source: "{#PackageDir}\src\*"; DestDir: "{app}\src"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "config.json,*.log,*.pdb"
 Source: "{#PackageDir}\public\*"; DestDir: "{app}\public"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*.apk,config.json,*.log,*.pdb"
-Source: "{#PackageDir}\node_modules\ws\*"; DestDir: "{app}\node_modules\ws"; Flags: ignoreversion recursesubdirs createallsubdirs
+; build-windows.ps1 stages only production dependencies, including managed TLS and QR.
+Source: "{#PackageDir}\node_modules\*"; DestDir: "{app}\node_modules"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*.log,*.pdb"
 
 [Icons]
 Name: "{autoprograms}\WinDock"; Filename: "{app}\WinDockTray.exe"; WorkingDir: "{app}"
@@ -68,4 +72,4 @@ Filename: "{app}\WinDockTray.exe"; Description: "Open WinDock"; WorkingDir: "{ap
 
 [Messages]
 FinishedHeadingLabel=WinDock is ready.
-FinishedLabel=Find WinDock in your Windows system tray. Choose Show connection info to pair your phone, then make the dock your own.
+FinishedLabel=Find WinDock in your Windows system tray and choose Pair a phone securely. Allow its bundled runtime on your trusted Private network if Windows asks. If the phone cannot connect, choose Connection help and paired phones in the pairing window, then Check connection.

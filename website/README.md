@@ -59,6 +59,24 @@ in `windock-website-theme`. `theme.js` applies it before styles load.
 
 ## Local review
 
+### Illustrated setup and usage guide
+
+`setup.html` is the permanent Setup & help entry point used by the homepage,
+navigation and footer. It now covers Windows / Hyprland Linux / Android
+installation, Wi-Fi and USB, legacy PIN pairing, 0.3.0 secure QR pairing,
+everyday controls, Files & Media and troubleshooting. `guide.css` is
+loaded only by that page; the guide works without JavaScript.
+
+The local website is prepared for 0.3.0. Deploy only after the matching GitHub
+assets are published and verified; never advertise unavailable downloads. The
+local feed and copy are staged together; no deployment has been performed.
+
+Screenshots are stored in `assets/guide/`. Numbered HTML callouts and highlight
+boxes sit above the unmodified images; captions repeat their meaning in text.
+Full-size links open the original image. See `assets/guide/README.md` for sources
+and pairing-fixture safety. Refresh screenshots when their UI changes, and never
+use a live invitation or a screenshot containing personal file names or secrets.
+
 ```powershell
 npm run website
 ```
@@ -127,7 +145,9 @@ PC picker, Windows app or Android app.
 
 `downloads.json` is the verified public release manifest. Installer URLs, sizes
 and SHA-256 hashes must match published GitHub release assets before changing it.
-This design refresh does not change that feed or any installer.
+The local 0.3.0 preparation updates this feed to the verified staged packages.
+Those future asset URLs must not be deployed until the GitHub release assets
+are published and verified. See ../docs/GITHUB_RELEASE_0.3.0.md.
 
 `/api/download-stats` serves cached public GitHub asset counts. These are download
 counts, not users or visits, and include repeats across releases. Loading and

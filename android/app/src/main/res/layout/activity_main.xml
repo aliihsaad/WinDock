@@ -6,47 +6,71 @@
     <ScrollView android:id="@+id/connection" android:layout_width="match_parent"
         android:layout_height="match_parent" android:fillViewport="true">
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:orientation="vertical" android:gravity="center" android:padding="24dp">
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="@string/app_name" android:textColor="#F3F8FA" android:textSize="26sp"
-                android:textStyle="bold" />
-            <TextView android:id="@+id/status" android:layout_width="match_parent"
-                android:layout_height="wrap_content" android:gravity="center"
-                android:padding="12dp" android:textColor="#AABBC8" android:textSize="15sp" />
-            <ProgressBar android:id="@+id/progress" android:layout_width="24dp"
-                android:layout_height="24dp" android:indeterminateTint="#88E9C4" />
-            <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:orientation="horizontal" android:layout_marginTop="8dp">
-                <Button android:id="@+id/retry" android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" android:text="@string/retry" android:textAllCaps="false" />
-                <Button android:id="@+id/usb_connect" android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" android:layout_marginStart="12dp"
-                    android:text="@string/usb_title" android:textAllCaps="false" />
+            android:orientation="vertical" android:padding="20dp" android:focusableInTouchMode="true">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical">
+                <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+                    android:text="@string/connection_title" android:textColor="#F3F8FA" android:textSize="24sp" android:textStyle="bold" />
+                <Button style="@style/ConnectionButton" android:id="@+id/connection_return" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="@string/connection_return" android:textAllCaps="false" android:visibility="gone" />
+                <Button style="@style/ConnectionButton" android:id="@+id/connection_cancel" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="@string/connection_cancel" android:textAllCaps="false" android:visibility="gone" />
             </LinearLayout>
-            <TextView android:id="@+id/connection_mode" android:layout_width="wrap_content"
-                android:layout_height="wrap_content" android:gravity="center" android:text="@string/mode_wifi"
-                android:textColor="#AABBC8" android:textSize="13sp" />
-            <EditText android:id="@+id/address" android:layout_width="360dp"
-                android:layout_height="56dp" android:layout_marginTop="12dp"
-                android:inputType="textUri" android:singleLine="true" android:imeOptions="actionGo"
-                android:hint="@string/address_hint" android:autofillHints=""
-                android:importantForAutofill="no" android:maxLength="200"
-                android:textColor="#F3F8FA" android:textColorHint="#8196A6"
-                android:backgroundTint="#568475" />
-            <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:orientation="horizontal" android:layout_marginTop="8dp">
-                <Button android:id="@+id/connect" android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/connect" android:textAllCaps="false" />
-                <Button android:id="@+id/phone_options" android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" android:layout_marginStart="12dp"
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical" android:paddingBottom="8dp">
+                <ProgressBar android:id="@+id/progress" android:layout_width="24dp"
+                    android:layout_height="24dp" android:indeterminateTint="#88E9C4" android:layout_marginEnd="12dp" />
+                <TextView android:id="@+id/status" android:layout_width="0dp" android:layout_weight="1"
+                    android:layout_height="wrap_content" android:textColor="#AABBC8" android:textSize="14sp" />
+            </LinearLayout>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:baselineAligned="false">
+                <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+                    android:orientation="vertical" android:layout_marginEnd="20dp">
+                    <Button style="@style/ConnectionButton.Primary" android:id="@+id/scan_computer" android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:text="@string/scan_computer" android:textAllCaps="false" />
+                    <Button style="@style/ConnectionButton" android:id="@+id/choose_pc" android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:text="@string/connection_saved" android:textAllCaps="false" />
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:baselineAligned="false">
+                        <Button style="@style/ConnectionButton" android:id="@+id/retry" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+                            android:text="@string/retry" android:textAllCaps="false" />
+                        <Button style="@style/ConnectionButton" android:id="@+id/usb_connect" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+                            android:text="@string/usb_title" android:textAllCaps="false" android:layout_marginStart="8dp" />
+                    </LinearLayout>
+                </LinearLayout>
+                <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical">
+                    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:labelFor="@id/address"
+                        android:text="@string/connection_address" android:textColor="#F3F8FA" android:textSize="16sp" android:textStyle="bold" />
+                    <EditText android:id="@+id/address" android:layout_width="match_parent" android:layout_height="56dp"
+                        android:inputType="textUri" android:singleLine="true" android:imeOptions="actionGo"
+                        android:hint="@string/address_hint" android:autofillHints="" android:importantForAutofill="no"
+                        android:maxLength="200" android:textColor="#F3F8FA" android:textColorHint="#8196A6" android:backgroundTint="#568475" />
+                    <Button style="@style/ConnectionButton" android:id="@+id/connect" android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:text="@string/connect" android:textAllCaps="false" />
+                    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/connection_address_hint"
+                        android:textColor="#AABBC8" android:textSize="12sp" />
+                </LinearLayout>
+            </LinearLayout>
+            <TextView android:id="@+id/connection_mode" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="8dp" android:text="@string/mode_wifi" android:textColor="#AABBC8" android:textSize="12sp" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:baselineAligned="false">
+                <Button style="@style/ConnectionButton" android:id="@+id/connection_more" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="@string/more_options" android:textAllCaps="false" />
+                <Button style="@style/ConnectionButton" android:id="@+id/connection_help" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="@string/connection_help" android:textAllCaps="false" android:layout_marginStart="12dp" />
+            </LinearLayout>
+            <LinearLayout android:id="@+id/connection_options" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:visibility="gone">
+                <Button style="@style/ConnectionButton" android:id="@+id/pairing_text" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="@string/pairing_text" android:textAllCaps="false" />
+                <Button style="@style/ConnectionButton" android:id="@+id/connection_files" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Files &amp; Media" android:textAllCaps="false" />
+                <Button style="@style/ConnectionButton" android:id="@+id/phone_options" android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:text="@string/phone_options" android:textAllCaps="false" />
+                <Button style="@style/ConnectionButton" android:id="@+id/app_updates" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="@string/app_updates" android:textAllCaps="false" />
+                <Button style="@style/ConnectionButton" android:id="@+id/privacy" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="@string/privacy" android:textAllCaps="false" />
             </LinearLayout>
-            <Button android:id="@+id/choose_pc" android:layout_width="wrap_content"
-                android:layout_height="wrap_content" android:layout_marginTop="12dp"
-                android:text="@string/switch_pc" android:textAllCaps="false" />
-            <Button android:id="@+id/app_updates" android:layout_width="wrap_content"
-                android:layout_height="wrap_content" android:text="@string/app_updates" android:textAllCaps="false" />
         </LinearLayout>
     </ScrollView>
     <View android:id="@+id/idle_cover" android:layout_width="match_parent" android:layout_height="match_parent"

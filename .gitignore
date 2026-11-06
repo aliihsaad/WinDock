@@ -28,6 +28,13 @@ native/linux/target/
 android/.gradle/
 android/local.properties
 android/**/build/
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.key
+*.pem
+android/keystore.properties
 ios/WinDock.xcodeproj/
 ios/build/
 ios/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png

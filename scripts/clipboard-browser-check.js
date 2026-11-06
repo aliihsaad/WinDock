@@ -8,7 +8,7 @@ async (page) => {
     if(native)await context.addInitScript(()=>{window.nativeKeyboardOpens=0;window.WinDockAndroid={showKeyboard(){window.nativeKeyboardOpens++;},hideKeyboard(){},showPhoneSettings(){}};});
     const tab=await context.newPage();await tab.goto("http://127.0.0.1:18627");
     await tab.getByRole("textbox",{name:"PIN",exact:true}).fill("864213");await tab.locator("#pair-form button").click();
-    await tab.locator("#app:not([hidden])").waitFor();await tab.locator("#drawer-open").click();await tab.locator("#drawer-input").click();
+    await tab.locator("#app:not([hidden])").waitFor();await tab.locator("#quick-controls-open").click();await tab.locator("#quick-input").click();
     await tab.locator('#input-pad[data-ready="true"]').waitFor();return tab;
   }
   try{

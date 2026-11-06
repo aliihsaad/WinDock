@@ -10,7 +10,7 @@ on:
       release_tag:
         description: New release tag (used only when creating a draft)
         type: string
-        default: v0.2.6-preview.1
+        default: v0.3.0
   push:
     branches: [main]
     paths:
@@ -80,13 +80,13 @@ jobs:
           distribution: temurin
           java-version: '21'
       - name: Prepare Android SDK
-        run: '"$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-34" "build-tools;34.0.0"'
+        run: '"$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.1.0"'
       - name: Build and check Android preview
         working-directory: android
-        run: bash ./gradlew assembleDebug testDebugUnitTest lintDebug --no-daemon --console=plain
+        run: bash ./gradlew assembleDebug testDebugUnitTest testReleaseUnitTest lintDebug lintRelease bundleRelease --no-daemon --console=plain
       - name: Verify APK and give it a stable download name
         run: |
-          "$ANDROID_HOME/build-tools/34.0.0/apksigner" verify --verbose android/app/build/outputs/apk/debug/app-debug.apk
+          "$ANDROID_HOME/build-tools/36.1.0/apksigner" verify --verbose android/app/build/outputs/apk/debug/app-debug.apk
           mkdir -p artifacts
           cp android/app/build/outputs/apk/debug/app-debug.apk artifacts/WinDock-android-debug.apk
       - uses: actions/upload-artifact@v4
@@ -131,5 +131,7 @@ jobs:
           $notes = Join-Path $env:RUNNER_TEMP 'release-notes.md'
           $combined = (Get-Content -Raw -LiteralPath native/installer/RELEASE-NOTES.md).TrimEnd() + "`n`n" + (Get-Content -Raw -LiteralPath native/linux/packaging/RELEASE-NOTES.md)
           [IO.File]::WriteAllText($notes, $combined, [Text.UTF8Encoding]::new($false))
-          gh release create $env:RELEASE_TAG artifacts/website-downloads/WinDockSetup.exe artifacts/website-downloads/WinDock-android-debug.apk artifacts/website-downloads/SHA256SUMS.txt artifacts/website-downloads/downloads.json artifacts/linux/WinDock-linux-amd64.deb artifacts/linux/WinDock-linux-x64.pkg.tar.zst artifacts/linux/SHA256SUMS-linux.txt artifacts/linux/build-info.json --repo $env:RELEASE_REPO --target $env:RELEASE_SHA --draft --prerelease --title "WinDock $env:RELEASE_TAG" --notes-file $notes
+          $releaseKind = @()
+          if ($env:RELEASE_TAG.Contains('-')) { $releaseKind += '--prerelease' }
+          gh release create $env:RELEASE_TAG artifacts/website-downloads/WinDockSetup.exe artifacts/website-downloads/WinDock-android-debug.apk artifacts/website-downloads/SHA256SUMS.txt artifacts/website-downloads/downloads.json artifacts/linux/WinDock-linux-amd64.deb artifacts/linux/WinDock-linux-x64.pkg.tar.zst artifacts/linux/SHA256SUMS-linux.txt artifacts/linux/build-info.json --repo $env:RELEASE_REPO --target $env:RELEASE_SHA --draft @releaseKind --title "WinDock $env:RELEASE_TAG" --notes-file $notes
           if ($LASTEXITCODE -ne 0) { throw 'Draft release creation failed' }

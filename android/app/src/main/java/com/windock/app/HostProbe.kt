@@ -8,6 +8,7 @@ import java.net.URL
 object HostProbe {
     fun read(endpoint: String, usb: Boolean): KnownHost? {
         if (!ServerUrl.isValid(endpoint) || Thread.currentThread().isInterrupted) return null
+        if (BuildConfig.REQUIRE_SECURE_HOST && !EndpointPolicy.isSecure(endpoint)) return null
         var conn: HttpURLConnection? = null
         return try {
             conn = URL("$endpoint/health").openConnection() as HttpURLConnection

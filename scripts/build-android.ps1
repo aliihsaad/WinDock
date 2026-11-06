@@ -7,7 +7,7 @@ $projectRoot = Split-Path -Parent $PSScriptRoot
 if (-not $JavaHome) { $JavaHome = Join-Path $env:ProgramFiles 'Android\Android Studio\jbr' }
 if (-not $AndroidSdk) { $AndroidSdk = Join-Path $env:LOCALAPPDATA 'Android\Sdk' }
 if (-not (Test-Path -LiteralPath (Join-Path $JavaHome 'bin\java.exe'))) { throw 'Set JAVA_HOME to JDK 17 or 21 (Android Studio includes one).' }
-if (-not (Test-Path -LiteralPath (Join-Path $AndroidSdk 'platforms\android-34\android.jar'))) { throw 'Install Android SDK Platform 34, then set ANDROID_HOME to the SDK directory.' }
+if (-not (Test-Path -LiteralPath (Join-Path $AndroidSdk 'platforms\android-36\android.jar'))) { throw 'Install Android SDK Platform 36, then set ANDROID_HOME to the SDK directory.' }
 $env:JAVA_HOME = $JavaHome
 $env:ANDROID_HOME = $AndroidSdk
 Push-Location (Join-Path $projectRoot 'android')
@@ -19,7 +19,7 @@ $outputDir = Join-Path $projectRoot 'artifacts'
 New-Item -ItemType Directory -Force $outputDir | Out-Null
 $apk = Join-Path $outputDir 'WinDock-android-debug.apk'
 Copy-Item -LiteralPath (Join-Path $projectRoot 'android\app\build\outputs\apk\debug\app-debug.apk') -Destination $apk
-$signer = Join-Path $AndroidSdk 'build-tools\34.0.0\apksigner.bat'
+$signer = Join-Path $AndroidSdk 'build-tools\36.1.0\apksigner.bat'
 & $signer verify --verbose $apk
 if ($LASTEXITCODE -ne 0) { throw 'APK signature verification failed.' }
 Write-Host "Installable test APK: $apk"

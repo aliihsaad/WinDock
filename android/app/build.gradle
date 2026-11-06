@@ -3,23 +3,49 @@ plugins {
     id 'org.jetbrains.kotlin.android'
 }
 
+// Signing is opt-in. Ordinary builds never open an inherited production keystore.
+def signingNames = ['WINDOCK_UPLOAD_STORE_FILE', 'WINDOCK_UPLOAD_STORE_PASSWORD',
+                    'WINDOCK_UPLOAD_KEY_ALIAS', 'WINDOCK_UPLOAD_KEY_PASSWORD']
+def signingValues = signingNames.collectEntries { [(it): System.getenv(it)] }
+def uploadSigning = providers.gradleProperty('windockUploadSigning').orNull == 'true'
+def unsignedInspection = providers.gradleProperty('windockUnsigned').orNull == 'true'
+if (uploadSigning && unsignedInspection) throw new GradleException('Unsigned inspection cannot enable upload signing.')
+def hasUploadKey = uploadSigning && signingValues.values().every { it }
+
 android {
     namespace 'com.windock.app'
-    compileSdk 34
+    compileSdk 36
+    buildToolsVersion '36.1.0'
 
     defaultConfig {
         applicationId 'com.windock.app'
         minSdk 24
-        targetSdk 34
-        versionCode 9
-        versionName '0.2.6-preview.1'
+        targetSdk 36
+        versionCode 10
+        versionName '0.3.0'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
 
+    signingConfigs {
+        if (hasUploadKey) {
+            release {
+                storeFile file(signingValues.WINDOCK_UPLOAD_STORE_FILE)
+                storePassword signingValues.WINDOCK_UPLOAD_STORE_PASSWORD
+                keyAlias signingValues.WINDOCK_UPLOAD_KEY_ALIAS
+                keyPassword signingValues.WINDOCK_UPLOAD_KEY_PASSWORD
+            }
+        }
+    }
     buildTypes {
+        debug {
+            buildConfigField 'boolean', 'REQUIRE_SECURE_HOST', 'false'
+            buildConfigField 'boolean', 'PLAY_DISTRIBUTION', 'false'
+        }
         release {
+            debuggable false
+            buildConfigField 'boolean', 'REQUIRE_SECURE_HOST', 'true'
+            buildConfigField 'boolean', 'PLAY_DISTRIBUTION', 'true'
             minifyEnabled false
-            // Release builds remain unsigned until external signing is configured.
             signingConfig signingConfigs.findByName('release')
         }
     }
@@ -32,7 +58,32 @@ android {
     buildFeatures { buildConfig true }
 }
 
+// Unsigned bundles may be inspected locally/CI; signed publication candidates fail closed.
+tasks.register('verifyUploadSigning') {
+    doLast {
+        if (!hasUploadKey) throw new GradleException('Upload signing requires explicit -PwindockUploadSigning=true and all WINDOCK_UPLOAD_* credentials. See docs/PLAY_SIGNING.md.')
+        if (!file(signingValues.WINDOCK_UPLOAD_STORE_FILE).isFile()) throw new GradleException('Upload keystore does not exist.')
+        if (signingValues.WINDOCK_UPLOAD_KEY_ALIAS == 'androiddebugkey') throw new GradleException('A debug key cannot be used for publication.')
+        def expected = (System.getenv('WINDOCK_UPLOAD_CERT_SHA256') ?: '').replaceAll('[:\\s]', '').toUpperCase(Locale.ROOT)
+        if (!(expected ==~ /[0-9A-F]{64}/)) throw new GradleException('Set the owner-approved public WINDOCK_UPLOAD_CERT_SHA256 fingerprint.')
+        def store = java.security.KeyStore.getInstance(file(signingValues.WINDOCK_UPLOAD_STORE_FILE), signingValues.WINDOCK_UPLOAD_STORE_PASSWORD.toCharArray())
+        def cert = store.getCertificate(signingValues.WINDOCK_UPLOAD_KEY_ALIAS)
+        if (!(cert instanceof java.security.cert.X509Certificate) || cert.subjectX500Principal.name.contains('CN=Android Debug'))
+            throw new GradleException('A non-debug X.509 upload certificate is required.')
+        cert.checkValidity()
+        def actual = java.security.MessageDigest.getInstance('SHA-256').digest(cert.encoded).encodeHex().toString().toUpperCase(Locale.ROOT)
+        if (actual != expected) throw new GradleException('Upload certificate does not match the approved public fingerprint.')
+    }
+}
+tasks.register('signedReleaseBundle') {
+    dependsOn 'verifyUploadSigning', 'bundleRelease'
+}
+tasks.configureEach { if (name == 'bundleRelease') mustRunAfter 'verifyUploadSigning' }
+tasks.configureEach { if (uploadSigning && name == 'preReleaseBuild') dependsOn 'verifyUploadSigning' }
+
 dependencies {
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    implementation 'com.journeyapps:zxing-android-embedded:4.3.0'
     implementation 'androidx.core:core-ktx:1.13.1'
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test:runner:1.6.2'

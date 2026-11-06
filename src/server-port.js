@@ -1,7 +1,7 @@
 /** Bind once, then let the OS choose a port if the automatic default is blocked. */
 export const DEFAULT_PORT = 8620;
 
-export function serverPortChoice(port, environmentPort = process.env.PORT) {
+export function serverPortChoice(port, environmentPort) {
   const configured = port ?? (environmentPort?.trim() || undefined);
   if (configured === undefined) return { port: DEFAULT_PORT, automatic: true };
   // Only numeric TCP ports are accepted; never pass a string to listen() as a pipe path.

@@ -18,6 +18,8 @@ object Discovery {
     const val PORT = 41234
     const val PROBE = "windock:discover:v1"
     const val REPLY_PREFIX = "windock:here:v1:"
+    const val SECURE_PROBE = "windock:discover:v2"
+    const val SECURE_REPLY_PREFIX = "windock:here:v2:"
 
     private const val TIMEOUT_MS = 500
     private const val ATTEMPTS = 3
@@ -26,22 +28,25 @@ object Discovery {
         previousUsb && networks.any { it.wired }
 
     fun permitsRememberedEndpoint(endpoint: String, usbOnly: Boolean, networks: List<LocalNetwork>): Boolean {
-        val url = EndpointPolicy.normalize(endpoint) ?: return false
+        val url = EndpointPolicy.normalize(endpoint, networks) ?: return false
         val host = URI(url).host.orEmpty()
         return if (usbOnly) networks.any { it.wired && it.contains(host) }
         else networks.any { !it.wired && it.contains(host) } || networks.none { it.wired && it.contains(host) }
     }
 
     /** Parse a reply datagram into an endpoint, or null if it is not ours. */
-    fun parseReply(message: String, sender: String? = null): String? {
-        if (!message.startsWith(REPLY_PREFIX)) return null
-        val endpoint = EndpointPolicy.normalize(message.removePrefix(REPLY_PREFIX).trim()) ?: return null
-        if (sender == null) return endpoint
+    fun parseReply(message: String, sender: String? = null, secureOnly: Boolean = false,
+                   networks: List<LocalNetwork>? = null): String? {
+        val prefix = if (secureOnly) SECURE_REPLY_PREFIX else REPLY_PREFIX
+        if (!message.startsWith(prefix)) return null
+        val endpoint = EndpointPolicy.canonicalize(message.removePrefix(prefix).trim()) ?: return null
+        if (secureOnly && !endpoint.startsWith("https://")) return null
+        if (sender == null) return EndpointPolicy.normalize(endpoint, networks)
         // A PC with Wi-Fi and USB may advertise its Wi-Fi IP. The datagram's
         // source is the address that actually answered on this cable/network.
         val advertised = URI(endpoint)
         return try {
-            EndpointPolicy.normalize(URI(advertised.scheme, null, sender, advertised.port, null, null, null).toString())
+            EndpointPolicy.normalize(URI(advertised.scheme, null, sender, advertised.port, null, null, null).toString(), networks)
         } catch (_: Exception) { null }
     }
 
@@ -50,14 +55,14 @@ object Discovery {
      * Runs on a background thread; never call from the main thread.
      */
     fun find(reachable: (String) -> Boolean, usbOnly: Boolean = false,
-             networks: List<LocalNetwork> = LocalNetwork.available(), port: Int = PORT): String? {
+             networks: List<LocalNetwork> = LocalNetwork.available(), port: Int = PORT, secureOnly: Boolean = false): String? {
         val links = networks.filter { it.wired == usbOnly }
         // USB mode never silently falls back to Wi-Fi. The wildcard broadcast
         // preserves discovery on phones which hide interface enumeration.
         val targets: List<LocalNetwork?> = if (usbOnly) links else links + listOf(null)
         for (link in targets) {
             if (Thread.currentThread().isInterrupted) return null
-            val found = findOnLink(link, port) { permitsRememberedEndpoint(it, usbOnly, networks) && reachable(it) }
+            val found = findOnLink(link, port, secureOnly, networks) { permitsRememberedEndpoint(it, usbOnly, networks) && reachable(it) }
             if (found != null) return found
         }
         return null
@@ -66,7 +71,7 @@ object Discovery {
     data class Candidate(val endpoint: String, val usb: Boolean)
 
     /** Collect before health checks so a slow or offline PC cannot hide other replies. */
-    fun findAll(networks: List<LocalNetwork> = LocalNetwork.available(), port: Int = PORT): List<Candidate> {
+    fun findAll(networks: List<LocalNetwork> = LocalNetwork.available(), port: Int = PORT, secureOnly: Boolean = false): List<Candidate> {
         val sockets = mutableListOf<Pair<LocalNetwork?, DatagramSocket>>()
         val found = linkedMapOf<String, Candidate>()
         try {
@@ -81,7 +86,7 @@ object Discovery {
             }
             val deadline = System.nanoTime() + 1_200_000_000L
             var nextProbe = 0L
-            val payload = PROBE.toByteArray()
+            val payload = (if (secureOnly) SECURE_PROBE else PROBE).toByteArray()
             while (sockets.isNotEmpty() && System.nanoTime() < deadline && !Thread.currentThread().isInterrupted) {
                 if (System.nanoTime() >= nextProbe) {
                     sockets.forEach { (link, socket) ->
@@ -99,7 +104,7 @@ object Discovery {
                         socket.receive(packet)
                         val sender = packet.address.hostAddress ?: continue
                         if (link != null && !link.contains(sender)) continue
-                        val endpoint = parseReply(String(packet.data, 0, packet.length), sender) ?: continue
+                        val endpoint = parseReply(String(packet.data, 0, packet.length), sender, secureOnly, networks) ?: continue
                         val usb = link?.wired ?: (networks.any { it.wired && it.contains(sender) } &&
                             networks.none { !it.wired && it.contains(sender) })
                         found.putIfAbsent(endpoint, Candidate(endpoint, usb))
@@ -111,12 +116,12 @@ object Discovery {
         } finally { sockets.forEach { it.second.close() } }
     }
 
-    private fun findOnLink(link: LocalNetwork?, port: Int, reachable: (String) -> Boolean): String? = try {
+    private fun findOnLink(link: LocalNetwork?, port: Int, secureOnly: Boolean, networks: List<LocalNetwork>, reachable: (String) -> Boolean): String? = try {
         DatagramSocket(null).use { socket ->
             socket.bind(InetSocketAddress(link?.let { InetAddress.getByName(it.address) }, 0))
             socket.broadcast = true
             socket.soTimeout = TIMEOUT_MS
-            val payload = PROBE.toByteArray()
+            val payload = (if (secureOnly) SECURE_PROBE else PROBE).toByteArray()
             val broadcast = InetAddress.getByName(link?.broadcast ?: "255.255.255.255")
 
             repeat(ATTEMPTS) {
@@ -131,7 +136,7 @@ object Discovery {
                         val sender = packet.address.hostAddress ?: continue
                         if (link != null && !link.contains(sender)) continue
                         val reply = String(packet.data, 0, packet.length)
-                        parseReply(reply, sender)?.takeIf(reachable)?.let { return it }
+                        parseReply(reply, sender, secureOnly, networks)?.takeIf(reachable)?.let { return it }
                     }
                 } catch (_: SocketTimeoutException) {
                     // try again

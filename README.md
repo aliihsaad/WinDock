@@ -45,8 +45,8 @@ under the MIT license, the listing credits Ali Saad and links to the
 
 | Platform | Availability |
 | --- | --- |
-| Windows 10 / 11, x64 | [Download the installer](https://github.com/aliihsaad/WinDock/releases/download/v0.2.6-preview.1/WinDockSetup.exe) |
-| Android 7.0+ | [Download the APK](https://github.com/aliihsaad/WinDock/releases/download/v0.2.6-preview.1/WinDock-android-debug.apk) |
+| Windows 10 / 11, x64 | [Download the installer](https://github.com/aliihsaad/WinDock/releases/download/v0.3.0/WinDockSetup.exe) |
+| Android 7.0+ | [Download the APK](https://github.com/aliihsaad/WinDock/releases/download/v0.3.0/WinDock-android-debug.apk) |
 | Linux (Hyprland), x86-64 | [Arch/Omarchy and Debian/Ubuntu installer preview](#linux-preview) |
 | iOS | Coming soon — [native companion development & GitHub builds](ios/README.md); no installable public release yet. |
 
@@ -54,16 +54,16 @@ under the MIT license, the listing credits Ali Saad and links to the
    runtimes and adds WinDock to your Start menu and system tray.
 2. **Install on your phone.** Open the Android APK and allow installation from
    your browser or file manager when prompted.
-3. **Connect.** Keep both devices on the same trusted network. Open WinDock on
-   your phone, select your PC, and enter the PIN from **Show connection info**
-   in the Windows tray menu. Enter the tray address manually if discovery misses it.
+3. **Connect.** Keep both devices on the same trusted network. Choose **Pair a
+   phone securely** in the Windows tray, then **Scan computer code** on Android.
+   Older companions still support their displayed address and PIN.
 4. **Make it yours.** Turn the phone sideways, swipe up, and open **Apps** to
    pin your favorites. Hold an icon to start arranging.
 
 The Windows installer is currently unsigned and the Android APK is debug-signed.
 Windows may show a publisher warning. An APK signed with a different key can
 require uninstalling an earlier Android build before installing the new one.
-See the [release notes and checksums](https://github.com/aliihsaad/WinDock/releases/tag/v0.2.6-preview.1).
+See the [release notes and checksums](https://github.com/aliihsaad/WinDock/releases/tag/v0.3.0).
 
 The Android **Switch PC** picker discovers running WinDock
 hosts and keeps up to eight recently reached addresses. It is available on the
@@ -71,18 +71,20 @@ connection screen and, with the updated host, in the dock drawer. See [PC picker
 
 **Updating:** quit WinDock from the Windows tray and run the latest installer;
 your dock settings are kept. Reconnect the phone app to load the updated dock.
-Install the new Android APK for automatic low-RAM detection. It updates public
-0.2.2/0.2.3 builds in place, preserving phone settings. Public APKs older than
+Install the new Android APK for secure pairing and Files & Media. It updates public
+0.2.2 and later builds in place, preserving phone settings. Public APKs older than
 0.2.2 use a different signing key and must be uninstalled first; that resets
 phone-only preferences, while your PC dock is preserved. Close and reopen the
-phone app, then pair using the new six-digit PIN. Windows users can clear a
+phone app; existing secure pairings reconnect. Scan the computer's code when
+moving from legacy PIN pairing. Windows users can clear a
 host-wide pairing pause with **Allow pairing now** in the tray menu.
 Starting with 0.2.1-preview.1, the Windows tray offers **Check for updates** and
 checks at startup. A newer release shows a notification and download menu item;
 installation remains manual. Older installations need one manual upgrade first.
 
 For USB, connect a data-capable cable and enable **USB tethering** on Android.
-Select **Connect by USB → Find USB PC**, then enter the normal tray PIN.
+Select **Connect by USB → Find USB PC**, then use the saved secure pairing or
+scan the computer's code. Older hosts use the displayed PIN.
 Choose **Connect by Wi-Fi** for wireless. Each mode remembers its own address;
 reopening the app without a USB link returns to Wi-Fi. No USB debugging is needed.
 
@@ -132,7 +134,7 @@ to it, with the touchpad, phone keyboard and signatures.
 ### Install a package (no build tools needed)
 
 Download the package for your **x86-64** machine from the
-[current release](https://github.com/aliihsaad/WinDock/releases/tag/v0.2.6-preview.1).
+[current release](https://github.com/aliihsaad/WinDock/releases/tag/v0.3.0).
 The Node.js runtime and compiled input helper are included. Your package
 manager installs the desktop dependencies and configures touchpad permissions.
 
@@ -149,8 +151,9 @@ sudo apt install ./WinDock-linux-amd64.deb
 ```
 
 Open **WinDock** from your application menu, or run `windock` without sudo.
-WinDock starts in the background, and its window shows the address and pairing PIN.
-On Android, choose **Connect by Wi-Fi → Find my PC**, then enter that PIN.
+WinDock starts in the background, and its window shows the local pairing link.
+Open that link on the PC, then scan its code with Android. The address and PIN
+remain available for older clients. Use `windock network` for connection help.
 You can close the window; the phone stays connected. To see the PIN again, open
 WinDock again or run `windock status`. To stop WinDock, press **S** in its window
 or run `windock stop`. It also stops when you log out.
@@ -167,8 +170,8 @@ access is unavailable immediately after installation, log out and back in (or
 reboot) so your session picks up the udev rule.
 
 To update, install the newer package with the same command. A WinDock running in
-the background restarts with the update and gets a new PIN, so pair your phone
-again. If a WinDock window from an older version is still open, close it, then
+the background restarts with the update. Secure pairings are retained; legacy
+PIN sessions need to authenticate again. If an older window is open, close it, then
 open WinDock again. Your dock configuration and captures are kept. To remove it, use
 `sudo pacman -R windock` on Arch or `sudo apt remove windock` on Debian/Ubuntu;
 this also stops a background WinDock.
@@ -305,12 +308,12 @@ in the app and pair normally; automatic discovery remains LAN-only.
 See the [Android Tailscale setup](android/README.md#tailscale-connection-development-build)
 for connection steps and firewall requirements.
 
-## Current release
+## Prepared release
 
-[0.2.6-preview.1](https://github.com/aliihsaad/WinDock/releases/tag/v0.2.6-preview.1)
-fixes Android appearance settings persistence, improves Performance mode Auto
-detection, and recovers Windows startup when the default server port is unavailable.
-Update both the PC host and Android companion. Android version code 9 preserves
+[0.3.0](https://github.com/aliihsaad/WinDock/releases/tag/v0.3.0) adds secure QR
+pairing, Files & Media, folder and website tiles, quick controls and network help.
+This checkout is unpublished preparation; see [readiness](docs/GITHUB_RELEASE_0.3.0.md).
+Update both the PC host and Android companion. Android version code 10 preserves
 the existing signing certificate for in-place upgrades.
 See the [version history](CHANGELOG.md) for changes and upgrade notes.
 

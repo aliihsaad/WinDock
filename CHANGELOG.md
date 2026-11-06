@@ -8,6 +8,17 @@
   archives. This is not an installable iPhone release; signing and physical testing
   are still pending. This is separate from the Windows and Android releases below.
 
+## 0.3.0 — prepared, unpublished
+
+- Secure QR pairing, remembered computer identities and connection recovery.
+- Files & Media transfers through Android pickers and Share to WinDock.
+- Windows folder tiles, Windows/Linux website tiles, quick controls and HDR guidance.
+- Scoped Windows/Linux firewall help with actual listener ports.
+- Android 7 resource fix and Windows HTTP/HTTPS port-selection fixes.
+- GitHub Android updates retain the existing signing certificate and manual release
+  flow; version code 10. Google Play remains a separate delivery channel.
+- Upgrade and known limitations: see native/installer/RELEASE-NOTES.md.
+
 ## [0.2.6](https://github.com/aliihsaad/WinDock/releases/tag/v0.2.6-preview.1) — October 29, 2026
 
 - Android: preserve Performance mode, layout, app labels and theme across restarts

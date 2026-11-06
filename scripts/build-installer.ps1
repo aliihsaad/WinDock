@@ -12,7 +12,7 @@ if (-not $Compiler) {
     if (-not $Compiler) { $command = Get-Command ISCC.exe -ErrorAction SilentlyContinue; if ($command) { $Compiler = $command.Source } }
 }
 if (-not $Compiler) { throw 'Install Inno Setup 7 or pass -Compiler with the path to ISCC.exe.' }
-foreach ($name in @('WinDockTray.exe','WinDockHelper.exe','node.exe','server.js','package.json','package-lock.json','src\platform\windows.js','public\index.html','node_modules\ws\index.js')) {
+foreach ($name in @('WinDockTray.exe','WinDockHelper.exe','node.exe','server.js','package.json','package-lock.json','src\platform\windows.js','public\index.html','node_modules\ws\index.js','scripts\create-local-tls.ps1','docs\PLAY_RELEASE.md')) {
     if (-not (Test-Path -LiteralPath (Join-Path $packageRoot $name) -PathType Leaf)) { throw "Build Windows first. Missing: $name" }
 }
 $version = (Get-Content -LiteralPath (Join-Path $projectRoot 'package.json') -Raw | ConvertFrom-Json).version

@@ -60,7 +60,9 @@ class PcPicker(private val activity: Activity, private val current: String?,
         render()
         val saved = ServerUrl.knownHosts(activity)
         job = worker.submit {
-            val found = PcScanner.scan(saved)
+            val pairing = SecurePairing(activity)
+            val trusted = saved.mapNotNull { runCatching { pairing.get(it.hostId) }.getOrNull() }
+            val found = ManagedPcScanner.scan(saved, trusted, secureOnly = BuildConfig.REQUIRE_SECURE_HOST)
             activity.runOnUiThread {
                 if (closed || scan != generation || activity.isDestroyed || activity.isFinishing) return@runOnUiThread
                 available = found.sortedWith(compareBy<KnownHost> { it.endpoint != current }
@@ -124,7 +126,8 @@ class PcPicker(private val activity: Activity, private val current: String?,
                 setStroke(px(1), if (host.endpoint == this@PcPicker.current) 0xff88e9c4.toInt() else 0xff34444f.toInt())
             }
         }
-        val state = if (host.endpoint == current) activity.getString(R.string.current_pc)
+        val state = if (host.requiresPairing) activity.getString(R.string.pc_pairing_required)
+            else if (host.endpoint == current) activity.getString(R.string.current_pc)
             else if (online) activity.getString(R.string.pc_available)
             else activity.getString(if (scanning) R.string.pc_checking else R.string.pc_not_found)
         val details = listOf(host.platform, if (host.usb) "USB" else "LAN", state).filter { it.isNotBlank() }.joinToString(" · ")

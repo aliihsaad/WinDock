@@ -32,12 +32,14 @@ export const SESSION_VARS = Object.freeze([
 /** A host started for another compositor instance belongs to an old session. */
 export const SESSION_KEYS = Object.freeze(["HYPRLAND_INSTANCE_SIGNATURE", "WAYLAND_DISPLAY"]);
 
-export const USAGE = `Usage: windock [--foreground | status | stop | --version]
+export const USAGE = `Usage: windock [--foreground | status | network | stop | --version]
 
   windock               Start WinDock in the background and show its PIN
   windock --foreground  Run WinDock in this window until the window closes
   windock status        Show the address and PIN of the running WinDock
   windock stop          Stop WinDock running in the background
+  windock files         Open Files & Media settings and receive progress
+  windock network       Open local connection checks and firewall guidance
 `;
 
 /** The service unit reads and writes these as %t/windock-session.env and %t/windock/host.json. */
@@ -98,7 +100,9 @@ export async function readStatus(file, { alive = isAlive } = {}) {
 }
 
 export function details(status) {
-  return `  Address:  ${status.endpoint}\n  PIN:      ${status.pin}\n`;
+  return `  Address:  ${status.endpoint}\n  PIN:      ${status.pin}\n` +
+    (typeof status.pairUrl === "string" && /^http:\/\/127\.0\.0\.1:\d+\/pair$/.test(status.pairUrl)
+      ? `  Pair a phone: open ${status.pairUrl} on this computer, then scan the code in WinDock.\n` : "");
 }
 
 /** Keys in the connection window: S stops the host; Q, Enter, Esc, Ctrl+C or Ctrl+D close the window. */
@@ -110,7 +114,8 @@ export function viewerKey(key) {
 
 export function screen(note, status, interactive) {
   return `WinDock — Linux preview\n\n${note}\n${details(status)}\n` +
-    "On your phone, open WinDock, choose this PC and enter the PIN.\n" +
+    (status.pairUrl ? "On your phone, choose Scan computer code. Open the pairing link above on this PC.\n" : "On your phone, open WinDock, choose this PC and enter the PIN.\n") +
+    "If your phone cannot connect, run `windock network` for connection and firewall checks.\n" +
     "WinDock keeps running after you close this window.\n" +
     (interactive ? "Press S to stop WinDock, or Q to close this window.\n" : "Run `windock stop` to stop it.\n");
 }
@@ -340,6 +345,23 @@ export async function main({
     case undefined: return open(false);
     case "--foreground": return open(true);
     case "status": return showStatus();
+    case "network":
+    case "files": {
+      const status=await readStatus(paths?.status,{alive});
+      let activePort=port;
+      if(status) {
+        try {
+          const endpoint=new URL(status.endpoint);
+          if(endpoint.protocol!=="http:" || !endpoint.port)throw Error("Invalid endpoint");
+          activePort=Number(endpoint.port);
+        } catch { err("WinDock's saved address is invalid. Restart the companion and try again.\n"); return 1; }
+      }
+      if(!status && !await probe(port)) { err("Start WinDock before opening connection tools.\n"); return 3; }
+      const url=`http://127.0.0.1:${activePort}/${command === "network" ? "pair#network" : "files"}`;
+      const result=await run("xdg-open",[url]);
+      if(result.code!==0)out(`Open ${url} on this computer.\n`);
+      return result.code===0?0:1;
+    }
     case "stop": return stop();
     case "help": case "--help": case "-h": out(USAGE); return 0;
     default: err(USAGE); return 2;

@@ -35,6 +35,9 @@ internal static class Program
             return args[0] switch
             {
                 "launch" => Launch(args),
+                "open-link" => OpenLink(args),
+                "pick-folder" when args.Length == 1 => FolderShortcut.Pick(),
+                "open-folder" when args.Length == 2 => FolderShortcut.Open(args[1]),
                 "launch-packaged" => LaunchPackaged(args),
                 "icon-packaged" => PackagedIcon(args),
                 "focus" => Focus(args),
@@ -66,6 +69,18 @@ internal static class Program
     }
 
     // ---- launch ----------------------------------------------------------
+
+    private static int OpenLink(string[] args)
+    {
+        if (args.Length != 2 || args[1].Length > 2048 || args[1].Any(c => char.IsControl(c) || char.IsWhiteSpace(c) || c == '\\') ||
+            !Uri.TryCreate(args[1], UriKind.Absolute, out var uri) ||
+            (uri.Scheme != "http" && uri.Scheme != "https") || string.IsNullOrEmpty(uri.Host) || !string.IsNullOrEmpty(uri.UserInfo))
+            return Usage("open-link: expected an http(s) website address without credentials");
+        // ShellExecute resolves the user's default browser; no command shell or arguments.
+        using var process = Process.Start(new ProcessStartInfo { FileName = uri.AbsoluteUri, UseShellExecute = true });
+        // Browser reuse may succeed without returning a new process handle.
+        return 0;
+    }
 
     private static int Launch(string[] args)
     {
@@ -130,10 +145,9 @@ internal static class Program
 
         if (IsIconic(hWnd)) ShowWindow(hWnd, SW_RESTORE);
 
-        // Windows refuses SetForegroundWindow from a process that does not own
-        // the foreground. Attaching to the foreground thread's input queue is
-        // the documented way to make the call succeed for a legitimate
-        // user-initiated activation.
+        // Sharing input state can assist activation, but does not grant foreground
+        // permission. Windows can still reject a background caller; preserve the
+        // failure result instead of claiming activation succeeded.
         var foreground = GetForegroundWindow();
         var foreThread = GetWindowThreadProcessId(foreground, out _);
         var thisThread = GetCurrentThreadId();
@@ -235,7 +249,9 @@ internal static class Program
 
             case "brightness-set":
                 if (value is null) return Usage("brightness-set requires a value");
-                return Brightness.Set(value.Value) ? 0 : 2;
+                if (!Brightness.Set(value.Value)) return 2;
+                Console.Out.Write(JsonSerializer.Serialize(new { hdrActive = DisplayColor.IsHdrActive() }));
+                return 0;
 
             case "lock":
                 return LockWorkStation() ? 0 : 2;
@@ -301,7 +317,7 @@ internal static class Program
     {
         if (args.Length != 1) return Usage("usage: brightness");
         var displays = Brightness.Read();
-        Console.Out.Write(JsonSerializer.Serialize(new { displays }));
+        Console.Out.Write(JsonSerializer.Serialize(new { displays, hdrActive = DisplayColor.IsHdrActive() }));
         return displays.Count > 0 ? 0 : 2;
     }
 

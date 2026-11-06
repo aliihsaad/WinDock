@@ -188,6 +188,16 @@ const brightnessFailure = await call("/api/control", { method: "POST", body: { v
 t.equal(brightnessFailure.status, 503, "unsupported brightness reaches the phone as an actionable failure");
 t.ok(brightnessFailure.json.error.includes("DDC/CI"), "brightness API response explains the monitor setting");
 t.ok(!brightnessFailure.json.error.includes("private native"), "brightness API response does not disclose native diagnostics");
+const originalControl = provider.control;
+provider.control = async () => ({ warning: "hdr-active", private: "must not escape" });
+t.deepEqual((await call("/api/control", { method: "POST", body: { verb: "brightness-set", value: 50 } })).json,
+  { ok: true, verb: "brightness-set", warning: "hdr-active" }, "API forwards only the recognized brightness warning");
+t.deepEqual((await call("/api/control", { method: "POST", body: { verb: "volume-up" } })).json,
+  { ok: true, verb: "volume-up" }, "other controls cannot carry the HDR warning");
+provider.control = async () => ({ warning: "private diagnostics" });
+t.deepEqual((await call("/api/control", { method: "POST", body: { verb: "brightness-set", value: 50 } })).json,
+  { ok: true, verb: "brightness-set" }, "unknown warning text is not forwarded");
+provider.control = originalControl;
 t.equal((await call("/api/control", { method: "POST", body: { verb: "nope" } })).status, 400,
   "an unknown verb is rejected");
 t.equal((await call("/api/control", { method: "POST", body: { verb: "volume-set", value: 500 } })).status, 400,

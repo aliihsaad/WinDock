@@ -13,6 +13,7 @@
 </head>
 <body>
 <div id="wallpaper" class="wallpaper" aria-hidden="true"><span></span><span></span><span></span></div>
+<button id="connection-open" class="connection-trigger" type="button" hidden><span data-icon="monitor"></span><span>Connection</span></button>
 <div id="rotate" class="rotate">
   <div class="rotate__device" data-icon="monitor"></div><h1>A wider point of view.</h1>
   <p>Turn your phone sideways to use WinDock.</p><span class="eyebrow">YOUR DESKTOP, WITHIN REACH</span>
@@ -51,19 +52,16 @@
 </main>
 
 <button id="drawer-open" class="drawer-trigger" type="button" aria-label="Open drawer" hidden><span></span></button>
+<button id="quick-controls-open" class="quick-controls-trigger" type="button" aria-label="Open quick controls" aria-haspopup="dialog" aria-controls="controls" aria-expanded="false" title="Swipe down for quick controls" hidden><span class="controls-island" aria-hidden="true"><span data-icon="sliders"></span><span class="island-grip"></span></span></button>
 <button id="edit-done" class="edit-done icon-button" type="button" aria-label="Done editing" hidden><span data-icon="check"></span></button>
 
 <dialog id="drawer" class="glass-drawer" aria-label="WinDock drawer">
   <button id="drawer-close" class="drawer-grip" type="button" aria-label="Close drawer"><span></span></button>
   <div class="drawer-actions">
     <button id="drawer-apps" type="button"><span data-icon="plus"></span><span>Apps</span></button>
-    <button id="drawer-controls" type="button"><span data-icon="sliders"></span><span>Controls</span></button>
-    <button id="drawer-capture" type="button"><span data-icon="camera"></span><span>Capture</span></button>
-    <button id="drawer-input" type="button"><span data-icon="touchpad"></span><span>Touch & sign</span></button>
     <button id="drawer-settings" type="button"><span data-icon="sun"></span><span>Appearance</span></button>
-    <button id="drawer-updates" type="button"><span data-icon="refresh"></span><span>Updates</span></button>
-    <button id="drawer-edit" type="button"><span data-icon="edit"></span><span>Arrange</span></button>
-    <button id="drawer-fullscreen" type="button"><span data-icon="monitor"></span><span>Fullscreen</span></button>
+    <button id="drawer-edit" type="button"><span data-icon="edit"></span><span>Edit dock</span></button>
+    <button id="drawer-updates" type="button"><span data-icon="updates"></span><span>Updates</span></button>
   </div>
   <div class="drawer-connection"><span id="drawer-host">Your PC</span><button id="drawer-switch-pc" type="button" hidden>Switch PC</button><span id="drawer-conn" data-state="off">Connecting</span></div>
 </dialog>
@@ -136,11 +134,31 @@
   <div class="sheet__heading"><div><p class="eyebrow">MAKE ROOM FOR YOUR FAVORITES</p><h2 id="picker-title">Add to your dock</h2></div><button id="picker-close" class="icon-button" type="button" aria-label="Close app library"><span data-icon="close"></span></button></div>
   <div class="picker__tools"><div class="picker__tabs" role="tablist" aria-label="Tile type">
     <button id="tab-apps" class="picker__tab is-active" type="button" role="tab" aria-selected="true" aria-controls="picker-list">Apps</button>
+    <button id="tab-folders" class="picker__tab" type="button" role="tab" aria-selected="false" aria-controls="folder-panel" tabindex="-1" hidden>Folders</button>
     <button id="tab-controls" class="picker__tab" type="button" role="tab" aria-selected="false" aria-controls="control-list" tabindex="-1">Controls</button>
+    <button id="tab-links" class="picker__tab" type="button" role="tab" aria-selected="false" aria-controls="link-panel" tabindex="-1" hidden>Links</button>
   </div><label id="picker-search" class="search-box"><span data-icon="search"></span><input id="filter" placeholder="Find an app…" aria-label="Search apps" autocomplete="off"></label></div>
   <p id="picker-status" class="picker__status" role="status">Loading your apps…</p>
   <ul id="picker-list" class="picker__list" role="tabpanel" aria-labelledby="tab-apps"></ul>
+  <section id="folder-panel" class="folder-picker" role="tabpanel" aria-labelledby="tab-folders" hidden>
+    <h3>One tap to your folder.</h3>
+    <p>Choose a folder in the Windows dialog on your PC. It will appear on your dock and open directly in File Explorer.</p>
+    <button id="folder-pick" class="button button--primary" type="button">Choose on PC</button>
+    <p id="folder-status" role="status">Choose a local folder, such as Documents or a project folder.</p>
+  </section>
   <ul id="control-list" class="picker__list" role="tabpanel" aria-labelledby="tab-controls" hidden></ul>
+  <section id="link-panel" class="folder-picker" role="tabpanel" aria-labelledby="tab-links" hidden>
+    <h3>Your websites, one tap away.</h3>
+    <p>Open a website in your computer’s default browser.</p>
+    <form id="link-form" class="link-form">
+      <label for="link-name">Name <span>(optional)</span></label>
+      <input id="link-name" maxlength="80" placeholder="YouTube" autocomplete="off">
+      <label for="link-url">Website address</label>
+      <input id="link-url" type="url" inputmode="url" maxlength="2048" placeholder="https://www.youtube.com/" required autocomplete="off" autocapitalize="none" spellcheck="false" aria-describedby="link-status">
+      <button id="link-add" class="button button--primary" type="submit">Add link</button>
+    </form>
+    <p id="link-status" role="status">Use an http:// or https:// address.</p>
+  </section>
 </dialog>
 
 <dialog id="settings" class="sheet settings" aria-labelledby="settings-title">
@@ -155,7 +173,7 @@
       </div>
       <label class="setting-row">Immersive mode<input id="immersive" class="switch" type="checkbox" role="switch" checked></label>
       <label class="setting-row">App names<input id="show-labels" class="switch" type="checkbox" role="switch"></label>
-      <p class="settings__tip">Hold to arrange. Swipe up for the drawer.</p>
+      <p class="settings__tip">Hold to arrange. Swipe up for the drawer; down for quick controls.</p>
     </section>
     <section class="settings__card"><h3>Background</h3>
       <div class="background-choices" role="group" aria-label="Background">
@@ -169,7 +187,7 @@
       <label class="setting-row" for="glass-theme">Glass style<select id="glass-theme" aria-describedby="glass-hint"><option value="glass">Clear</option><option value="frost">Frosted</option><option value="smoke">Smoked</option></select></label>
       <p id="glass-hint" class="settings__tip" hidden>Glass effects return when Performance mode is off.</p>
       <div class="settings__utilities"><button id="fullscreen" class="button" type="button"><span data-icon="monitor"></span>Fullscreen</button><button id="refresh" class="button" type="button"><span data-icon="refresh"></span>Refresh</button></div>
-      <div class="settings__utilities"><button id="settings-updates" class="button" type="button"><span data-icon="refresh"></span>Updates</button></div>
+      <div class="settings__utilities"><button id="settings-updates" class="button" type="button"><span data-icon="updates"></span>Updates</button></div>
       <div class="settings__utilities" id="phone-options-row" hidden><button id="phone-options" class="button" type="button"><span data-icon="sun"></span>This phone · screen &amp; sleep</button></div>
     </section>
   </div>
@@ -187,10 +205,21 @@
   </div>
 </dialog>
 
-<dialog id="controls" class="sheet" aria-labelledby="controls-title">
-  <div class="sheet-handle"></div>
-  <div class="sheet__heading"><div><p class="eyebrow">THE LITTLE ADJUSTMENTS</p><h2 id="controls-title">Take control</h2></div><button class="icon-button" type="button" data-close="controls" aria-label="Close controls"><span data-icon="close"></span></button></div>
+<dialog id="controls" class="sheet controls-curtain" aria-labelledby="controls-title">
+  <div class="sheet__heading"><div><h2 id="controls-title">Quick controls</h2></div><button class="icon-button" type="button" data-close="controls" aria-label="Close controls" autofocus><span data-icon="close"></span></button></div>
   <div id="controls-grid" class="controls-grid"></div>
+  <div class="quick-controls-shortcuts" role="group" aria-label="More PC controls">
+    <button id="quick-files" type="button" hidden><span data-icon="files"></span><span>Files &amp; Media</span></button>
+    <button id="quick-input" type="button"><span data-icon="touchpad"></span><span>Touch &amp; sign</span></button>
+    <button id="quick-capture" type="button"><span data-icon="camera"></span><span>Capture</span></button>
+    <button id="quick-power" type="button" aria-haspopup="dialog" aria-controls="power-controls"><span data-icon="power"></span><span>Power</span></button>
+  </div>
+  <button id="controls-grip" class="drawer-grip controls-grip" type="button" aria-label="Close quick controls" title="Swipe up to close"><span></span></button>
+</dialog>
+
+<dialog id="power-controls" class="sheet power-sheet" aria-labelledby="power-controls-title">
+  <div class="sheet__heading"><div><h2 id="power-controls-title">Power</h2></div><button class="icon-button" type="button" data-close="power-controls" aria-label="Back to quick controls" autofocus><span data-icon="close"></span></button></div>
+  <div id="power-controls-grid" class="controls-grid"></div>
 </dialog>
 
 <dialog id="tile-options" class="options" aria-labelledby="tile-options-title">

@@ -21,10 +21,12 @@ export async function buildWebsiteDemo() {
   html = replaceOnce(html, 'Main monitor · Saved on your PC', 'Demo · Nothing is captured or saved');
   html = replaceOnce(html, 'Recordings stop after 60 minutes.<span', 'In the app, captures are saved to your PC.<span');
   html = replaceOnce(html, '>Paste to PC</button>', '>Try paste</button>');
+  html = replaceOnce(html, 'id="link-add" class="button button--primary" type="submit"', 'id="link-add" class="button button--primary" type="button"');
   html = replaceOnce(html, '<head>', `<head>
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'">`);
+  html = replaceOnce(html, '</body>', `<dialog id="demo-files" class="sheet" style="padding:20px;gap:14px;overflow:auto" aria-labelledby="demo-files-title"><h2 id="demo-files-title">Files &amp; Media · demo</h2><p>Sample items only. Your files are never opened or sent.</p><ul><li>Weekend photo.jpg</li><li>Desk notes.pdf</li></ul><p id="demo-files-status" role="status">Ready to preview sending to the sample PC.</p><button id="demo-files-send" class="button button--primary" type="button">Send sample items</button><button id="demo-files-close" class="button" type="button">Close</button></dialog></body>`);
   await writeFile(resolve(destination, 'index.html'), html);
-  for (const file of ['style.css', 'appearance.js', 'performance.js', 'icons.js', 'tiles.js', 'launcher.js', 'input-pad.js', 'touchpad-gestures.js', 'remote-keyboard.js', 'pc-clipboard.js', 'now-playing.js', 'pairing.js', 'updates.js']) {
+  for (const file of ['style.css', 'appearance.js', 'performance.js', 'icons.js', 'tiles.js', 'launcher.js', 'input-pad.js', 'touchpad-gestures.js', 'remote-keyboard.js', 'pc-clipboard.js', 'now-playing.js', 'pairing.js', 'updates.js', 'folder.svg', 'link.svg']) {
     await copyFile(resolve(root, 'public', file), resolve(destination, file));
   }
   let clipboard = await readFile(resolve(destination, 'pc-clipboard.js'), 'utf8');
@@ -42,11 +44,14 @@ export async function buildWebsiteDemo() {
   updates = replaceOnce(updates, '"Installed on your PC: "', '"Preview: "');
   await writeFile(resolve(destination, 'updates.js'), updates);
   let dock = await readFile(resolve(root, 'public/dock.js'), 'utf8');
+  dock = dock.replaceAll('src="/folder.svg"', 'src="./folder.svg"').replaceAll('src="/link.svg"', 'src="./link.svg"');
   dock = replaceOnce(dock,
     'src="/api/apps/icon?v=3&amp;id=${escapeHtml(encodeURIComponent(app.id))}"',
     'src="../assets/${escapeHtml(encodeURIComponent(app.id))}.png"');
   await writeFile(resolve(destination, 'dock.js'), dock);
   let app = await readFile(resolve(root, 'public/app.js'), 'utf8');
+  app = replaceOnce(app, 'import { dockFetch, DockWebSocket, nativeTransport } from "./native-transport.js";',
+    'const dockFetch = fetch, DockWebSocket = WebSocket, nativeTransport = false;');
   app = `import { fetch, WebSocket, localStorage, getPreviewPcs, selectPreviewPc, forgetPreviewPc } from '../preview-transport.js';
 // The Android picker is native. Its browser equivalent lives outside the dock
 // frame too, so it stays readable on phones instead of scaling with the dock.
@@ -54,10 +59,19 @@ function showPreviewPcPicker() {
   for (const dialog of document.querySelectorAll('dialog[open]')) dialog.close();
   parent.postMessage({ type: 'windock-preview-pcs', pcs: getPreviewPcs(), open: true }, location.origin);
 }
-window.WinDockAndroid = { showPcPicker: showPreviewPcPicker };
+window.WinDockAndroid = { showPcPicker: showPreviewPcPicker, openFiles: () => document.getElementById('demo-files').showModal() };
+// Sandbox forbids form submission. Dispatch only the app's in-memory handler.
+const previewLinkForm = document.getElementById('link-form');
+const submitPreviewLink = () => previewLinkForm.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+document.getElementById('link-add').addEventListener('click', submitPreviewLink);
+previewLinkForm.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); submitPreviewLink(); } });
+document.getElementById('demo-files-close').addEventListener('click', () => document.getElementById('demo-files').close());
+document.getElementById('demo-files-send').addEventListener('click', () => {
+  document.getElementById('demo-files-status').textContent = 'Demo complete: 2 sample items received. No files were read, sent or saved.';
+});
 ${app}`;
   // The preview must never install a worker that could outlive the frame.
-  app = replaceOnce(app, 'if ("serviceWorker" in navigator) {', 'if (false) { // Service workers are disabled in the website preview.');
+  app = replaceOnce(app, 'if (!nativeTransport && "serviceWorker" in navigator) {', 'if (false) { // Service workers are disabled in the website preview.');
   app = replaceOnce(app, 'try { await refresh(); showApp(); connect(); }', "try { await refresh(); showApp(); connect(); parent.postMessage({ type: 'windock-preview-ready' }, location.origin); }");
   for (const [from, to] of [
     ['Recording started · Tap Stop to save', 'Demo recording started · Tap Stop to finish'],

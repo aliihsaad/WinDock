@@ -3,10 +3,10 @@ import { originAllowed } from "./sync.js";
 import { validateInput } from "./input.js";
 
 /** Only one paired phone can own mouse buttons. Dock sync remains read-only. */
-export function createInputHub({ server, isAuthorized, input, leaseMs = 2000 }) {
+export function createInputHub({ server, servers = [server], isAuthorized, input, leaseMs = 2000 }) {
   const wss = new WebSocketServer({ noServer: true, maxPayload: 262144, perMessageDeflate: false });
   let owner = null;
-  server.on("upgrade", (req, socket, head) => {
+  for (const listener of servers) listener.on("upgrade", (req, socket, head) => {
     if (req.url?.split("?")[0] !== "/input") return;
     if (!originAllowed(req) || !isAuthorized(req)) {
       socket.end("HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n"); return;

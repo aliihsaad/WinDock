@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="address_hint">PC address · https://192.168.1.40:8621</string>
+    <string name="usb_address_hint">PC USB address · https://192.168.42.10:8621</string>
+</resources>

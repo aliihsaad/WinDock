@@ -17,7 +17,7 @@ export const EXEC_MAX_BUFFER = 8 * 1024 * 1024;
 export const EXEC_TIMEOUT_MS = 20_000;
 
 export function createExec({ timeout = EXEC_TIMEOUT_MS, maxBuffer = EXEC_MAX_BUFFER } = {}) {
-  return function exec(file, args = []) {
+  return function exec(file, args = [], { interactive = false, timeoutMs = timeout } = {}) {
     if (typeof file !== "string" || !file) {
       return Promise.reject(new Error("exec requires a file"));
     }
@@ -28,7 +28,7 @@ export function createExec({ timeout = EXEC_TIMEOUT_MS, maxBuffer = EXEC_MAX_BUF
       execFile(
         file,
         args,
-        { timeout, maxBuffer, windowsHide: true, shell: false },
+        { timeout: timeoutMs, maxBuffer, windowsHide: !interactive, shell: false },
         (err, stdout, stderr) => {
           if (err) {
             err.stdout = String(stdout ?? "");

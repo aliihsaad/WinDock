@@ -1,22 +1,32 @@
-# WinDock Android test app
+# WinDock Android companion
 
 The Android app displays the PC's existing dock in a fullscreen landscape
 WebView. Keep the Windows tray running; this app needs a connection to the PC.
 
 ## Build and install
 
-On Windows, install Android Studio with SDK Platform 34 and Build Tools 34.0.0,
+On Windows, install Android Studio with SDK Platform 36 and Build Tools 36.1.0,
 then run `npm run build:android` from the repository root. The script discovers
 Android Studio's JDK and the usual SDK directory; `JAVA_HOME` and `ANDROID_HOME`
-override them. Java 21, Gradle 8.9 and the included SDK 34 setup were verified.
+override them. Java 21, Gradle 8.11.1 and SDK 36 are used for Play preparation.
 The wrapper can also be run directly with `bash android/gradlew -p android
 assembleDebug` on Linux with those prerequisites.
 
 Output: `artifacts/WinDock-android-debug.apk`. It supports Android 7/API 24 and
-newer, targets API 34, and uses a local debug signing key. Updating requires the
+newer, targets API 36, and uses a local debug signing key. Updating requires the
 same signing key. Production signing and Play Store preparation are separate.
-The current public APK is `0.2.4-preview.1` (version code 5).
-The unreleased testing candidate is `0.2.5-preview.1` (version code 6).
+The dock also needs an updated WebView provider. Install the latest compatible
+Android System WebView (or Chrome, when it supplies WebView on older Android)
+from the device's official update source. Factory WebView builds on old emulator
+images are not representative of an updated device; see the current validation
+record in [Play blockers](../docs/PLAY_BLOCKERS.md).
+The compatibility baseline is public `0.2.6-preview.1` (version code 9).
+The local GitHub release candidate is `0.3.0` (version code 10).
+It is uncommitted and not published. See [Play integration](../docs/PLAY_INTEGRATION.md)
+and [production signing](../docs/PLAY_SIGNING.md). Debug previews retain HTTP/v1
+discovery and manual updates. The release variant requires HTTPS/v2 discovery,
+uses Google Play for Android updates, and remains unsigned unless the owner
+explicitly enables upload signing. Desktop updates and protocols are retained.
 
 Transfer the APK to the phone, open it and allow installation from the chosen
 browser/file manager if Android asks. Alternatively, enable USB debugging,
@@ -28,8 +38,13 @@ Connect. A bare IP defaults to port 8620. Back closes an open sheet; a second
 Back returns to the connection screen. Android's first fullscreen prompt needs
 one tap on Got it. System-edge swipes can temporarily reveal navigation bars.
 
-In the testing candidate, open **Switch PC** from the connection screen or the
-updated dock drawer. It discovers running PCs and checks up to eight saved PCs.
+In the current testing candidate, tap **Connection** at the top-left of the dock
+(also available on the PIN page). **Use another address** is visible directly;
+**Saved & nearby PCs** opens the PC picker. Reconnection pauses while this page
+is open, including when returning from Android Settings. **Return to saved PC**
+reconnects without forgetting its identity. **Change connection** cancels a
+pending connection attempt. Older Android clients retain **Switch PC** in the
+dock drawer. The picker discovers running PCs and checks up to eight saved PCs.
 Choose an available PC, retry a saved address, or tap **Forget** beside a saved
 entry to stop automatic reconnection. Forgetting does not revoke pairing, and
 explicitly choosing the PC saves it again. Updated hosts are grouped across
@@ -94,7 +109,7 @@ firewall configurations still need device-specific verification.
 
 ## Phone display options (development build)
 
-Open **This phone** on the connection screen, or **Appearance → This phone ·
+Open **Connection → More options → This phone**, or **Appearance → This phone ·
 screen & sleep** in the updated shared dock. These preferences stay on this
 phone and do not change the PC's brightness or power settings.
 
@@ -218,7 +233,7 @@ and [Gradle wrapper checksums](https://docs.gradle.org/current/userguide/gradle_
 
 ## Update checks (development builds)
 
-Open **Updates** on the connection screen, or **Drawer → Updates → Check Android
+Open **Connection → More options → Updates**, or **Drawer → Updates → Check Android
 updates** while connected. The screen shows this phone's installed version and
 an explicit current, available or failed result. A newer APK opens the official
 release page in your browser; installation remains manual. A PC-only release
@@ -235,3 +250,38 @@ adb -s emulator-5556 shell am instrument -w -e class com.windock.app.UpdatesTest
 Expected: OK (4 tests). Start scripts/android-smoke-host.mjs for the connected
 dock test. The live-feed cases require internet access; the other
 cases use deterministic metadata and a simulated offline request.
+# Managed secure pairing (preparation branch)
+
+The current Play preparation build adds **Scan computer code** and **Enter pairing
+text**. In the updated desktop companion, choose **Pair a phone securely**; Linux
+prints the local pairing-page link. The phone trusts only that computer inside
+WinDock. Normal restarts, updates and IP changes retain the pairing. Existing
+manual HTTPS and preview HTTP connections remain available under their prior
+build policies. See [secure connection details](../docs/SECURE_CONNECTIONS.md).
+
+Camera access is requested only for scanning. Pairing text works without it.
+Network retries are bounded and run only while the Android activity is active.
+No background service or new wake lock is introduced.
+
+## Files & Media (preparation branch)
+
+Open Files & Media in the controls curtain or connection screen, or select files
+in another application and use Share → WinDock. Review the selection and explicitly
+send to the securely paired PC. Keep WinDock open; backgrounding stops the transfer.
+Retry checks the existing receipt before sending again. The existing keyboard's
+microphone/voice typing remains supported; dedicated Voice to PC was removed.
+
+Photo Picker (API33+) and Storage Access Framework (API24+) supply content URIs.
+Single/multiple Shares require valid temporary URI read permission. No broad
+storage/media, microphone, notification, or foreground-service permission is used.
+The app retains handles, not complete private copies of selected files. Cloud
+providers may retrieve content on demand. See [Files & Media](../docs/FILES_AND_MEDIA.md)
+for limits, security, local artifacts and the physical-device checklist.
+
+Emulator regression setup must enable the on-screen keyboard when a hardware
+keyboard is attached: `adb -s emulator-5554 shell settings put secure show_ime_with_hard_keyboard 1`.
+Use a disposable emulator only. Start `scripts/secure-android-smoke-host.mjs` for
+`FilesTransferTest` with `-e verifyFiles true`; its private synthetic sharing provider
+exists only in the instrumentation APK. Start `android-smoke-host.mjs` and
+`clipboard-smoke-host.mjs` for keyboard/dock/clipboard regressions. Do not run these
+fixtures against the user's active companion or physical phone.

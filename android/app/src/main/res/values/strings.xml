@@ -1,13 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="native_font_family" translatable="false">sans</string>
+    <string name="scan_computer">Scan computer code</string>
+    <string name="pairing_text">Enter pairing text</string>
+    <string name="connection_help">Connection help</string>
     <string name="app_name">WinDock</string>
+    <string name="connection_title">Connection</string>
+    <string name="connection_intro">Choose a computer or enter its address. Your saved pairing and dock are kept.</string>
+    <string name="connection_return">Return to saved PC</string>
+    <string name="connection_cancel">Change connection</string>
+    <string name="connection_saved">Saved &amp; nearby PCs</string>
+    <string name="connection_address">Use another address</string>
+    <string name="connection_address_hint">Use the address from your PC’s Show connection info. For a new secure PC, scan its code first.</string>
+    <string name="more_options">More options</string>
+    <string name="fewer_options">Fewer options</string>
+    <string name="privacy">Privacy</string>
+    <string name="secure_host_required">Open WinDock on your computer, choose Pair a phone securely, then tap Scan computer code below. Existing manually configured HTTPS connections are still supported.</string>
     <string name="searching">Looking for your PC on Wi-Fi…</string>
     <string name="not_found">Keep WinDock running on your PC and connect both devices to the same LAN or VPN.\nTry again, or enter the PC\'s LAN or Tailscale IPv4 address.</string>
     <string name="connecting">Opening your dock…</string>
     <string name="connection_lost">Could not reach your PC. Check the connection and try again.</string>
     <string name="choose_pc">Connect to your PC, or search for another one.</string>
     <string name="address_hint">PC address · 192.168.1.40:8620</string>
+    <string name="secure_address_hint">https://192.168.1.40:8621</string>
+    <string name="secure_usb_address_hint">https://192.168.42.10:8621</string>
     <string name="invalid_address">Enter your PC\'s LAN or Tailscale IPv4 address, optionally followed by :port.</string>
+    <string name="address_not_local">This address is not on a local network the phone can detect. Connect both devices to the same Wi-Fi, or enable USB tethering, then try again.</string>
     <string name="retry">Connect by Wi-Fi</string>
     <string name="connect">Use this address</string>
     <string name="mode_wifi">Wi-Fi selected · Phone and PC on the same network</string>
@@ -29,6 +47,8 @@
     <string name="saved_pcs">Saved PCs</string>
     <string name="no_available_pcs">No PCs found. Keep WinDock running on the same network, refresh, or enter its address. For USB setup, use Connect by USB on the connection screen.</string>
     <string name="pc_available">Available</string>
+    <string name="pc_pairing_required">Scan its code to pair</string>
+    <string name="pc_pairing_instructions">This computer needs secure pairing. Open WinDock on that computer and show a fresh pairing code, then choose Scan computer code here. Its address alone cannot establish trust.</string>
     <string name="current_pc">Current PC</string>
     <string name="pc_checking">Checking…</string>
     <string name="pc_not_found">Not found this scan · Tap to retry</string>
@@ -49,6 +69,8 @@
     <string-array name="dim_delays"><item>Never</item><item>After 15 seconds</item><item>After 30 seconds</item><item>After 1 minute</item><item>After 2 minutes</item></string-array>
     <string-array name="sleep_delays"><item>Use phone’s timeout</item><item>After 1 minute idle</item><item>After 2 minutes idle</item><item>After 5 minutes idle</item><item>After 10 minutes idle</item><item>Stay awake while dock is open</item></string-array>
     <string name="app_updates">Updates</string>
+    <string name="open_google_play">Open Google Play</string>
+    <string name="play_update_install">Google Play manages updates for this installation. Desktop updates are still available from the dock on your PC.</string>
     <string name="installed_android_version">Installed on this phone: %1$s</string>
     <string name="check_updates">Check for updates</string>
     <string name="checking_updates">Checking for updates…</string>

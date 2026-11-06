@@ -4,6 +4,16 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class EndpointPolicyTest {
+    @Test fun secureDiscoveryCannotDowngrade() {
+        assertFalse(EndpointPolicy.isSecure("192.168.1.2"))
+        assertFalse(EndpointPolicy.isSecure("https://example.com"))
+        assertTrue(EndpointPolicy.isSecure("https://192.168.1.2:8621"))
+        assertNull(Discovery.parseReply("windock:here:v1:http://192.168.1.2:8620", secureOnly = true))
+        assertNull(Discovery.parseReply("windock:here:v2:http://192.168.1.2:8620", secureOnly = true))
+        assertEquals("https://192.168.42.20:8621", Discovery.parseReply(
+            "windock:here:v2:https://192.168.1.2:8621", "192.168.42.20", true))
+        assertFalse(EndpointPolicy.allowsRequest("https://192.168.1.2:8621", "http://192.168.1.2:8620"))
+    }
     @Test fun trayAddressesAndManualEntry() {
         assertEquals("http://192.168.178.80:8620", EndpointPolicy.normalize("http://192.168.178.80:8620/"))
         assertEquals("http://192.168.178.80:8620", EndpointPolicy.normalize(" 192.168.178.80 "))

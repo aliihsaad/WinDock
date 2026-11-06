@@ -6,8 +6,12 @@ import { createInputPad } from "./input-pad.js";
 import { pairingError } from "./pairing.js";
 import { createUpdates } from "./updates.js";
 import { createNowPlayingPoller } from "./now-playing.js";
+import { dockFetch, DockWebSocket, nativeTransport } from "./native-transport.js";
 
 const $ = (id) => document.getElementById(id);
+if (location.protocol === 'https:') {
+  document.querySelector('.pair__hint').textContent = 'Enter the secure pairing PIN from your PC’s WinDock tray → Show connection info.';
+}
 const performanceMode = window.WinDockPerformance;
 let state = { tiles: [], running: [], verbs: [] };
 let editing = false, paired = false, online = false, saving = false;
@@ -28,13 +32,19 @@ const nowPlaying = createNowPlayingPoller({
 let layout;
 try { layout = normalizeLayout(JSON.parse((window.WinDockPreferences || localStorage).getItem("windock-layout"))); } catch { layout = normalizeLayout(); }
 document.querySelectorAll("[data-icon]").forEach((el) => { el.innerHTML = icon(el.dataset.icon); });
-if (typeof window.WinDockAndroid?.showPcPicker === "function") {
+if (typeof window.WinDockAndroid?.showConnectionSettings === "function") {
+  document.body.classList.add("has-connection-navigation");
+  $("connection-open").hidden = false;
+  $("connection-open").addEventListener("click", () => window.WinDockAndroid.showConnectionSettings());
+} else if (typeof window.WinDockAndroid?.showPcPicker === "function") {
   $("drawer-switch-pc").hidden = false;
   $("drawer-switch-pc").addEventListener("click", () => {
     $("drawer").close();
     window.WinDockAndroid.showPcPicker();
   });
 }
+// Native Android already runs fullscreen, including older keyboard-capable clients.
+$("fullscreen").hidden = nativeTransport || typeof window.WinDockAndroid?.showKeyboard === "function";
 if (typeof window.WinDockAndroid?.showPhoneSettings === "function") {
   $("phone-options-row").hidden = false;
   $("phone-options").addEventListener("click", () => window.WinDockAndroid.showPhoneSettings());
@@ -43,15 +53,16 @@ document.addEventListener("error", (event) => {
   if (event.target instanceof HTMLImageElement && event.target.closest(".app-icon")) event.target.parentElement.classList.add("icon-failed");
 }, true);
 
-function notify(message, error = false) {
+function notify(message, error = false, warning = false) {
   clearTimeout(toastTimer);
   const el = $("toast");
   el.textContent = message;
   el.dataset.error = String(error);
+  el.dataset.warning = String(warning && !error);
   // Native dialogs occupy the top layer; feedback belongs inside the active one.
   (Array.from(document.querySelectorAll("dialog[open]")).at(-1) || document.body).append(el);
   el.hidden = false;
-  toastTimer = setTimeout(() => { el.hidden = true; }, error ? 5500 : 2700);
+  toastTimer = setTimeout(() => { el.hidden = true; }, warning ? 6500 : error ? 5500 : 2700);
 }
 function report(error) {
   if (error.message === "unauthorized") return;
@@ -107,7 +118,7 @@ function openCapture() {
   refreshCapture().catch(report);
 }
 async function api(path, options = {}) {
-  const res = await fetch(path, {
+  const res = await dockFetch(path, {
     credentials: "same-origin",
     headers: options.body ? { "content-type": "application/json" } : {},
     ...options,
@@ -150,6 +161,7 @@ function syncLayout() {
   document.body.classList.toggle("is-immersive", layout.immersive);
   document.body.classList.toggle("show-labels", layout.showLabels);
   $("drawer-open").hidden = !layout.immersive || !paired;
+  $("quick-controls-open").hidden = !layout.immersive || !paired || editing;
   $("edit-done").hidden = !layout.immersive || !editing || !paired;
   $("immersive").checked = layout.immersive;
   $("show-labels").checked = layout.showLabels;
@@ -189,8 +201,9 @@ function paint() {
   $("host-name").textContent = state.hostName || state.platformName || "Your PC";
   $("drawer-host").textContent = $("host-name").textContent;
   document.body.classList.toggle("is-arranging", editing);
+  $("quick-controls-open").hidden = !layout.immersive || !paired || editing;
   $("edit-done").hidden = !layout.immersive || !editing || !paired;
-  $("drawer-edit").innerHTML = icon(editing ? "check" : "edit") + "<span>" + (editing ? "Done" : "Arrange") + "</span>";
+  $("drawer-edit").innerHTML = icon(editing ? "check" : "edit") + "<span>" + (editing ? "Done" : "Edit dock") + "</span>";
   $("dock-title").textContent = editing ? "A place for everything." : "Make yourself at home.";
   $("edit-hint").textContent = editing ? "Drag to move · Tap an icon for options · Done to finish" : "Hold an icon to arrange your space";
   $("edit").setAttribute("aria-pressed", String(editing));
@@ -217,15 +230,17 @@ async function commitTiles(tiles, previous = state.tiles) {
   finally { saving = false; }
 }
 function connect() {
-  if (!paired || socket && [WebSocket.OPEN, WebSocket.CONNECTING].includes(socket.readyState)) return;
+  if (!paired || socket && [DockWebSocket.OPEN, DockWebSocket.CONNECTING].includes(socket.readyState)) return;
   const scheme = location.protocol === "https:" ? "wss:" : "ws:";
-  const ws = new WebSocket(scheme + "//" + location.host);
+  const ws = new DockWebSocket(scheme + "//" + location.host);
   socket = ws;
   ws.onopen = () => setConn(true);
   ws.onclose = () => {
     if (socket !== ws) return;
     socket = null;
     setConn(false);
+    // Managed Android owns bounded rediscovery; do not start a second retry loop.
+    if (nativeTransport) return;
     if (paired) reconnectTimer = setTimeout(async () => {
       try { await refresh(); connect(); } catch (error) { if (paired) reconnectTimer = setTimeout(connect, 2000); }
     }, 2000);
@@ -243,8 +258,10 @@ async function refresh() {
   const fresh = await api("/api/state");
   state = { ...fresh, tiles: editing || saving || gesture?.dragging ? state.tiles : fresh.tiles };
   if (!gesture?.dragging) paint();
-  await nowPlaying.refresh().catch(() => {});
-  await refreshCapture().catch(() => {});
+  // Optional telemetry must not delay showing the dock or opening its main socket.
+  // A native media provider may legitimately take up to 20 seconds to return.
+  nowPlaying.refresh().catch(() => {});
+  refreshCapture().catch(() => {});
 }
 const powerActions = {
   lock: ["Lock your PC?", "Your computer will return to its lock screen.", "Lock PC"],
@@ -274,9 +291,11 @@ async function activate(button) {
   try {
     if (action === "control") {
       const raw = button.dataset.value;
-      await api("/api/control", { method: "POST", body: JSON.stringify(raw === undefined ? { verb: key } : { verb: key, value: Number(raw) }) });
+      const result = await api("/api/control", { method: "POST", body: JSON.stringify(raw === undefined ? { verb: key } : { verb: key, value: Number(raw) }) });
       if (key.startsWith("media-")) nowPlaying.refresh().catch(() => {});
-      notify(powerActions[key] ? "Command sent to your PC" : "Control sent");
+      if (key === "brightness-set" && result.warning === "hdr-active") {
+        notify("Command sent. HDR may prevent the brightness from changing.", false, true);
+      } else notify(powerActions[key] ? "Command sent to your PC" : "Control sent");
     } else if (action === "launch") {
       const running = state.running.find((item) => item.id === key);
       const title = state.tiles.find((item) => item.id === key)?.label || "App";
@@ -299,7 +318,7 @@ function openTileOptions(key) {
 }
 function drawApps() {
   const term = $("filter").value.trim().toLowerCase();
-  const matches = installedApps.filter((app) => app.name.toLowerCase().includes(term));
+  const matches = installedApps.filter((app) => !["folder", "link"].includes(app.source) && app.name.toLowerCase().includes(term));
   const pinned = new Set(state.tiles.filter((tile) => tile.kind === "app").map((tile) => tile.id));
   $("picker-status").textContent = matches.length + " apps" + (term ? " found" : " on your PC") + " · " + pinned.size + " pinned";
   $("picker-list").innerHTML = matches.length ? matches.map((app) => '<li><button type="button" data-id="' + escapeHtml(app.id) + '"' + (pinned.has(app.id) ? " disabled" : "") + ' aria-label="' + escapeHtml((pinned.has(app.id) ? "Pinned: " : "Add ") + app.name) + '">' + renderAppIcon(app, true) + '<span class="picker__name">' + escapeHtml(app.name) + '<small>' + (pinned.has(app.id) ? "On your dock" : escapeHtml((state.platformName || "Desktop") + " app")) + '</small></span><span class="picker__add">' + icon(pinned.has(app.id) ? "check" : "plus") + "</span></button></li>").join("") : '<li class="picker__empty">No apps found. Try a different name.</li>';
@@ -311,17 +330,25 @@ function drawControls() {
 }
 function selectTab(which) {
   const apps = which === "apps";
-  for (const [id, active] of [["tab-apps", apps], ["tab-controls", !apps]]) {
+  const folders = which === "folders";
+  for (const [id, active] of [["tab-apps", apps], ["tab-folders", folders], ["tab-controls", which === "controls"], ["tab-links", which === "links"]]) {
     $(id).classList.toggle("is-active", active);
     $(id).setAttribute("aria-selected", String(active));
     $(id).tabIndex = active ? 0 : -1;
   }
   $("picker-list").hidden = !apps;
-  $("control-list").hidden = apps;
+  $("control-list").hidden = which !== "controls";
+  $("folder-panel").hidden = !folders;
+  $("link-panel").hidden = which !== "links";
   $("picker-search").hidden = !apps;
-  if (apps && appsLoaded) drawApps(); else if (!apps) drawControls();
+  if (apps && appsLoaded) drawApps();
+  else if (folders) $("picker-status").textContent = "Pin a folder from your PC";
+  else if (which === "links") $("picker-status").textContent = "Pin a website to open on your PC";
+  else if (!apps) drawControls();
 }
 async function openPicker() {
+  $("tab-folders").hidden = state.canPickFolders !== true;
+  $("tab-links").hidden = state.canAddLinks !== true;
   selectTab("apps");
   if (!$("picker").open) $("picker").showModal();
   if (appsLoaded) drawApps();
@@ -334,6 +361,16 @@ async function openPicker() {
 }
 function openSettings() { $("drawer").close(); syncLayout(); if (!$("settings").open) $("settings").showModal(); }
 function openDrawer() { if (paired && !$("drawer").open) $("drawer").showModal(); }
+function openControls() {
+  if (!paired || $("controls").open) return;
+  $("drawer").close();
+  $("controls-grid").innerHTML = renderControls(state.verbs, state.allowDestructive);
+  $("power-controls-grid").innerHTML = renderControls(state.verbs, state.allowDestructive, true);
+  $("quick-power").hidden = !$("power-controls-grid").childElementCount;
+  $("controls-grid").scrollTop = 0;
+  $("controls").showModal();
+  $("quick-controls-open").setAttribute("aria-expanded", "true");
+}
 
 $("picker-list").addEventListener("click", async (event) => {
   const button = event.target.closest("button[data-id]");
@@ -372,6 +409,7 @@ function cleanupGesture(cancel = false) {
 }
 $("dock").addEventListener("contextmenu", (event) => event.preventDefault());
 $("dock").addEventListener("pointerdown", (event) => {
+  if (gesture && !event.isPrimary) { gesture.multitouch = true; clearTimeout(gesture.holdTimer); }
   if (event.button !== 0 || saving || !event.isPrimary) return;
   const tile = event.target.closest("[data-tile-key]");
   gesture = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, key: tile?.dataset.tileKey, previous: state.tiles, page: currentPage, dragging: false, held: false, wasEditing: editing };
@@ -431,11 +469,13 @@ document.addEventListener("pointerup", (event) => {
   const startPage = gesture.page;
   const dx = event.clientX - gesture.x, dy = event.clientY - gesture.y;
   const swipeUp = !dragged && !gesture.held && dy < -55 && Math.abs(dy) > Math.abs(dx) * 1.3;
+  const swipeDown = !dragged && !gesture.held && !gesture.multitouch && !editing && !gesture.wasEditing && dy > 55 && Math.abs(dy) > Math.abs(dx) * 1.3;
   const swipeAcross = !dragged && !gesture.held && !editing && Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.3;
   if (dragged || gesture.held || Math.hypot(dx, dy) > 15) suppressClickUntil = Date.now() + 500;
   cleanupGesture();
   if (dragged) commitTiles(state.tiles, previous).catch(report);
   else if (swipeUp) openDrawer();
+  else if (swipeDown) openControls();
   else if (swipeAcross) pageTo(startPage + (dx < 0 ? 1 : -1));
 });
 document.addEventListener("pointercancel", () => cleanupGesture(true));
@@ -484,17 +524,68 @@ for (const [id, delta] of [["tile-earlier", -1], ["tile-later", 1], ["tile-remov
 $("add").addEventListener("click", openPicker);
 $("picker-close").addEventListener("click", () => $("picker").close());
 $("tab-apps").addEventListener("click", () => selectTab("apps"));
+$("tab-folders").addEventListener("click", () => selectTab("folders"));
 $("tab-controls").addEventListener("click", () => selectTab("controls"));
+$("folder-pick").addEventListener("click", async () => {
+  if (!online || saving) return notify("Wait for your PC to reconnect or your last change to finish.", true);
+  if (state.tiles.length >= 64) return notify("Your dock is full. Remove a tile before adding another.", true);
+  const button = $("folder-pick"), status = $("folder-status");
+  button.disabled = true;
+  button.setAttribute("aria-busy", "true");
+  status.textContent = "Choose a folder in the Windows dialog on your PC, then select it. Cancel there to go back.";
+  try {
+    const { app } = await api("/api/folders/pick", { method: "POST", body: "{}" });
+    if (!paired || !$("picker").open) return;
+    if (!app) { status.textContent = "Selection cancelled. No folder was added."; return; }
+    if (state.tiles.some(tile => tile.kind === "app" && tile.id === app.id)) {
+      status.textContent = app.name + " is already on your dock."; return;
+    }
+    if (state.tiles.length >= 64) throw new Error("Your dock is full. Remove a tile before adding another.");
+    await commitTiles(addAppTile(state.tiles, app));
+    appsLoaded = false;
+    status.textContent = app.name + " added. Tap its folder tile to open it on your PC.";
+    notify(app.name + " added to your dock");
+  } catch (error) { status.textContent = error.message; report(error); }
+  finally { button.disabled = false; button.removeAttribute("aria-busy"); }
+});
+$("tab-links").addEventListener("click", () => selectTab("links"));
+$("link-form").addEventListener("submit", async event => {
+  event.preventDefault();
+  const button = $("link-add"), status = $("link-status");
+  if (button.disabled) return;
+  button.disabled = true; button.setAttribute("aria-busy", "true");
+  status.textContent = "Adding link…";
+  try {
+    if (state.tiles.length >= 64) throw new Error("Your dock is full. Remove a tile before adding another.");
+    const { app } = await api("/api/links", { method: "POST", body: JSON.stringify({ name: $("link-name").value.trim(), url: $("link-url").value.trim() }) });
+    if (state.tiles.some(tile => tile.kind === "app" && tile.id === app.id)) {
+      status.textContent = app.name + " is already on your dock."; return;
+    }
+    await commitTiles(addAppTile(state.tiles, app));
+    appsLoaded = false;
+    $("link-form").reset();
+    status.textContent = app.name + " added. Tap its tile to open it on your PC.";
+    notify(app.name + " added to your dock");
+  } catch (error) { status.textContent = error.message; report(error); }
+  finally { button.disabled = false; button.removeAttribute("aria-busy"); }
+});
+
 document.querySelector(".picker__tabs").addEventListener("keydown", (event) => {
   if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
   event.preventDefault();
-  const apps = event.key === "Home" || event.key !== "End" && $("tab-apps").getAttribute("aria-selected") !== "true";
-  selectTab(apps ? "apps" : "controls"); $(apps ? "tab-apps" : "tab-controls").focus();
+  const tabs = ["apps", "folders", "controls", "links"].filter(name => !$("tab-" + name).hidden);
+  const current = tabs.findIndex(name => $("tab-" + name).getAttribute("aria-selected") === "true");
+  const index = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1
+    : (current + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+  selectTab(tabs[index]); $("tab-" + tabs[index]).focus();
 });
 $("filter").addEventListener("input", drawApps);
 $("settings-open").addEventListener("click", openSettings);
 $("swipe-settings").addEventListener("click", openDrawer);
-$("controls-open").addEventListener("click", () => { $("controls-grid").innerHTML = renderControls(state.verbs, state.allowDestructive); $("controls").showModal(); });
+$("controls-open").addEventListener("click", openControls);
+$("quick-controls-open").addEventListener("click", openControls);
+$("controls").addEventListener("close", () => $("quick-controls-open").setAttribute("aria-expanded", "false"));
+$("controls-grip").addEventListener("click", () => $("controls").close());
 document.querySelectorAll("button[data-per-page]").forEach((button) => button.addEventListener("click", () => saveLayout({ perPage: Number(button.dataset.perPage) })));
 document.querySelectorAll("button[data-background]").forEach((button) => button.addEventListener("click", () => saveLayout({ background: button.dataset.background })));
 $("immersive").addEventListener("change", () => saveLayout({ immersive: $("immersive").checked }));
@@ -516,7 +607,6 @@ async function toggleFullscreen() {
   } catch { notify("Fullscreen isn’t available here. Turn your phone sideways to continue."); }
 }
 $("fullscreen").addEventListener("click", toggleFullscreen);
-$("drawer-fullscreen").addEventListener("click", toggleFullscreen);
 $("drawer-open").addEventListener("click", openDrawer);
 $("drawer-close").addEventListener("click", () => $("drawer").close());
 const updatesScreen = createUpdates({ api });
@@ -524,10 +614,12 @@ $("drawer-updates").addEventListener("click", () => updatesScreen.open());
 $("settings-updates").addEventListener("click", () => updatesScreen.open());
 $("drawer-settings").addEventListener("click", openSettings);
 $("drawer-apps").addEventListener("click", () => { $("drawer").close(); openPicker(); });
-$("drawer-controls").addEventListener("click", () => { $("drawer").close(); $("controls-grid").innerHTML = renderControls(state.verbs, state.allowDestructive); $("controls").showModal(); });
-$("drawer-capture").addEventListener("click", openCapture);
-const inputPad = createInputPad({ api, notify, WebSocketClass: WebSocket, storage: localStorage });
-$("drawer-input").addEventListener("click", () => inputPad.open());
+const inputPad = createInputPad({ api, notify, WebSocketClass: DockWebSocket, storage: localStorage });
+$("quick-files").hidden = typeof window.WinDockAndroid?.openFiles !== "function";
+$("quick-files").addEventListener("click", () => { $("controls").close(); window.WinDockAndroid?.openFiles?.(); });
+$("quick-input").addEventListener("click", () => { $("controls").close(); inputPad.open(); });
+$("quick-capture").addEventListener("click", () => { $("controls").close(); openCapture(); });
+$("quick-power").addEventListener("click", () => $("power-controls").showModal());
 $("capture-screenshot").addEventListener("click", () => captureAction("screenshot"));
 $("capture-record").addEventListener("click", () => captureAction(captureActive() ? "stop" : "start"));
 $("recording-stop").addEventListener("click", () => captureAction("stop"));
@@ -542,6 +634,33 @@ document.addEventListener("pointerup", (event) => {
   edgeGesture = null;
 });
 document.addEventListener("pointercancel", () => { edgeGesture = null; });
+// Limit curtain gestures to the dock and its own handles. Touchpad, keyboard,
+// clipboard and scrollable panels keep their existing input behavior.
+function curtainSwipe(handle, direction, action) {
+  let start = null;
+  const reset = () => { start = null; };
+  handle.addEventListener("pointerdown", (event) => {
+    if (!event.isPrimary) { reset(); return; }
+    if (event.button !== 0) return;
+    start = { id: event.pointerId, x: event.clientX, y: event.clientY };
+    handle.setPointerCapture(event.pointerId);
+  });
+  handle.addEventListener("pointerup", (event) => {
+    if (start?.id !== event.pointerId) return;
+    const dx = event.clientX - start.x, dy = (event.clientY - start.y) * direction;
+    reset();
+    if (Math.hypot(dx, dy) > 15) suppressClickUntil = Date.now() + 500;
+    if (dy > 30 && dy > Math.abs(dx) * 1.3) {
+      action();
+    }
+  });
+  handle.addEventListener("pointercancel", reset);
+  handle.addEventListener("lostpointercapture", reset);
+  window.addEventListener("blur", reset);
+  document.addEventListener("visibilitychange", reset);
+}
+curtainSwipe($("quick-controls-open"), 1, openControls);
+curtainSwipe($("controls-grip"), -1, () => $("controls").close());
 let drawerGesture = null;
 $("drawer-close").addEventListener("pointerdown", (event) => { drawerGesture = { id: event.pointerId, y: event.clientY }; });
 document.addEventListener("pointerup", (event) => {
@@ -572,7 +691,7 @@ $("pair-form").addEventListener("submit", async (event) => {
   } catch (error) { showPair(error.message); } finally { button.disabled = false; }
 });
 
-if ("serviceWorker" in navigator) {
+if (!nativeTransport && "serviceWorker" in navigator) {
   navigator.serviceWorker.register("/sw.js").catch(() => { /* The shell also works without a service worker. */ });
 }
 syncLayout();

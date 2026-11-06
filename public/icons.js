@@ -1,5 +1,7 @@
 // Small, consistent UI symbols. Application artwork comes from Windows.
 const paths = {
+  updates: '<path d="M12 3v12m-5-5 5 5 5-5M4 16v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/>',
+  files: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M8 13h8m-8 4h5"/>',
   touchpad: '<rect x="2" y="4" width="20" height="16" rx="4"/><path d="M2 15h20m-10 0v5m-4-10 4-3 4 3"/>',
   clipboard: '<rect x="5" y="4" width="14" height="18" rx="3"/><rect x="8" y="2" width="8" height="5" rx="2"/><path d="M9 12h6m-6 4h4"/>',
   keyboard: '<rect x="2" y="5" width="20" height="14" rx="3"/><path d="M6 9h1m4 0h1m4 0h1M6 12h1m4 0h1m4 0h1M7 15h10"/>',

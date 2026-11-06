@@ -58,6 +58,19 @@ try {
   const page = await fetch(base);
   assert.equal(page.status, 200);
   assert.match(await page.text(), /WinDock/);
+  // Check the new secure runtime and help assets in the installed package,
+  // not just the development checkout used by earlier feature tests.
+  const info = await (await fetch(`${base}/api/updates`)).json();
+  assert.equal(info.installedVersion, '0.3.0');
+  const pairing = await fetch(`${base}/pair`);
+  assert.equal(pairing.status, 200);
+  assert.match(await pairing.text(), /Check connection/);
+  const help = await fetch(`${base}/api/pairing/network`, { headers: { 'x-windock-pair': 'local' } });
+  assert.equal(help.status, 200, 'packaged network help is available locally');
+  const identity = `${configDir}/config.json.secure/identity.json`;
+  assert.equal((await stat(identity)).mode & 0o777, 0o600);
+  assert.equal((await stat(`${configDir}/config.json.secure`)).mode & 0o777, 0o700);
+  assert.ok(JSON.parse(await readFile(identity, 'utf8')).ca, 'packaged TLS dependencies create a private CA');
   const auth = await fetch(`${base}/api/auth`, {
     method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ pin }),
   });

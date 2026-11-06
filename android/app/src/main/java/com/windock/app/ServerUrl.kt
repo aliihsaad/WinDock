@@ -23,7 +23,7 @@ object ServerUrl {
     fun migrate(context: Context) {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         if (prefs.contains("usbEndpoint") || prefs.contains("wifiEndpoint")) return
-        val old = prefs.getString(KEY, null)?.let { EndpointPolicy.normalize(it) } ?: return
+        val old = prefs.getString(KEY, null)?.let { EndpointPolicy.canonicalize(it) } ?: return
         prefs.edit().putString(key(PhonePreferences.usbOnly(context)), old).apply()
     }
 
@@ -32,7 +32,7 @@ object ServerUrl {
     fun load(context: Context, usbOnly: Boolean = PhonePreferences.usbOnly(context)): String? =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .getString(key(usbOnly), null)
-            ?.let { EndpointPolicy.normalize(it) }
+            ?.let { EndpointPolicy.canonicalize(it) }
             ?.takeIf { canAutoConnect(context, it) }
 
     fun save(context: Context, url: String, usbOnly: Boolean = PhonePreferences.usbOnly(context)) {
@@ -63,10 +63,11 @@ object ServerUrl {
 
     /** Forget is persistent even if this endpoint answers automatic discovery again. */
     fun forgetHost(context: Context, endpoint: String, hostId: String = "") {
-        val target = EndpointPolicy.normalize(endpoint) ?: return
+        val target = EndpointPolicy.canonicalize(endpoint) ?: return
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val hosts = knownHosts(context)
         val identity = KnownHosts.cleanId(hostId).ifBlank { hosts.find { it.endpoint == target }?.hostId.orEmpty() }
+        if (identity.isNotEmpty()) SecurePairing(context).forget(identity)
         val removed = hosts.filter { it.endpoint == target || (identity.isNotEmpty() && it.hostId == identity) }
         val addresses = removed.map { it.endpoint }.toSet() + target
         val edit = prefs.edit().putString(KNOWN, KnownHosts.serialize(hosts - removed.toSet()))
@@ -77,13 +78,13 @@ object ServerUrl {
                     addresses.map { "$identity|$it" }.toSet())
         }
         for (slot in listOf(KEY, key(false), key(true))) {
-            if (EndpointPolicy.normalize(prefs.getString(slot, null)) in addresses) edit.remove(slot)
+            if (EndpointPolicy.canonicalize(prefs.getString(slot, null)) in addresses) edit.remove(slot)
         }
         edit.apply()
     }
 
     fun canAutoConnect(context: Context, endpoint: String): Boolean {
-        val target = EndpointPolicy.normalize(endpoint) ?: return false
+        val target = EndpointPolicy.canonicalize(endpoint) ?: return false
         return target !in context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .getStringSet(FORGOTTEN, emptySet()).orEmpty()
     }

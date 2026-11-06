@@ -24,6 +24,8 @@ import { fileURLToPath } from "node:url";
 import { createWindowsCapture } from "./capture.js";
 import { createWindowsInput } from "./input.js";
 import { createClipboardHistory } from "./clipboard.js";
+import { folderApp } from "../folders.js";
+import { linkApp } from "../links.js";
 
 /** Constant PowerShell: classic shortcuts and the Windows packaged-app catalog. */
 export const INVENTORY_PS = [
@@ -258,6 +260,7 @@ export function createWindowsProvider({ exec, helperPath = process.env.WINDOCK_H
   const helper = (args) => exec(helperPath, args);
   // DDC/CI monitor firmware can reject overlapping requests.
   let brightnessQueue = Promise.resolve();
+  let pickingFolder = false;
 
   return {
     id: "windows",
@@ -265,6 +268,29 @@ export function createWindowsProvider({ exec, helperPath = process.env.WINDOCK_H
     capture: createWindowsCapture({ helperPath }),
     input: createWindowsInput({ helperPath }),
     clipboard: createClipboardHistory({ platform: "windows", helperPath }),
+
+    async pickFolder() {
+      if (pickingFolder) throw Object.assign(new Error("A folder picker is already open on your PC."), { status: 409 });
+      pickingFolder = true;
+      try {
+        // This helper intentionally shows an interactive Windows folder dialog.
+        const { stdout } = await exec(helperPath, ["pick-folder"], { interactive: true, timeoutMs: 120_000 });
+        const [result] = jsonArray(stdout);
+        if (result?.path === null) return null;
+        const app = folderApp(result?.path);
+        if (!app) throw new Error("invalid folder result");
+        return app;
+      } catch (cause) {
+        throw Object.assign(new Error("Could not choose a folder. Try again and select a local folder on your PC within two minutes.", { cause }), { status: 422 });
+      } finally { pickingFolder = false; }
+    },
+
+    async openFolder(app) {
+      const checked = folderApp(app?.target);
+      if (!checked || checked.id !== app.id || app.args) throw Object.assign(new Error("Invalid folder shortcut."), { status: 400 });
+      try { await helper(["open-folder", checked.target]); }
+      catch (cause) { throw Object.assign(new Error("This folder is unavailable. Check its drive or add the folder again.", { cause }), { status: 422 }); }
+    },
 
     async appIcon(app) {
       const aumid = packagedAppId(app.target);
@@ -283,6 +309,13 @@ export function createWindowsProvider({ exec, helperPath = process.env.WINDOCK_H
     async listRunningApps() {
       const { stdout } = await ps(RUNNING_PS);
       return parseRunning(stdout);
+    },
+
+    async openLink(app) {
+      const checked = linkApp(app?.target);
+      if (!checked || checked.id !== app.id || app.args) throw Object.assign(new Error("Invalid website shortcut."), { status: 400 });
+      try { await helper(["open-link", checked.target]); }
+      catch { throw Object.assign(new Error("Could not open the website. Check your computer's default browser."), { status: 422 }); }
     },
 
     async launchApp(app) {
@@ -329,12 +362,18 @@ export function createWindowsProvider({ exec, helperPath = process.env.WINDOCK_H
       if (verb === "brightness-set") {
         const pending = brightnessQueue.then(() => helper(args));
         brightnessQueue = pending.catch(() => {});
-        try { await pending; }
+        let stdout;
+        try { ({ stdout } = await pending); }
         catch (cause) {
-          const error = new Error("Could not adjust display brightness. Check that DDC/CI is enabled in your monitor's menu and its picture mode allows brightness changes.", { cause });
+          const error = new Error("Could not adjust display brightness. For a laptop screen, check the display driver. For an external monitor, check DDC/CI and its picture mode. HDR may also restrict brightness changes.", { cause });
           error.status = 503;
           throw error;
         }
+        // Older helpers have no response body. Optional diagnostics must never
+        // turn a successful control into a failure or expose native output.
+        try {
+          if (JSON.parse(stdout).hdrActive === true) return { ok: true, verb, warning: "hdr-active" };
+        } catch { /* Legacy helper or unavailable display diagnostics. */ }
       } else await helper(args);
       return { ok: true, verb };
     },

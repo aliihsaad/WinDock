@@ -1,6 +1,7 @@
 /** Issue #41: reserved/default ports recover without changing explicit choices. */
 import { EventEmitter } from "node:events";
 import { createServer, Server } from "node:http";
+import { request as httpsRequest } from "node:https";
 import { createSocket } from "node:dgram";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -144,4 +145,84 @@ try {
   }
   await rm(directory, { recursive: true, force: true });
 }
+// Regression: a custom HTTP PORT must never become either HTTPS listener's default.
+// Use temporary identity/config and a mock provider; no installed companion state is read.
+const customDirectory = await mkdtemp(join(tmpdir(), "windock-custom-port-"));
+const environmentNames = ["PORT", "WINDOCK_TLS_PORT", "WINDOCK_MANAGED_TLS_PORT", "WINDOCK_TLS_CERT", "WINDOCK_TLS_KEY"];
+const originalEnvironment = Object.fromEntries(environmentNames.map(name => [name, process.env[name]]));
+for (const name of environmentNames) delete process.env[name];
+const fixture = {
+  host: "", discoveryPort: 0, trustLoopback: false, pin: "123456",
+  provider: { id: "test", displayName: "Test", listRunningApps: async () => [] },
+  updates: { state: () => ({ status: "unchecked" }) },
+  configStore: createConfigStore({ path: join(customDirectory, "config.json") }),
+};
+async function unusedPort() {
+  const probe = createServer();
+  await new Promise(resolve => probe.listen(0, resolve));
+  const port = probe.address().port;
+  await new Promise(resolve => probe.close(resolve));
+  return port;
+}
+async function closeHost(host) {
+  if (!host) return;
+  await host.discovery.close();
+  await host.hub.close(); await host.inputHub.close();
+  await Promise.all([host.server, host.secureServer, host.managedServer].filter(Boolean).map(server => {
+    server.closeAllConnections();
+    return new Promise(resolve => server.close(resolve));
+  }));
+}
+function secureHealth(host, port) {
+  return new Promise((resolve, reject) => {
+    const req = httpsRequest({ hostname: "127.0.0.1", port, path: "/health", agent: false,
+      servername: host.managed.name, ca: host.managed.ca,
+      headers: { host: `${host.managed.name}:${port}` } }, res => {
+      res.resume(); res.on("end", () => resolve(res.statusCode));
+    });
+    req.on("error", reject); req.end();
+  });
+}
+let customHost;
+try {
+  process.env.PORT = String(await unusedPort());
+  try {
+    customHost = await start(fixture);
+    t.equal(customHost.port, Number(process.env.PORT), "custom HTTP PORT is preserved");
+    t.ok(customHost.managedPort !== customHost.port, "managed HTTPS chooses its own port");
+    t.equal((await fetch(`http://127.0.0.1:${customHost.port}/health`)).status, 200, "legacy HTTP remains reachable");
+    t.equal((await fetch(`http://127.0.0.1:${customHost.port}/api/state`)).status, 401, "custom HTTP still requires pairing");
+    t.equal(await secureHealth(customHost, customHost.managedPort), 200, "managed HTTPS validates its certificate on the separate port");
+  } catch (error) {
+    t.ok(false, `custom HTTP with automatic managed HTTPS must start: ${error.message}`);
+  }
+  // Reuse only this temporary fixture's certificate for the optional external listener.
+  const tls = customHost?.managed.options;
+  await closeHost(customHost); customHost = null;
+  if (tls) {
+    process.env.PORT = String(await unusedPort());
+    customHost = await start({ ...fixture, tls });
+    t.equal(new Set([customHost.port, customHost.securePort, customHost.managedPort]).size, 3,
+      "custom HTTP, external HTTPS and managed HTTPS bind three distinct ports");
+    t.equal(await secureHealth(customHost, customHost.securePort), 200, "external HTTPS retains certificate validation");
+    await closeHost(customHost); customHost = null;
+    process.env.PORT = String(await unusedPort());
+    process.env.WINDOCK_TLS_PORT = String(await unusedPort());
+    process.env.WINDOCK_MANAGED_TLS_PORT = String(await unusedPort());
+    customHost = await start({ ...fixture, tls });
+    t.equal(customHost.securePort, Number(process.env.WINDOCK_TLS_PORT), "explicit external HTTPS port is preserved");
+    t.equal(customHost.managedPort, Number(process.env.WINDOCK_MANAGED_TLS_PORT), "explicit managed HTTPS port is preserved");
+    await closeHost(customHost); customHost = null;
+    // A genuinely conflicting explicit setting must still fail, not silently move.
+    process.env.WINDOCK_MANAGED_TLS_PORT = process.env.PORT;
+    await t.rejects(() => start({ ...fixture, tls }), "explicitly colliding listener ports still fail");
+  }
+} finally {
+  await closeHost(customHost);
+  for (const [name, value] of Object.entries(originalEnvironment)) {
+    if (value === undefined) delete process.env[name]; else process.env[name] = value;
+  }
+  await rm(customDirectory, { recursive: true, force: true });
+}
+
 t.done("server-port verification passed");
