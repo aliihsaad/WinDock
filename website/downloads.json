@@ -1,11 +1,11 @@
 {
   "version": "0.3.0",
   "available": true,
-  "generatedAt": "2026-11-06T11:21:39.2361223Z",
+  "generatedAt": "2026-11-06T19:47:37.7103101Z",
   "windows": {
     "url": "https://github.com/aliihsaad/WinDock/releases/download/v0.3.0/WinDockSetup.exe",
-    "sha256": "b92f97b52d197aeb6b3c1bcf80062d519bbb1c6acf84c1621147e8897fc679c5",
-    "bytes": 122619745
+    "sha256": "8ec7d11b50e8d170be502118873fccbb4abe1d74a97c11d8005b727e2522f7f9",
+    "bytes": 122620490
   },
   "android": {
     "sha256": "996e3b4be0148bc03b8906cdd75e93ae9329a556045aaca9e490ca4108f9e3ae",
