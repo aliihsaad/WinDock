@@ -4,6 +4,18 @@
 
 - Native iPhone companion source and simulator checks remain in development;
   no installable iPhone release is included.
+- Full glass: the drawer, sheets, dialogs and dropdown menus now bend what sits
+  behind them at their curved edge. Android and Chromium browsers draw true
+  refraction; other browsers keep frosted blur with the same rim and reflection.
+- Every glass surface gets a lit rim and a reflection that leans toward your finger.
+  Sheets frost more than small glass, so text stays readable over bright icons.
+- Dropdowns: Performance mode, Glass style and signature ink now open a glass menu
+  instead of the system picker, with full keyboard support. The clipboard and
+  pointer speed panels get the same rim and reflection, without refraction, so
+  nothing recomputes over the animated touchpad field.
+- Redesign the quick controls notch: slimmer real glass that flows out of the top
+  edge through soft curves, with the same touch area as before.
+- Performance mode removes all of the above and keeps solid surfaces.
 
 ## 0.3.1 — November 7, 2026
 

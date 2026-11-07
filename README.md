@@ -93,7 +93,7 @@ or **Appearance → This phone · screen & sleep** in the dock. Android’s scre
 timeout may add a delay before the display turns off.
 
 **Appearance → Performance mode** offers **Auto**, **On**, and
-**Off**. On removes glass blur, animated paging, and heavy touch effects for older
+**Off**. On removes glass effects, animated paging, and heavy touch effects for older
 phones. Auto enables it when Android reports a low-RAM device or at most 2 GiB of
 total usable RAM; browsers and older companions can select On manually. Manual
 On/Off always wins over Auto, and Off restores your selected glass style.

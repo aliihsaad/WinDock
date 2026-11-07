@@ -7,8 +7,12 @@ import { pairingError } from "./pairing.js";
 import { createUpdates } from "./updates.js";
 import { createNowPlayingPoller } from "./now-playing.js";
 import { dockFetch, DockWebSocket, nativeTransport } from "./native-transport.js";
+import { startGlass } from "./glass.js";
+import { enhanceSelects } from "./glass-select.js";
 
 const $ = (id) => document.getElementById(id);
+const syncSelects = enhanceSelects();
+startGlass();
 if (location.protocol === 'https:') {
   document.querySelector('.pair__hint').textContent = 'Enter the secure pairing PIN from your PC’s WinDock tray → Show connection info.';
 }
@@ -179,6 +183,7 @@ function syncPerformance() {
   $("performance-mode").value = performanceMode.preference;
   $("glass-theme").disabled = performanceMode.enabled;
   $("glass-hint").hidden = !performanceMode.enabled;
+  syncSelects();
   $("performance-status").textContent = performanceMode.preference === "auto"
     ? (performanceMode.enabled ? "Auto · On for this device. Fewer effects, instant page changes." : "Auto · Off. Turn on for fewer effects and instant page changes on older phones.")
     : (performanceMode.enabled ? "On · Fewer effects and instant page changes on this device." : "Off · Your usual appearance is restored.");

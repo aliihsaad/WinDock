@@ -94,12 +94,12 @@
     </div>
     <div class="pc-clipboard">
       <button id="pc-clipboard-toggle" class="pc-clipboard__toggle" type="button" aria-label="PC clipboard" title="PC clipboard" aria-expanded="false" aria-controls="pc-clipboard-panel" hidden><span data-icon="clipboard"></span></button>
-      <section id="pc-clipboard-panel" class="pc-clipboard__panel" aria-label="PC clipboard history" hidden>
+      <section id="pc-clipboard-panel" class="pc-clipboard__panel" aria-label="PC clipboard history" hidden><div class="pc-clipboard__scroll">
         <div class="pc-clipboard__heading"><button id="pc-clipboard-back" type="button" aria-label="Back to clipboard history" hidden><span data-icon="left"></span></button><strong id="pc-clipboard-title">Recent clipboard</strong><button id="pc-clipboard-refresh" type="button" aria-label="Refresh PC clipboard"><span data-icon="refresh"></span></button><button id="pc-clipboard-close" type="button" aria-label="Collapse PC clipboard"><span data-icon="close"></span></button></div>
         <p id="pc-clipboard-status" role="status"></p>
         <div id="pc-clipboard-list" class="pc-clipboard__list" aria-label="Recent text items"></div>
         <div id="pc-clipboard-editor" hidden><label for="pc-clipboard-text">Text to paste</label><textarea id="pc-clipboard-text" rows="3" maxlength="32768" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea><button id="pc-clipboard-paste" type="button" disabled>Paste to PC</button></div>
-      </section>
+      </div></section>
     </div>
     <div class="touchpad-toolbar" aria-label="Touchpad controls">
       <div class="touchpad-navigation"><button type="button" data-close="input-pad" aria-label="Back to dock" title="Back to dock"><span data-icon="left"></span></button></div>
@@ -239,16 +239,16 @@
   <div id="power-controls-grid" class="controls-grid"></div>
 </dialog>
 
-<dialog id="tile-options" class="options" aria-labelledby="tile-options-title">
+<dialog id="tile-options" class="options" aria-labelledby="tile-options-title"><div class="dialog-scroll">
   <span id="tile-options-icon" class="options__icon"></span><h2 id="tile-options-title">App options</h2><p>Make a little room. Keep it in reach.</p>
   <div class="options__actions"><button id="tile-earlier" type="button"><span data-icon="left"></span>Move earlier</button><button id="tile-later" type="button"><span data-icon="right"></span>Move later</button><button id="tile-remove" class="danger-text" type="button"><span data-icon="trash"></span>Remove from dock</button></div>
   <button class="button options__done" type="button" data-close="tile-options">Done</button>
-</dialog>
+</div></dialog>
 
-<dialog id="confirm" class="confirm" aria-labelledby="confirm-title" aria-describedby="confirm-description">
+<dialog id="confirm" class="confirm" aria-labelledby="confirm-title" aria-describedby="confirm-description"><div class="dialog-scroll">
   <span class="confirm__icon" data-icon="power"></span><h2 id="confirm-title">Continue?</h2><p id="confirm-description"></p>
   <div class="confirm__actions"><button id="confirm-cancel" class="button" type="button" autofocus>Cancel</button><button id="confirm-go" class="button button--danger" type="button">Continue</button></div>
-</dialog>
+</div></dialog>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 <script type="module" src="/app.js"></script>
 </body>
