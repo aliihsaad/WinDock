@@ -28,6 +28,8 @@ The website demo includes the same controls and simulated key feedback.
 2. Install WinDock-android-debug.apk over the existing Android app. Version 0.3.1
    uses version code 11 and the existing GitHub signing certificate. The historical
    filename is retained for compatibility with update checks.
+   Public APKs older than 0.2.2 used a different signing key and require uninstalling
+   that old Android app first. This resets phone-only settings; the PC dock is kept.
 3. Open the companion and phone app. Existing secure pairings should reconnect.
    Users moving from the older PIN-only connection can choose Scan computer code
    to enable secure features. The GitHub APK retains older HTTP/PIN connections;

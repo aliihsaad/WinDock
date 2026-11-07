@@ -45,8 +45,8 @@ under the MIT license, the listing credits Ali Saad and links to the
 
 | Platform | Availability |
 | --- | --- |
-| Windows 10 / 11, x64 | [Download the installer](https://github.com/aliihsaad/WinDock/releases/download/v0.3.0/WinDockSetup.exe) |
-| Android 7.0+ | [Download the APK](https://github.com/aliihsaad/WinDock/releases/download/v0.3.0/WinDock-android-debug.apk) |
+| Windows 10 / 11, x64 | [Download the installer](https://github.com/aliihsaad/WinDock/releases/download/v0.3.1/WinDockSetup.exe) |
+| Android 7.0+ | [Download the APK](https://github.com/aliihsaad/WinDock/releases/download/v0.3.1/WinDock-android-debug.apk) |
 | Linux (Hyprland), x86-64 | [Arch/Omarchy and Debian/Ubuntu installer preview](#linux-preview) |
 | iOS | Coming soon — [native companion development & GitHub builds](ios/README.md); no installable public release yet. |
 
@@ -63,7 +63,7 @@ under the MIT license, the listing credits Ali Saad and links to the
 The Windows installer is currently unsigned and the Android APK is debug-signed.
 Windows may show a publisher warning. An APK signed with a different key can
 require uninstalling an earlier Android build before installing the new one.
-See the [release notes and checksums](https://github.com/aliihsaad/WinDock/releases/tag/v0.3.0).
+See the [release notes and checksums](https://github.com/aliihsaad/WinDock/releases/tag/v0.3.1).
 
 The Android **Switch PC** picker discovers running WinDock
 hosts and keeps up to eight recently reached addresses. It is available on the
@@ -134,7 +134,7 @@ to it, with the touchpad, phone keyboard and signatures.
 ### Install a package (no build tools needed)
 
 Download the package for your **x86-64** machine from the
-[current release](https://github.com/aliihsaad/WinDock/releases/tag/v0.3.0).
+[current release](https://github.com/aliihsaad/WinDock/releases/tag/v0.3.1).
 The Node.js runtime and compiled input helper are included. Your package
 manager installs the desktop dependencies and configures touchpad permissions.
 
@@ -308,13 +308,13 @@ in the app and pair normally; automatic discovery remains LAN-only.
 See the [Android Tailscale setup](android/README.md#tailscale-connection-development-build)
 for connection steps and firewall requirements.
 
-## Prepared release
+## Current release
 
-[0.3.0](https://github.com/aliihsaad/WinDock/releases/tag/v0.3.0) adds secure QR
-pairing, Files & Media, folder and website tiles, quick controls and network help.
-This checkout is unpublished preparation; see [readiness](docs/GITHUB_RELEASE_0.3.0.md).
-Update both the PC host and Android companion. Android version code 10 preserves
-the existing signing certificate for in-place upgrades.
+[0.3.1](https://github.com/aliihsaad/WinDock/releases/tag/v0.3.1) adds a gesture-aware
+touchpad, thumb-friendly clicks, optional split PC keys, a keyboard capitalization
+correction and quick connection controls. Update both the PC host and Android
+companion. Android version code 11 preserves the existing signing certificate
+for in-place upgrades.
 See the [version history](CHANGELOG.md) for changes and upgrade notes.
 
 The Windows installer, Android APK and Linux packages are built from this source.
