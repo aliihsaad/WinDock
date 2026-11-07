@@ -449,7 +449,7 @@ body.has-connection-navigation .pair { padding-top: calc(52px + env(safe-area-in
 .pc-clipboard button { min-height: 44px; border: 0; border-radius: 12px; color: #d5e1f1; background: #a8c7ff0b; touch-action: manipulation; }
 .pc-clipboard button:focus-visible { outline: 2px solid #a8c7ff; outline-offset: 2px; }
 .pc-clipboard .icon { width: 18px; height: 18px; flex: 0 0 auto; }
-.pc-clipboard__toggle { display: flex; align-items: center; gap: 9px; margin-left: auto; padding: 0 14px; font-size: 12px; backdrop-filter: blur(16px); }
+.pc-clipboard__toggle { display: flex; align-items: center; gap: 9px; margin-left: auto; padding: 0 14px; font-size: 12px; }
 .pc-clipboard__chevron { color: #8498b3; }
 .pc-clipboard__toggle[aria-expanded="true"] .pc-clipboard__chevron { transform: rotate(180deg); }
 .pc-clipboard__panel { width: min(350px, calc(100vw - 28px)); max-height: calc(100vh - 136px); max-height: calc(100dvh - 136px); overflow: auto; overscroll-behavior: contain; margin-top: 8px; padding: 14px; border: 1px solid #c3d9ff19; border-radius: 20px; background: #151c29ed; box-shadow: 0 16px 45px #0006; backdrop-filter: blur(20px); }
@@ -483,7 +483,7 @@ html.perf :is(.pc-clipboard__panel, .pc-clipboard__toggle) { backdrop-filter: no
 .pointer-speed output { color: var(--accent); font-variant-numeric: tabular-nums; }
 .pointer-speed-scale { display: flex; justify-content: space-between; color: #8490a2; font-size: 10px; }
 .mouse-buttons, .signature-tools { display: flex; align-items: center; gap: 8px; }
-.mouse-buttons { justify-self: center; pointer-events: auto; padding: 3px; gap: 2px; border-radius: 17px; background: #141b2699; backdrop-filter: blur(16px); }
+.mouse-buttons { justify-self: center; pointer-events: auto; padding: 3px; gap: 2px; border-radius: 17px; background: #141b26d9; }
 .mouse-buttons button { background: transparent; min-width: 82px; }
 .mouse-buttons button[aria-pressed="true"] { background: #a8c7ff22; color: #c3d9ff; }
 .signature-tools button { border: 0; background: #ffffff08; border-radius: 12px; padding: 10px 18px; font-size: 12px; min-height: 44px; }
