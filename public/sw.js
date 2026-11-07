@@ -9,7 +9,7 @@
  *    worse, replay a control action from cache. Neither is acceptable.
  */
 
-const VERSION = "windock-v29-touchpad-field";
+const VERSION = "windock-v30-touchpad-layout";
 const SHELL = [
   "/",
   "/index.html",

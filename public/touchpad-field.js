@@ -200,12 +200,13 @@ export function createTouchpadField(canvas, surface) {
     magnifyTarget = 1; lastLift = null;
     kick();
   }
-  function tap() {
-    if (!live() || !lastLift) return;
-    ripples.push({ ...lastLift, age: 0 });
+  function ripple(x, y) {
+    if (!live()) return;
+    ripples.push({ x, y, age: 0 });
     if (ripples.length > 6) ripples.shift();
     kick();
   }
+  function tap() { if (lastLift) ripple(lastLift.x, lastLift.y); }
   function scroll(dx, dy) {
     if (!live()) return;
     const now = performance.now(), seconds = Math.max(now - scrolled, 1) / 1000; scrolled = now;
@@ -224,5 +225,5 @@ export function createTouchpadField(canvas, surface) {
   canvas.addEventListener("webglcontextlost", (event) => { event.preventDefault(); program = null; canvas.hidden = true; });
   canvas.addEventListener("webglcontextrestored", () => { update({ open: visible, dragging: lockTarget === 1 }); });
   new ResizeObserver(() => { if (live() && resize()) kick(); }).observe(surface);
-  return { update, touch, lift, clear, tap, scroll, zoom };
+  return { update, touch, lift, clear, tap, ripple, scroll, zoom };
 }

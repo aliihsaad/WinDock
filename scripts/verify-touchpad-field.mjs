@@ -90,6 +90,11 @@ for (const [name, set] of [["Performance mode", () => { perf = true; }], ["reduc
 
   // Each gesture has its own response, and every one of them comes to rest.
   field.touch(1, 120, 80); pump(3); field.lift(1); pump(400);
+  field.ripple(40, 350);
+  t.deepEqual(Array.from(gl.values.W).slice(0, 2), [-1, -1], "a ripple waits for its frame");
+  pump(1);
+  t.deepEqual(Array.from(gl.values.W).slice(0, 2), [40, 350], "a corner click ripples from where it was pressed");
+  pump(400);
   field.tap(); const tapped = pump(400);
   t.ok(tapped > 60 && tapped < 120, `a tap ripples for about a second and a half (${tapped} frames)`);
   t.equal(queue.length, 0, "a tap settles");
@@ -149,11 +154,30 @@ for (const [name, set] of [["Performance mode", () => { perf = true; }], ["reduc
   t.equal(field.touch(1, 10, 10), true, "a restored context takes touches again");
 }
 
+{
+  const { field } = harness(null);
+  field.update(open); field.ripple(40, 350);
+  t.equal(queue.length, 0, "a corner click draws nothing when the field cannot run");
+}
+
 // A module the shell imports but the cache or website demo lacks breaks them outright.
-const pad = read("public/input-pad.js"), html = read("public/index.html");
+const pad = read("public/input-pad.js"), html = read("public/index.html"), css = read("public/style.css");
 t.ok(pad.includes('from "./touchpad-field.js"'), "the touchpad loads the field");
 t.ok(read("public/sw.js").includes('"/touchpad-field.js"'), "the offline shell precaches the field");
 t.ok(read("scripts/build-website-demo.mjs").includes("'touchpad-field.js'"), "the website demo copies the field");
 t.ok(html.indexOf('id="touchpad-field"') > 0 && html.indexOf('id="touchpad-field"') < html.indexOf('id="touchpad-feedback"'), "the field sits behind the feedback and hint");
 t.ok(/\.touchpad-field \{[^}]*pointer-events: none/.test(read("public/style.css")), "the field never intercepts touches");
+
+// Thumb zones keep every control the app and its device tests drive by id.
+for (const id of ["mouse-left", "mouse-right", "mouse-drag", "mouse-drag-label", "touchpad-signature", "touchpad-keyboard", "pointer-options-toggle", "pc-clipboard-toggle"]) t.ok(html.includes(`id="${id}"`), `the touchpad keeps #${id}`);
+t.ok(/class="touchpad-navigation"><button type="button" data-close="input-pad"/.test(html), "Back to dock stays in the touchpad navigation");
+for (const id of ["pc-clipboard-toggle", "pointer-options-toggle"]) t.ok(new RegExp(`id="${id}"[^>]*aria-label="[^"]+"`).test(html), `#${id} is named now that it only shows an icon`);
+t.ok(/\$\("mouse-drag-label"\)\.textContent/.test(pad), "the Drag label changes without removing its icon");
+t.ok(/field\.ripple\(/.test(pad), "corner clicks ripple through the field");
+t.ok(/#mouse-left \{[^}]*border-radius: 0 100% 0 0/.test(css) && /#mouse-right \{[^}]*border-radius: 100% 0 0 0/.test(css), "thumb zones keep their curved touch area");
+t.ok(!/#mouse-(left|right)[^{]*\{[^}]*(border: |box-shadow)/.test(css), "thumb zones are colour alone, with no drawn edge");
+t.ok(/#6be6b800 100%\); \}\n#mouse-right/.test(css), "the fade reaches nothing before the zone ends, so no hard edge shows");
+t.ok(/prefers-reduced-motion: no-preference\) \{\s+html:not\(\.perf\) \.input-pad\[data-touching="true"\]/.test(css), "controls only fade where motion is welcome");
+t.ok(/\.input-pad\[data-keyboard="true"\] \.touchpad-toolbar \{ visibility: hidden; \}/.test(css), "typing still hides the touchpad controls");
+t.ok(html.indexOf('class="pc-clipboard"') < html.indexOf('class="touchpad-toolbar"'), "the clipboard stays outside the toolbar, so it remains reachable while typing");
 t.done("touchpad-field verification passed");
