@@ -23,6 +23,10 @@ fitPreview();
 
 function openDemo(action) {
   if (!ready) { pendingAction = action; return; }
+  document.querySelector('#demo-key-feedback').hidden = true;
+  document.querySelector('#demo-note').textContent = action === 'touchpad'
+    ? 'Try the touchpad, then turn on PC keys for Esc, Tab, Delete and navigation. The keys fade while you touch the pad. No input is sent to your devices.'
+    : 'A safe space to explore. PCs and clipboard items are samples; this demo never connects to your devices.';
   if (action === 'touchpad' || action === 'signature') send({ type: 'windock-preview-input', mode: action });
   else send({ type: `windock-preview-${action}` });
   document.querySelectorAll('.demo-shortcuts [data-demo-action]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.demoAction === action)));
@@ -85,6 +89,12 @@ dialog.addEventListener('close', () => {
 window.addEventListener('message', event => {
   if (event.source !== frame.contentWindow || event.origin !== location.origin) return;
   const data = event.data;
+  if (data?.type === 'windock-preview-key' && ['Escape', 'Tab', 'Delete', 'Home', 'End', 'ArrowLeft', 'ArrowUp', 'ArrowDown', 'ArrowRight', 'Backspace', 'Enter'].includes(data.key)) {
+    const feedback = document.querySelector('#demo-key-feedback');
+    const label = { Escape: 'Esc', ArrowLeft: '←', ArrowUp: '↑', ArrowDown: '↓', ArrowRight: '→' }[data.key] || data.key;
+    feedback.textContent = `Demo key: ${label} · No key is sent to your PC.`;
+    feedback.hidden = false;
+  }
   if (data?.type === 'windock-preview-ready') { ready = true; if (pendingAction) { openDemo(pendingAction); pendingAction = null; } }
   if (data?.type === 'windock-preview-layout') document.querySelectorAll('[data-density-choice]').forEach(button => button.setAttribute('aria-pressed', String(Number(button.dataset.densityChoice) === data.perPage)));
   if (data?.type === 'windock-preview-typed' && typeof data.text === 'string') {

@@ -138,6 +138,7 @@ export class WebSocket {
       queueMicrotask(() => { if (this.readyState === WebSocket.OPEN) this.onmessage?.({ data: JSON.stringify({ type: 'paste-result' }) }); });
     }
     if (message.type === 'key') {
+      parent.postMessage({ type: 'windock-preview-key', key: message.key }, location.origin);
       if (message.key === 'Backspace') typedText = Array.from(typedText).slice(0, -1).join('');
       if (message.key === 'Enter') typedText = (typedText + '\n').slice(-500);
       if (message.key === 'Tab') typedText = (typedText + '  ').slice(-500);
