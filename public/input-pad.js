@@ -1,4 +1,5 @@
 import { TouchpadGestures } from "./touchpad-gestures.js";
+import { createTouchpadField } from "./touchpad-field.js";
 import { createRemoteKeyboard } from "./remote-keyboard.js";
 import { createPcClipboard } from "./pc-clipboard.js";
 
@@ -24,6 +25,7 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
   $("pointer-speed-value").value = speed + "×";
   const setStatus = (text) => { $("input-status").textContent = text; };
   const glowNodes = Array.from($("touchpad-feedback").children), contacts = new Map();
+  const field = createTouchpadField($("touchpad-field"), $("touchpad-surface"));
   function showContact(event) {
     let contact = contacts.get(event.pointerId);
     if (!contact) {
@@ -32,6 +34,7 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
       contact = { node, rect: $("touchpad-surface").getBoundingClientRect() }; contacts.set(event.pointerId, contact);
     }
     const x = event.clientX - contact.rect.left, y = event.clientY - contact.rect.top;
+    if (field.touch(event.pointerId, x, y)) return;
     contact.node.style.transform = `translate3d(${x}px, ${y}px, 0)`;
     if (!document.documentElement.classList.contains("perf")) {
       contact.node.style.setProperty("--contact-x", x + "px");
@@ -39,8 +42,8 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
     }
     contact.node.classList.add("is-touching");
   }
-  function hideContact(id) { contacts.get(id)?.node.classList.remove("is-touching"); contacts.delete(id); }
-  function clearContacts() { for (const node of glowNodes) node.classList.remove("is-touching"); contacts.clear(); }
+  function hideContact(id) { field.lift(id); contacts.get(id)?.node.classList.remove("is-touching"); contacts.delete(id); }
+  function clearContacts() { field.clear(); for (const node of glowNodes) node.classList.remove("is-touching"); contacts.clear(); }
   function showOptions(open) {
     $("pointer-options").hidden = !open;
     $("pointer-options-toggle").setAttribute("aria-expanded", String(open));
@@ -50,6 +53,7 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
     dialog.dataset.mode = mode; dialog.dataset.ready = String(ready); dialog.dataset.demo = String(demo);
     $("touchpad-pane").hidden = mode !== "touchpad";
     $("signature-pane").hidden = mode !== "signature";
+    field.update({ open: dialog.open && mode === "touchpad", dragging });
     $("input-touchpad-tab").setAttribute("aria-pressed", String(mode === "touchpad"));
     $("input-signature-tab").setAttribute("aria-pressed", String(mode === "signature"));
     $("touchpad-surface").dataset.ready = String(ready);
@@ -90,7 +94,7 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
     if (frame === null) frame = requestAnimationFrame(flush);
   }
   function click(button) { flush(); if (raw({ type: "button", button, down: true })) raw({ type: "button", button, down: false }); }
-  const gestures = new TouchpadGestures({ move: (x, y) => motion("move", x * speed, y * speed), scroll: (x, y) => motion("scroll", x * 4, y * 4), zoom: (steps) => raw({ type: "zoom", steps }), click, dragging: () => dragging });
+  const gestures = new TouchpadGestures({ move: (x, y) => motion("move", x * speed, y * speed), scroll: (x, y) => { field.scroll(x, y); motion("scroll", x * 4, y * 4); }, zoom: (steps) => { field.zoom(steps); raw({ type: "zoom", steps }); }, click: (button) => { field.tap(); click(button); }, dragging: () => dragging });
   function release() { clearContacts(); gestures.reset(); flush(); raw({ type: "release" }); dragging = false; paint(); }
   function disconnect() {
     clearInterval(heartbeat); clearTimeout(startup); heartbeat = startup = null;
