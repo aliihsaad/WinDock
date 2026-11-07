@@ -25,6 +25,9 @@ async (page) => {
     for (const size of [{width:844,height:390},{width:640,height:320},{width:568,height:320}]) {
       await tab.setViewportSize(size);
       await tab.locator('#drawer-open').click();
+      await tab.locator('#drawer').evaluate(async drawer => {
+        await Promise.all(drawer.getAnimations({ subtree: true }).map(animation => animation.finished.catch(() => {})));
+      });
       const connection = await tab.locator('#connection-open').boundingBox();
       const picker = await tab.locator('#drawer-switch-pc').boundingBox();
       const actions = await tab.locator('.drawer-actions').boundingBox();
