@@ -22,7 +22,7 @@ foreach (var invalid in new[] { "", "v0.2.1", "0.2", "01.2.1", "0.2.1-preview.01
 }
 var newer = UpdateChecker.ParseManifest(Manifest("0.2.2-preview.1"), "0.2.1-preview.1");
 Check(newer.Status == UpdateStatus.Available, "new release found");
-Check(newer.ReleasePage?.AbsoluteUri == "https://github.com/aliihsaad/WinDock/releases/tag/v0.2.2-preview.1", "opens canonical release page");
+Check(newer.ReleasePage?.AbsoluteUri == "https://windock.vercel.app/#download", "opens official website download section");
 Check(newer.ShouldNotify(false), "startup notifies about a newer release");
 foreach (var version in new[] { "0.2.0-preview.1", "0.2.1-preview.1" }) {
     var current = UpdateChecker.ParseManifest(Manifest(version), "0.2.1-preview.1");

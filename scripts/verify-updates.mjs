@@ -20,6 +20,7 @@ for (const platform of ["windows","linux"]) {
   t.equal(parseUpdateManifest(manifest(),INSTALLED_VERSION,platform).status,"current",platform + " current");
   const nextMajor = Number(INSTALLED_VERSION.split(".")[0]) + 1;
   t.equal(parseUpdateManifest(manifest(`${nextMajor}.0.0-preview.1`),INSTALLED_VERSION,platform).status,"available",platform + " newer");
+  t.equal(parseUpdateManifest(manifest(`${nextMajor}.0.0-preview.1`),INSTALLED_VERSION,platform).releasePage,"https://windock.vercel.app/#download",platform + " offers the website download section");
 }
 t.throws(() => parseUpdateManifest({...manifest(),available:false},INSTALLED_VERSION,"windows"),"unpublished feed rejected");
 t.throws(() => parseUpdateManifest({...manifest(),windows:{url:"https://evil.example/a.exe"}},INSTALLED_VERSION,"windows"),"arbitrary executable URL rejected");
@@ -72,7 +73,7 @@ t.ok(get("updates-version").textContent.includes(INSTALLED_VERSION),"installed v
 answer={status:"available",installedVersion:INSTALLED_VERSION,latestVersion:"0.3.0-preview.1",releasePage:"https://evil.example"};
 await get("updates-check").handlers.click();await flush();
 t.equal(get("updates-download").hidden,false,"newer release reveals download action");
-t.equal(get("updates-download").href,RELEASES_URL+"/tag/v0.3.0-preview.1","UI constructs official release link");
+t.equal(get("updates-download").href,"https://windock.vercel.app/#download","UI opens official website despite response-provided URL");
 fail=true;await get("updates-check").handlers.click();await flush();
 t.equal(get("updates-download").hidden,true,"failed recheck clears stale download state");
 t.ok(get("updates-status").textContent.includes("Couldn’t check"),"failure is visible");

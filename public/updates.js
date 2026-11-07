@@ -12,11 +12,11 @@ export function createUpdates({ api, get = id => document.getElementById(id), an
     status.textContent = busy ? "Checking for updates…" : updateStatusText(result);
     check.disabled = busy;
     check.textContent = busy ? "Checking…" : "Check for updates";
-    // Construct a known repository URL instead of trusting a response-provided link.
+    // Use the official download page instead of trusting a response-provided link.
     const version = result.latestVersion;
     const safe = typeof version === "string" && version.length <= 100 && /^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?$/.test(version);
     link.hidden = busy || result.status !== "available" || !safe;
-    link.href = !link.hidden ? "https://github.com/aliihsaad/WinDock/releases/tag/v" + version : "https://github.com/aliihsaad/WinDock/releases";
+    link.href = "https://windock.vercel.app/#download";
   }
   async function load(manual) {
     if (busy) return;
