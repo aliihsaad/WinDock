@@ -32,6 +32,7 @@ const SHELL = [
   "/touchpad-field.js",
   "/glass.js",
   "/glass-select.js",
+  "/quick-controls.js",
   "/remote-keyboard.js",
   "/pc-clipboard.js",
   "/manifest.webmanifest",

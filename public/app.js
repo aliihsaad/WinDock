@@ -1,4 +1,4 @@
-import { renderNowPlaying, renderControlPicker, renderAppIcon, renderControls, escapeHtml } from "./dock.js";
+import { renderNowPlaying, renderControlPicker, renderAppIcon, renderPowerControls, escapeHtml } from "./dock.js";
 import { icon, controlIcon } from "./icons.js";
 import { addAppTile, addControlTile, removeTile, moveTile, toWireTiles, availableControls, tileKey } from "./tiles.js";
 import { normalizeLayout, renderPages, pageCount, moveToTile } from "./launcher.js";
@@ -9,6 +9,7 @@ import { createNowPlayingPoller } from "./now-playing.js";
 import { dockFetch, DockWebSocket, nativeTransport } from "./native-transport.js";
 import { startGlass } from "./glass.js";
 import { enhanceSelects } from "./glass-select.js";
+import { createQuickControls } from "./quick-controls.js";
 
 const $ = (id) => document.getElementById(id);
 const syncSelects = enhanceSelects();
@@ -24,10 +25,12 @@ let currentPage = 0, toastTimer, selectedKey = "", suppressClickUntil = 0;
 let pageHintTimer;
 let captureState = { available: false, phase: "idle" }, captureBusy = false, capturePoll = false, captureReceivedAt = Date.now();
 let nowPlayingHtml = "";
+const quickControls = createQuickControls({ api, isOnline: () => online, notify, report });
 const nowPlaying = createNowPlayingPoller({
   load: async (signal) => (await api("/api/nowplaying", { signal })).nowPlaying,
   isActive: () => paired && online && !document.hidden,
   onChange: (media) => {
+    quickControls.media(media);
     const html = renderNowPlaying(media);
     // Keep the playback button (and its focus) when nothing has changed.
     if (nowPlayingHtml !== html) { $("nowplaying").innerHTML = html; nowPlayingHtml = html; }
@@ -372,10 +375,10 @@ function openDrawer() { if (paired && !$("drawer").open) $("drawer").showModal()
 function openControls() {
   if (!paired || $("controls").open) return;
   $("drawer").close();
-  $("controls-grid").innerHTML = renderControls(state.verbs, state.allowDestructive);
-  $("power-controls-grid").innerHTML = renderControls(state.verbs, state.allowDestructive, true);
+  $("power-controls-grid").innerHTML = renderPowerControls(state.verbs, state.allowDestructive);
   $("quick-power").hidden = !$("power-controls-grid").childElementCount;
-  $("controls-grid").scrollTop = 0;
+  quickControls.show(state.verbs);
+  nowPlaying.refresh().catch(() => {});
   $("controls").showModal();
   $("quick-controls-open").setAttribute("aria-expanded", "true");
 }

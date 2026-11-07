@@ -223,15 +223,31 @@
 </dialog>
 
 <dialog id="controls" class="sheet controls-curtain" aria-labelledby="controls-title">
-  <div class="sheet__heading"><div><h2 id="controls-title">Quick controls</h2></div><button class="icon-button" type="button" data-close="controls" aria-label="Close controls" autofocus><span data-icon="close"></span></button></div>
-  <div id="controls-grid" class="controls-grid"></div>
+  <h2 id="controls-title" class="visually-hidden">Quick controls</h2>
   <div class="quick-controls-shortcuts" role="group" aria-label="More PC controls">
-    <button id="quick-files" type="button" hidden><span data-icon="files"></span><span>Files &amp; Media</span></button>
-    <button id="quick-input" type="button"><span data-icon="touchpad"></span><span>Touch &amp; sign</span></button>
-    <button id="quick-capture" type="button"><span data-icon="camera"></span><span>Capture</span></button>
-    <button id="quick-power" type="button" aria-haspopup="dialog" aria-controls="power-controls"><span data-icon="power"></span><span>Power</span></button>
+    <button id="quick-files" type="button" hidden><span class="qc-disc" data-icon="files"></span><span>Files &amp; Media</span></button>
+    <button id="quick-input" type="button"><span class="qc-disc" data-icon="touchpad"></span><span>Touch &amp; sign</span></button>
+    <button id="quick-capture" type="button"><span class="qc-disc" data-icon="camera"></span><span>Capture</span></button>
+    <button id="quick-power" type="button" aria-haspopup="dialog" aria-controls="power-controls"><span class="qc-disc" data-icon="power"></span><span>Power</span></button>
   </div>
-  <button id="controls-grip" class="drawer-grip controls-grip" type="button" aria-label="Close quick controls" title="Swipe up to close"><span></span></button>
+  <div id="controls-grid" class="controls-grid">
+    <div class="qc-levels">
+      <label id="level-brightness" class="level" hidden><span class="level__icon" data-icon="sun"></span><input type="range" min="0" max="100" value="0" aria-label="Display brightness"></label>
+      <div class="qc-level-row">
+        <label id="level-volume" class="level" hidden><span class="level__icon" data-icon="volume"></span><input type="range" min="0" max="100" value="0" aria-label="PC volume"></label>
+        <button id="qc-mute" class="qc-round" type="button" data-action="control" data-key="mute-toggle" aria-label="Mute" title="Mute" hidden><span data-icon="mute"></span></button>
+      </div>
+    </div>
+    <section id="qc-music" class="qc-music" aria-label="Media playback" hidden>
+      <div class="qc-music__now"><span class="qc-music__art" data-icon="music"></span><div class="qc-music__text"><strong id="qc-music-title"></strong><span id="qc-music-artist"></span></div></div>
+      <div class="qc-music__transport">
+        <button type="button" data-action="control" data-key="media-previous" aria-label="Previous" title="Previous"><span data-icon="previous"></span></button>
+        <button id="qc-music-toggle" class="qc-music__play" type="button" data-action="control" data-key="media-play-pause"></button>
+        <button type="button" data-action="control" data-key="media-next" aria-label="Next" title="Next"><span data-icon="next"></span></button>
+      </div>
+    </section>
+  </div>
+  <button id="controls-grip" class="drawer-grip controls-grip" type="button" aria-label="Close quick controls" title="Swipe up to close" autofocus><span></span></button>
 </dialog>
 
 <dialog id="power-controls" class="sheet power-sheet" aria-labelledby="power-controls-title">

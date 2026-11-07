@@ -497,6 +497,12 @@ export async function createApp({
         return sendJson(res, 200, { ok: true, verb: checked.verb, ...warning });
       }
 
+      if (path === "/api/levels" && req.method === "GET") {
+        // Optional: without it the sliders start empty and still set a level.
+        const levels = typeof provider.levels === "function" ? await provider.levels().catch(() => null) : null;
+        return sendJson(res, 200, { volume: levels?.volume ?? null, brightness: levels?.brightness ?? null });
+      }
+
       if (path === "/api/nowplaying" && req.method === "GET") {
         return sendJson(res, 200, { nowPlaying: await provider.nowPlaying().catch(() => null) });
       }

@@ -11,7 +11,7 @@ import {
 } from "../src/platform/contract.js";
 import { controlArgv, unmappedVerbs, createWindowsProvider, HELPER_CONTROL } from "../src/platform/windows.js";
 import { createLinuxProvider, LINUX_CONTROL } from "../src/platform/linux.js";
-import { renderControls } from "../public/dock.js";
+import { renderPowerControls } from "../public/dock.js";
 
 const t = createChecker("control");
 const HELPER = "WinDockHelper.exe";
@@ -180,12 +180,10 @@ const hdr = createWindowsProvider({ helperPath: HELPER, exec: async () => ({ std
 t.deepEqual(await hdr.control("brightness-set", 50), { ok: true, verb: "brightness-set", warning: "hdr-active" }, "HDR adds only the safe warning marker");
 t.deepEqual(await hdr.control("volume-up"), { ok: true, verb: "volume-up" }, "HDR never affects other controls");
 const allVerbs = [...CONTROL_VERBS];
-const primary = renderControls(allVerbs, true);
-const power = renderControls(allVerbs, true, true);
-t.ok(primary.includes('data-key="brightness-set"') && !primary.includes('data-key="lock"'), "primary panel keeps display controls and separates power");
+const power = renderPowerControls(allVerbs, true);
+t.ok(!power.includes('data-key="brightness-set"'), "the Power sheet holds power actions only");
 for (const verb of ["lock", "sleep", "restart", "shutdown"]) t.ok(power.includes(`data-key="${verb}"`), `Power sheet preserves ${verb}`);
-t.equal(renderControls(["volume-up"], true, true), "", "hosts without power support get no Power sheet content");
-t.equal(renderControls(["sleep", "restart", "shutdown"], false, true), "", "host setting still hides disabled power actions");
-t.ok(!renderControls(["volume-up"], true).includes('data-key="brightness-set"'), "unsupported brightness controls are not added");
+t.equal(renderPowerControls(["volume-up"], true), "", "hosts without power support get no Power sheet content");
+t.equal(renderPowerControls(["sleep", "restart", "shutdown"], false), "", "host setting still hides disabled power actions");
 
 t.done("control verification passed");

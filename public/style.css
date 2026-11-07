@@ -6,6 +6,7 @@ body { background: radial-gradient(ellipse at 77% -25%, #4a6c5360, transparent 5
 button, input, select { font: inherit; }
 button { color: inherit; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 button:disabled { opacity: .45; cursor: default; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 button { transition: background .16s, transform .16s, border-color .16s; }
 button:active:not(:disabled) { transform: scale(.96); }
@@ -405,33 +406,85 @@ body.is-immersive .empty .button .icon { width: 36px; height: 36px; }
 .picker__tab.is-active { background: #ffffff10; }
 .control-card, .control-card__actions button, .options__actions button { background: #ffffff07; border-color: #ffffff16; }
 @keyframes drawer-in { from { transform: translateY(24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-.controls-curtain { margin: max(10px, env(safe-area-inset-top)) auto auto; max-height: calc(100dvh - max(20px, env(safe-area-inset-top)) - env(safe-area-inset-bottom)); }
-.controls-curtain[open] { animation: controls-in .18s ease-out; }
-.controls-curtain .sheet__heading { flex-shrink: 0; padding: 10px 20px 8px; }
-.controls-curtain h2 { font-size: 21px; }
-.quick-controls-shortcuts { display: flex; flex-shrink: 0; gap: 10px; padding: 12px 20px 0; }
-.quick-controls-shortcuts button { display: flex; align-items: center; justify-content: center; gap: 9px; flex: 1; min-height: 44px; padding: 8px 12px; border: 1px solid #ffffff18; border-radius: 13px; background: #ffffff09; font-size: 12px; }
-.quick-controls-shortcuts .icon { width: 20px; height: 20px; }
-.controls-curtain .controls-grid { min-height: 0; padding: 0 20px 4px; gap: 10px; overscroll-behavior: contain; }
-.controls-curtain .control-card { padding: 12px; }
-.controls-curtain .control-card__actions { margin-top: 10px; }
-.controls-curtain .control-card__actions button { min-height: 52px; }
+/* Quick controls: pills for places to go, sliders for levels, a card for music.
+   Solid light discs mark what can be pressed, so the glass around them stays quiet. */
+.controls-curtain { --qc-gap: 10px; --qc-well: #ffffff0b; --qc-edge: inset 0 0 0 1px #ffffff14, inset 0 1px 0 #ffffff12; --qc-disc: #ffffffdb; --qc-ink: #15202a; width: min(92vw, 780px);
+  /* The panel starts above the screen, so its top corners and rim stay out of sight and
+     it reads as part of the top edge. --qc-notch is the notch's box inside that panel:
+     open and close are one transition between that box and the full panel. */
+  --qc-reach: 36px; --qc-notch: inset(var(--qc-reach) calc(50% - 44px) calc(100% - var(--qc-reach) - 22px) calc(50% - 44px) round 0 0 14px 14px);
+  position: fixed; inset-block-start: 0; inset-inline: 0; margin: calc(env(safe-area-inset-top) - var(--qc-reach)) auto auto; padding-top: var(--qc-reach);
+  max-height: calc(100dvh + var(--qc-reach) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 10px);
+  clip-path: var(--qc-notch);
+  transition: clip-path .34s cubic-bezier(.22,1,.36,1), display .34s allow-discrete, overlay .34s allow-discrete;
+}
+.controls-curtain[open] { clip-path: inset(0 round 29px); }
+@starting-style { .controls-curtain[open] { clip-path: var(--qc-notch); } }
+.controls-curtain > * { transition: opacity .16s; }
+/* A closing panel is on its way out, so taps go straight to the dock. */
+.controls-curtain:not([open]) { pointer-events: none; }
+.controls-curtain:not([open]) > * { opacity: 0; }
+.controls-curtain[open] > * { transition: opacity .24s .08s; }
+@starting-style { .controls-curtain[open] > * { opacity: 0; } }
+.quick-controls-shortcuts { display: flex; flex-shrink: 0; gap: var(--qc-gap); padding: 14px 14px 0; }
+.quick-controls-shortcuts button { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; height: 58px; padding: 6px 14px 6px 6px; border: 0; border-radius: 29px; background: var(--qc-well); box-shadow: var(--qc-edge); color: #eef6f5; font-size: 12px; transition: background-color .15s, transform .15s; }
+.quick-controls-shortcuts button > :last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.quick-controls-shortcuts button:hover, .quick-controls-shortcuts button:focus-visible { background: #ffffff18; }
+.quick-controls-shortcuts button:active, .qc-round:active { transform: scale(.96); }
+.qc-disc { display: grid; place-items: center; flex-shrink: 0; width: 46px; height: 46px; border-radius: 50%; background: var(--qc-disc); color: var(--qc-ink); }
+.qc-disc .icon { width: 21px; height: 21px; }
+.controls-curtain .controls-grid { grid-template-columns: minmax(0, 1.14fr) minmax(0, 1fr); gap: var(--qc-gap); min-height: 0; padding: var(--qc-gap) 14px 0; overscroll-behavior: contain; }
+.qc-levels { display: grid; align-content: center; gap: var(--qc-gap); min-width: 0; }
+.qc-level-row { display: flex; gap: var(--qc-gap); min-width: 0; }
+.qc-level-row:not(:has(> :not([hidden]))) { display: none; }
+.level { position: relative; display: block; flex: 1; min-width: 0; height: 60px; overflow: hidden; border-radius: 30px; background: #ffffff1a; box-shadow: var(--qc-edge); }
+.level::before { content: ""; position: absolute; inset: 0 auto 0 0; width: calc(var(--level, 0) * 1%); border-radius: inherit; background: linear-gradient(90deg, #ffffffb0, #ffffffe8); }
+.level__icon { position: absolute; z-index: 1; left: 20px; top: 50%; color: #eef6f5; transform: translateY(-50%); pointer-events: none; transition: color .15s; }
+.level__icon .icon { width: 22px; height: 22px; }
+.level[data-covered="true"] .level__icon { color: var(--qc-ink); }
+/* The native range stays on top, invisible, so touch and keyboard work as usual. */
+.level input { position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; touch-action: none; }
+.level input:disabled { cursor: not-allowed; }
+.level:has(input:disabled) { opacity: .45; }
+.level:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.qc-round { display: grid; place-items: center; flex-shrink: 0; width: 60px; height: 60px; padding: 0; border: 0; border-radius: 50%; background: var(--qc-disc); color: var(--qc-ink); transition: transform .15s; }
+.qc-round .icon { width: 22px; height: 22px; }
+.qc-music { display: flex; flex-direction: column; justify-content: space-between; gap: 6px; min-width: 0; padding: 12px 14px 8px; border-radius: 26px; background: var(--qc-well); box-shadow: var(--qc-edge); }
+.qc-music__now { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.qc-music__art { display: grid; place-items: center; flex-shrink: 0; width: 42px; height: 42px; border-radius: 13px; background: linear-gradient(140deg, var(--scene-a), var(--scene-b)); color: #f4fbf8; }
+.qc-music__art .icon { width: 20px; height: 20px; }
+.qc-music__text { display: grid; gap: 2px; min-width: 0; }
+.qc-music__text > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qc-music__text strong { font-size: 13px; font-weight: 550; }
+.qc-music__text span { font-size: 11px; color: #d2dedbb3; }
+.qc-music__transport { display: flex; align-items: center; justify-content: space-evenly; }
+.qc-music__transport button { display: grid; place-items: center; width: 52px; height: 44px; padding: 0; border: 0; border-radius: 14px; background: none; color: #eef6f5; transition: background-color .15s, transform .15s; }
+.qc-music__transport button:hover, .qc-music__transport button:focus-visible { background: #ffffff14; }
+.qc-music__transport button:active { transform: scale(.94); }
+.qc-music__transport .icon { width: 22px; height: 22px; }
+.qc-music__transport .qc-music__play { width: 44px; border-radius: 50%; background: var(--qc-disc); color: var(--qc-ink); }
+.qc-music__transport .qc-music__play:hover, .qc-music__transport .qc-music__play:focus-visible { background: #ffffff; }
 .controls-grip { flex-shrink: 0; min-height: 40px; }
+.drawer-grip:focus-visible { outline: 0; }
+.drawer-grip:focus-visible > span { outline: 2px solid var(--accent); outline-offset: 4px; }
 .power-sheet { width: min(92vw, 560px); }
 .power-sheet .controls-grid { grid-template-columns: 1fr; }
 .toast[data-warning="true"] { color: #fff2cc; background: #483719; border-color: #d6ad5f80; }
-@media (min-width: 700px) {
-  .controls-curtain .controls-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-}
 @media (orientation: landscape) and (max-width: 699px) {
-  .controls-curtain .controls-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; padding-inline: 12px; }
-  .controls-curtain .control-card { padding: 8px; }
-  .controls-curtain .control-card__heading p { display: none; }
-  .controls-curtain .control-card__actions { gap: 4px; }
-  .quick-controls-shortcuts { gap: 6px; padding-inline: 12px; }
-  .quick-controls-shortcuts button { gap: 5px; padding-inline: 6px; font-size: 11px; }
+  .controls-curtain { --qc-gap: 7px; width: min(95vw, 640px); }
+  .quick-controls-shortcuts { padding: 9px 9px 0; }
+  .quick-controls-shortcuts button { gap: 6px; height: 46px; padding: 4px 8px 4px 4px; border-radius: 23px; font-size: 11px; }
+  .qc-disc { width: 38px; height: 38px; }
+  .qc-disc .icon { width: 18px; height: 18px; }
+  .controls-curtain .controls-grid { padding: var(--qc-gap) 9px 0; }
+  .level { height: 50px; border-radius: 25px; }
+  .level__icon { left: 16px; }
+  .qc-round { width: 50px; height: 50px; }
+  .qc-music { padding: 8px 10px 4px; border-radius: 22px; }
+  .qc-music__art { width: 34px; height: 34px; border-radius: 11px; }
+  .qc-music__transport button { width: 44px; height: 40px; }
+  .qc-music__transport .qc-music__play { width: 40px; }
 }
-@keyframes controls-in { from { transform: translateY(-24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 @media (max-height: 400px) and (orientation: landscape) {
   .settings__grid { padding-bottom: 14px; }
   .settings__card { padding: 13px 15px; }
@@ -444,7 +497,7 @@ body.is-immersive .empty .button .icon { width: 36px; height: 36px; }
   .settings__utilities { margin-top: 10px; }
 }
 @media (orientation: portrait) and (max-width: 599px) { .drawer-trigger, .quick-controls-trigger, .edit-done, .glass-drawer[open] { visibility: hidden; } }
-@media (prefers-reduced-motion: reduce) { .glass-drawer[open], .controls-curtain[open] { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .glass-drawer[open] { animation: none; } }
 
 /* Capture stays in the drawer; only an active recording adds a stop pill. */
 .capture-sheet { width: min(92vw, 620px); overflow-y: auto; }
@@ -642,7 +695,8 @@ html.perf dialog::backdrop { background: #050b1773; backdrop-filter: none; -webk
 html.perf .input-pad::backdrop { background: #080b10; }
 html.perf body :is(.app-icon img, .drag-ghost) { filter: none; }
 html.perf .dock { scroll-behavior: auto; }
-html.perf :is(.tile.is-editing, .glass-drawer[open], .controls-curtain[open]) { animation: none; }
+html.perf :is(.tile.is-editing, .glass-drawer[open]) { animation: none; }
+html.perf .controls-curtain, html.perf .controls-curtain > * { transition: none; }
 html.perf body :is(button, .page-dots, .drawer-trigger > span, .switch, .touchpad-feedback > span, .touchpad-hint),
 html.perf :is(.page-dot::before, .switch::after) { transition: none; }
 html.perf .touchpad-feedback > span {

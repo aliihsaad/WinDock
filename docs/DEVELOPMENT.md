@@ -298,6 +298,7 @@ for the known focus-smoke failure and other hardware acceptance evidence.
 | POST | `/api/apps/close` | Ask a running PID to close |
 | POST | `/api/control` | Run an allowed control verb |
 | GET | `/api/nowplaying` | Current media session |
+| GET | `/api/levels` | Current volume and brightness, 0 to 100, or `null` when unknown |
 | GET | `/api/stats` | CPU, memory, battery |
 | GET | `/api/capture` | Recording phase, elapsed time, last saved file |
 | POST | `/api/capture/screenshot` | Save the main monitor as PNG |

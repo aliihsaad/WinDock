@@ -15,6 +15,10 @@
   nothing recomputes over the animated touchpad field.
 - Redesign the quick controls notch: slimmer real glass that flows out of the top
   edge through soft curves, with the same touch area as before.
+- Quick controls expand out of the notch and shrink back into it. Live brightness and
+  volume sliders open at your PC's real levels, and a music card shows what is playing
+  with previous, play and next. Brightness presets and volume steps are replaced by
+  the sliders, and both can still be pinned to the dock as tiles.
 - Performance mode removes all of the above and keeps solid surfaces.
 
 ## 0.3.1 — November 7, 2026

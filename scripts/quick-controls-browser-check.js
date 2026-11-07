@@ -36,9 +36,8 @@ async (page) => {
     check(await tab.locator('#quick-controls-open').getAttribute('aria-expanded') === 'true', 'Accessible trigger reflects open panel');
     check((await tab.locator('#controls').boundingBox()).y <= 12, 'Curtain is anchored at the top');
     const grid = await tab.locator('#controls-grid').boundingBox();
-    for (const name of ['Sound', 'Playback', 'Display']) {
-      const card = tab.locator('.control-card').filter({ has: tab.getByRole('heading', { name, exact: true }) });
-      const box = await card.boundingBox();
+    for (const [name, selector] of [['Brightness', '#level-brightness'], ['Volume', '#level-volume'], ['Music', '#qc-music']]) {
+      const box = await tab.locator(selector).boundingBox();
       check(box.y >= grid.y && box.y + box.height <= grid.y + grid.height + 1, name + ' controls visible without scrolling on landscape phone');
     }
     await tab.screenshot({ path: 'output/playwright/quick-controls-phone.png' });
@@ -46,6 +45,7 @@ async (page) => {
     check(await tab.locator('#quick-controls-open').getAttribute('aria-expanded') === 'false', 'Escape closes panel and clears expanded state');
     await tab.locator('#quick-controls-open').click();
     check(await shown('controls'), 'Tap opens quick controls');
+    await tab.locator('#controls').evaluate(el => Promise.all(el.getAnimations().map(animation => animation.finished)));
     await swipe('#controls-grip', 0, -70);
     check(!await shown('controls'), 'Swipe up on curtain handle closes it');
     await swipe('#quick-controls-open', 90, 2);
@@ -93,17 +93,18 @@ async (page) => {
     check(await tab.locator('#dock').textContent() === tilesBefore, 'Navigation gestures preserve existing tiles');
     await tab.locator('#quick-controls-open').click();
     await tab.evaluate(() => window.WinDockPerformance.setPreference('on'));
-    check(await tab.locator('#controls').evaluate(el => getComputedStyle(el).animationName === 'none'), 'Performance mode disables curtain animation');
+    check(await tab.locator('#controls').evaluate(el => getComputedStyle(el).transitionDuration.split(',').every(time => parseFloat(time) === 0)), 'Performance mode disables curtain animation');
     await tab.evaluate(() => window.WinDockPerformance.setPreference('off'));
     await tab.emulateMedia({ reducedMotion: 'reduce' });
-    check(await tab.locator('#controls').evaluate(el => getComputedStyle(el).animationName === 'none'), 'Reduced-motion preference disables curtain animation');
+    check(await tab.locator('#controls').evaluate(el => getComputedStyle(el).transitionDuration.split(',').every(time => parseFloat(time) === 0)), 'Reduced-motion preference disables curtain animation');
     await close();
     await tab.setViewportSize({ width: 640, height: 320 });
     const shortIsland = await tab.locator('#quick-controls-open').boundingBox();
     check(await tab.locator('#dock .tile').evaluateAll((nodes, bottom) => nodes.every(node => node.getBoundingClientRect().top >= bottom), shortIsland.y + shortIsland.height), 'Island does not overlap tiles on short phones');
     await tab.locator('#quick-controls-open').click();
     const short = await tab.locator('#controls').boundingBox();
-    check(short.y >= 0 && short.y + short.height <= 320, 'Curtain fits a short landscape viewport');
+    // The panel starts above the screen on purpose, so it reads as part of the top edge.
+    check(short.y <= 0 && short.y + short.height <= 320, 'Curtain fits a short landscape viewport');
     await tab.locator('#quick-power').click();
     check(await tab.getByRole('button', { name: 'Lock', exact: true }).isVisible(), 'Power actions remain reachable on short phones');
     await tab.locator('[data-close="power-controls"]').click();

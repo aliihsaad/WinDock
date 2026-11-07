@@ -29,6 +29,8 @@ const provider = createWindowsProvider({
       helperCalls.push(args);
       if (args[0] === "control" && args[1] === "brightness-set") throw new Error("unsupported monitor; private native diagnostics");
       if (args[0] === "nowplaying") return { stdout: '{"title":"Track","artist":"Band","playing":true}' };
+      if (args[0] === "volume") return { stdout: '{"volume":0.5}' };
+      if (args[0] === "brightness") return { stdout: '{"displays":[{"percent":30}],"hdrActive":false}' };
       return { stdout: "" };
     }
     const script = args[args.length - 1];
@@ -206,6 +208,11 @@ t.equal((await call("/api/control", { method: "POST", body: { verb: "volume-set"
 const np = await call("/api/nowplaying");
 t.equal(np.status, 200, "GET /api/nowplaying succeeds");
 t.equal(np.json.nowPlaying.title, "Track", "now playing reports the current title");
+
+const levels = await call("/api/levels");
+t.equal(levels.status, 200, "GET /api/levels succeeds");
+t.deepEqual(levels.json, { volume: 50, brightness: 30 }, "levels report volume and brightness as percentages");
+t.equal((await call("/api/levels", { withCookie: false })).status, 401, "levels need a paired session");
 
 t.equal((await call("/api/stats")).status, 200, "GET /api/stats succeeds");
 t.equal((await call("/api/nope")).status, 404, "an unknown API route returns 404");

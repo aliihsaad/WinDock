@@ -26,7 +26,7 @@ export async function buildWebsiteDemo() {
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'">`);
   html = replaceOnce(html, '</body>', `<dialog id="demo-files" class="sheet" style="padding:20px;gap:14px;overflow:auto" aria-labelledby="demo-files-title"><h2 id="demo-files-title">Files &amp; Media · demo</h2><p>Sample items only. Your files are never opened or sent.</p><ul><li>Weekend photo.jpg</li><li>Desk notes.pdf</li></ul><p id="demo-files-status" role="status">Ready to preview sending to the sample PC.</p><button id="demo-files-send" class="button button--primary" type="button">Send sample items</button><button id="demo-files-close" class="button" type="button">Close</button></dialog></body>`);
   await writeFile(resolve(destination, 'index.html'), html);
-  for (const file of ['style.css', 'appearance.js', 'performance.js', 'icons.js', 'tiles.js', 'launcher.js', 'input-pad.js', 'touchpad-gestures.js', 'touchpad-field.js', 'glass.js', 'glass-select.js', 'remote-keyboard.js', 'pc-clipboard.js', 'now-playing.js', 'pairing.js', 'updates.js', 'folder.svg', 'link.svg']) {
+  for (const file of ['style.css', 'appearance.js', 'performance.js', 'icons.js', 'tiles.js', 'launcher.js', 'input-pad.js', 'touchpad-gestures.js', 'touchpad-field.js', 'glass.js', 'glass-select.js', 'quick-controls.js', 'remote-keyboard.js', 'pc-clipboard.js', 'now-playing.js', 'pairing.js', 'updates.js', 'folder.svg', 'link.svg']) {
     await copyFile(resolve(root, 'public', file), resolve(destination, file));
   }
   let clipboard = await readFile(resolve(destination, 'pc-clipboard.js'), 'utf8');
