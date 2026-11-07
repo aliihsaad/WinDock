@@ -1,32 +1,30 @@
-## WinDock 0.3.0
+## WinDock 0.3.1
 
-Pair your Android phone with a computer by scanning its code, send files to that
-computer, and keep everyday controls close to your dock.
+A more responsive touchpad with controls that stay out of your way.
 
-- **Secure QR pairing:** pair once with each computer. Saved computer identities
-  support reconnection and switching between Wi-Fi and USB tethering. The local
-  pairing page also lets you manage paired phones.
-- **Files & Media:** select photos, videos or documents using Android's system
-  picker, or Share to WinDock from another app. Review your selection, follow
-  progress and cancel transfers. Files go to Downloads/WinDock by default;
-  choose another destination on the computer. Transfers require secure pairing
-  and the updated phone app and companion.
-- **Folder and website tiles:** add shortcuts to folders and links on the computer.
-- **Quick controls:** a compact top panel groups controls, Capture, Touch & sign
-  and Files & Media. Updated display controls explain HDR limitations.
-- **Connection help:** inspect the active network and ports, with scoped firewall
-  instructions for Windows and Linux. WinDock does not apply firewall rules itself.
-- **Compatibility fixes:** Android 7 startup resources and Windows HTTP/HTTPS
-  port selection were corrected. Existing clipboard, keyboard, touchpad, media
-  and signature features remain available.
+- **Gesture-aware dot field:** dots react to taps, scrolling, pinch zoom and drag.
+  Animation stops when idle; Performance mode and reduced motion keep simpler feedback.
+- **Thumb-friendly controls:** Left and Right click sit in the bottom corners,
+  tools stay along the top, and controls fade while you touch the pad.
+- **Optional PC keys:** use the PC keys toggle to show Esc, Tab and Delete on the
+  left and Home, End and arrow keys on the right. Keys dim and disable during touch.
+- **Keyboard correction:** Android no longer requests sentence capitalization
+  from a repeatedly cleared input draft. PC navigation commits composing text first.
+  Manual Shift remains available; behavior on the originally reported tablet still
+  needs device confirmation.
+- **Quick connections:** Switch PC and Connection sit together at the bottom of
+  the drawer, keeping quick switching and connection settings easy to reach.
+
+Update both the PC companion and Android app to get all improvements.
+The website demo includes the same controls and simulated key feedback.
 
 ### Upgrade
 
 1. Quit the Windows companion and run WinDockSetup.exe under the same Windows
    account, or update the Linux package. Keep your existing data; do not uninstall
    or clear it. Keep start-at-sign-in selected if you use it.
-2. Install WinDock-android-debug.apk over the existing Android app. Version 0.3.0
-   uses version code 10 and the existing GitHub signing certificate. The historical
+2. Install WinDock-android-debug.apk over the existing Android app. Version 0.3.1
+   uses version code 11 and the existing GitHub signing certificate. The historical
    filename is retained for compatibility with update checks.
 3. Open the companion and phone app. Existing secure pairings should reconnect.
    Users moving from the older PIN-only connection can choose Scan computer code

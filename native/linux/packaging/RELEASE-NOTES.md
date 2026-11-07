@@ -1,8 +1,8 @@
-## WinDock 0.3.0 for Linux
+## WinDock 0.3.1 for Linux
 
 Prebuilt packages for **x86-64 Hyprland desktops**. Node.js and the compiled
 input helper are bundled, so you do not need to install Node.js, npm or Rust.
-For 0.3.0 (Linux package 0.3.0-1), update the Android companion too
+For 0.3.1 (Linux package 0.3.1-1), update the Android companion too
 for secure QR pairing and Files & Media. Existing appearance settings are retained. The
 **Switch PC** picker discovers running hosts and lets you choose one while keeping
 other hosts running. Scan each computer's pairing code; PIN pairing remains for older clients. The touchpad also offers PC text clipboard

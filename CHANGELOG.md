@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Native iPhone companion source and simulator checks remain in development;
+  no installable iPhone release is included.
+
+## 0.3.1 — November 7, 2026
+
+- Optional PC keys: toggle Esc, Tab and Delete on the left, with Home, End and
+  arrows on the right. Subtle glass keys dim and disable while touching the pad.
+- Android keyboard: stop requesting sentence capitalization from the temporary
+  input draft; commit composing text before sending PC navigation keys.
+- Keep quick Switch PC and Connection actions together at the bottom of the drawer.
 - Touchpad: move Left and Right click into soft thumb zones in the bottom corners and
   gather the tools in one quiet row along the top. Controls fade back during a touch,
   corner clicks send a shockwave through the dots, and drag lock turns amber.
@@ -9,13 +19,10 @@
   gesture. Tap sends a shockwave, two fingers stretch the dots as they scroll, pinch
   zooms the field, and drag lock turns amber. It stops drawing when idle. Performance
   mode, reduced motion and phones without suitable graphics keep the previous feedback.
-- Add the first native iPhone companion source: remembered PC address, PIN pairing
-  through the shared landscape dock, and reconnect/change-PC controls.
-- Add a GitHub macOS workflow for simulator tests, screenshots and unsigned iOS
-  archives. This is not an installable iPhone release; signing and physical testing
-  are still pending. This is separate from the Windows and Android releases below.
+- Update both the PC companion and Android APK (version code 11). Existing GitHub
+  signing identity is retained. Website demo mirrors these controls.
 
-## 0.3.0 — prepared, unpublished
+## 0.3.0 — November 6, 2026
 
 - Secure QR pairing, remembered computer identities and connection recovery.
 - Files & Media transfers through Android pickers and Share to WinDock.
