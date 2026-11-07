@@ -415,6 +415,7 @@ body.is-immersive .empty .button .icon { width: 36px; height: 36px; }
 .input-pad__pane { display: flex; flex-direction: column; flex: 1; min-height: 0; gap: 12px; }
 #touchpad-pane { position: absolute; inset: 0; }
 .touchpad-surface { position: absolute; inset: 0; border: 0; border-radius: 0; background-color: #080b10; background-image: linear-gradient(#91afd014 1px, transparent 1px), linear-gradient(90deg, #91afd014 1px, transparent 1px); background-size: 24px 24px; touch-action: none; user-select: none; -webkit-user-select: none; cursor: default; overflow: hidden; }
+.touchpad-field { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .touchpad-feedback { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 .touchpad-feedback > span { position: absolute; left: 0; top: 0; width: 260px; height: 260px; margin: -130px 0 0 -130px; border-radius: 50%; opacity: 0; pointer-events: none; transition: opacity 220ms ease-out; will-change: transform, opacity; }
 .touchpad-feedback > span::before, .touchpad-feedback > span::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
@@ -427,27 +428,36 @@ body.is-immersive .empty .button .icon { width: 36px; height: 36px; }
 .touchpad-hint { position: absolute; inset: 0; display: flex; justify-content: center; align-items: center; gap: 12px; margin: 0; padding: 24px; pointer-events: none; font-size: 12px; color: #788599; opacity: .7; transition: opacity .3s; }
 .touchpad-hint span { color: #465063; }
 .touchpad-surface[data-used="true"] .touchpad-hint, .touchpad-surface[data-ready="false"] .touchpad-hint { opacity: 0; }
-.touchpad-toolbar { position: absolute; z-index: 2; left: max(14px, env(safe-area-inset-left)); right: max(14px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 14px; pointer-events: none; }
-.touchpad-toolbar button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 14px; min-height: 46px; padding: 0 16px; background: #ffffff06; color: #9eaabe; font-size: 12px; touch-action: manipulation; }
-.touchpad-toolbar button:hover, .touchpad-toolbar button:focus-visible { background: #a8c7ff14; color: #dbe8ff; }
-.touchpad-toolbar button:active { background: #a8c7ff25; }
-.touchpad-toolbar .icon { width: 19px; height: 19px; }
-.touchpad-navigation { display: flex; gap: 6px; justify-self: start; pointer-events: auto; }
-.touchpad-navigation button { width: 46px; padding: 0; }
-.touchpad-navigation .has-text-focus { color: #a8c7ff; background: #a8c7ff18; }
+.touchpad-toolbar { position: absolute; z-index: 2; inset: 0; pointer-events: none; }
+.touchpad-toolbar button:disabled { opacity: .4; }
+.touchpad-navigation, .touchpad-tools, .touchpad-options { position: absolute; top: max(12px, env(safe-area-inset-top)); display: flex; gap: 6px; }
+.touchpad-navigation { left: max(14px, env(safe-area-inset-left)); }
+.touchpad-tools { right: calc(max(14px, env(safe-area-inset-right)) + 100px); }
+.input-pad:has(#pc-clipboard-toggle[hidden]) .touchpad-tools { right: calc(max(14px, env(safe-area-inset-right)) + 50px); }
+.touchpad-options { right: max(14px, env(safe-area-inset-right)); }
+:is(.touchpad-navigation, .touchpad-tools, .touchpad-options) button { width: 44px; border-radius: 50%; }
+:is(.touchpad-navigation, .touchpad-tools, .touchpad-options) button:hover, :is(.touchpad-navigation, .touchpad-tools, .touchpad-options) button:focus-visible { background: #ffffff14; }
+:is(.touchpad-navigation, .touchpad-tools, .touchpad-options) button:active { background: #ffffff24; transform: scale(.94); }
+.touchpad-tools .has-text-focus, #pointer-options-toggle[aria-expanded="true"] { color: #6be6b8; background: #6be6b826; }
+.touchpad-toolbar button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; min-height: 44px; padding: 0; background: none; color: #d7e0ec; touch-action: manipulation; pointer-events: auto; transition: opacity .2s, background-color .12s, color .12s, transform .1s; }
+.touchpad-toolbar button:disabled { opacity: .4; }
+.touchpad-toolbar .icon { width: 20px; height: 20px; }
 .input-pad[data-keyboard="true"] .touchpad-toolbar { visibility: hidden; }
 .remote-keyboard { position: absolute; z-index: 3; bottom: max(8px, env(safe-area-inset-bottom)); left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 16px; background: #101722f5; }
 .remote-keyboard input { min-width: 0; flex: 1; padding: 10px; font-size: 16px; border: 0; border-radius: 10px; background: #ffffff08; color: #e1e7f0; }
 .remote-keyboard button { min-width: 44px; height: 44px; padding: 8px; border: 0; border-radius: 10px; background: transparent; color: #a8c7ff; font-size: 20px; }
 .remote-keyboard .icon { width: 20px; height: 20px; }
-.pc-clipboard { position: absolute; z-index: 4; top: max(12px, env(safe-area-inset-top)); right: max(14px, env(safe-area-inset-right)); max-width: calc(100% - 28px); }
+.pc-clipboard { position: absolute; z-index: 4; top: max(12px, env(safe-area-inset-top)); right: calc(max(14px, env(safe-area-inset-right)) + 50px); max-width: calc(100% - 78px); }
 .pc-clipboard button { min-height: 44px; border: 0; border-radius: 12px; color: #d5e1f1; background: #a8c7ff0b; touch-action: manipulation; }
 .pc-clipboard button:focus-visible { outline: 2px solid #a8c7ff; outline-offset: 2px; }
 .pc-clipboard .icon { width: 18px; height: 18px; flex: 0 0 auto; }
-.pc-clipboard__toggle { display: flex; align-items: center; gap: 9px; margin-left: auto; padding: 0 14px; font-size: 12px; backdrop-filter: blur(16px); }
-.pc-clipboard__chevron { color: #8498b3; }
-.pc-clipboard__toggle[aria-expanded="true"] .pc-clipboard__chevron { transform: rotate(180deg); }
-.pc-clipboard__panel { width: min(350px, calc(100vw - 28px)); max-height: calc(100vh - 136px); max-height: calc(100dvh - 136px); overflow: auto; overscroll-behavior: contain; margin-top: 8px; padding: 14px; border: 1px solid #c3d9ff19; border-radius: 20px; background: #151c29ed; box-shadow: 0 16px 45px #0006; backdrop-filter: blur(20px); }
+.pc-clipboard .pc-clipboard__toggle .icon { width: 20px; height: 20px; }
+.pc-clipboard .pc-clipboard__toggle { display: flex; align-items: center; justify-content: center; width: 44px; margin-left: auto; padding: 0; border-radius: 50%; background: none; color: #d7e0ec; transition: opacity .2s, background-color .12s, color .12s, transform .1s; }
+.pc-clipboard .pc-clipboard__toggle:disabled { opacity: .4; }
+.pc-clipboard .pc-clipboard__toggle:hover, .pc-clipboard .pc-clipboard__toggle:focus-visible { background: #ffffff14; }
+.pc-clipboard .pc-clipboard__toggle:active { background: #ffffff24; transform: scale(.94); }
+.pc-clipboard .pc-clipboard__toggle[aria-expanded="true"] { background: #6be6b826; color: #6be6b8; }
+.pc-clipboard__panel { width: min(350px, calc(100vw - 78px)); max-height: calc(100vh - 136px); max-height: calc(100dvh - 136px); overflow: auto; overscroll-behavior: contain; margin-top: 8px; padding: 14px; border: 1px solid #c3d9ff19; border-radius: 20px; background: #151c29ed; box-shadow: 0 16px 45px #0006; backdrop-filter: blur(20px); }
 .pc-clipboard__heading { display: flex; align-items: center; gap: 4px; }
 .pc-clipboard__heading strong { margin-right: auto; font-size: 13px; font-weight: 500; }
 .pc-clipboard__heading button { display: grid; place-items: center; min-width: 44px; }
@@ -468,25 +478,38 @@ body.is-immersive .empty .button .icon { width: 36px; height: 36px; }
 .pc-clipboard__panel[data-editing="true"] #pc-clipboard-editor label { display: none; }
 .pc-clipboard__panel[data-editing="true"] #pc-clipboard-text { flex: 1; min-width: 0; min-height: 44px; max-height: none; resize: none; }
 .pc-clipboard__panel[data-editing="true"] #pc-clipboard-paste { flex: 0 0 96px; width: auto; height: 44px; align-self: flex-end; margin: 0; }
-html.perf :is(.pc-clipboard__panel, .pc-clipboard__toggle) { backdrop-filter: none; background: #151c29; }
+html.perf .pc-clipboard__panel { backdrop-filter: none; background: #151c29; }
 .signature-actions { display: flex; gap: 8px; }
 .signature-actions .button { padding: 10px 14px; min-height: 42px; font-size: 12px; }
-.touchpad-options { position: relative; justify-self: end; pointer-events: auto; }
-.pointer-options { position: absolute; right: 0; bottom: calc(100% + 12px); width: 240px; padding: 20px; border: 0; border-radius: 18px; background: #151c29f5; box-shadow: 0 12px 45px #0008; backdrop-filter: blur(20px); }
+.pointer-options { position: absolute; right: 0; top: calc(100% + 8px); width: 240px; padding: 20px; pointer-events: auto; border: 0; border-radius: 18px; background: #151c29f5; box-shadow: 0 12px 45px #0008; backdrop-filter: blur(20px); }
 .pointer-options input { display: block; width: 100%; height: 38px; margin: 10px 0 0; accent-color: var(--accent); touch-action: none; }
 .pointer-speed { display: flex; justify-content: space-between; align-items: center; gap: 12px; color: #c0cada; font-size: 12px; }
 .pointer-speed output { color: var(--accent); font-variant-numeric: tabular-nums; }
 .pointer-speed-scale { display: flex; justify-content: space-between; color: #8490a2; font-size: 10px; }
 .mouse-buttons, .signature-tools { display: flex; align-items: center; gap: 8px; }
-.mouse-buttons { justify-self: center; pointer-events: auto; padding: 3px; gap: 2px; border-radius: 17px; background: #141b2699; backdrop-filter: blur(16px); }
-.mouse-buttons button { background: transparent; min-width: 82px; }
-.mouse-buttons button[aria-pressed="true"] { background: #a8c7ff22; color: #c3d9ff; }
+.mouse-buttons { display: contents; }
+#mouse-left, #mouse-right { position: absolute; bottom: 0; width: min(204px, 32vw); height: min(158px, 46vh); align-items: flex-end; gap: 9px; color: #eaf6f1; font-size: 14px; font-weight: 500; }
+#mouse-left { left: 0; justify-content: flex-start; padding: 0 0 max(22px, calc(env(safe-area-inset-bottom) + 10px)) max(26px, calc(env(safe-area-inset-left) + 12px)); border-radius: 0 100% 0 0; background: radial-gradient(100% 100% at 0 100%, #6be6b84d, #6be6b82b 38%, #6be6b810 70%, #6be6b800 100%); }
+#mouse-right { right: 0; justify-content: flex-end; padding: 0 max(26px, calc(env(safe-area-inset-right) + 12px)) max(22px, calc(env(safe-area-inset-bottom) + 10px)) 0; border-radius: 100% 0 0 0; background: radial-gradient(100% 100% at 100% 100%, #6be6b84d, #6be6b82b 38%, #6be6b810 70%, #6be6b800 100%); }
+#mouse-left:active { background: radial-gradient(100% 100% at 0 100%, #6be6b899, #6be6b855 38%, #6be6b81f 70%, #6be6b800 100%); }
+#mouse-right:active { background: radial-gradient(100% 100% at 100% 100%, #6be6b899, #6be6b855 38%, #6be6b81f 70%, #6be6b800 100%); }
+:is(#mouse-left, #mouse-right):focus-visible { outline: 2px solid #6be6b8; outline-offset: -6px; }
+#mouse-drag { position: absolute; left: calc(50% - 58px); bottom: max(14px, env(safe-area-inset-bottom)); width: 116px; border-radius: 22px; background: #ffffff12; color: #dfe7f1; font-size: 14px; font-weight: 500; }
+#mouse-drag:active { background: #ffffff24; transform: scale(.97); }
+#mouse-drag[aria-pressed="true"] { background: #ffb04038; color: #ffd79a; box-shadow: 0 0 26px #ffb04040; }
+@media (prefers-reduced-motion: no-preference) {
+  html:not(.perf) .input-pad[data-touching="true"] :is(.touchpad-navigation, .touchpad-tools, .touchpad-options, .pc-clipboard__toggle) { opacity: .16; }
+  html:not(.perf) .input-pad[data-touching="true"] :is(#mouse-left, #mouse-right, #mouse-drag:not([aria-pressed="true"])) { opacity: .4; }
+}
 .signature-tools button { border: 0; background: #ffffff08; border-radius: 12px; padding: 10px 18px; font-size: 12px; min-height: 44px; }
 .input-pad__connection { display: flex; gap: 14px; align-items: center; justify-content: center; flex-shrink: 0; }
-.input-pad[data-mode="touchpad"] .input-pad__connection { position: absolute; top: max(22px, env(safe-area-inset-top)); left: max(24px, env(safe-area-inset-left)); right: max(24px, env(safe-area-inset-right)); z-index: 2; pointer-events: none; }
+.input-pad[data-mode="touchpad"] .input-pad__connection { position: absolute; top: max(12px, env(safe-area-inset-top)); left: calc(max(14px, env(safe-area-inset-left)) + 56px); right: calc(max(14px, env(safe-area-inset-right)) + 206px); width: fit-content; min-height: 44px; margin-inline: auto; box-sizing: border-box; z-index: 2; pointer-events: none; }
+.input-pad[data-mode="touchpad"][data-ready="false"][data-connecting="false"] .input-pad__connection { gap: 10px; padding: 0 5px 0 16px; border: 1px solid #ffb8ad55; border-radius: 14px; background: #301b22; }
+.input-pad[data-mode="touchpad"][data-ready="false"][data-connecting="false"] .input-pad__status { color: #ffe9e5; }
+.input-pad[data-mode="touchpad"] .input-pad__status { min-height: 0; font-size: 12px; }
 .input-pad[data-mode="touchpad"][data-ready="true"][data-demo="false"] .input-pad__connection { visibility: hidden; }
 .input-pad__status { margin: 0; min-height: 18px; color: var(--muted); font-size: 11px; overflow-wrap: anywhere; line-height: 1.5; }
-#input-reconnect { pointer-events: auto; border: 0; border-radius: 12px; padding: 10px 16px; min-height: 44px; background: #a8c7ff18; color: var(--accent); font-size: 12px; flex-shrink: 0; }
+#input-reconnect { pointer-events: auto; border: 0; border-radius: 10px; padding: 8px 14px; min-height: 34px; background: #a8c7ff18; color: var(--accent); font-size: 12px; flex-shrink: 0; }
 .signature-space { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
 .signature-paper { position: relative; aspect-ratio: 8 / 3; height: 100%; max-width: 100%; max-height: 100%; border-radius: 15px; overflow: hidden; background: #f2f2ec; }
 #signature-canvas { display: block; width: 100%; height: 100%; touch-action: none; user-select: none; -webkit-user-select: none; cursor: crosshair; }
@@ -496,7 +519,7 @@ html.perf :is(.pc-clipboard__panel, .pc-clipboard__toggle) { backdrop-filter: no
 .signature-tools select { background: #1b2a2a; color: var(--text); border: 1px solid #ffffff25; border-radius: 10px; padding: 9px; font-size: 12px; }
 #signature-save { padding: 10px 18px; min-height: 42px; font-size: 12px; }
 @media (max-height: 450px) { .input-pad { padding-top: 8px; padding-bottom: 8px; } .input-pad[open], .input-pad__pane { gap: 7px; } .input-pad__tabs button { padding: 7px 14px; } .input-pad__status { font-size: 10px; } }
-@media (max-width: 640px) { .input-pad__tools { gap: 8px; } .signature-tools button { padding: 8px 11px; } .touchpad-toolbar { gap: 8px; left: max(8px, env(safe-area-inset-left)); right: max(8px, env(safe-area-inset-right)); bottom: max(8px, env(safe-area-inset-bottom)); } .touchpad-toolbar button { padding-inline: 12px; font-size: 11px; } .touchpad-navigation { gap: 2px; } .touchpad-navigation button { padding: 0; width: 44px; } .mouse-buttons button { min-width: 66px; } .touchpad-hint { font-size: 10px; gap: 8px; } .pointer-options { width: 220px; } .drawer-actions { gap: 3px; } .drawer-actions button { font-size: 10px; padding-inline: 2px; } }
+@media (max-width: 640px) { .input-pad__tools { gap: 8px; } .signature-tools button { padding: 8px 11px; } #mouse-left, #mouse-right, #mouse-drag { font-size: 13px; } .touchpad-hint { font-size: 10px; gap: 8px; } .pointer-options { width: 220px; } .drawer-actions { gap: 3px; } .drawer-actions button { font-size: 10px; padding-inline: 2px; } }
 @media (orientation: portrait) and (max-width: 599px) { .input-pad[open] { visibility: hidden; } }
 
 /* Optional low-cost rendering. Removing .perf restores the selected glass style. */

@@ -43,6 +43,7 @@ const EXPECTED = {
   "verify-launcher.mjs": "launcher verification passed",
   "verify-capture.mjs": "capture verification passed",
   "verify-input.mjs": "input verification passed",
+  "verify-touchpad-field.mjs": "touchpad-field verification passed",
   "verify-transfers.mjs": "transfers verification passed",
   "verify-clipboard.mjs": "clipboard verification passed",
   "verify-linux-clipboard.mjs": "linux-clipboard verification passed",

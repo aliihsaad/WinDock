@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Touchpad: move Left and Right click into soft thumb zones in the bottom corners and
+  gather the tools in one quiet row along the top. Controls fade back during a touch,
+  corner clicks send a shockwave through the dots, and drag lock turns amber.
+- Touchpad: replace the grid and glow with a GPU-drawn dot field that responds to each
+  gesture. Tap sends a shockwave, two fingers stretch the dots as they scroll, pinch
+  zooms the field, and drag lock turns amber. It stops drawing when idle. Performance
+  mode, reduced motion and phones without suitable graphics keep the previous feedback.
 - Add the first native iPhone companion source: remembered PC address, PIN pairing
   through the shared landscape dock, and reconnect/change-PC controls.
 - Add a GitHub macOS workflow for simulator tests, screenshots and unsigned iOS
