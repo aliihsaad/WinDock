@@ -119,7 +119,7 @@ t.ok(/KERNEL=="uinput"/.test(active[0]) && /TAG\+="uaccess"/.test(active[0]), "u
 t.ok(!/MODE=|GROUP=/.test(active[0]), "no world- or group-writable uinput");
 
 // ---- the built helper, when present: real rendering, no desktop input ----
-if (existsSync(INPUT_HELPER)) {
+if (process.platform === "linux" && existsSync(INPUT_HELPER)) {
   const usage = spawnSync(INPUT_HELPER, ["launch", "x"], { encoding: "utf8" });
   t.equal(usage.status, 1, "unknown verbs are usage errors");
   const relative = spawnSync(INPUT_HELPER, ["signature", "relative/dir"], { input: JSON.stringify(signature), encoding: "utf8" });
