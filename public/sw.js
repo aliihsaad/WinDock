@@ -9,7 +9,7 @@
  *    worse, replay a control action from cache. Neither is acceptable.
  */
 
-const VERSION = "windock-v32-pc-keys";
+const VERSION = "windock-v33-release-031";
 const SHELL = [
   "/",
   "/index.html",

@@ -11,11 +11,11 @@ class UpdatePolicyTest {
         assertEquals("current", update(release = "0.2.5-preview.1").status)
         assertEquals("current", update(installed = 6).status)
     }
-    @Test fun aHigherApkCodeOffersItsOwnVersionAndOfficialRelease() {
+    @Test fun aHigherApkCodeOffersItsOwnVersionAndWebsiteDownloads() {
         val result = update(release = "0.2.6-preview.1", apk = "0.2.5-preview.1", code = 6)
         assertEquals("available", result.status)
         assertEquals("0.2.5-preview.1", result.version)
-        assertEquals(UpdatePolicy.RELEASES + "/tag/v0.2.6-preview.1", result.releasePage)
+        assertEquals("https://windock.vercel.app/#download", result.releasePage)
     }
     @Test fun untrustedOrMalformedDownloadsAreRejected() {
         for (url in listOf("http://github.com/aliihsaad/WinDock/releases/download/v0.2.4-preview.1/WinDock-android-debug.apk",

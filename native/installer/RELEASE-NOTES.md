@@ -14,6 +14,8 @@ A more responsive touchpad with controls that stay out of your way.
   needs device confirmation.
 - **Quick connections:** Switch PC and Connection sit together at the bottom of
   the drawer, keeping quick switching and connection settings easy to reach.
+- **One download page:** update actions on Android, Windows and the shared dock
+  open the WinDock website download section. Installer and APK links remain on GitHub.
 
 Update both the PC companion and Android app to get all improvements.
 The website demo includes the same controls and simulated key feedback.
@@ -32,7 +34,7 @@ The website demo includes the same controls and simulated key feedback.
    file transfer requires the new secure connection.
 
 Android 7 or newer and an up-to-date compatible WebView are required. Android's
-App updates checks the WinDock download feed and opens GitHub; it does not use
+App updates checks the WinDock download feed and opens the website download page; it does not use
 Google Play or silently install updates. Updating this GitHub version requires
 the same signing certificate. Google Play delivery is a separate future channel.
 

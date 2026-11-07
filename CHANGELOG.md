@@ -7,6 +7,8 @@
 
 ## 0.3.1 — November 7, 2026
 
+- Update actions open the WinDock website download section on Android, Windows
+  and the shared dock. Package URLs remain restricted to official GitHub assets.
 - Optional PC keys: toggle Esc, Tab and Delete on the left, with Home, End and
   arrows on the right. Subtle glass keys dim and disable while touching the pad.
 - Android keyboard: stop requesting sentence capitalization from the temporary
