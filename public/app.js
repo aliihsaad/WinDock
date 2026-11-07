@@ -33,10 +33,13 @@ let layout;
 try { layout = normalizeLayout(JSON.parse((window.WinDockPreferences || localStorage).getItem("windock-layout"))); } catch { layout = normalizeLayout(); }
 document.querySelectorAll("[data-icon]").forEach((el) => { el.innerHTML = icon(el.dataset.icon); });
 if (typeof window.WinDockAndroid?.showConnectionSettings === "function") {
-  document.body.classList.add("has-connection-navigation");
   $("connection-open").hidden = false;
-  $("connection-open").addEventListener("click", () => window.WinDockAndroid.showConnectionSettings());
-} else if (typeof window.WinDockAndroid?.showPcPicker === "function") {
+  $("connection-open").addEventListener("click", () => {
+    $("drawer").close();
+    window.WinDockAndroid.showConnectionSettings();
+  });
+}
+if (typeof window.WinDockAndroid?.showPcPicker === "function") {
   $("drawer-switch-pc").hidden = false;
   $("drawer-switch-pc").addEventListener("click", () => {
     $("drawer").close();

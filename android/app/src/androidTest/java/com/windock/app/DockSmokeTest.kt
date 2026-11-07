@@ -112,8 +112,8 @@ class DockSmokeTest {
             // A fresh Android image explains immersive mode with a system overlay.
             UiDevice.getInstance(instrumentation).wait(Until.findObject(By.text("Got it")), 3000)?.click()
             // Connection is explicit; PC selection remains available without losing the legacy PIN cookie.
-            assertEquals("true", js(web, "!document.getElementById('connection-open').hidden && document.getElementById('drawer-switch-pc').hidden"))
-            js(web, "document.getElementById('connection-open').click()")
+            assertEquals("true", js(web, "!document.getElementById('connection-open').hidden && !document.getElementById('drawer-switch-pc').hidden"))
+            js(web, "document.getElementById('drawer-open').click(); document.getElementById('connection-open').click()")
             val device = UiDevice.getInstance(instrumentation)
             device.wait(Until.findObject(By.text("Saved & nearby PCs")), 5000).click()
             assertTrue(device.wait(Until.hasObject(By.text("Switch PC")), 5000))

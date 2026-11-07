@@ -65,7 +65,7 @@ class PcClipboardTest {
             UiDevice.getInstance(instrumentation).wait(Until.findObject(By.text("Got it")),1500)?.click()
             js(web,"document.getElementById('drawer-open').click()")
             // The explicit Connection action replaced this duplicate drawer entry.
-            assertEquals("true", js(web,"!document.getElementById('connection-open').hidden && document.getElementById('drawer-switch-pc').hidden"))
+            assertEquals("true", js(web,"!document.getElementById('connection-open').hidden && !document.getElementById('drawer-switch-pc').hidden"))
             js(web,"document.getElementById('drawer-updates').click()")
             awaitJs(web,"document.getElementById('updates').open && !document.getElementById('updates-android').hidden")
             assertTrue(js(web,"document.getElementById('updates-android-version').textContent").contains(BuildConfig.VERSION_NAME))

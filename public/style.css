@@ -289,11 +289,6 @@ body.is-immersive .empty .button .icon { width: 36px; height: 36px; }
 .quick-controls-trigger .icon { width: 15px; height: 15px; }
 .quick-controls-trigger:hover .controls-island, .quick-controls-trigger:focus-visible .controls-island { border-color: #beffed55; background: #233541; }
 .quick-controls-trigger:active { transform: translateX(-50%) !important; }
-.connection-trigger { position: fixed; z-index: 4; top: env(safe-area-inset-top); left: max(12px, env(safe-area-inset-left)); display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 0 10px; border: 0; border-radius: 0 0 14px 14px; background: #0e1b24e8; color: #d1eee5; font: inherit; font-size: 12px; }
-.connection-trigger .icon { width: 17px; height: 17px; }
-.connection-trigger:hover, .connection-trigger:focus-visible { background: #233541; outline: 1px solid #beffed55; }
-body.has-connection-navigation:not(.is-immersive) .app { padding-top: calc(48px + env(safe-area-inset-top)); }
-body.has-connection-navigation .pair { padding-top: calc(52px + env(safe-area-inset-top)); }
 .edit-done { position: fixed; z-index: 5; right: max(14px, env(safe-area-inset-right)); top: max(10px, env(safe-area-inset-top)); background: var(--glass-bg); border: 1px solid var(--glass-border); backdrop-filter: blur(25px); color: #ecf4ef; border-radius: 50%; }
 .sheet, .options, .confirm, .glass-drawer {
   background: var(--glass-bg); border: 1px solid var(--glass-border);
@@ -312,8 +307,9 @@ body.has-connection-navigation .pair { padding-top: calc(52px + env(safe-area-in
 .drawer-actions button:hover, .drawer-actions button:focus-visible { background: #ffffff12; }
 .drawer-connection { display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between; gap: 10px; border-top: 1px solid #ffffff12; padding: 12px 3px 15px; font-size: 10px; color: #d2dedbb3; }
 #drawer-host { overflow-wrap: anywhere; flex: 1; min-width: 0; }
-#drawer-switch-pc { min-height: 44px; padding: 8px 14px; border: 1px solid #ffffff20; border-radius: 12px; background: #ffffff08; color: #eef6f5; font: inherit; font-size: 12px; }
-#drawer-switch-pc:hover, #drawer-switch-pc:focus-visible { background: #ffffff18; }
+.drawer-connection-actions { display: flex; align-items: center; gap: 8px; }
+.drawer-connection-actions button { min-height: 44px; padding: 8px 14px; border: 1px solid #ffffff20; border-radius: 12px; background: #ffffff08; color: #eef6f5; font: inherit; font-size: 12px; }
+.drawer-connection-actions button:hover, .drawer-connection-actions button:focus-visible { background: #ffffff18; }
 #drawer-conn { display: inline-flex; align-items: center; gap: 6px; }
 #drawer-conn::before { content: ""; width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
 #drawer-conn[data-state="on"] { color: var(--live); }

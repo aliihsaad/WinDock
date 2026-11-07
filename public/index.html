@@ -13,7 +13,6 @@
 </head>
 <body>
 <div id="wallpaper" class="wallpaper" aria-hidden="true"><span></span><span></span><span></span></div>
-<button id="connection-open" class="connection-trigger" type="button" hidden><span data-icon="monitor"></span><span>Connection</span></button>
 <div id="rotate" class="rotate">
   <div class="rotate__device" data-icon="monitor"></div><h1>A wider point of view.</h1>
   <p>Turn your phone sideways to use WinDock.</p><span class="eyebrow">YOUR DESKTOP, WITHIN REACH</span>
@@ -63,7 +62,7 @@
     <button id="drawer-edit" type="button"><span data-icon="edit"></span><span>Edit dock</span></button>
     <button id="drawer-updates" type="button"><span data-icon="updates"></span><span>Updates</span></button>
   </div>
-  <div class="drawer-connection"><span id="drawer-host">Your PC</span><button id="drawer-switch-pc" type="button" hidden>Switch PC</button><span id="drawer-conn" data-state="off">Connecting</span></div>
+  <div class="drawer-connection"><span id="drawer-host">Your PC</span><div class="drawer-connection-actions"><button id="drawer-switch-pc" type="button" hidden>Switch PC</button><button id="connection-open" type="button" hidden>Connection</button></div><span id="drawer-conn" data-state="off">Connecting</span></div>
 </dialog>
 
 <button id="recording-stop" class="recording-stop" type="button" aria-label="Stop screen recording" hidden><span class="recording-dot"></span><span id="recording-time">00:00</span><strong>Stop</strong></button>

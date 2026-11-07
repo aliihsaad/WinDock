@@ -75,8 +75,9 @@ class ConnectionNavigationTest {
                     await("return without pairing again") { var visible = false; scenario.onActivity { visible = web.visibility == View.VISIBLE }; visible && connected() }
                 }
                 await("initial dock") { connected() }
-                assertEquals("true", js(web, "!document.getElementById('connection-open').hidden && document.getElementById('drawer-switch-pc').hidden"))
-                assertEquals("true", js(web, "(() => { const a=document.getElementById('connection-open').getBoundingClientRect(), b=document.getElementById('quick-controls-open').getBoundingClientRect(); return a.height>=44 && a.right<=b.left; })()"))
+                assertEquals("true", js(web, "!document.getElementById('connection-open').hidden && !document.getElementById('drawer-switch-pc').hidden"))
+                js(web, "document.getElementById('drawer-open').click()")
+                assertEquals("true", js(web, "(() => { const a=document.getElementById('connection-open').getBoundingClientRect(), b=document.getElementById('drawer-switch-pc').getBoundingClientRect(); return a.height>=44 && b.right<=a.left && Math.abs(a.top-b.top)<1; })()"))
                 // Real accessibility tap: no device-specific edge swipe or JS bridge call needed.
                 val entry = device.wait(Until.findObject(By.text("Connection").clazz("android.widget.Button")), 5000)
                 device.takeScreenshot(java.io.File(context.getExternalFilesDir(null), "connection-dock.png"))
@@ -106,7 +107,7 @@ class ConnectionNavigationTest {
                 // Cancelling the chooser must leave the address screen, not start reconnection.
                 device.pressBack(); assertTrue(inSettings())
                 returnToDock()
-                js(web, "document.getElementById('connection-open').click()")
+                js(web, "document.getElementById('drawer-open').click(); document.getElementById('connection-open').click()")
                 await("settings before trying another address") { inSettings() }
                 scenario.onActivity { activity ->
                     activity.findViewById<EditText>(R.id.address).setText("https://10.0.2.2:18628")

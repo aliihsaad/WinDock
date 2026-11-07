@@ -4,14 +4,14 @@ The connection screen is now an explicit destination. Opening it must never eras
 
 ## User flow
 
-1. Tap **Connection** at the top-left of the Android dock or PIN page. There is no dependency on a system-edge gesture. Close any open modal first.
+1. Open the dock drawer. Its bottom row has **Switch PC** for the quick picker and **Connection** beside it for connection settings. Either action closes the drawer. Android Back also opens Connection from the dock or PIN page after closing any open sheet.
 2. Use the visible **Use another address** field, **Saved & nearby PCs**, or **Scan computer code**. Wi-Fi and USB setup stay available.
 3. Reconnection pauses while intentionally viewing this page, including across app background/resume and activity recreation. An address draft survives recreation.
 4. **Return to saved PC** reconnects using the retained identity. An unsuccessful attempt at another address does not delete the previous trust record; returning selects that existing identity again.
 5. **Change connection** cancels an in-progress attempt. Generation checks prevent its late completion from taking over navigation.
 6. **More options** contains pairing text, Files & Media, phone settings, updates and privacy. Connection help remains visible.
 
-The new Android bridge replaces the duplicate drawer Switch PC entry with the single top-level action. Older Android clients still see the existing drawer entry; browser clients do not receive an unsupported native action. Older desktop UIs can still use their existing picker and its Enter address action with the updated APK.
+The current Android bridge exposes both drawer actions. Older Android clients still see their supported Switch PC entry; browser clients do not receive unsupported native actions. Older desktop UIs can still use their existing picker and its Enter address action with the updated APK. The November 7 layout correction removes the top-left Connection button and its extra top padding.
 
 ## Findings and implementation
 
@@ -21,9 +21,21 @@ The previous Back and picker-manual paths treated intentional navigation as a co
 
 The activity explicitly enables its existing Android 13+ Back callback, retaining the older `onBackPressed` handler. See [Android's supported Back APIs](https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture). There are no new dependencies, permissions, transport protocols or server authentication changes.
 
-UI files: `public/index.html`, `public/app.js`, `public/style.css`, `public/sw.js`; native layout, strings and styles in `android/app/src/main/res`; navigation in `MainActivity.kt`. The new service-worker shell version is `windock-v28-connection-navigation`.
+UI files: `public/index.html`, `public/app.js`, `public/style.css`, `public/sw.js`; native layout, strings and styles in `android/app/src/main/res`; navigation in `MainActivity.kt`. The current service-worker shell version is `windock-v29-drawer-connection`.
 
-## Validation
+## November 7 drawer placement correction — local verification
+
+- Switch PC and Connection share the existing drawer footer, in that order.
+  Each closes the drawer before calling its own native destination.
+- The browser navigation check passes at 844×390, 640×320 and 568×320, including
+  classic layout, older-client fallback and plain-browser hiding. Both buttons
+  keep 44-pixel touch targets and remain side by side without clipping.
+- PWA verification: 153 assertions passed; Android source verification: 41 passed.
+  The three existing Android device tests now expect the drawer placement; those
+  device tests were not rerun for this shared HTML/JavaScript/CSS adjustment.
+- This correction is local source work, not part of the published 0.3.0 packages.
+
+## Original November 2 validation (before the drawer placement correction)
 
 - Node regression suite: 35/35 suites passed, including Linux provider/CLI/input/download and security checks.
 - Android JVM tests: 43 debug and 43 release tests passed.
