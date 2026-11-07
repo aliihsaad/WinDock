@@ -609,9 +609,14 @@ class MainActivity : Activity() {
             else finish()
             return
         }
-        // Close the shared UI's topmost sheet first; otherwise offer PC selection.
+        // Dismiss a glass picker before its sheet; otherwise offer PC selection.
         web.evaluateJavascript("""
-            (() => { const sheets = document.querySelectorAll('dialog[open]');
+            (() => {
+            if ('popover' in HTMLElement.prototype) {
+                const menus = document.querySelectorAll(':popover-open');
+                if (menus.length) { menus[menus.length - 1].hidePopover(); return true; }
+            }
+            const sheets = document.querySelectorAll('dialog[open]');
             if (!sheets.length) return false; sheets[sheets.length - 1].close(); return true; })()
         """.trimIndent()) { closed ->
             if (closed != "true" && !isDestroyed) showConnectionSettings()

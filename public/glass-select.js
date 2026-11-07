@@ -54,10 +54,13 @@ function enhance(select) {
   select.after(trigger);
   if (select.labels[0]) select.labels[0].htmlFor = trigger.id;
   // A modal dialog makes everything outside it inert, so the menu must live inside.
-  (select.closest("dialog") ?? document.body).append(menu);
+  const dialog = select.closest("dialog");
+  (dialog ?? document.body).append(menu);
 
   const value = trigger.firstElementChild;
   const isOpen = () => menu.matches(":popover-open");
+  // Programmatic dialog.close() does not dismiss its popovers (including on older APKs).
+  dialog?.addEventListener("close", () => { if (isOpen()) menu.hidePopover(); });
   let active = 0;
   const highlight = (index) => {
     active = index;

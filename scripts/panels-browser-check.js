@@ -22,6 +22,9 @@ async (page) => {
             window.__controlCalls = (window.__controlCalls || 0) + 1;
             return new Response(JSON.stringify(window.__controlFixture.body), { status: window.__controlFixture.status || 200, headers: { 'content-type': 'application/json' } });
           }
+          if (url === '/api/levels' && window.__levelReadResolvers) {
+            return new Promise(resolve => window.__levelReadResolvers.push(levels => resolve(new Response(JSON.stringify(levels)))));
+          }
           return previewFetch(url, options);
         }
       `);
@@ -40,6 +43,14 @@ async (page) => {
     await tab.screenshot({ path: 'output/playwright/simplified-drawer.png' });
     await tab.locator('#drawer-settings').click();
     check(await tab.locator('#fullscreen').isVisible(), 'Fullscreen remains available in browser Appearance');
+    await tab.locator('#performance-mode-picker').click();
+    await tab.locator('#performance-mode-menu').waitFor({ state: 'visible' });
+    // Native and programmatic closes bypass the browser's normal popover light dismiss.
+    await tab.locator('#settings').evaluate(el => el.close());
+    await tab.waitForFunction(() => !document.querySelector('#performance-mode-menu').matches(':popover-open'));
+    check(await tab.locator('#performance-mode-picker').getAttribute('aria-expanded') === 'false', 'Closing a parent sheet clears its dropdown state');
+    await tab.locator('#drawer-open').click(); await tab.locator('#drawer-settings').click();
+    check(await tab.locator('#performance-mode-menu').isHidden(), 'Reopening Appearance does not reopen an abandoned dropdown');
     await tab.locator('[data-close="settings"]').click();
     await tab.goto('http://127.0.0.1:4173/demo/index.html?android');
     await tab.locator('#app:not([hidden])').waitFor();
@@ -61,6 +72,22 @@ async (page) => {
     }
     await tab.setViewportSize({ width: 844, height: 390 });
     await tab.screenshot({ path: 'output/playwright/controls-android-preview.png' });
+    await tab.evaluate(() => { window.__levelReadResolvers = []; });
+    for (let opening = 1; opening <= 2; opening++) {
+      await tab.keyboard.press('Escape');
+      await tab.locator('#controls').waitFor({ state: 'hidden' });
+      await tab.locator('#quick-controls-open').click();
+      await tab.waitForFunction(count => window.__levelReadResolvers.length === count, opening);
+    }
+    await tab.evaluate(() => window.__levelReadResolvers[1]({ volume: 80, brightness: 70 }));
+    await tab.waitForFunction(() => document.querySelector('#level-volume input').value === '80');
+    await tab.evaluate(async () => {
+      window.__levelReadResolvers[0]({ volume: 10, brightness: null });
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      delete window.__levelReadResolvers;
+    });
+    check(await tab.locator('#level-volume input').inputValue() === '80', 'An earlier panel opening cannot overwrite the current volume');
+    check(await tab.locator('#level-brightness input').inputValue() === '70' && await tab.locator('#level-brightness input').isEnabled(), 'An earlier panel opening cannot replace or disable current brightness');
     const brightness = tab.locator('#level-brightness input');
     await tab.evaluate(() => window.__controlFixture = { body: { ok: true, warning: 'hdr-active' } });
     await brightness.fill('50');

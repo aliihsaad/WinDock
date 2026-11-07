@@ -115,6 +115,19 @@ const allVerbs = ["brightness-set", "volume-set", "mute-toggle", "media-play-pau
   t.deepEqual(requests, [{ verb: "volume-set", value: 41 }, { verb: "brightness-set", value: 58 }], "sliders send their verb and a number");
 }
 {
+  const reads = [];
+  const { controls, nodes } = curtain({ levels: () => new Promise((resolve) => reads.push(resolve)) });
+  controls.show(allVerbs);
+  controls.show(allVerbs);
+  reads[1]({ volume: 80, brightness: 70 });
+  await settle();
+  reads[0]({ volume: 10, brightness: null });
+  await settle();
+  t.equal(nodes["level-volume"].input.value, 80, "a previous opening cannot overwrite the current volume");
+  t.equal(nodes["level-brightness"].input.value, 70, "a previous opening cannot overwrite the current brightness");
+  t.ok(!nodes["level-brightness"].input.disabled, "an old unsupported-display response cannot disable the current slider");
+}
+{
   const { controls, requests, drag } = curtain({ online: false });
   controls.show(allVerbs);
   await settle();
@@ -158,6 +171,47 @@ t.deepEqual(await windows({ volume: '{"volume":0.423}', brightness: realDisplay 
 t.deepEqual(await windows({ volume: '{"volume":1}' }).levels(), { volume: 100, brightness: null }, "a display without support reads as unknown");
 t.deepEqual(await windows({ volume: '{"volume":null}', brightness: "not json" }).levels(), { volume: null, brightness: null }, "missing or broken readings stay unknown, never zero");
 t.deepEqual(await windows({ volume: '{"volume":1.4}', brightness: '{"displays":[]}' }).levels(), { volume: 100, brightness: null }, "readings stay within 0 to 100");
+
+// Both reads and writes must reserve the monitor queue, including two phones reading together.
+{
+  const started = [], pending = [];
+  const provider = createWindowsProvider({ helperPath: "helper", exec: async (_, args) => {
+    if (args[0] === "volume") return { stdout: '{"volume":0.5}' };
+    started.push(args.join(" "));
+    await new Promise((resolve) => pending.push(resolve));
+    return { stdout: args[0] === "brightness" ? realDisplay : "{}" };
+  } });
+  const first = provider.levels(), second = provider.levels(), write = provider.control("brightness-set", 80);
+  await settle();
+  t.deepEqual(started, ["brightness"], "a brightness read holds off another read and a write");
+  pending.shift()();
+  await settle();
+  t.deepEqual(started, ["brightness", "brightness"], "the second read starts only after the first finishes");
+  pending.shift()();
+  await settle();
+  t.deepEqual(started, ["brightness", "brightness", "control brightness-set 80"], "the write starts only after both reads finish");
+  const afterWrite = provider.levels();
+  await settle();
+  t.equal(started.length, 3, "a pending write also holds off later reads");
+  pending.shift()();
+  await settle();
+  t.equal(started[3], "brightness", "reading resumes once the write finishes");
+  pending.shift()();
+  await Promise.all([first, second, write, afterWrite]);
+}
+{
+  const started = [];
+  const provider = createWindowsProvider({ helperPath: "helper", exec: async (_, args) => {
+    if (args[0] === "volume") return { stdout: '{"volume":0.5}' };
+    started.push(args.join(" "));
+    if (started.length === 1) throw new Error("monitor read failed");
+    return { stdout: "{}" };
+  } });
+  const failedRead = provider.levels(), write = provider.control("brightness-set", 60);
+  t.equal((await failedRead).brightness, null, "a failed queued read remains unknown");
+  await write;
+  t.deepEqual(started, ["brightness", "control brightness-set 60"], "a failed read does not strand the next write");
+}
 
 const linux = (outputs) => createLinuxProvider({ appDirs: [], icons: async () => null, capture: {}, exec: async (file) => {
   if (outputs[file] === undefined) throw new Error("not installed");

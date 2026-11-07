@@ -28,6 +28,7 @@ export function createLevelSender(send, onError) {
 
 export function createQuickControls({ api, isOnline, notify, report }) {
   const $ = (id) => document.getElementById(id);
+  let reading = 0;
 
   function createSlider(id, verb, field) {
     const root = $(id), input = root.querySelector("input");
@@ -77,10 +78,14 @@ export function createQuickControls({ api, isOnline, notify, report }) {
   media(null);
 
   function show(verbs) {
+    const ticket = ++reading;
     sliders.forEach((slider) => slider.show(verbs));
     $("qc-mute").hidden = !verbs.includes("mute-toggle");
     $("qc-music").hidden = !verbs.includes("media-play-pause");
-    api("/api/levels").then((levels) => sliders.forEach((slider) => slider.load(levels))).catch(() => {
+    api("/api/levels").then((levels) => {
+      // Closing and reopening must not let an earlier reading replace this one.
+      if (ticket === reading) sliders.forEach((slider) => slider.load(levels));
+    }).catch(() => {
       // Sliders stay usable without a reading; they simply start empty.
     });
   }
