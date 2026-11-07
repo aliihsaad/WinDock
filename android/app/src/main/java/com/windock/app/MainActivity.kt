@@ -451,6 +451,15 @@ class MainActivity : Activity() {
                 }
             }
         }
+        @JavascriptInterface fun pressKeyboardKey(target: String, key: String) {
+            if (key !in setOf("Escape", "Tab", "Delete", "Home", "End", "ArrowLeft", "ArrowUp", "ArrowDown", "ArrowRight")) return
+            runOnUiThread {
+                if (!trustedKeyboardPage() || keyboardTarget != target) return@runOnUiThread
+                // Commit composition before moving the PC caret, preserving event order.
+                keyboardEditor.commitDraft()
+                emitKeyboardInput(JSONObject().put("type", "key").put("key", key))
+            }
+        }
         @JavascriptInterface fun hideKeyboard() { runOnUiThread { if (trustedKeyboardPage()) hideRemoteKeyboard() } }
         @JavascriptInterface fun showPcPicker() { runOnUiThread { if (trustedKeyboardPage()) this@MainActivity.showPcPicker() } }
         @JavascriptInterface fun showConnectionSettings() { runOnUiThread { if (trustedKeyboardPage()) this@MainActivity.showConnectionSettings() } }

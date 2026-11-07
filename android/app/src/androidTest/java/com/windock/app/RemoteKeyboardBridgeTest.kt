@@ -20,7 +20,10 @@ class RemoteKeyboardBridgeTest {
     @Test fun opensNativeImeAndReturnsEmojiToTrustedPage() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val prefs = context.getSharedPreferences("windock", android.content.Context.MODE_PRIVATE)
-        val remembered = prefs.getString("endpoint", null)
+        val remembered = prefs.getString("wifiEndpoint", null)
+        val usbOnly = PhonePreferences.usbOnly(context)
+        val securePrefs = context.getSharedPreferences("secure-computers", android.content.Context.MODE_PRIVATE)
+        val selected = securePrefs.getString("selected", null)
         val server = ServerSocket(0)
         val endpoint = "http://127.0.0.1:" + server.localPort
         val host = thread(isDaemon = true) {
@@ -33,7 +36,8 @@ class RemoteKeyboardBridgeTest {
                         val health = request.startsWith("GET /health ")
                         val body = if (health) """{"app":"windock"}""" else
                             """<html><body>ready<script>
-                            window.addEventListener('windock-keyboard-input',e=>{document.body.textContent=JSON.stringify(e.detail)});
+                            window.inputs=[];
+                            window.addEventListener('windock-keyboard-input',e=>{window.inputs.push(e.detail);document.body.textContent=JSON.stringify(e.detail)});
                             </script></body></html>"""
                         val bytes = body.toByteArray()
                         client.getOutputStream().apply {
@@ -53,7 +57,10 @@ class RemoteKeyboardBridgeTest {
         }
         try {
             androidx.test.uiautomator.UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).wakeUp()
-            ServerUrl.save(context, endpoint)
+            // This loopback fixture must not restore a PC left selected by another test.
+            SecurePairing(context).select(null)
+            PhonePreferences.setUsbOnly(context, false)
+            ServerUrl.save(context, endpoint, false)
             ActivityScenario.launch(MainActivity::class.java).use { scenario ->
                 scenario.onActivity {
                     it.window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -100,12 +107,36 @@ class RemoteKeyboardBridgeTest {
                 assertTrue(delivered.await(5, TimeUnit.SECONDS))
                 assertTrue(reply.contains("Hi"))
                 assertTrue(reply.contains("42"))
+                scenario.onActivity {
+                    val edit = editor(it.findViewById(R.id.root))!!
+                    edit.onCreateInputConnection(EditorInfo())!!.setComposingText("draft", 1)
+                    it.findViewById<WebView>(R.id.web).evaluateJavascript("WinDockAndroid.pressKeyboardKey('42','Home')", null)
+                }
+                var ordered = ""
+                val keyUntil = System.currentTimeMillis() + 5000
+                do {
+                    val read = CountDownLatch(1)
+                    scenario.onActivity { it.findViewById<WebView>(R.id.web).evaluateJavascript("JSON.stringify(window.inputs)") { value -> ordered=value; read.countDown() } }
+                    assertTrue(read.await(5, TimeUnit.SECONDS))
+                    if (ordered.contains("Home")) break
+                    Thread.sleep(50)
+                } while (System.currentTimeMillis() < keyUntil)
+                assertTrue("Native draft must be committed before Home: $ordered", ordered.indexOf("draft") >= 0 && ordered.indexOf("Home") > ordered.indexOf("draft"))
+                scenario.onActivity { it.findViewById<WebView>(R.id.web).evaluateJavascript("WinDockAndroid.pressKeyboardKey('41','End');WinDockAndroid.pressKeyboardKey('42','Control')", null) }
+                Thread.sleep(150)
+                val denied = CountDownLatch(1)
+                scenario.onActivity { it.findViewById<WebView>(R.id.web).evaluateJavascript("JSON.stringify(window.inputs)") { value -> ordered=value; denied.countDown() } }
+                assertTrue(denied.await(5, TimeUnit.SECONDS))
+                assertFalse(ordered.contains("End"))
+                assertFalse(ordered.contains("Control"))
                 scenario.onActivity { it.findViewById<WebView>(R.id.web).evaluateJavascript("WinDockAndroid.hideKeyboard()", null) }
                 awaitState { editor(it.findViewById(R.id.root))?.isShown == false }
             }
         } finally {
             server.close(); host.join(500)
-            prefs.edit().apply { if (remembered == null) remove("endpoint") else putString("endpoint", remembered) }.commit()
+            prefs.edit().apply { if (remembered == null) remove("wifiEndpoint") else putString("wifiEndpoint", remembered) }.commit()
+            PhonePreferences.setUsbOnly(context, usbOnly)
+            SecurePairing(context).select(selected)
         }
     }
 }

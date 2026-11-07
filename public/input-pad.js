@@ -42,8 +42,8 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
     }
     contact.node.classList.add("is-touching");
   }
-  function hideContact(id) { field.lift(id); contacts.get(id)?.node.classList.remove("is-touching"); contacts.delete(id); if (!contacts.size) dialog.dataset.touching = "false"; }
-  function clearContacts() { field.clear(); for (const node of glowNodes) node.classList.remove("is-touching"); contacts.clear(); dialog.dataset.touching = "false"; }
+  function hideContact(id) { field.lift(id); contacts.get(id)?.node.classList.remove("is-touching"); contacts.delete(id); const touching = Array.from(gestures.points.keys()).some(pointer => pointer !== id); dialog.dataset.touching = String(touching); keyboard.touch(touching); }
+  function clearContacts() { field.clear(); for (const node of glowNodes) node.classList.remove("is-touching"); contacts.clear(); dialog.dataset.touching = "false"; keyboard.touch(false); }
   function showOptions(open) {
     $("pointer-options").hidden = !open;
     $("pointer-options-toggle").setAttribute("aria-expanded", String(open));
@@ -144,7 +144,7 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
   pad.addEventListener("pointerdown", (event) => {
     if (!ready || event.button !== 0) return;
     showOptions(false); pad.dataset.used = "true";
-    event.preventDefault(); pad.setPointerCapture(event.pointerId); gestures.down(event.pointerId, event.clientX, event.clientY); showContact(event); dialog.dataset.touching = "true";
+    event.preventDefault(); pad.setPointerCapture(event.pointerId); gestures.down(event.pointerId, event.clientX, event.clientY); showContact(event); dialog.dataset.touching = "true"; keyboard.touch(true);
   });
   pad.addEventListener("pointermove", (event) => {
     if (!ready) return;

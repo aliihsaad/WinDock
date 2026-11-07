@@ -42,7 +42,7 @@ class RemoteKeyboardEditor(context: Context) : EditText(context) {
     fun configure(password: Boolean) {
         resetSession()
         inputType = if (password) InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-            else InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+            else InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
         maxLines = 2
         imeOptions = EditorInfo.IME_FLAG_NO_FULLSCREEN or EditorInfo.IME_FLAG_NO_EXTRACT_UI or
             EditorInfo.IME_ACTION_NONE
@@ -77,6 +77,9 @@ class RemoteKeyboardEditor(context: Context) : EditText(context) {
         val base = super.onCreateInputConnection(outAttrs) ?: return null
         val ticket = generation
         return object : InputConnectionWrapper(base, false) {
+            // The draft is emptied after each commit and is not the PC document.
+            // Never infer a new sentence from that empty buffer. Manual Shift still works.
+            override fun getCursorCapsMode(reqModes: Int): Int = 0
             override fun setComposingText(value: CharSequence?, newCursorPosition: Int): Boolean =
                 ticket == generation && super.setComposingText(value, newCursorPosition)
             override fun setSelection(start: Int, end: Int): Boolean =

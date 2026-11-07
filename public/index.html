@@ -109,9 +109,25 @@
         <div id="pointer-options" class="pointer-options" hidden><label class="pointer-speed" for="pointer-speed">Pointer speed <output id="pointer-speed-value" for="pointer-speed">1.5×</output></label><input id="pointer-speed" type="range" min="0.5" max="3" step="0.25" value="1.5" aria-label="Pointer speed"><div class="pointer-speed-scale" aria-hidden="true"><span>Precise</span><span>Fast</span></div></div>
       </div>
     </div>
+    <button id="pc-keys-toggle" class="pc-keys-toggle" type="button" aria-label="PC keys" aria-expanded="false" aria-controls="pc-keys" hidden><span data-icon="keys"></span><span>PC keys</span></button>
+    <div id="pc-keys" class="pc-keys" role="group" aria-label="PC editing keys" hidden>
+      <div class="pc-key-bank pc-key-bank--editing" role="group" aria-label="Editing keys">
+      <button type="button" data-pc-key="Escape" aria-label="Escape" disabled>Esc</button>
+      <button type="button" data-pc-key="Tab" aria-label="Tab" disabled>Tab</button>
+      <button type="button" data-pc-key="Delete" aria-label="Delete" disabled>Del</button>
+      </div>
+      <div class="pc-key-bank pc-key-bank--navigation" role="group" aria-label="Navigation keys">
+      <button type="button" data-pc-key="Home" aria-label="Home" disabled>Home</button>
+      <button type="button" data-pc-key="End" aria-label="End" disabled>End</button>
+      <button type="button" data-pc-key="ArrowLeft" aria-label="Arrow left" disabled>←</button>
+      <button type="button" data-pc-key="ArrowUp" aria-label="Arrow up" disabled>↑</button>
+      <button type="button" data-pc-key="ArrowDown" aria-label="Arrow down" disabled>↓</button>
+      <button type="button" data-pc-key="ArrowRight" aria-label="Arrow right" disabled>→</button>
+      </div>
+    </div>
     <div id="remote-keyboard" class="remote-keyboard" aria-label="Type on your PC" hidden>
       <button id="remote-keyboard-close" type="button" aria-label="Hide keyboard"><span data-icon="close"></span></button>
-      <input id="remote-keyboard-text" type="text" placeholder="Type on PC…" aria-label="Text to type on PC" maxlength="1024" autocomplete="off" enterkeyhint="enter">
+      <input id="remote-keyboard-text" type="text" placeholder="Type on PC…" aria-label="Text to type on PC" maxlength="1024" autocomplete="off" autocapitalize="none" enterkeyhint="enter">
       <button id="remote-keyboard-backspace" type="button" aria-label="Backspace">⌫</button>
       <button id="remote-keyboard-enter" type="button" aria-label="Enter">↵</button>
       <button id="remote-keyboard-signature" type="button" aria-label="Draw and insert signature"><span data-icon="edit"></span></button>

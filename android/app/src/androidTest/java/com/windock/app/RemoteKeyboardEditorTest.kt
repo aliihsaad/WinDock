@@ -1,11 +1,35 @@
 package com.windock.app
 
 import android.view.inputmethod.EditorInfo
+import android.text.InputType
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.*
 import org.junit.Test
 
 class RemoteKeyboardEditorTest {
+    @Test fun clearingCommittedWordsDoesNotRequestCapitalization() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        instrumentation.runOnMainSync {
+            val editor = RemoteKeyboardEditor(instrumentation.targetContext)
+            val commits = mutableListOf<String>()
+            editor.onText = { commits.add(it) }
+            val info = EditorInfo()
+            val connection = editor.onCreateInputConnection(info)!!
+            val caps = InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS or InputType.TYPE_TEXT_FLAG_CAP_WORDS or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+            assertEquals(0, info.inputType and caps)
+            assertEquals(0, connection.getCursorCapsMode(caps))
+            for (word in listOf("hello ", "world ", "MANUAL ", "MixedCase")) {
+                connection.commitText(word, 1)
+                assertEquals(word, commits.last())
+                assertTrue(editor.text.isNullOrEmpty())
+                assertEquals(0, connection.getCursorCapsMode(caps))
+            }
+            editor.configure(true)
+            val password = editor.onCreateInputConnection(EditorInfo())!!
+            assertEquals(0, password.getCursorCapsMode(caps))
+            assertFalse(connection.commitText("stale", 1))
+        }
+    }
     @Test fun compositionKeepsTheDockActiveButCleanupDoesNot() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         instrumentation.runOnMainSync {
