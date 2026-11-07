@@ -19,7 +19,14 @@
   volume sliders open at your PC's real levels, and a music card shows what is playing
   with previous, play and next. Brightness presets and volume steps are replaced by
   the sliders, and both can still be pinned to the dock as tiles.
-- Performance mode removes all of the above and keeps solid surfaces.
+- Eight backgrounds replace the four colour washes: Aurora, Midnight, Dusk, Ember,
+  Lagoon, Silk, Obsidian and Prism. Each is a rendered scene with real depth, so the
+  glass has something to bend. Pick one from a rail of previews at the top of
+  Appearance; the change fades in once the new scene is ready.
+- Performance mode removes the glass effects above and keeps solid surfaces. The
+  backgrounds stay, since a still image costs nothing while you use the dock.
+- The four new backgrounds need the updated Android app to be remembered. An older
+  app keeps the rest of your layout and returns to Aurora on the next launch.
 
 ## 0.3.1 — November 7, 2026
 

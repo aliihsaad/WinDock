@@ -52,7 +52,7 @@ class AppearancePreferences(private val preferences: SharedPreferences) {
                 when (field) {
                     "perPage", "columns", "rows", "iconSize" -> layout.get(field) is Number
                     "immersive", "showLabels" -> layout.get(field) is Boolean
-                    "background" -> layout.getString(field) in listOf("aurora", "dusk", "ember", "midnight")
+                    "background" -> layout.getString(field) in listOf("aurora", "midnight", "dusk", "ember", "lagoon", "silk", "obsidian", "prism")
                     "theme" -> layout.getString(field) in listOf("glass", "frost", "smoke")
                     else -> false
                 }

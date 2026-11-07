@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-<div id="wallpaper" class="wallpaper" aria-hidden="true"><span></span><span></span><span></span></div>
+<div id="wallpaper" class="wallpaper" aria-hidden="true"></div>
 <div id="rotate" class="rotate">
   <div class="rotate__device" data-icon="monitor"></div><h1>A wider point of view.</h1>
   <p>Turn your phone sideways to use WinDock.</p><span class="eyebrow">YOUR DESKTOP, WITHIN REACH</span>
@@ -182,6 +182,18 @@
   <div class="sheet-handle"></div>
   <div class="sheet__heading"><div><h2 id="settings-title">Your space</h2></div><button class="icon-button" type="button" data-close="settings" aria-label="Close settings"><span data-icon="close"></span></button></div>
   <div class="settings__grid">
+    <section class="settings__card settings__scenes"><h3 id="scenes-title">Background</h3>
+      <div class="scene-choices" role="group" aria-labelledby="scenes-title">
+        <button type="button" data-background="aurora" aria-pressed="true"><img src="wallpapers/aurora-thumb.webp" alt="" width="480" height="224" loading="lazy" decoding="async"><span>Aurora</span></button>
+        <button type="button" data-background="midnight" aria-pressed="false"><img src="wallpapers/midnight-thumb.webp" alt="" width="480" height="224" loading="lazy" decoding="async"><span>Midnight</span></button>
+        <button type="button" data-background="dusk" aria-pressed="false"><img src="wallpapers/dusk-thumb.webp" alt="" width="480" height="224" loading="lazy" decoding="async"><span>Dusk</span></button>
+        <button type="button" data-background="ember" aria-pressed="false"><img src="wallpapers/ember-thumb.webp" alt="" width="480" height="224" loading="lazy" decoding="async"><span>Ember</span></button>
+        <button type="button" data-background="lagoon" aria-pressed="false"><img src="wallpapers/lagoon-thumb.webp" alt="" width="480" height="224" loading="lazy" decoding="async"><span>Lagoon</span></button>
+        <button type="button" data-background="silk" aria-pressed="false"><img src="wallpapers/silk-thumb.webp" alt="" width="480" height="224" loading="lazy" decoding="async"><span>Silk</span></button>
+        <button type="button" data-background="obsidian" aria-pressed="false"><img src="wallpapers/obsidian-thumb.webp" alt="" width="480" height="224" loading="lazy" decoding="async"><span>Obsidian</span></button>
+        <button type="button" data-background="prism" aria-pressed="false"><img src="wallpapers/prism-thumb.webp" alt="" width="480" height="224" loading="lazy" decoding="async"><span>Prism</span></button>
+      </div>
+    </section>
     <section class="settings__card"><h3>Layout</h3><p id="layout-summary">4 icons · 2 × 2</p>
       <div class="layout-choices" role="group" aria-label="Icons per page">
         <button type="button" data-per-page="4" aria-pressed="true"><span class="mini-grid" style="--mini-columns:2"><i></i><i></i><i></i><i></i></span><span>4 icons</span></button>
@@ -192,13 +204,7 @@
       <label class="setting-row">App names<input id="show-labels" class="switch" type="checkbox" role="switch"></label>
       <p class="settings__tip">Hold to arrange. Swipe up for the drawer; down for quick controls.</p>
     </section>
-    <section class="settings__card"><h3>Background</h3>
-      <div class="background-choices" role="group" aria-label="Background">
-        <button type="button" data-background="aurora" aria-pressed="true"><span class="swatch swatch--aurora"></span><span>Aurora</span></button>
-        <button type="button" data-background="dusk" aria-pressed="false"><span class="swatch swatch--dusk"></span><span>Dusk</span></button>
-        <button type="button" data-background="ember" aria-pressed="false"><span class="swatch swatch--ember"></span><span>Ember</span></button>
-        <button type="button" data-background="midnight" aria-pressed="false"><span class="swatch swatch--midnight"></span><span>Midnight</span></button>
-      </div>
+    <section class="settings__card"><h3>Appearance</h3>
       <label class="setting-row" for="performance-mode">Performance mode<select id="performance-mode" aria-describedby="performance-status"><option value="auto">Auto</option><option value="on">On</option><option value="off">Off</option></select></label>
       <p id="performance-status" class="settings__tip" role="status"></p>
       <label class="setting-row" for="glass-theme">Glass style<select id="glass-theme" aria-describedby="glass-hint"><option value="glass">Clear</option><option value="frost">Frosted</option><option value="smoke">Smoked</option></select></label>

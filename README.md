@@ -232,7 +232,8 @@ feature works.
   bring an app forward when Windows permits it.
 - **Build your own dock.** Choose 4, 6, or 8 icons per page. Hold to rearrange,
   drag to an edge to move between pages, and swipe left or right to navigate.
-- **Set the mood.** Choose a background and glass style. The landscape interface
+- **Set the mood.** Choose one of eight backgrounds, from an aurora to reeded glass,
+  and a glass style. The landscape interface
   opens to large icons; swipe up for Apps, Controls, Capture, and Appearance.
 - **Control the essentials.** Adjust volume and supported display brightness,
   control media playback, or use Windows power actions.

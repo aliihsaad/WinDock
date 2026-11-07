@@ -75,6 +75,34 @@ t.equal(demo.prefs.getItem(layoutKey), layout, "demo layout works in memory");
 const unavailable = boot({ blocked: true });
 unavailable.mode.setPreference("off");
 t.equal(unavailable.mode.enabled, false, "no storage still supports session choices");
+// An older Android app refuses a layout naming a background newer than itself.
+const strictDisk = {};
+const strictSaves = [];
+const strict = boot({ native: {
+  getAppearance: () => JSON.stringify({ scope: "pc-c", values: {} }),
+  saveAppearance(origin, scope, key, value) {
+    strictSaves.push(value);
+    const known = !/"background":"(silk|lagoon|obsidian|prism)"/.test(value);
+    if (known) strictDisk[key] = value;
+    return known;
+  },
+} });
+strict.prefs.setItem(layoutKey, JSON.stringify({ perPage: 6, background: "silk", theme: "smoke" }));
+t.deepEqual(JSON.parse(strictDisk[layoutKey]), { perPage: 6, theme: "smoke" }, "an older app still saves the rest of the layout");
+t.equal(strict.prefs.getItem(layoutKey), JSON.stringify({ perPage: 6, background: "silk", theme: "smoke" }), "this session keeps the new background");
+strictSaves.length = 0;
+strict.prefs.setItem(layoutKey, JSON.stringify({ perPage: 8, background: "dusk" }));
+t.equal(strictSaves.length, 1, "a known background saves in one call");
+const refusing = boot({ native: {
+  getAppearance: () => JSON.stringify({ scope: "pc-d", values: {} }),
+  saveAppearance() { strictSaves.push("refused"); return false; },
+} });
+strictSaves.length = 0;
+refusing.prefs.setItem(layoutKey, JSON.stringify({ perPage: 4, background: "prism" }));
+t.equal(strictSaves.length, 2, "a refused save is retried once, never in a loop");
+strictSaves.length = 0;
+refusing.prefs.setItem(layoutKey, JSON.stringify({ perPage: 4 }));
+t.equal(strictSaves.length, 1, "a refusal that is not about the background is not retried");
 const beforeUnknown = calls;
 restored.prefs.setItem("session-token", "not-an-appearance-value");
 t.equal(calls, beforeUnknown, "unrelated keys never cross the bridge");

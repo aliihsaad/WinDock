@@ -102,6 +102,9 @@ const manifest = await call("/manifest.webmanifest");
 t.equal(manifest.status, 200, "the manifest is served");
 t.ok(manifest.headers.get("content-type").includes("manifest+json"), "manifest content type is correct");
 t.equal((await call("/does-not-exist.js")).status, 404, "a missing asset returns 404");
+const scene = await fetch(base + "/wallpapers/aurora.webp");
+t.equal(scene.status, 200, "background art is served from its folder");
+t.equal(scene.headers.get("content-type"), "image/webp", "background art has its type, since responses are nosniff");
 t.equal((await call("/../server.js")).status, 404, "traversal above public is refused");
 
 // ---- DNS rebinding: unknown Host names are refused outright ----

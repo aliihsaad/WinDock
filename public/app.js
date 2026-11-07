@@ -10,6 +10,7 @@ import { dockFetch, DockWebSocket, nativeTransport } from "./native-transport.js
 import { startGlass } from "./glass.js";
 import { enhanceSelects } from "./glass-select.js";
 import { createQuickControls } from "./quick-controls.js";
+import { showScene } from "./scenes.js";
 
 const $ = (id) => document.getElementById(id);
 const syncSelects = enhanceSelects();
@@ -166,7 +167,7 @@ function syncLayout() {
   root.setProperty("--rows", layout.rows);
   root.setProperty("--icon-size", (layout.immersive ? layout.iconSize : 72) + "px");
   root.setProperty("--icon-scale", { 4: .44, 6: .38, 8: .32 }[layout.perPage]);
-  document.documentElement.dataset.background = layout.background;
+  showScene(layout.background);
   document.documentElement.dataset.theme = layout.theme;
   document.body.classList.toggle("is-immersive", layout.immersive);
   document.body.classList.toggle("show-labels", layout.showLabels);
@@ -370,7 +371,13 @@ async function openPicker() {
     if ($("tab-apps").getAttribute("aria-selected") === "true") drawApps();
   } catch (error) { $("picker-status").textContent = "Couldn’t load apps. Close the library and try again."; report(error); }
 }
-function openSettings() { $("drawer").close(); syncLayout(); if (!$("settings").open) $("settings").showModal(); }
+function openSettings() {
+  $("drawer").close();
+  syncLayout();
+  if (!$("settings").open) $("settings").showModal();
+  // The chosen scene can sit past the end of the rail.
+  document.querySelector('.scene-choices [aria-pressed="true"]')?.scrollIntoView({ block: "nearest", inline: "nearest" });
+}
 function openDrawer() { if (paired && !$("drawer").open) $("drawer").showModal(); }
 function openControls() {
   if (!paired || $("controls").open) return;

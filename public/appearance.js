@@ -39,7 +39,15 @@
       values.set(key, value);
       if (memoryOnly) return;
       if (snapshot) {
-        try { native.saveAppearance(origin, snapshot.scope, key, value); } catch {}
+        try {
+          const saved = native.saveAppearance(origin, snapshot.scope, key, value);
+          // Older Android apps refuse a whole layout over a background they don't know.
+          // Save the rest, so only that one choice is lost on the next launch.
+          if (saved === false && key === "windock-layout") {
+            const { background, ...layout } = JSON.parse(value);
+            if (background) native.saveAppearance(origin, snapshot.scope, key, JSON.stringify(layout));
+          }
+        } catch {}
       }
       mirror(key, value);
     },

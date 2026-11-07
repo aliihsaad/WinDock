@@ -233,23 +233,27 @@ h2 { margin: 0; font-size: 25px; font-weight: 500; letter-spacing: -.6px; }
 
 /* Immersive surface and the glass drawers share one appearance palette. */
 :root {
-  --scene-base: #0b1720; --scene-a: #49876a; --scene-b: #36577a; --scene-c: #95ab87;
+  --scene-image: none; --scene-base: #0a1a20; --scene-a: #2f9a72; --scene-b: #2b5d7a;
   --glass-bg: #273d493b; --glass-card: #ffffff08; --glass-border: #e1f0ff29; --glass-blur: 28px; --glass-lens-blur: 14; --glass-sheet-blur: 24;
   --light-x: 22%;
   --icon-scale: .44;
 }
-:root[data-background="dusk"] { --scene-base: #171228; --scene-a: #8b578f; --scene-b: #3b5a90; --scene-c: #af7fa0; --accent: #e7d4ff; --live: #d1b3f3; }
-:root[data-background="ember"] { --scene-base: #221615; --scene-a: #a45f43; --scene-b: #5b3f6c; --scene-c: #c19e75; --accent: #f8dcc0; --live: #ebc4a1; }
-:root[data-background="midnight"] { --scene-base: #090e17; --scene-a: #283852; --scene-b: #151f35; --scene-c: #54617a; --accent: #d0e2ff; --live: #afc7e7; }
+:root[data-background="aurora"] { --scene-image: url("wallpapers/aurora.webp"); }
+:root[data-background="midnight"] { --scene-image: url("wallpapers/midnight.webp"); --scene-base: #050a18; --scene-a: #2c5db3; --scene-b: #122448; --accent: #d0e2ff; --live: #afc7e7; }
+:root[data-background="dusk"] { --scene-image: url("wallpapers/dusk.webp"); --scene-base: #171228; --scene-a: #b0506f; --scene-b: #4a2a70; --accent: #e7d4ff; --live: #d1b3f3; }
+:root[data-background="ember"] { --scene-image: url("wallpapers/ember.webp"); --scene-base: #1c0c0c; --scene-a: #b4582c; --scene-b: #4e2115; --accent: #f8dcc0; --live: #ebc4a1; }
+:root[data-background="lagoon"] { --scene-image: url("wallpapers/lagoon.webp"); --scene-base: #042029; --scene-a: #1b8f9e; --scene-b: #0b3f50; --accent: #bdf5ee; --live: #8fe5d8; }
+:root[data-background="silk"] { --scene-image: url("wallpapers/silk.webp"); --scene-base: #16060c; --scene-a: #8a2340; --scene-b: #3c0d20; --accent: #ffd9d6; --live: #f2b4b6; }
+:root[data-background="obsidian"] { --scene-image: url("wallpapers/obsidian.webp"); --scene-base: #08090d; --scene-a: #5a6478; --scene-b: #1f232c; --accent: #e6eaf2; --live: #c3cbd9; }
+:root[data-background="prism"] { --scene-image: url("wallpapers/prism.webp"); --scene-base: #08080f; --scene-a: #4a43c9; --scene-b: #2f89c7; --accent: #e2deff; --live: #c4bff5; }
 :root[data-theme="frost"] { --glass-bg: #cadceb24; --glass-card: #edf5ff0c; --glass-border: #effaff47; --glass-blur: 44px; --glass-lens-blur: 26; --glass-sheet-blur: 36; }
 :root[data-theme="smoke"] { --glass-bg: #09121dc4; --glass-card: #ffffff04; --glass-border: #c9ddee1c; --glass-blur: 32px; --glass-lens-blur: 18; --glass-sheet-blur: 26; }
 body { background: var(--scene-base); }
-.wallpaper { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; background: var(--scene-base); }
-.wallpaper::after { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, #070f1845, transparent 60%); }
-.wallpaper > span { position: absolute; border-radius: 50%; filter: blur(42px); opacity: .8; }
-.wallpaper > span:nth-child(1) { width: 110vw; height: 135vh; left: -45vw; top: -80vh; background: radial-gradient(ellipse, var(--scene-a), transparent 65%); transform: rotate(-25deg); }
-.wallpaper > span:nth-child(2) { width: 125vw; height: 150vh; right: -45vw; bottom: -90vh; background: radial-gradient(ellipse, var(--scene-b), transparent 66%); }
-.wallpaper > span:nth-child(3) { width: 70vw; height: 100vh; left: 32vw; top: -72vh; background: radial-gradient(ellipse, var(--scene-c), transparent 70%); opacity: .4; }
+.wallpaper { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; background: var(--scene-base) var(--scene-image) center / cover no-repeat; }
+/* A faint grain keeps dark gradients from banding once the art is compressed. */
+.wallpaper::after { content: ""; position: absolute; inset: 0; background: url("wallpapers/grain.png") 0 0 / 64px, linear-gradient(0deg, #070f1845, transparent 60%); }
+.wallpaper__fade { position: absolute; inset: 0; background: center / cover no-repeat; animation: scene-out .5s ease-out forwards; }
+@keyframes scene-out { to { opacity: 0; } }
 .app, .pair { position: relative; z-index: 1; }
 body.is-immersive .app { max-width: none; padding: calc(44px + env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(20px, env(safe-area-inset-left)); }
 body.is-immersive .bar, body.is-immersive .dock-heading, body.is-immersive .foot { display: none; }
@@ -383,20 +387,25 @@ body.is-immersive .empty .button .icon { width: 36px; height: 36px; }
 .settings__card > p, .settings__tip { color: #c5d2d0; }
 .layout-choices { display: flex; gap: 7px; margin: 14px 0 16px; }
 .layout-choices button { display: flex; align-items: center; justify-content: center; flex-direction: column; flex: 1; min-height: 73px; gap: 9px; border-radius: 12px; border: 1px solid #ffffff12; background: #ffffff03; font-size: 11px; color: #c9d7d5; }
-.layout-choices button[aria-pressed="true"], .background-choices button[aria-pressed="true"] { border-color: #ecfff4a6; color: #f2fff9; background: #eafff010; }
+.layout-choices button[aria-pressed="true"] { border-color: #ecfff4a6; color: #f2fff9; background: #eafff010; }
 .mini-grid { display: grid; grid-template-columns: repeat(var(--mini-columns), 6px); gap: 4px; }
 .mini-grid i { width: 6px; height: 6px; border-radius: 1.5px; background: currentColor; opacity: .85; }
 .switch { appearance: none; width: 36px; height: 22px; flex-shrink: 0; border: 1px solid #ffffff28; border-radius: 20px; background: #15242b61; cursor: pointer; position: relative; transition: background .2s; }
 .switch::after { content: ""; position: absolute; left: 3px; top: 3px; width: 14px; height: 14px; border-radius: 50%; background: #b7c9c7; transition: transform .2s; }
 .switch:checked { background: #d6f5e54f; border-color: #d6f5e57a; }
 .switch:checked::after { background: #e5fff2; transform: translateX(14px); }
-.background-choices { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; margin: 14px 0 17px; }
-.background-choices button { display: flex; flex-direction: column; align-items: center; gap: 7px; border: 1px solid #ffffff12; padding: 5px 5px 7px; border-radius: 11px; background: #ffffff03; font-size: 9px; color: #c9d7d5; }
-.swatch { width: 100%; height: 40px; border-radius: 7px; }
-.swatch--aurora { background: radial-gradient(ellipse at top left, #71a78a, transparent 80%), linear-gradient(140deg, #273f45, #274268); }
-.swatch--dusk { background: radial-gradient(ellipse at top left, #b481b8, transparent 80%), linear-gradient(140deg, #50305f, #2c4878); }
-.swatch--ember { background: radial-gradient(ellipse at top left, #c39167, transparent 80%), linear-gradient(140deg, #713d3a, #4e3a61); }
-.swatch--midnight { background: radial-gradient(ellipse at top left, #45566e, transparent 80%), #0b1120; }
+.settings__grid .settings__scenes { grid-column: 1 / -1; padding-inline: 0; padding-bottom: 8px; }
+.settings__scenes h3 { padding-inline: 17px; }
+/* The rail runs edge to edge, so a card cut off at the end shows there is more. */
+.scene-choices { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(116px, 1fr); gap: 11px; padding: 12px 17px 7px; overflow-x: auto; overscroll-behavior-x: contain; scroll-padding-inline: 17px; scroll-snap-type: x proximity; scrollbar-width: none; }
+.scene-choices::-webkit-scrollbar { display: none; }
+.scene-choices button { position: relative; display: grid; gap: 7px; padding: 0; border: 0; border-radius: 13px; background: none; color: #c5d2d0; font: inherit; font-size: 11px; line-height: 1.2; scroll-snap-align: start; }
+.scene-choices img { display: block; width: 100%; height: auto; aspect-ratio: 15 / 7; border-radius: 13px; outline: 1px solid #ffffff26; outline-offset: -1px; background: #ffffff0a; transition: transform .15s; }
+.scene-choices button:active img { transform: scale(.97); }
+.scene-choices button[aria-pressed="true"] { color: #f4fbf8; font-weight: 550; }
+.scene-choices button[aria-pressed="true"] img { outline: 2px solid var(--accent); outline-offset: 2px; }
+.scene-choices button[aria-pressed="true"]::after { content: ""; position: absolute; top: 6px; right: 6px; width: 20px; height: 20px; border-radius: 50%; background: var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%23101719' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 6.4 5 8.8l4.5-5.4'/%3E%3C/svg%3E") center / 12px no-repeat; box-shadow: 0 1px 4px #0000005c; }
+.scene-choices button:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 .setting-row select { background: #ffffff08; border-color: #ffffff1f; color: #e4f4ee; }
 .setting-row option { background: #1f2c32; color: #eef6f3; }
 .settings__utilities { display: flex; gap: 8px; margin-top: 14px; }
@@ -492,8 +501,8 @@ body.is-immersive .empty .button .icon { width: 36px; height: 36px; }
   .layout-choices button { min-height: 57px; gap: 6px; }
   .setting-row { min-height: 40px; }
   .settings__card .settings__tip { margin-top: 6px; font-size: 8px; }
-  .background-choices { margin: 10px 0 11px; }
-  .swatch { height: 34px; }
+  .settings__scenes h3 { padding-inline: 15px; }
+  .scene-choices { gap: 9px; padding: 10px 15px 6px; scroll-padding-inline: 15px; }
   .settings__utilities { margin-top: 10px; }
 }
 @media (orientation: portrait) and (max-width: 599px) { .drawer-trigger, .quick-controls-trigger, .edit-done, .glass-drawer[open] { visibility: hidden; } }
@@ -678,11 +687,7 @@ html.perf .pc-clipboard__panel { backdrop-filter: none; background: #151c29; }
 @media (orientation: portrait) and (max-width: 599px) { .input-pad[open] { visibility: hidden; } }
 
 /* Optional low-cost rendering. Removing .perf restores the selected glass style. */
-html.perf .wallpaper {
-  background: radial-gradient(ellipse at 0 0, var(--scene-a), transparent 65%),
-    linear-gradient(145deg, var(--scene-base), var(--scene-b));
-}
-html.perf .wallpaper > span, html.perf .wallpaper::after { display: none; }
+html.perf .wallpaper::after { display: none; }
 html.perf body :is(.sheet, .options, .confirm, .glass-drawer, .glass-menu, .tile--control .tile__glyph,
   .empty .button, .edit-done, .pointer-options, .mouse-buttons) {
   background: #17252d; backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: none;

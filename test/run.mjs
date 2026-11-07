@@ -46,6 +46,7 @@ const EXPECTED = {
   "verify-touchpad-field.mjs": "touchpad-field verification passed",
   "verify-glass.mjs": "glass verification passed",
   "verify-quick-controls.mjs": "quick-controls verification passed",
+  "verify-scenes.mjs": "scenes verification passed",
   "verify-remote-keyboard.mjs": "remote-keyboard verification passed",
   "verify-transfers.mjs": "transfers verification passed",
   "verify-clipboard.mjs": "clipboard verification passed",
