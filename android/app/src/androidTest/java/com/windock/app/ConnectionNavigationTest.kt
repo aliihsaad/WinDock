@@ -123,7 +123,7 @@ class ConnectionNavigationTest {
                     js(web, "document.getElementById('performance-mode-picker').click()")
                     await("glass dropdown opens") { js(web, "document.getElementById('performance-mode-menu').matches(':popover-open')") == "true" }
                     device.pressBack()
-                    await("Back dismisses only the dropdown") { js(web, "document.getElementById('settings').open && !document.getElementById('performance-mode-menu').matches(':popover-open')") == "true" }
+                    await("Back dismisses only the dropdown") { js(web, "document.getElementById('settings').open && !document.getElementById('performance-mode-menu').matches(':popover-open') && document.getElementById('performance-mode-picker').getAttribute('aria-expanded') === 'false'") == "true" }
                     assertEquals("true", js(web, "document.getElementById('performance-mode-picker').getAttribute('aria-expanded') === 'false'"))
                 }
                 device.pressBack()

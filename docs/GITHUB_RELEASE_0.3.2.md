@@ -1,8 +1,11 @@
-# GitHub release 0.3.2 — preparation
+# GitHub release 0.3.2
 
-Source: `claude/full-glass` release candidate based on PR #59 at
-`b1da2180c45d829decefe36b5a50dda14d26b23e`, plus media artwork, expanded notch,
-website music demo and version 0.3.2 preparation. Publication is pending final CI.
+Release source is tracked in [PR #59](https://github.com/aliihsaad/WinDock/pull/59)
+and the `v0.3.2` tag. Windows and Linux assets were built and tested by workflow
+[`42500722815`](https://github.com/aliihsaad/WinDock/actions/runs/42500722815)
+from `96c45ff25845948a56c0afd957c42ec6fec9f34c`. Subsequent changes cover the
+website/release records, an Android test wait and the wallpaper generator guard;
+the packaged application source is unchanged.
 
 ## Confirmed on device
 
@@ -22,36 +25,37 @@ host. This covers the feature implementation before the release version bump.
 
 - JavaScript regression suite: 41/41 groups passed after the version bump.
 - Native artwork tests: 24 assertions passed; native update tests: 42 passed.
-- Windows self-contained build and installer compilation passed. Installer and
-  tray metadata both report 0.3.2. An isolated smoke run started the bundled host,
-  received its ready signal and exited; packaged media files match the source.
+- Windows self-contained build, installer compilation, fresh installation,
+  packaged startup, upgrade and uninstall passed in clean CI. A local isolated
+  smoke run also verified version 0.3.2 and the packaged media files.
 - Android debug build, JVM tests and lint passed. The APK reports 0.3.2/code 12
   and its certificate matches the established GitHub identity above.
-- Release workflow syntax passed actionlint.
-- Linux final packages are pending. Local Docker Desktop failed before the build
-  started because its inference-manager socket could not be accessed. No Docker
-  reset or data deletion was attempted. Use repository CI for the final Linux
-  build and Debian/Ubuntu/Arch installation checks, or repair Docker separately.
-- Fresh Windows installation/upgrade/uninstall checks remain for clean CI. The
-  developer machine already has WinDock installed; the package smoke run used a
-  separate port and configuration without replacing that installation.
+- Linux builds and ordinary-user installation, startup, upgrade and uninstall
+  passed in Debian 12, Ubuntu 24.04 and Arch containers in CI.
+- Website music checks passed (29), as did release/download checks (21) at widths
+  from 320 to 1440 pixels. Earlier media/panel/gesture browser checks also passed.
+- The Android instrumented-test wait now includes its final accessibility state
+  and compiles. Reduced-scale wallpaper rendering rejects the bundled-art folder;
+  an explicit preview output succeeds without modifying shipped images.
+- Release workflow syntax passed actionlint. Required source checks passed on
+  Windows, macOS and Linux; the PR records checks for each subsequent commit.
 
-Prepared local assets are in `artifacts/release-0.3.2/`. Its unpublished manifest
-currently contains Windows and Android only; add the verified Linux assets before
-promoting it to the website. Public `website/downloads.json` remains at 0.3.1.
+Final assets and checksums are in `artifacts/release-0.3.2/`. The website manifest
+contains all four packages. Android is the verified local build with the existing
+certificate, not the disposable CI debug APK.
 
 | Asset | Bytes | SHA-256 |
 | --- | ---: | --- |
-| WinDockSetup.exe | 123068903 | `6b7d84eb3c31837549d736bf31d75146acb6fe268ccd1e0e84d9835bc006decc` |
+| WinDockSetup.exe | 124177673 | `97c0122792c916e4612121a6437e1c3ccbd021de03bd8b5e57c160a1187815fe` |
 | WinDock-android-debug.apk | 3110218 | `9cde96449b12171ec2f66d1b14fdcb8114f85d317f439a7e4ab97a35951aaf61` |
+| WinDock-linux-amd64.deb | 31891084 | `02ca601a68b212de113349c72d8ded396a3b3bcbac22bdf7b6f169e76a7a5d04` |
+| WinDock-linux-x64.pkg.tar.zst | 44855182 | `fc6d1c8eaefd720fb79341a2d85e380940f2b72ae41e6017c3ba770810c5d66b` |
 
-## Publication checklist
+## Publication
 
-- Commit and push the allowlisted release changes; pass CI on that source.
-- Verify final Windows, Android and Linux packages and record their hashes.
-- Merge the reviewed release source and publish the matching GitHub assets.
-- Update the website download feed and release history, README download links,
-  and changelog date; deploy the website demo with the release.
+Publish only after the PR checks pass, using the assets above. Promote the matching
+website deployment with the GitHub release, preserving older release-history
+entries and existing user data. Verify public asset hashes and the live feed.
 
 Windows remains unsigned. Android retains its existing debug signing identity.
 Linux song metadata uses its existing provider; Windows artwork is the newly

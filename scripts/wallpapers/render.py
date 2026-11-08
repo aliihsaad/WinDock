@@ -6,7 +6,7 @@ free of licensing questions and can be regenerated at any size. The output is
 committed, and neither the host nor the phone ever runs this file.
 
     python scripts/wallpapers/render.py                 # every scene
-    python scripts/wallpapers/render.py silk --scale .4 # quick look at one scene
+    python scripts/wallpapers/render.py silk --scale .4 --out output/wallpapers
 
 Needs numpy and Pillow with WebP support.
 """
@@ -432,6 +432,8 @@ def main():
     parser.add_argument("--out", type=Path, default=OUT)
     parser.add_argument("--quality", type=int, default=86)
     args = parser.parse_args()
+    if args.scale != 1.0 and args.out.resolve() == OUT.resolve():
+        parser.error("--scale other than 1 needs a separate --out directory to protect the bundled art")
     args.out.mkdir(parents=True, exist_ok=True)
     for name in args.scenes or SCENES:
         rendered = finish(SCENES[name](Canvas(args.scale)), len(name))
