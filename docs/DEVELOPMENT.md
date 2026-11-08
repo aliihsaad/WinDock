@@ -26,12 +26,25 @@ small Rust helper for the touchpad, phone keyboard and signatures (see
 | `src/platform/input.js` | Bridge to the persistent touchpad helper and signature export process (Windows and Linux) |
 | `src/platform/linux-input.js` | Linux input helper path and signature folder |
 | `public/` | Shared dock UI and offline shell |
+| `public/wallpapers/` | Background art, rendered by `scripts/wallpapers/render.py` |
 | `android/` | Discovery, validated endpoints, landscape WebView |
 | `native/win/` | Windows helper |
 | `native/linux/` | Linux input helper (`windock-input`, Rust) and its udev rule |
 | `native/tray/` | System tray host |
 | `website/` | Static product website and isolated demo |
 | `scripts/verify-*.mjs` | Platform-independent verification scripts |
+
+### Backgrounds
+
+Each background is a procedural render, committed as a 2400×1120 WebP with a 480px
+thumbnail. To change one, edit its function in `scripts/wallpapers/render.py` and run
+`python scripts/wallpapers/render.py <scene>`; `--scale .4` renders a quick preview
+elsewhere with `--out`. It needs numpy and Pillow. Neither the host nor the phone runs it.
+
+Adding a scene touches `public/scenes.js`, a style rule and picker button in
+`public/`, and the Android save filter in `AppearancePreferences.kt`.
+`scripts/verify-scenes.mjs` fails until all of them agree. Never rename a shipped id,
+because saved layouts refer to it.
 
 ## Boundaries
 
@@ -298,6 +311,7 @@ for the known focus-smoke failure and other hardware acceptance evidence.
 | POST | `/api/apps/close` | Ask a running PID to close |
 | POST | `/api/control` | Run an allowed control verb |
 | GET | `/api/nowplaying` | Current media session |
+| GET | `/api/levels` | Current volume and brightness, 0 to 100, or `null` when unknown |
 | GET | `/api/stats` | CPU, memory, battery |
 | GET | `/api/capture` | Recording phase, elapsed time, last saved file |
 | POST | `/api/capture/screenshot` | Save the main monitor as PNG |

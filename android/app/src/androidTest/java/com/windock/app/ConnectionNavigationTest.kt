@@ -118,6 +118,16 @@ class ConnectionNavigationTest {
                 assertNotNull("Trying another address retains the previous trusted identity", store.get(paired.hostId))
                 returnToDock()
                 assertEquals(paired.hostId, store.selected()!!.hostId)
+                js(web, "document.getElementById('drawer-open').click(); document.getElementById('drawer-settings').click()")
+                if (js(web, "'popover' in HTMLElement.prototype") == "true") {
+                    js(web, "document.getElementById('performance-mode-picker').click()")
+                    await("glass dropdown opens") { js(web, "document.getElementById('performance-mode-menu').matches(':popover-open')") == "true" }
+                    device.pressBack()
+                    await("Back dismisses only the dropdown") { js(web, "document.getElementById('settings').open && !document.getElementById('performance-mode-menu').matches(':popover-open') && document.getElementById('performance-mode-picker').getAttribute('aria-expanded') === 'false'") == "true" }
+                    assertEquals("true", js(web, "document.getElementById('performance-mode-picker').getAttribute('aria-expanded') === 'false'"))
+                }
+                device.pressBack()
+                await("next Back closes Appearance") { js(web, "!document.getElementById('settings').open") == "true" }
                 js(web, "document.getElementById('quick-controls-open').click()")
                 device.pressBack()
                 await("Back closes only the curtain") { js(web, "!document.getElementById('controls').open") == "true" }

@@ -10,8 +10,9 @@ startup preference are preserved. The current phone APK can remain installed.
 
 ## Behavior
 
-- Swipe down: Sound, Playback, Display, then compact Files & Media (native
-  Android only), Touch & sign, Capture, and Power shortcuts.
+- Swipe down: the notch expands into compact Files & Media (native Android only),
+  Touch & sign, Capture, and Power shortcuts, above live brightness and volume
+  sliders and a music card.
 - Power opens a separate sheet. Lock, Sleep, Restart, and Shut down retain
   their existing confirmations, capability filtering, and server authorization.
   Back/Escape closes the top sheet and returns to quick controls.

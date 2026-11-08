@@ -1,7 +1,14 @@
 import { createNowPlayingPoller } from "../public/now-playing.js";
 import { createChecker } from "./lib/assert.mjs";
+import { createWindowsProvider } from "../src/platform/windows.js";
 
 const t = createChecker("now-playing");
+const artwork = "data:image/jpeg;base64,/9j/2Q==";
+const metadata = { title: "Track", artist: "Artist", playing: true };
+for (const candidate of [artwork, null, "", "https://example.com/image.jpg", "data:image/svg+xml,<svg/>", "data:image/jpeg;base64,\"bad", "data:image/jpeg;base64," + "A".repeat(128 * 1024 + 24)]) {
+  const provider = createWindowsProvider({ helperPath: "helper", exec: async () => ({ stdout: JSON.stringify({ ...metadata, artwork: candidate }) }) });
+  t.deepEqual(await provider.nowPlaying(), candidate === artwork ? { ...metadata, artwork } : metadata, "media metadata survives absent/invalid artwork; only bounded JPEG data passes through");
+}
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 async function until(check) {
   const deadline = Date.now() + 2000;

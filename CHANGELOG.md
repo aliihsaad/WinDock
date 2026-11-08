@@ -5,6 +5,42 @@
 - Native iPhone companion source and simulator checks remain in development;
   no installable iPhone release is included.
 
+## 0.3.2 — November 8, 2026
+
+- Full glass: the drawer, sheets, dialogs and dropdown menus now bend what sits
+  behind them at their curved edge. Android and Chromium browsers draw true
+  refraction; other browsers keep frosted blur with the same rim and reflection.
+- Every glass surface gets a lit rim and a reflection that leans toward your finger.
+  Sheets frost more than small glass, so text stays readable over bright icons.
+- Dropdowns: Performance mode, Glass style and signature ink now open a glass menu
+  instead of the system picker, with full keyboard support. The clipboard and
+  pointer speed panels get the same rim and reflection, without refraction, so
+  nothing recomputes over the animated touchpad field.
+- Redesign the quick controls notch: slimmer real glass that flows out of the top
+  edge through soft curves, with the same touch area as before.
+- Quick controls expand out of the notch and shrink back into it. Live brightness and
+  volume sliders open at your PC's real levels, and a music card shows what is playing
+  with previous, play and next. Brightness presets and volume steps are replaced by
+  the sliders, and both can still be pinned to the dock as tiles.
+- Eight backgrounds replace the four colour washes: Aurora, Midnight, Dusk, Ember,
+  Lagoon, Silk, Obsidian and Prism. Each is a rendered scene with real depth, so the
+  glass has something to bend. Pick one from a rail of previews at the top of
+  Appearance; the change fades in once the new scene is ready.
+- Performance mode removes the glass effects above and keeps solid surfaces. The
+  backgrounds stay, since a still image costs nothing while you use the dock.
+- The four new backgrounds need the updated Android app to be remembered. An older
+  app keeps the rest of your layout and returns to Aurora on the next launch.
+- Windows music sessions now include song artwork when the player provides it.
+  The top notch expands to show the cover, title and artist; paused tracks stay
+  visible, and tapping opens playback controls. Missing covers use a music icon.
+- The website demo includes three silent sample tracks with cover art, working
+  previous, next and play/pause controls, and a Music shortcut.
+- Prevent delayed level readings from overwriting newer slider changes. Windows
+  brightness reads and writes share a queue, and Android Back dismisses a glass
+  dropdown before closing its sheet.
+- Android version code 12 retains the established GitHub signing identity for
+  in-place upgrades. Update both the host and Android companion for this release.
+
 ## 0.3.1 — November 7, 2026
 
 - Update actions open the WinDock website download section on Android, Windows

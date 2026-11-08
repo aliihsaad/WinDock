@@ -378,6 +378,16 @@ export function createWindowsProvider({ exec, helperPath = process.env.WINDOCK_H
       return { ok: true, verb };
     },
 
+    async levels() {
+      const percent = (value) => Number.isFinite(value) ? Math.round(Math.min(100, Math.max(0, value))) : null;
+      const read = (args) => helper(args).then(({ stdout }) => JSON.parse(stdout)).catch(() => null);
+      // Brightness shares the queue, because monitors garble overlapping DDC requests.
+      const pending = brightnessQueue.then(() => read(["brightness"]));
+      brightnessQueue = pending.catch(() => {});
+      const [audio, display] = await Promise.all([read(["volume"]), pending]);
+      return { volume: typeof audio?.volume === "number" ? percent(audio.volume * 100) : null, brightness: percent(display?.displays?.[0]?.percent) };
+    },
+
     async nowPlaying() {
       const { stdout } = await helper(["nowplaying"]);
       const [row] = jsonArray(stdout);
@@ -388,6 +398,9 @@ export function createWindowsProvider({ exec, helperPath = process.env.WINDOCK_H
         title,
         artist: typeof row.artist === "string" ? row.artist.trim() : "",
         playing: row.playing === true,
+        // Only the helper's small, re-encoded JPEG may cross the media API.
+        ...(typeof row.artwork === "string" && row.artwork.length <= 128 * 1024 + 23 &&
+          /^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(row.artwork) ? { artwork: row.artwork } : {}),
       };
     },
 

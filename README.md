@@ -45,8 +45,8 @@ under the MIT license, the listing credits Ali Saad and links to the
 
 | Platform | Availability |
 | --- | --- |
-| Windows 10 / 11, x64 | [Download the installer](https://github.com/aliihsaad/WinDock/releases/download/v0.3.1/WinDockSetup.exe) |
-| Android 7.0+ | [Download the APK](https://github.com/aliihsaad/WinDock/releases/download/v0.3.1/WinDock-android-debug.apk) |
+| Windows 10 / 11, x64 | [Download the installer](https://github.com/aliihsaad/WinDock/releases/download/v0.3.2/WinDockSetup.exe) |
+| Android 7.0+ | [Download the APK](https://github.com/aliihsaad/WinDock/releases/download/v0.3.2/WinDock-android-debug.apk) |
 | Linux (Hyprland), x86-64 | [Arch/Omarchy and Debian/Ubuntu installer preview](#linux-preview) |
 | iOS | Coming soon — [native companion development & GitHub builds](ios/README.md); no installable public release yet. |
 
@@ -63,7 +63,7 @@ under the MIT license, the listing credits Ali Saad and links to the
 The Windows installer is currently unsigned and the Android APK is debug-signed.
 Windows may show a publisher warning. An APK signed with a different key can
 require uninstalling an earlier Android build before installing the new one.
-See the [release notes and checksums](https://github.com/aliihsaad/WinDock/releases/tag/v0.3.1).
+See the [release notes and checksums](https://github.com/aliihsaad/WinDock/releases/tag/v0.3.2).
 
 The Android **Switch PC** picker discovers running WinDock
 hosts and keeps up to eight recently reached addresses. It is available on the
@@ -93,7 +93,7 @@ or **Appearance → This phone · screen & sleep** in the dock. Android’s scre
 timeout may add a delay before the display turns off.
 
 **Appearance → Performance mode** offers **Auto**, **On**, and
-**Off**. On removes glass blur, animated paging, and heavy touch effects for older
+**Off**. On removes glass effects, animated paging, and heavy touch effects for older
 phones. Auto enables it when Android reports a low-RAM device or at most 2 GiB of
 total usable RAM; browsers and older companions can select On manually. Manual
 On/Off always wins over Auto, and Off restores your selected glass style.
@@ -134,7 +134,7 @@ to it, with the touchpad, phone keyboard and signatures.
 ### Install a package (no build tools needed)
 
 Download the package for your **x86-64** machine from the
-[current release](https://github.com/aliihsaad/WinDock/releases/tag/v0.3.1).
+[current release](https://github.com/aliihsaad/WinDock/releases/tag/v0.3.2).
 The Node.js runtime and compiled input helper are included. Your package
 manager installs the desktop dependencies and configures touchpad permissions.
 
@@ -232,7 +232,8 @@ feature works.
   bring an app forward when Windows permits it.
 - **Build your own dock.** Choose 4, 6, or 8 icons per page. Hold to rearrange,
   drag to an edge to move between pages, and swipe left or right to navigate.
-- **Set the mood.** Choose a background and glass style. The landscape interface
+- **Set the mood.** Choose one of eight backgrounds, from an aurora to reeded glass,
+  and a glass style. The landscape interface
   opens to large icons; swipe up for Apps, Controls, Capture, and Appearance.
 - **Control the essentials.** Adjust volume and supported display brightness,
   control media playback, or use Windows power actions.
@@ -310,10 +311,11 @@ for connection steps and firewall requirements.
 
 ## Current release
 
-[0.3.1](https://github.com/aliihsaad/WinDock/releases/tag/v0.3.1) adds a gesture-aware
-touchpad, thumb-friendly clicks, optional split PC keys, a keyboard capitalization
-correction and quick connection controls. Update both the PC host and Android
-companion. Android version code 11 preserves the existing signing certificate
+[0.3.2](https://github.com/aliihsaad/WinDock/releases/tag/v0.3.2) adds full glass
+styling, eight rendered backgrounds, live volume and brightness sliders, and an
+expanded music notch with Windows song artwork. The website demo includes silent
+sample tracks and playback controls. Update both the PC host and Android
+companion. Android version code 12 preserves the existing signing certificate
 for in-place upgrades.
 See the [version history](CHANGELOG.md) for changes and upgrade notes.
 

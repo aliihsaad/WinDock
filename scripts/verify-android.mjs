@@ -7,6 +7,7 @@
  */
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
+import { runInNewContext } from "node:vm";
 import { createChecker } from "./lib/assert.mjs";
 import { PROBE, REPLY_PREFIX, DISCOVERY_PORT, replyFor, parseReply } from "../src/discovery.js";
 
@@ -67,6 +68,33 @@ t.equal(
 // ---- the app must only use routes the host serves ----
 const server = readFileSync(join(root, "server.js"), "utf8");
 const main = read("app/src/main/java/com/windock/app/MainActivity.kt");
+// Execute the exact script injected by Android Back; no copied implementation can drift.
+const backScript = main.slice(main.indexOf("private fun handleBack()"))
+  .match(/web\.evaluateJavascript\("""([\s\S]*?)"""\.trimIndent\(\)/)?.[1];
+t.ok(backScript, "Android Back injects a dismiss script");
+if (backScript) {
+  const calls = [], menus = [{ hidePopover() { calls.push("menu"); menus.pop(); } }];
+  const sheets = [{ close() { calls.push("sheet"); sheets.pop(); } }];
+  const environment = {
+    HTMLElement: { prototype: { popover: "" } },
+    document: { querySelectorAll(selector) {
+      if (selector === ":popover-open") return menus;
+      if (selector === "dialog[open]") return sheets;
+      throw new Error(`Unexpected selector: ${selector}`);
+    } },
+  };
+  t.equal(runInNewContext(backScript, environment), true, "Back consumes an open dropdown");
+  t.deepEqual(calls, ["menu"], "Back leaves the parent sheet open while dismissing its dropdown");
+  t.equal(runInNewContext(backScript, environment), true, "a second Back consumes the sheet");
+  t.deepEqual(calls, ["menu", "sheet"], "the sheet closes only after its dropdown");
+  t.equal(runInNewContext(backScript, environment), false, "Back falls through to PC selection without overlays");
+  environment.HTMLElement.prototype = {};
+  environment.document.querySelectorAll = (selector) => {
+    if (selector !== "dialog[open]") throw new Error("Older WebView does not support popover selectors");
+    return [{ close() { calls.push("legacy-sheet"); } }];
+  };
+  t.equal(runInNewContext(backScript, environment), true, "older WebViews still close sheets without popover support");
+}
 const probe = read("app/src/main/java/com/windock/app/HostProbe.kt");
 const routes = [...probe.matchAll(/"\$endpoint(\/[a-z/]+)"/g)].map((m) => m[1]);
 t.ok(routes.length > 0, `the app references at least one host route (${routes.join(", ")})`);

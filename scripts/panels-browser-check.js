@@ -9,7 +9,7 @@ async (page) => {
       const response = await route.fetch();
       let body = await response.text();
       body = body.replace('import { fetch, WebSocket,', 'import { fetch as previewFetch, WebSocket,');
-      body = body.replace('window.WinDockAndroid = { showPcPicker: showPreviewPcPicker };', `
+      body = body.replace("window.WinDockAndroid = { showPcPicker: showPreviewPcPicker, openFiles: () => document.getElementById('demo-files').showModal() };", `
         window.__filesOpened = 0;
         window.WinDockAndroid = { showPcPicker: showPreviewPcPicker,
           ...(location.search.includes('android') ? { showKeyboard() {}, showPhoneSettings() {}, openFiles() { window.__filesOpened++; } } : {}) };
@@ -21,6 +21,9 @@ async (page) => {
           if (url === '/api/control' && window.__controlFixture) {
             window.__controlCalls = (window.__controlCalls || 0) + 1;
             return new Response(JSON.stringify(window.__controlFixture.body), { status: window.__controlFixture.status || 200, headers: { 'content-type': 'application/json' } });
+          }
+          if (url === '/api/levels' && window.__levelReadResolvers) {
+            return new Promise(resolve => window.__levelReadResolvers.push(levels => resolve(new Response(JSON.stringify(levels)))));
           }
           return previewFetch(url, options);
         }
@@ -40,6 +43,14 @@ async (page) => {
     await tab.screenshot({ path: 'output/playwright/simplified-drawer.png' });
     await tab.locator('#drawer-settings').click();
     check(await tab.locator('#fullscreen').isVisible(), 'Fullscreen remains available in browser Appearance');
+    await tab.locator('#performance-mode-picker').click();
+    await tab.locator('#performance-mode-menu').waitFor({ state: 'visible' });
+    // Native and programmatic closes bypass the browser's normal popover light dismiss.
+    await tab.locator('#settings').evaluate(el => el.close());
+    await tab.waitForFunction(() => !document.querySelector('#performance-mode-menu').matches(':popover-open'));
+    check(await tab.locator('#performance-mode-picker').getAttribute('aria-expanded') === 'false', 'Closing a parent sheet clears its dropdown state');
+    await tab.locator('#drawer-open').click(); await tab.locator('#drawer-settings').click();
+    check(await tab.locator('#performance-mode-menu').isHidden(), 'Reopening Appearance does not reopen an abandoned dropdown');
     await tab.locator('[data-close="settings"]').click();
     await tab.goto('http://127.0.0.1:4173/demo/index.html?android');
     await tab.locator('#app:not([hidden])').waitFor();
@@ -48,7 +59,7 @@ async (page) => {
     check(await tab.locator('#phone-options').isVisible(), 'Native phone settings remain accessible');
     await tab.locator('[data-close="settings"]').click();
     await tab.locator('#quick-controls-open').click();
-    check(await tab.locator('#controls-grid .control-card').count() === 3, 'Primary controls contain Sound, Playback and Display only');
+    check(await tab.locator('#level-brightness').isVisible() && await tab.locator('#level-volume').isVisible() && await tab.locator('#qc-music').isVisible(), 'Primary controls hold brightness, volume and music');
     check(await tab.locator('.quick-controls-shortcuts button:visible').count() === 4, 'Android has all four compact shortcuts');
     for (const size of [{ width: 844, height: 390 }, { width: 640, height: 320 }, { width: 568, height: 320 }]) {
       await tab.setViewportSize(size);
@@ -61,25 +72,41 @@ async (page) => {
     }
     await tab.setViewportSize({ width: 844, height: 390 });
     await tab.screenshot({ path: 'output/playwright/controls-android-preview.png' });
-    const brightness = tab.locator('#controls-grid [data-key="brightness-set"][data-value="50"]');
+    await tab.evaluate(() => { window.__levelReadResolvers = []; });
+    for (let opening = 1; opening <= 2; opening++) {
+      await tab.keyboard.press('Escape');
+      await tab.locator('#controls').waitFor({ state: 'hidden' });
+      await tab.locator('#quick-controls-open').click();
+      await tab.waitForFunction(count => window.__levelReadResolvers.length === count, opening);
+    }
+    await tab.evaluate(() => window.__levelReadResolvers[1]({ volume: 80, brightness: 70 }));
+    await tab.waitForFunction(() => document.querySelector('#level-volume input').value === '80');
+    await tab.evaluate(async () => {
+      window.__levelReadResolvers[0]({ volume: 10, brightness: null });
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      delete window.__levelReadResolvers;
+    });
+    check(await tab.locator('#level-volume input').inputValue() === '80', 'An earlier panel opening cannot overwrite the current volume');
+    check(await tab.locator('#level-brightness input').inputValue() === '70' && await tab.locator('#level-brightness input').isEnabled(), 'An earlier panel opening cannot replace or disable current brightness');
+    const brightness = tab.locator('#level-brightness input');
     await tab.evaluate(() => window.__controlFixture = { body: { ok: true, warning: 'hdr-active' } });
-    await brightness.click();
+    await brightness.fill('50');
     await tab.waitForFunction(() => document.querySelector('#toast').dataset.warning === 'true');
     check(await tab.locator('#toast').innerText() === 'Command sent. HDR may prevent the brightness from changing.', 'HDR warning is contextual and useful');
     check(await tab.locator('#toast').evaluate(el => el.parentElement.id === 'controls'), 'HDR warning stays visible above the dialog');
     check(await brightness.isEnabled(), 'Warning does not block brightness controls');
     await tab.screenshot({ path: 'output/playwright/controls-hdr-warning.png' });
-    await tab.locator('#controls-grid [data-key="volume-up"]').click();
+    await tab.locator('#qc-mute').click();
     await tab.waitForFunction(() => document.querySelector('#toast').textContent === 'Control sent');
     check(await tab.locator('#toast').getAttribute('data-warning') === 'false', 'Warning does not stick to unrelated controls');
-    for (const body of [{ ok: true }, { ok: true, warning: 'unknown' }]) {
+    for (const [value, body] of [['60', { ok: true }], ['70', { ok: true, warning: 'unknown' }]]) {
       await tab.evaluate(body => window.__controlFixture = { body }, body);
-      await brightness.click();
-      await tab.waitForFunction(() => document.querySelector('#toast').textContent === 'Control sent');
+      await brightness.fill(value);
+      await tab.waitForTimeout(150);
       check(await tab.locator('#toast').getAttribute('data-warning') === 'false', 'Older hosts and unknown warning codes keep normal success');
     }
     await tab.evaluate(() => window.__controlFixture = { status: 503, body: { error: 'Display brightness unavailable' } });
-    await brightness.click();
+    await brightness.fill('80');
     await tab.waitForFunction(() => document.querySelector('#toast').dataset.error === 'true');
     check(await tab.locator('#toast').innerText() === 'Display brightness unavailable', 'Actual brightness failures remain error feedback');
     await tab.locator('#quick-power').click();
@@ -95,7 +122,7 @@ async (page) => {
     check(await tab.locator('#controls').isVisible() && await tab.locator('#power-controls').isHidden(), 'Android Back returns from Power to quick controls');
     await tab.locator('#quick-files').click();
     check(await tab.evaluate(() => window.__filesOpened) === 1, 'Files & Media opens through the existing Android bridge');
-    check(await tab.locator('#controls').isHidden(), 'Files shortcut dismisses curtain');
+    check(await tab.locator('#controls').evaluate(el => !el.open), 'Files shortcut dismisses curtain');
     check(!errors.length, 'No JavaScript runtime errors');
     return { passed: results.length, checks: results };
   } finally { await context.close(); }

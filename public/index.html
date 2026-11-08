@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-<div id="wallpaper" class="wallpaper" aria-hidden="true"><span></span><span></span><span></span></div>
+<div id="wallpaper" class="wallpaper" aria-hidden="true"></div>
 <div id="rotate" class="rotate">
   <div class="rotate__device" data-icon="monitor"></div><h1>A wider point of view.</h1>
   <p>Turn your phone sideways to use WinDock.</p><span class="eyebrow">YOUR DESKTOP, WITHIN REACH</span>
@@ -51,7 +51,7 @@
 </main>
 
 <button id="drawer-open" class="drawer-trigger" type="button" aria-label="Open drawer" hidden><span></span></button>
-<button id="quick-controls-open" class="quick-controls-trigger" type="button" aria-label="Open quick controls" aria-haspopup="dialog" aria-controls="controls" aria-expanded="false" title="Swipe down for quick controls" hidden><span class="controls-island" aria-hidden="true"><span data-icon="sliders"></span><span class="island-grip"></span></span></button>
+<button id="quick-controls-open" class="quick-controls-trigger" type="button" aria-label="Open quick controls" aria-haspopup="dialog" aria-controls="controls" aria-expanded="false" title="Swipe down for quick controls" hidden><span class="controls-island" aria-hidden="true"><span class="island-idle"><span data-icon="sliders"></span><span class="island-grip"></span></span><span id="island-media" class="island-media" hidden><span class="island-art"><span id="island-art-fallback" data-icon="music"></span><img id="island-artwork" alt="" decoding="async" hidden></span><span class="island-track"><strong id="island-title"></strong><span id="island-artist"></span></span><span id="island-playback"></span></span></span></button>
 <button id="edit-done" class="edit-done icon-button" type="button" aria-label="Done editing" hidden><span data-icon="check"></span></button>
 
 <dialog id="drawer" class="glass-drawer" aria-label="WinDock drawer">
@@ -94,12 +94,12 @@
     </div>
     <div class="pc-clipboard">
       <button id="pc-clipboard-toggle" class="pc-clipboard__toggle" type="button" aria-label="PC clipboard" title="PC clipboard" aria-expanded="false" aria-controls="pc-clipboard-panel" hidden><span data-icon="clipboard"></span></button>
-      <section id="pc-clipboard-panel" class="pc-clipboard__panel" aria-label="PC clipboard history" hidden>
+      <section id="pc-clipboard-panel" class="pc-clipboard__panel" aria-label="PC clipboard history" hidden><div class="pc-clipboard__scroll">
         <div class="pc-clipboard__heading"><button id="pc-clipboard-back" type="button" aria-label="Back to clipboard history" hidden><span data-icon="left"></span></button><strong id="pc-clipboard-title">Recent clipboard</strong><button id="pc-clipboard-refresh" type="button" aria-label="Refresh PC clipboard"><span data-icon="refresh"></span></button><button id="pc-clipboard-close" type="button" aria-label="Collapse PC clipboard"><span data-icon="close"></span></button></div>
         <p id="pc-clipboard-status" role="status"></p>
         <div id="pc-clipboard-list" class="pc-clipboard__list" aria-label="Recent text items"></div>
         <div id="pc-clipboard-editor" hidden><label for="pc-clipboard-text">Text to paste</label><textarea id="pc-clipboard-text" rows="3" maxlength="32768" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea><button id="pc-clipboard-paste" type="button" disabled>Paste to PC</button></div>
-      </section>
+      </div></section>
     </div>
     <div class="touchpad-toolbar" aria-label="Touchpad controls">
       <div class="touchpad-navigation"><button type="button" data-close="input-pad" aria-label="Back to dock" title="Back to dock"><span data-icon="left"></span></button></div>
@@ -182,6 +182,18 @@
   <div class="sheet-handle"></div>
   <div class="sheet__heading"><div><h2 id="settings-title">Your space</h2></div><button class="icon-button" type="button" data-close="settings" aria-label="Close settings"><span data-icon="close"></span></button></div>
   <div class="settings__grid">
+    <section class="settings__card settings__scenes"><h3 id="scenes-title">Background</h3>
+      <div class="scene-choices" role="group" aria-labelledby="scenes-title">
+        <button type="button" data-background="aurora" aria-pressed="true"><img src="wallpapers/aurora-thumb.webp" alt="" width="480" height="224" loading="lazy" decoding="async"><span>Aurora</span></button>
+        <button type="button" data-background="midnight" aria-pressed="false"><img src="wallpapers/midnight-thumb.webp" alt="" width="480" height="224" loading="lazy" decoding="async"><span>Midnight</span></button>
+        <button type="button" data-background="dusk" aria-pressed="false"><img src="wallpapers/dusk-thumb.webp" alt="" width="480" height="224" loading="lazy" decoding="async"><span>Dusk</span></button>
+        <button type="button" data-background="ember" aria-pressed="false"><img src="wallpapers/ember-thumb.webp" alt="" width="480" height="224" loading="lazy" decoding="async"><span>Ember</span></button>
+        <button type="button" data-background="lagoon" aria-pressed="false"><img src="wallpapers/lagoon-thumb.webp" alt="" width="480" height="224" loading="lazy" decoding="async"><span>Lagoon</span></button>
+        <button type="button" data-background="silk" aria-pressed="false"><img src="wallpapers/silk-thumb.webp" alt="" width="480" height="224" loading="lazy" decoding="async"><span>Silk</span></button>
+        <button type="button" data-background="obsidian" aria-pressed="false"><img src="wallpapers/obsidian-thumb.webp" alt="" width="480" height="224" loading="lazy" decoding="async"><span>Obsidian</span></button>
+        <button type="button" data-background="prism" aria-pressed="false"><img src="wallpapers/prism-thumb.webp" alt="" width="480" height="224" loading="lazy" decoding="async"><span>Prism</span></button>
+      </div>
+    </section>
     <section class="settings__card"><h3>Layout</h3><p id="layout-summary">4 icons · 2 × 2</p>
       <div class="layout-choices" role="group" aria-label="Icons per page">
         <button type="button" data-per-page="4" aria-pressed="true"><span class="mini-grid" style="--mini-columns:2"><i></i><i></i><i></i><i></i></span><span>4 icons</span></button>
@@ -192,13 +204,7 @@
       <label class="setting-row">App names<input id="show-labels" class="switch" type="checkbox" role="switch"></label>
       <p class="settings__tip">Hold to arrange. Swipe up for the drawer; down for quick controls.</p>
     </section>
-    <section class="settings__card"><h3>Background</h3>
-      <div class="background-choices" role="group" aria-label="Background">
-        <button type="button" data-background="aurora" aria-pressed="true"><span class="swatch swatch--aurora"></span><span>Aurora</span></button>
-        <button type="button" data-background="dusk" aria-pressed="false"><span class="swatch swatch--dusk"></span><span>Dusk</span></button>
-        <button type="button" data-background="ember" aria-pressed="false"><span class="swatch swatch--ember"></span><span>Ember</span></button>
-        <button type="button" data-background="midnight" aria-pressed="false"><span class="swatch swatch--midnight"></span><span>Midnight</span></button>
-      </div>
+    <section class="settings__card"><h3>Appearance</h3>
       <label class="setting-row" for="performance-mode">Performance mode<select id="performance-mode" aria-describedby="performance-status"><option value="auto">Auto</option><option value="on">On</option><option value="off">Off</option></select></label>
       <p id="performance-status" class="settings__tip" role="status"></p>
       <label class="setting-row" for="glass-theme">Glass style<select id="glass-theme" aria-describedby="glass-hint"><option value="glass">Clear</option><option value="frost">Frosted</option><option value="smoke">Smoked</option></select></label>
@@ -223,15 +229,31 @@
 </dialog>
 
 <dialog id="controls" class="sheet controls-curtain" aria-labelledby="controls-title">
-  <div class="sheet__heading"><div><h2 id="controls-title">Quick controls</h2></div><button class="icon-button" type="button" data-close="controls" aria-label="Close controls" autofocus><span data-icon="close"></span></button></div>
-  <div id="controls-grid" class="controls-grid"></div>
+  <h2 id="controls-title" class="visually-hidden">Quick controls</h2>
   <div class="quick-controls-shortcuts" role="group" aria-label="More PC controls">
-    <button id="quick-files" type="button" hidden><span data-icon="files"></span><span>Files &amp; Media</span></button>
-    <button id="quick-input" type="button"><span data-icon="touchpad"></span><span>Touch &amp; sign</span></button>
-    <button id="quick-capture" type="button"><span data-icon="camera"></span><span>Capture</span></button>
-    <button id="quick-power" type="button" aria-haspopup="dialog" aria-controls="power-controls"><span data-icon="power"></span><span>Power</span></button>
+    <button id="quick-files" type="button" hidden><span class="qc-disc" data-icon="files"></span><span>Files &amp; Media</span></button>
+    <button id="quick-input" type="button"><span class="qc-disc" data-icon="touchpad"></span><span>Touch &amp; sign</span></button>
+    <button id="quick-capture" type="button"><span class="qc-disc" data-icon="camera"></span><span>Capture</span></button>
+    <button id="quick-power" type="button" aria-haspopup="dialog" aria-controls="power-controls"><span class="qc-disc" data-icon="power"></span><span>Power</span></button>
   </div>
-  <button id="controls-grip" class="drawer-grip controls-grip" type="button" aria-label="Close quick controls" title="Swipe up to close"><span></span></button>
+  <div id="controls-grid" class="controls-grid">
+    <div class="qc-levels">
+      <label id="level-brightness" class="level" hidden><span class="level__icon" data-icon="sun"></span><input type="range" min="0" max="100" value="0" aria-label="Display brightness"></label>
+      <div class="qc-level-row">
+        <label id="level-volume" class="level" hidden><span class="level__icon" data-icon="volume"></span><input type="range" min="0" max="100" value="0" aria-label="PC volume"></label>
+        <button id="qc-mute" class="qc-round" type="button" data-action="control" data-key="mute-toggle" aria-label="Mute" title="Mute" hidden><span data-icon="mute"></span></button>
+      </div>
+    </div>
+    <section id="qc-music" class="qc-music" aria-label="Media playback" hidden>
+      <div class="qc-music__now"><span class="qc-music__art" aria-hidden="true"><span id="qc-art-fallback" data-icon="music"></span><img id="qc-artwork" alt="" decoding="async" hidden></span><div class="qc-music__text"><strong id="qc-music-title"></strong><span id="qc-music-artist"></span></div></div>
+      <div class="qc-music__transport">
+        <button type="button" data-action="control" data-key="media-previous" aria-label="Previous" title="Previous"><span data-icon="previous"></span></button>
+        <button id="qc-music-toggle" class="qc-music__play" type="button" data-action="control" data-key="media-play-pause"></button>
+        <button type="button" data-action="control" data-key="media-next" aria-label="Next" title="Next"><span data-icon="next"></span></button>
+      </div>
+    </section>
+  </div>
+  <button id="controls-grip" class="drawer-grip controls-grip" type="button" aria-label="Close quick controls" title="Swipe up to close" autofocus><span></span></button>
 </dialog>
 
 <dialog id="power-controls" class="sheet power-sheet" aria-labelledby="power-controls-title">
@@ -239,16 +261,16 @@
   <div id="power-controls-grid" class="controls-grid"></div>
 </dialog>
 
-<dialog id="tile-options" class="options" aria-labelledby="tile-options-title">
+<dialog id="tile-options" class="options" aria-labelledby="tile-options-title"><div class="dialog-scroll">
   <span id="tile-options-icon" class="options__icon"></span><h2 id="tile-options-title">App options</h2><p>Make a little room. Keep it in reach.</p>
   <div class="options__actions"><button id="tile-earlier" type="button"><span data-icon="left"></span>Move earlier</button><button id="tile-later" type="button"><span data-icon="right"></span>Move later</button><button id="tile-remove" class="danger-text" type="button"><span data-icon="trash"></span>Remove from dock</button></div>
   <button class="button options__done" type="button" data-close="tile-options">Done</button>
-</dialog>
+</div></dialog>
 
-<dialog id="confirm" class="confirm" aria-labelledby="confirm-title" aria-describedby="confirm-description">
+<dialog id="confirm" class="confirm" aria-labelledby="confirm-title" aria-describedby="confirm-description"><div class="dialog-scroll">
   <span class="confirm__icon" data-icon="power"></span><h2 id="confirm-title">Continue?</h2><p id="confirm-description"></p>
   <div class="confirm__actions"><button id="confirm-cancel" class="button" type="button" autofocus>Cancel</button><button id="confirm-go" class="button button--danger" type="button">Continue</button></div>
-</dialog>
+</div></dialog>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 <script type="module" src="/app.js"></script>
 </body>

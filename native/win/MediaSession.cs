@@ -33,6 +33,7 @@ internal static class MediaSession
                 title = props.Title,
                 artist = props.Artist ?? string.Empty,
                 playing,
+                artwork = MediaArtwork.Read(props.Thumbnail),
             };
         }
         catch (Exception ex)

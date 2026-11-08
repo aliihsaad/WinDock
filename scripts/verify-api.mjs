@@ -28,7 +28,9 @@ const provider = createWindowsProvider({
     if (file === "H.exe") {
       helperCalls.push(args);
       if (args[0] === "control" && args[1] === "brightness-set") throw new Error("unsupported monitor; private native diagnostics");
-      if (args[0] === "nowplaying") return { stdout: '{"title":"Track","artist":"Band","playing":true}' };
+      if (args[0] === "nowplaying") return { stdout: '{"title":"Track","artist":"Band","playing":true,"artwork":"data:image/jpeg;base64,/9j/2Q=="}' };
+      if (args[0] === "volume") return { stdout: '{"volume":0.5}' };
+      if (args[0] === "brightness") return { stdout: '{"displays":[{"percent":30}],"hdrActive":false}' };
       return { stdout: "" };
     }
     const script = args[args.length - 1];
@@ -100,6 +102,9 @@ const manifest = await call("/manifest.webmanifest");
 t.equal(manifest.status, 200, "the manifest is served");
 t.ok(manifest.headers.get("content-type").includes("manifest+json"), "manifest content type is correct");
 t.equal((await call("/does-not-exist.js")).status, 404, "a missing asset returns 404");
+const scene = await fetch(base + "/wallpapers/aurora.webp");
+t.equal(scene.status, 200, "background art is served from its folder");
+t.equal(scene.headers.get("content-type"), "image/webp", "background art has its type, since responses are nosniff");
 t.equal((await call("/../server.js")).status, 404, "traversal above public is refused");
 
 // ---- DNS rebinding: unknown Host names are refused outright ----
@@ -206,6 +211,12 @@ t.equal((await call("/api/control", { method: "POST", body: { verb: "volume-set"
 const np = await call("/api/nowplaying");
 t.equal(np.status, 200, "GET /api/nowplaying succeeds");
 t.equal(np.json.nowPlaying.title, "Track", "now playing reports the current title");
+t.equal(np.json.nowPlaying.artwork, "data:image/jpeg;base64,/9j/2Q==", "now playing carries artwork through the authenticated API");
+
+const levels = await call("/api/levels");
+t.equal(levels.status, 200, "GET /api/levels succeeds");
+t.deepEqual(levels.json, { volume: 50, brightness: 30 }, "levels report volume and brightness as percentages");
+t.equal((await call("/api/levels", { withCookie: false })).status, 401, "levels need a paired session");
 
 t.equal((await call("/api/stats")).status, 200, "GET /api/stats succeeds");
 t.equal((await call("/api/nope")).status, 404, "an unknown API route returns 404");

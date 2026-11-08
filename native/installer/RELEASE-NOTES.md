@@ -1,32 +1,33 @@
-## WinDock 0.3.1
+## WinDock 0.3.2
 
-A more responsive touchpad with controls that stay out of your way.
+Glass controls, eight backgrounds, and your music at a glance.
 
-- **Gesture-aware dot field:** dots react to taps, scrolling, pinch zoom and drag.
-  Animation stops when idle; Performance mode and reduced motion keep simpler feedback.
-- **Thumb-friendly controls:** Left and Right click sit in the bottom corners,
-  tools stay along the top, and controls fade while you touch the pad.
-- **Optional PC keys:** use the PC keys toggle to show Esc, Tab and Delete on the
-  left and Home, End and arrow keys on the right. Keys dim and disable during touch.
-- **Keyboard correction:** Android no longer requests sentence capitalization
-  from a repeatedly cleared input draft. PC navigation commits composing text first.
-  Manual Shift remains available; behavior on the originally reported tablet still
-  needs device confirmation.
-- **Quick connections:** Switch PC and Connection sit together at the bottom of
-  the drawer, keeping quick switching and connection settings easy to reach.
-- **One download page:** update actions on Android, Windows and the shared dock
-  open the WinDock website download section. Installer and APK links remain on GitHub.
+- **Full glass:** drawers, sheets and menus gain a lit rim and reflection, with
+  refraction on supported Android and Chromium browsers. Performance mode keeps
+  simpler solid surfaces.
+- **Eight backgrounds:** Aurora, Midnight, Dusk, Ember, Lagoon, Silk, Obsidian and
+  Prism, selected from previews in Appearance with a smooth change between scenes.
+- **Quick controls:** the glass notch expands into live volume and brightness
+  sliders, playback controls and shortcuts. Delayed readings no longer overwrite
+  your adjustments.
+- **Now playing:** on Windows, song artwork appears in the music card and expanded
+  notch alongside the title and artist. Tap the notch for controls; paused tracks
+  remain visible. Players without artwork keep a music icon.
+- **Android Back:** dismisses an open glass menu before closing the sheet behind it.
+- **Website demo:** try the notch, cover art and playback controls with three
+  fictional, silent tracks from the Music shortcut.
 
 Update both the PC companion and Android app to get all improvements.
-The website demo includes the same controls and simulated key feedback.
+The updated APK remembers all eight backgrounds; older apps can return to Aurora
+when saving one of the four new scenes. Your other layout settings are preserved.
 
 ### Upgrade
 
 1. Quit the Windows companion and run WinDockSetup.exe under the same Windows
    account, or update the Linux package. Keep your existing data; do not uninstall
    or clear it. Keep start-at-sign-in selected if you use it.
-2. Install WinDock-android-debug.apk over the existing Android app. Version 0.3.1
-   uses version code 11 and the existing GitHub signing certificate. The historical
+2. Install WinDock-android-debug.apk over the existing Android app. Version 0.3.2
+   uses version code 12 and the existing GitHub signing certificate. The historical
    filename is retained for compatibility with update checks.
    Public APKs older than 0.2.2 used a different signing key and require uninstalling
    that old Android app first. This resets phone-only settings; the PC dock is kept.

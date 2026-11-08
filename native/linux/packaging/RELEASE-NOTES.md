@@ -1,8 +1,8 @@
-## WinDock 0.3.1 for Linux
+## WinDock 0.3.2 for Linux
 
 Prebuilt packages for **x86-64 Hyprland desktops**. Node.js and the compiled
 input helper are bundled, so you do not need to install Node.js, npm or Rust.
-For 0.3.1 (Linux package 0.3.1-1), update the Android companion too
+For 0.3.2 (Linux package 0.3.2-1), update the Android companion too
 for secure QR pairing and Files & Media. Existing appearance settings are retained. The
 **Switch PC** picker discovers running hosts and lets you choose one while keeping
 other hosts running. Scan each computer's pairing code; PIN pairing remains for older clients. The touchpad also offers PC text clipboard
@@ -11,6 +11,11 @@ clipman, CopyQ or Klipper), or just the current clipboard without one; paste use
 wl-copy and Ctrl+V. The dock Updates screen checks public releases without installing them.
 WinDock now keeps running in the background after you close its window, so the
 phone stays connected.
+
+This release adds the glass controls, eight backgrounds, a now-playing notch,
+and live volume and brightness sliders. Linux levels use `pactl` and
+`brightnessctl` when available. Song artwork is currently supplied by the Windows
+host; Linux keeps the music icon alongside its track metadata.
 
 ### Omarchy / Arch
 

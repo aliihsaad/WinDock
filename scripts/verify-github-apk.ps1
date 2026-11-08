@@ -2,7 +2,7 @@ param(
     [string]$Apk = 'artifacts/WinDock-android-debug.apk',
     [string]$AndroidSdk = $env:ANDROID_HOME,
     [string]$ExpectedVersion = '',
-    [int]$ExpectedCode = 11
+    [int]$ExpectedCode = 12
 )
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot

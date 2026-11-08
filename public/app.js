@@ -1,4 +1,4 @@
-import { renderNowPlaying, renderControlPicker, renderAppIcon, renderControls, escapeHtml } from "./dock.js";
+import { renderNowPlaying, renderControlPicker, renderAppIcon, renderPowerControls, escapeHtml } from "./dock.js";
 import { icon, controlIcon } from "./icons.js";
 import { addAppTile, addControlTile, removeTile, moveTile, toWireTiles, availableControls, tileKey } from "./tiles.js";
 import { normalizeLayout, renderPages, pageCount, moveToTile } from "./launcher.js";
@@ -7,8 +7,14 @@ import { pairingError } from "./pairing.js";
 import { createUpdates } from "./updates.js";
 import { createNowPlayingPoller } from "./now-playing.js";
 import { dockFetch, DockWebSocket, nativeTransport } from "./native-transport.js";
+import { startGlass } from "./glass.js";
+import { enhanceSelects } from "./glass-select.js";
+import { createQuickControls } from "./quick-controls.js";
+import { showScene } from "./scenes.js";
 
 const $ = (id) => document.getElementById(id);
+const syncSelects = enhanceSelects();
+startGlass();
 if (location.protocol === 'https:') {
   document.querySelector('.pair__hint').textContent = 'Enter the secure pairing PIN from your PC’s WinDock tray → Show connection info.';
 }
@@ -20,10 +26,12 @@ let currentPage = 0, toastTimer, selectedKey = "", suppressClickUntil = 0;
 let pageHintTimer;
 let captureState = { available: false, phase: "idle" }, captureBusy = false, capturePoll = false, captureReceivedAt = Date.now();
 let nowPlayingHtml = "";
+const quickControls = createQuickControls({ api, isOnline: () => online, notify, report });
 const nowPlaying = createNowPlayingPoller({
   load: async (signal) => (await api("/api/nowplaying", { signal })).nowPlaying,
   isActive: () => paired && online && !document.hidden,
   onChange: (media) => {
+    quickControls.media(media);
     const html = renderNowPlaying(media);
     // Keep the playback button (and its focus) when nothing has changed.
     if (nowPlayingHtml !== html) { $("nowplaying").innerHTML = html; nowPlayingHtml = html; }
@@ -159,7 +167,7 @@ function syncLayout() {
   root.setProperty("--rows", layout.rows);
   root.setProperty("--icon-size", (layout.immersive ? layout.iconSize : 72) + "px");
   root.setProperty("--icon-scale", { 4: .44, 6: .38, 8: .32 }[layout.perPage]);
-  document.documentElement.dataset.background = layout.background;
+  showScene(layout.background);
   document.documentElement.dataset.theme = layout.theme;
   document.body.classList.toggle("is-immersive", layout.immersive);
   document.body.classList.toggle("show-labels", layout.showLabels);
@@ -179,6 +187,7 @@ function syncPerformance() {
   $("performance-mode").value = performanceMode.preference;
   $("glass-theme").disabled = performanceMode.enabled;
   $("glass-hint").hidden = !performanceMode.enabled;
+  syncSelects();
   $("performance-status").textContent = performanceMode.preference === "auto"
     ? (performanceMode.enabled ? "Auto · On for this device. Fewer effects, instant page changes." : "Auto · Off. Turn on for fewer effects and instant page changes on older phones.")
     : (performanceMode.enabled ? "On · Fewer effects and instant page changes on this device." : "Off · Your usual appearance is restored.");
@@ -362,15 +371,21 @@ async function openPicker() {
     if ($("tab-apps").getAttribute("aria-selected") === "true") drawApps();
   } catch (error) { $("picker-status").textContent = "Couldn’t load apps. Close the library and try again."; report(error); }
 }
-function openSettings() { $("drawer").close(); syncLayout(); if (!$("settings").open) $("settings").showModal(); }
+function openSettings() {
+  $("drawer").close();
+  syncLayout();
+  if (!$("settings").open) $("settings").showModal();
+  // The chosen scene can sit past the end of the rail.
+  document.querySelector('.scene-choices [aria-pressed="true"]')?.scrollIntoView({ block: "nearest", inline: "nearest" });
+}
 function openDrawer() { if (paired && !$("drawer").open) $("drawer").showModal(); }
 function openControls() {
   if (!paired || $("controls").open) return;
   $("drawer").close();
-  $("controls-grid").innerHTML = renderControls(state.verbs, state.allowDestructive);
-  $("power-controls-grid").innerHTML = renderControls(state.verbs, state.allowDestructive, true);
+  $("power-controls-grid").innerHTML = renderPowerControls(state.verbs, state.allowDestructive);
   $("quick-power").hidden = !$("power-controls-grid").childElementCount;
-  $("controls-grid").scrollTop = 0;
+  quickControls.show(state.verbs);
+  nowPlaying.refresh().catch(() => {});
   $("controls").showModal();
   $("quick-controls-open").setAttribute("aria-expanded", "true");
 }

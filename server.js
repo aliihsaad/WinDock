@@ -56,6 +56,7 @@ const MIME = {
   ".json": "application/json; charset=utf-8",
   ".webmanifest": "application/manifest+json; charset=utf-8",
   ".png": "image/png",
+  ".webp": "image/webp",
   ".svg": "image/svg+xml",
   ".ico": "image/x-icon",
 };
@@ -495,6 +496,12 @@ export async function createApp({
         const result = await provider.control(checked.verb, checked.value);
         const warning = checked.verb === "brightness-set" && result?.warning === "hdr-active" ? { warning: "hdr-active" } : {};
         return sendJson(res, 200, { ok: true, verb: checked.verb, ...warning });
+      }
+
+      if (path === "/api/levels" && req.method === "GET") {
+        // Optional: without it the sliders start empty and still set a level.
+        const levels = typeof provider.levels === "function" ? await provider.levels().catch(() => null) : null;
+        return sendJson(res, 200, { volume: levels?.volume ?? null, brightness: levels?.brightness ?? null });
       }
 
       if (path === "/api/nowplaying" && req.method === "GET") {

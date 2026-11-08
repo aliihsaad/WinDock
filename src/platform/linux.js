@@ -620,6 +620,21 @@ export function createLinuxProvider({
       return { ok: true, verb: checked.verb };
     },
 
+    async levels() {
+      const percent = async (file, args, pattern) => {
+        try {
+          const found = Number(String((await exec(file, args)).stdout).match(pattern)?.[1]);
+          return Number.isFinite(found) ? Math.min(100, found) : null;
+        } catch {
+          return null;
+        }
+      };
+      return {
+        volume: await percent("pactl", ["get-sink-volume", "@DEFAULT_SINK@"], /(\d+)%/),
+        brightness: await percent("brightnessctl", ["-m"], /,(\d+)%,/),
+      };
+    },
+
     async nowPlaying() {
       try {
         const player = pickPlayer(await players());
