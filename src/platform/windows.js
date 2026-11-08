@@ -398,6 +398,9 @@ export function createWindowsProvider({ exec, helperPath = process.env.WINDOCK_H
         title,
         artist: typeof row.artist === "string" ? row.artist.trim() : "",
         playing: row.playing === true,
+        // Only the helper's small, re-encoded JPEG may cross the media API.
+        ...(typeof row.artwork === "string" && row.artwork.length <= 128 * 1024 + 23 &&
+          /^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(row.artwork) ? { artwork: row.artwork } : {}),
       };
     },
 

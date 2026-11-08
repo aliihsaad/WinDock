@@ -60,6 +60,8 @@ jobs:
         run: dotnet run --project native/update-tests/WinDockUpdateTests.csproj -c Release
       - name: Verify saved server port settings
         run: dotnet run --project native/port-tests/WinDockPortTests.csproj -c Release
+      - name: Verify media artwork decoding and size limits
+        run: dotnet run --project native/media-tests/WinDockMediaTests.csproj -c Release
       - name: Build the Windows tray
         run: dotnet build native/tray/WinDockTray.csproj -c Release
 

@@ -1,18 +1,21 @@
-# WinDock 0.3.0 — local release preparation
+# WinDock 0.3.2 — local release preparation
 
-- Files & Media: choose photos, videos or documents with Android's system pickers,
-  or Share → WinDock from another app, review the selection and send securely to
-  your PC. Foreground progress, cancellation, verified contents and safe duplicate
-  naming. Default destination: Downloads/WinDock, configurable on the computer.
-- Dedicated native Voice to PC and its microphone permission were removed after
-  device testing. Voice typing through the existing Android keyboard is preserved.
-- A compact top controls island sits above the dock icons. Quick controls, Capture,
-  Touch & sign and Files & Media share the swipe-down curtain; duplicate actions
-  have been removed from the swipe-up drawer.
-- Existing managed QR pairing, reconnection, clipboard, folder tiles, signatures,
-  desktop updates and legacy controls remain supported. Transfers require the
-  updated Android app and companion and an authenticated HTTPS connection.
+Full glass, eight rendered backgrounds, live quick controls, Windows song artwork,
+and an expanded now-playing notch. The website demo includes three silent sample
+tracks with cover art and a Music shortcut.
 
-No microphone or broad storage permission is needed. The app remains free.
-See [FILES_AND_MEDIA.md](FILES_AND_MEDIA.md) for validation and limitations.
-This is unpublished preparation. The release notes are in native/installer/RELEASE-NOTES.md; readiness is tracked in GITHUB_RELEASE_0.3.0.md.
+The user confirmed artwork, the expanded notch and playback controls on their
+physical Android phone with the rebuilt Windows host on November 8, 2026.
+The JavaScript suite (41 groups), native artwork tests (24 assertions), media
+browser checks (21), panel/gesture regressions (74), and website music checks (29)
+passed before the version bump. Final package validation is recorded separately
+in [GITHUB_RELEASE_0.3.2.md](GITHUB_RELEASE_0.3.2.md).
+
+Version 0.3.2 uses Android version code 12 with the established GitHub signing
+certificate. Windows, Android and Linux packages must carry the same release
+version. Existing unsigned Windows and GitHub Android signing policies continue.
+
+This preparation is unpublished. Publish the new download feed, website demo and
+release page together after the versioned packages and CI pass. The current public
+download links remain on 0.3.1 until then. No installable iPhone or macOS release
+is included.

@@ -135,6 +135,11 @@ window.addEventListener('message', async (event) => {
     openCapture();
     parent.postMessage({ type: 'windock-preview-opened' }, location.origin);
   }
+  if (event.data?.type === 'windock-preview-music' && paired) {
+    for (const dialog of document.querySelectorAll('dialog[open]')) if (dialog.id !== 'controls') dialog.close();
+    openControls();
+    parent.postMessage({ type: 'windock-preview-opened' }, location.origin);
+  }
 });
 parent.postMessage({ type: 'windock-preview-layout', perPage: layout.perPage }, location.origin);
 `;

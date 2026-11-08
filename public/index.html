@@ -51,7 +51,7 @@
 </main>
 
 <button id="drawer-open" class="drawer-trigger" type="button" aria-label="Open drawer" hidden><span></span></button>
-<button id="quick-controls-open" class="quick-controls-trigger" type="button" aria-label="Open quick controls" aria-haspopup="dialog" aria-controls="controls" aria-expanded="false" title="Swipe down for quick controls" hidden><span class="controls-island" aria-hidden="true"><span data-icon="sliders"></span><span class="island-grip"></span></span></button>
+<button id="quick-controls-open" class="quick-controls-trigger" type="button" aria-label="Open quick controls" aria-haspopup="dialog" aria-controls="controls" aria-expanded="false" title="Swipe down for quick controls" hidden><span class="controls-island" aria-hidden="true"><span class="island-idle"><span data-icon="sliders"></span><span class="island-grip"></span></span><span id="island-media" class="island-media" hidden><span class="island-art"><span id="island-art-fallback" data-icon="music"></span><img id="island-artwork" alt="" decoding="async" hidden></span><span class="island-track"><strong id="island-title"></strong><span id="island-artist"></span></span><span id="island-playback"></span></span></span></button>
 <button id="edit-done" class="edit-done icon-button" type="button" aria-label="Done editing" hidden><span data-icon="check"></span></button>
 
 <dialog id="drawer" class="glass-drawer" aria-label="WinDock drawer">
@@ -245,7 +245,7 @@
       </div>
     </div>
     <section id="qc-music" class="qc-music" aria-label="Media playback" hidden>
-      <div class="qc-music__now"><span class="qc-music__art" data-icon="music"></span><div class="qc-music__text"><strong id="qc-music-title"></strong><span id="qc-music-artist"></span></div></div>
+      <div class="qc-music__now"><span class="qc-music__art" aria-hidden="true"><span id="qc-art-fallback" data-icon="music"></span><img id="qc-artwork" alt="" decoding="async" hidden></span><div class="qc-music__text"><strong id="qc-music-title"></strong><span id="qc-music-artist"></span></div></div>
       <div class="qc-music__transport">
         <button type="button" data-action="control" data-key="media-previous" aria-label="Previous" title="Previous"><span data-icon="previous"></span></button>
         <button id="qc-music-toggle" class="qc-music__play" type="button" data-action="control" data-key="media-play-pause"></button>

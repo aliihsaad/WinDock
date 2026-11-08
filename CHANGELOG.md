@@ -4,6 +4,9 @@
 
 - Native iPhone companion source and simulator checks remain in development;
   no installable iPhone release is included.
+
+## 0.3.2 — November 8, 2026
+
 - Full glass: the drawer, sheets, dialogs and dropdown menus now bend what sits
   behind them at their curved edge. Android and Chromium browsers draw true
   refraction; other browsers keep frosted blur with the same rim and reflection.
@@ -27,6 +30,16 @@
   backgrounds stay, since a still image costs nothing while you use the dock.
 - The four new backgrounds need the updated Android app to be remembered. An older
   app keeps the rest of your layout and returns to Aurora on the next launch.
+- Windows music sessions now include song artwork when the player provides it.
+  The top notch expands to show the cover, title and artist; paused tracks stay
+  visible, and tapping opens playback controls. Missing covers use a music icon.
+- The website demo includes three silent sample tracks with cover art, working
+  previous, next and play/pause controls, and a Music shortcut.
+- Prevent delayed level readings from overwriting newer slider changes. Windows
+  brightness reads and writes share a queue, and Android Back dismisses a glass
+  dropdown before closing its sheet.
+- Android version code 12 retains the established GitHub signing identity for
+  in-place upgrades. Update both the host and Android companion for this release.
 
 ## 0.3.1 — November 7, 2026
 

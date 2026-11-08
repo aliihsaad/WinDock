@@ -2,6 +2,7 @@
 // storage, or Windows APIs are used; CSP also blocks outgoing connections.
 import verbs from './demo/verbs.js';
 import { createPreviewPcs } from './preview-pcs.js';
+import { createPreviewMedia } from './preview-media.js';
 
 const apps = [
   ['chrome', 'Google Chrome'], ['vscode', 'Visual Studio Code'],
@@ -30,8 +31,7 @@ function currentCapture() {
   return captures.get(id);
 }
 let typedText = '';
-// Fictional, like the sample clipboard below.
-const previewTrack = { title: 'Golden Hour Drive', artist: 'The Sample Tapes', playing: true };
+const previewMedia = createPreviewMedia();
 const previewLevels = { volume: 64, brightness: 72 };
 // Fictional examples only. This adapter never reads either device's clipboard.
 const clipboardItems = [
@@ -86,12 +86,12 @@ export async function fetch(path, options = {}) {
     return response({ app: { id: 'link:' + previewLinks.get(url.href), name: body.name || url.hostname, target: 'demo:link', args: '', icon: '' } });
   }
   if (path === '/api/apps/installed') return response({ apps: apps.filter(app => pcs.current().id !== 'omarchy' || !['edge', 'notepad'].includes(app.id)) });
-  if (path === '/api/nowplaying') return response({ nowPlaying: { ...previewTrack } });
+  if (path === '/api/nowplaying') return response({ nowPlaying: previewMedia.current() });
   if (path === '/api/levels') return response({ ...previewLevels });
   if (path === '/api/control') {
-    // Only these three have something to show in the preview; the rest explain themselves below.
+    // Simulate media and levels in memory; other actions explain themselves below.
     const { verb, value } = JSON.parse(options.body);
-    if (verb === 'media-play-pause') { previewTrack.playing = !previewTrack.playing; return response({ ok: true, verb }); }
+    if (previewMedia.control(verb)) return response({ ok: true, verb });
     if (verb === 'volume-set') { previewLevels.volume = value; return response({ ok: true, verb }); }
     if (verb === 'brightness-set') { previewLevels.brightness = value; return response({ ok: true, verb }); }
   }

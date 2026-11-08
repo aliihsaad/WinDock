@@ -61,7 +61,7 @@ try {
   // Check the new secure runtime and help assets in the installed package,
   // not just the development checkout used by earlier feature tests.
   const info = await (await fetch(`${base}/api/updates`)).json();
-  assert.equal(info.installedVersion, '0.3.1');
+  assert.equal(info.installedVersion, '0.3.2');
   const pairing = await fetch(`${base}/pair`);
   assert.equal(pairing.status, 200);
   assert.match(await pairing.text(), /Check connection/);

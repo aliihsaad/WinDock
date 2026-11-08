@@ -28,7 +28,7 @@ const provider = createWindowsProvider({
     if (file === "H.exe") {
       helperCalls.push(args);
       if (args[0] === "control" && args[1] === "brightness-set") throw new Error("unsupported monitor; private native diagnostics");
-      if (args[0] === "nowplaying") return { stdout: '{"title":"Track","artist":"Band","playing":true}' };
+      if (args[0] === "nowplaying") return { stdout: '{"title":"Track","artist":"Band","playing":true,"artwork":"data:image/jpeg;base64,/9j/2Q=="}' };
       if (args[0] === "volume") return { stdout: '{"volume":0.5}' };
       if (args[0] === "brightness") return { stdout: '{"displays":[{"percent":30}],"hdrActive":false}' };
       return { stdout: "" };
@@ -211,6 +211,7 @@ t.equal((await call("/api/control", { method: "POST", body: { verb: "volume-set"
 const np = await call("/api/nowplaying");
 t.equal(np.status, 200, "GET /api/nowplaying succeeds");
 t.equal(np.json.nowPlaying.title, "Track", "now playing reports the current title");
+t.equal(np.json.nowPlaying.artwork, "data:image/jpeg;base64,/9j/2Q==", "now playing carries artwork through the authenticated API");
 
 const levels = await call("/api/levels");
 t.equal(levels.status, 200, "GET /api/levels succeeds");

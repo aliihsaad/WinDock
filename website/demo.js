@@ -26,7 +26,9 @@ function openDemo(action) {
   document.querySelector('#demo-key-feedback').hidden = true;
   document.querySelector('#demo-note').textContent = action === 'touchpad'
     ? 'Try the touchpad, then turn on PC keys for Esc, Tab, Delete and navigation. The keys fade while you touch the pad. No input is sent to your devices.'
-    : 'A safe space to explore. PCs and clipboard items are samples; this demo never connects to your devices.';
+    : action === 'music'
+      ? 'Skip tracks, or pause and resume to see the music notch update. These fictional tracks are silent; the demo never controls your music.'
+      : 'A safe space to explore. PCs, clipboard items, and silent music tracks are samples; this demo never connects to your devices.';
   if (action === 'touchpad' || action === 'signature') send({ type: 'windock-preview-input', mode: action });
   else send({ type: `windock-preview-${action}` });
   document.querySelectorAll('.demo-shortcuts [data-demo-action]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.demoAction === action)));

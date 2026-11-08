@@ -41,13 +41,14 @@ function curtain({ levels = { volume: 64, brightness: 72 }, online = true, contr
     const node = { hidden: false, dataset: {}, listeners: {}, attributes: {}, textContent: "", innerHTML: "", value: "0", disabled: false,
       style: { setProperty(name, value) { node.style[name] = value; } },
       setAttribute(name, value) { node.attributes[name] = value; },
+      removeAttribute(name) { delete node.attributes[name]; delete node[name]; },
       addEventListener(type, listener) { node.listeners[type] = listener; },
       querySelector: () => node.input };
     return node;
   };
   const nodes = {};
   for (const id of ["level-brightness", "level-volume"]) { nodes[id] = element(); nodes[id].input = element(); }
-  for (const id of ["qc-mute", "qc-music", "qc-music-title", "qc-music-artist", "qc-music-toggle"]) nodes[id] = element();
+  for (const id of ["qc-mute", "qc-music", "qc-music-title", "qc-music-artist", "qc-music-toggle", "qc-artwork", "qc-art-fallback", "island-artwork", "island-art-fallback", "island-media", "island-title", "island-artist", "island-playback", "quick-controls-open"]) nodes[id] = element();
   globalThis.document = { getElementById: (id) => nodes[id] };
   const requests = [], notices = [], errors = [];
   const api = async (path, options) => {
@@ -159,6 +160,38 @@ const allVerbs = ["brightness-set", "volume-set", "mute-toggle", "media-play-pau
   t.ok(icon.includes("<svg"), "the button draws an icon");
   controls.media(null);
   t.equal(nodes["qc-music-artist"].textContent, "", "stopping clears the artist");
+}
+{
+  const { controls, nodes } = curtain();
+  const artwork = "data:image/jpeg;base64,/9j/2Q==";
+  controls.media({ title: "First track", artist: "Artist", playing: true, artwork });
+  t.equal(nodes["quick-controls-open"].dataset.media, "true", "a media session expands the notch");
+  t.equal(nodes["island-title"].textContent, "First track", "the notch shows the actual title");
+  for (const [imageId, fallbackId] of [["qc-artwork", "qc-art-fallback"], ["island-artwork", "island-art-fallback"]]) {
+    const image = nodes[imageId], fallback = nodes[fallbackId];
+    t.equal(image.src, artwork, `${imageId} receives the artwork`);
+    t.ok(image.hidden && !fallback.hidden, "the music icon stays until the image decodes");
+    image.complete = true; image.naturalWidth = 160; image.listeners.load();
+    t.ok(!image.hidden && fallback.hidden, "decoded artwork replaces the fallback");
+  }
+  controls.media({ title: "First track", artist: "Artist", playing: false, artwork });
+  t.ok(!nodes["island-media"].hidden, "paused media remains accessible from the notch");
+  t.equal(nodes["island-artist"].textContent, "Paused", "the notch reports pause state");
+  t.ok(!nodes["qc-artwork"].hidden, "unchanged artwork does not flash on polling or pause");
+  controls.media({ title: "Second track", playing: false });
+  t.equal(nodes["island-title"].textContent, "Second track", "track changes update even without a playback-state change");
+  t.ok(nodes["qc-artwork"].hidden && !nodes["qc-art-fallback"].hidden, "a track without artwork clears the preceding cover");
+  for (const artwork of ["https://example.com/cover.jpg", "data:image/svg+xml,<svg/>", "data:image/jpeg;base64,\"onerror=alert(1)", "data:image/jpeg;base64," + "A".repeat(128 * 1024 + 24)]) {
+    controls.media({ title: "Rejected art", playing: true, artwork });
+    t.ok(!nodes["qc-artwork"].src, "untrusted or oversized artwork is never requested");
+  }
+  controls.media({ title: "Bad image", playing: true, artwork });
+  nodes["qc-artwork"].listeners.error();
+  t.ok(nodes["qc-artwork"].hidden && !nodes["qc-art-fallback"].hidden, "a decode error keeps the music icon");
+  controls.media(null);
+  t.ok(nodes["island-media"].hidden, "ending the session hides its metadata");
+  t.equal(nodes["quick-controls-open"].dataset.media, "false", "ending the session restores the small notch");
+  t.equal(nodes["quick-controls-open"].attributes["aria-label"], "Open quick controls", "the empty notch keeps its original accessible label");
 }
 
 // Levels from each host, using the Windows helper's real output.

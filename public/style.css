@@ -301,6 +301,21 @@ body.is-immersive .empty .button .icon { width: 36px; height: 36px; }
 }
 .controls-island::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='104' height='22'%3E%3ClinearGradient id='r'%3E%3Cstop offset='0' stop-color='%23fff' stop-opacity='.04'/%3E%3Cstop offset='.24' stop-color='%23fff' stop-opacity='.62'/%3E%3Cstop offset='.52' stop-color='%23fff' stop-opacity='.16'/%3E%3Cstop offset='.78' stop-color='%23fff' stop-opacity='.42'/%3E%3Cstop offset='1' stop-color='%23fff' stop-opacity='.04'/%3E%3C/linearGradient%3E%3Cpath d='M0 0A8 8 0 0 1 8 8A14 14 0 0 0 22 22H82A14 14 0 0 0 96 8A8 8 0 0 1 104 0' fill='none' stroke='url(%23r)' stroke-width='2.5'/%3E%3C/svg%3E"); }
 .island-grip { display: block; width: 18px; height: 2.5px; border-radius: 2px; background: #dff2ec8c; }
+.island-idle { display: flex; align-items: center; gap: 8px; }
+.quick-controls-trigger[data-media="true"] { width: 312px; height: 52px; padding-bottom: 8px; }
+.quick-controls-trigger[data-media="true"] .controls-island {
+  width: 288px; height: 40px; padding: 4px 24px;
+  clip-path: path("M0 0A8 8 0 0 1 8 8V20A20 20 0 0 0 28 40H260A20 20 0 0 0 280 20V8A8 8 0 0 1 288 0Z");
+}
+.quick-controls-trigger[data-media="true"] .controls-island::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='288' height='40'%3E%3ClinearGradient id='r'%3E%3Cstop stop-color='%23fff' stop-opacity='.12'/%3E%3Cstop offset='.24' stop-color='%23fff' stop-opacity='.62'/%3E%3Cstop offset='.52' stop-color='%23fff' stop-opacity='.16'/%3E%3Cstop offset='.78' stop-color='%23fff' stop-opacity='.42'/%3E%3Cstop offset='1' stop-color='%23fff' stop-opacity='.12'/%3E%3C/linearGradient%3E%3Cpath d='M0 0A8 8 0 0 1 8 8V20A20 20 0 0 0 28 40H260A20 20 0 0 0 280 20V8A8 8 0 0 1 288 0' fill='none' stroke='url(%23r)' stroke-width='2.5'/%3E%3C/svg%3E"); }
+.quick-controls-trigger[data-media="true"] .island-idle { display: none; }
+.island-media { display: flex; align-items: center; gap: 9px; width: 100%; min-width: 0; text-align: left; }
+.island-art { display: grid; place-items: center; width: 27px; height: 27px; flex-shrink: 0; border-radius: 7px; overflow: hidden; background: #ffffff14; }
+.island-track { display: grid; min-width: 0; flex: 1; line-height: 1.25; gap: 2px; }
+.island-track > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.island-track strong { font-size: 11px; font-weight: 600; color: #f0f7f4; }
+.island-track > span { font-size: 9px; color: #d1eee5b3; }
+.island-art img, .qc-music__art img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .quick-controls-trigger .icon { width: 12px; height: 12px; }
 .quick-controls-trigger:hover .controls-island, .quick-controls-trigger:focus-visible .controls-island, .quick-controls-trigger:active .controls-island { background: linear-gradient(180deg, #0a121a40, #ffffff30); }
 .quick-controls-trigger:active { transform: translateX(-50%) !important; }
@@ -460,7 +475,7 @@ body.is-immersive .empty .button .icon { width: 36px; height: 36px; }
 .qc-round .icon { width: 22px; height: 22px; }
 .qc-music { display: flex; flex-direction: column; justify-content: space-between; gap: 6px; min-width: 0; padding: 12px 14px 8px; border-radius: 26px; background: var(--qc-well); box-shadow: var(--qc-edge); }
 .qc-music__now { display: flex; align-items: center; gap: 11px; min-width: 0; }
-.qc-music__art { display: grid; place-items: center; flex-shrink: 0; width: 42px; height: 42px; border-radius: 13px; background: linear-gradient(140deg, var(--scene-a), var(--scene-b)); color: #f4fbf8; }
+.qc-music__art { display: grid; place-items: center; flex-shrink: 0; width: 42px; height: 42px; border-radius: 13px; overflow: hidden; background: linear-gradient(140deg, var(--scene-a), var(--scene-b)); color: #f4fbf8; }
 .qc-music__art .icon { width: 20px; height: 20px; }
 .qc-music__text { display: grid; gap: 2px; min-width: 0; }
 .qc-music__text > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

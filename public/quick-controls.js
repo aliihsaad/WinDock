@@ -66,10 +66,43 @@ export function createQuickControls({ api, isOnline, notify, report }) {
 
   const sliders = [createSlider("level-brightness", "brightness-set", "brightness"), createSlider("level-volume", "volume-set", "volume")];
 
+  function artworkView(imageId, fallbackId) {
+    const image = $(imageId), fallback = $(fallbackId);
+    let current = "";
+    const reset = () => { image.hidden = true; fallback.hidden = false; };
+    image.addEventListener("load", () => {
+      if (current && image.complete && image.naturalWidth > 0) { image.hidden = false; fallback.hidden = true; }
+    });
+    image.addEventListener("error", reset);
+    return (artwork) => {
+      const next = typeof artwork === "string" && artwork.length <= 128 * 1024 + 23 &&
+        /^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(artwork) ? artwork : "";
+      if (next === current) return;
+      current = next;
+      reset();
+      if (next) image.src = next;
+      else image.removeAttribute("src");
+    };
+  }
+  const artworkViews = [artworkView("qc-artwork", "qc-art-fallback"), artworkView("island-artwork", "island-art-fallback")];
+
   function media(track) {
     $("qc-music-title").textContent = track?.title || "Nothing playing";
     $("qc-music-artist").textContent = track?.artist ?? "";
-    const toggle = $("qc-music-toggle"), playing = track?.playing === true;
+    artworkViews.forEach((paint) => paint(track?.artwork));
+    const hasTrack = Boolean(track?.title), playing = track?.playing === true;
+    $("island-media").hidden = !hasTrack;
+    $("quick-controls-open").dataset.media = String(hasTrack);
+    $("quick-controls-open").setAttribute("aria-label", hasTrack
+      ? `Open media controls: ${track.title}${track.artist ? ` — ${track.artist}` : ""}${playing ? "" : ", paused"}` : "Open quick controls");
+    $("island-title").textContent = track?.title || "";
+    $("island-artist").textContent = hasTrack ? (playing ? track.artist || "Now playing" : "Paused") : "";
+    const playback = $("island-playback");
+    if (playback.dataset.playing !== String(playing)) {
+      playback.dataset.playing = String(playing);
+      playback.innerHTML = icon(playing ? "music" : "pause");
+    }
+    const toggle = $("qc-music-toggle");
     if (toggle.dataset.playing === String(playing)) return;
     toggle.dataset.playing = String(playing);
     toggle.innerHTML = icon(playing ? "pause" : "play");
