@@ -4,7 +4,8 @@
  * a silent no-op. A saved preference lets people turn it off.
  */
 const KEY = "windock-haptics";
-const store = () => (typeof window !== "undefined" && window.WinDockPreferences) || (typeof localStorage !== "undefined" ? localStorage : null);
+// Not WinDockPreferences: that store only accepts its own fixed list of keys.
+const store = () => { try { return typeof localStorage !== "undefined" ? localStorage : null; } catch { return null; } };
 
 export function hapticsEnabled(storage = store()) {
   try { return storage?.getItem(KEY) !== "off"; } catch { return true; }

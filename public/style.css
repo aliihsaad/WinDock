@@ -222,12 +222,12 @@ h2 { margin: 0; font-size: 25px; font-weight: 500; letter-spacing: -.6px; }
   .page-dots, .page-dot { min-height: 20px; height: 20px; }
 }
 @media (orientation: portrait) and (max-width: 599px) {
-  .rotate { display: flex; position: fixed; inset: 0; z-index: 100; background: radial-gradient(ellipse at top, #314b3e60, transparent 65%), var(--bg); flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 30px; }
-  .rotate__device { display: grid; place-items: center; width: 94px; height: 94px; background: #b4edcc10; color: var(--accent); border: 1px solid #b4edcc33; border-radius: 27px; }
-  .rotate__device .icon { width: 47px; height: 47px; }
-  .rotate h1 { font-size: 26px; font-weight: 450; letter-spacing: -.7px; margin: 25px 0 5px; }
-  .rotate p { color: var(--muted); font-size: 13px; margin-bottom: 32px; }
-  .app, .pair, dialog[open] { visibility: hidden; }
+  :root:not([data-rotate-ok]) .rotate { display: flex; position: fixed; inset: 0; z-index: 100; background: radial-gradient(ellipse at top, #314b3e60, transparent 65%), var(--bg); flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 30px; }
+  :root:not([data-rotate-ok]) .rotate__device { display: grid; place-items: center; width: 94px; height: 94px; background: #b4edcc10; color: var(--accent); border: 1px solid #b4edcc33; border-radius: 27px; }
+  :root:not([data-rotate-ok]) .rotate__device .icon { width: 47px; height: 47px; }
+  :root:not([data-rotate-ok]) .rotate h1 { font-size: 26px; font-weight: 450; letter-spacing: -.7px; margin: 25px 0 5px; }
+  :root:not([data-rotate-ok]) .rotate p { color: var(--muted); font-size: 13px; margin-bottom: 32px; }
+  :root:not([data-rotate-ok]) :is(.app, .pair, dialog[open]) { visibility: hidden; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
 
@@ -520,7 +520,7 @@ body.is-immersive .empty .button .icon { width: 36px; height: 36px; }
   .scene-choices { gap: 9px; padding: 10px 15px 6px; scroll-padding-inline: 15px; }
   .settings__utilities { margin-top: 10px; }
 }
-@media (orientation: portrait) and (max-width: 599px) { .drawer-trigger, .quick-controls-trigger, .edit-done, .glass-drawer[open] { visibility: hidden; } }
+@media (orientation: portrait) and (max-width: 599px) { :root:not([data-rotate-ok]) :is(.drawer-trigger, .quick-controls-trigger, .edit-done, .glass-drawer[open]) { visibility: hidden; } }
 @media (prefers-reduced-motion: reduce) { .glass-drawer[open] { animation: none; } }
 
 /* Capture stays in the drawer; only an active recording adds a stop pill. */
@@ -699,7 +699,7 @@ html.perf .pc-clipboard__panel { backdrop-filter: none; background: #151c29; }
 #signature-save { padding: 10px 18px; min-height: 42px; font-size: 12px; }
 @media (max-height: 450px) { .input-pad { padding-top: 8px; padding-bottom: 8px; } .input-pad[open], .input-pad__pane { gap: 7px; } .input-pad__tabs button { padding: 7px 14px; } .input-pad__status { font-size: 10px; } }
 @media (max-width: 640px) { .input-pad__tools { gap: 8px; } .signature-tools button { padding: 8px 11px; } #mouse-left, #mouse-right, #mouse-drag { font-size: 13px; } .touchpad-hint { font-size: 10px; gap: 8px; } .pointer-options { width: 220px; } .drawer-actions { gap: 3px; } .drawer-actions button { font-size: 10px; padding-inline: 2px; } }
-@media (orientation: portrait) and (max-width: 599px) { .input-pad[open] { visibility: hidden; } }
+@media (orientation: portrait) and (max-width: 599px) { :root:not([data-rotate-ok]) .input-pad[open] { visibility: hidden; } }
 
 /* Optional low-cost rendering. Removing .perf restores the selected glass style. */
 html.perf .wallpaper::after { display: none; }
@@ -755,3 +755,19 @@ body.is-immersive .group-grid .tile__label { display: block; font-size: 12px; te
 .window-row__title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
 .window-row small { color: var(--muted); font-size: 11px; }
 .window-close { width: 48px; flex: none; border: 0; border-radius: 14px; background: var(--surface); color: var(--muted); display: grid; place-items: center; }
+
+/* Touch & sign handle: a small tab on the right edge, always one tap from the touchpad. */
+.input-edge { position: fixed; z-index: 4; right: 0; top: calc(50% - 42px); transform: none !important; width: 30px; height: 84px; display: grid; place-items: center; padding: 0; border: 1px solid #ffffff1c; border-right: 0; border-radius: 16px 0 0 16px; background: #0d1512a8; color: #d1eee5; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); opacity: .55; transition: opacity .2s, width .2s; touch-action: manipulation; }
+.input-edge:active, .input-edge:focus-visible { opacity: 1; width: 38px; }
+.input-edge .icon { width: 20px; height: 20px; }
+.input-edge[hidden] { display: none; }
+.rotate-options { display: flex; gap: 6px; }
+@media (orientation: portrait) {
+  :root[data-rotate-ok] .dock-heading { padding-top: calc(env(safe-area-inset-top) + 18px); flex-direction: column; align-items: flex-start; gap: 4px; }
+  :root[data-rotate-ok] .dock-heading > p { margin-left: 0; }
+  :root[data-rotate-ok] .dock-page { gap: 14px 8px; padding: 10px 10px; }
+  :root[data-rotate-ok] body.is-immersive .dock-page { padding: 12px 10px; column-gap: 8px; row-gap: 14px; }
+  :root[data-rotate-ok] .drawer-actions { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  :root[data-rotate-ok] .input-edge { top: calc(62% - 42px); }
+  :root[data-rotate-ok] .touchpad-surface { min-height: 40dvh; }
+}

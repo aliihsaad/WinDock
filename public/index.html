@@ -52,6 +52,7 @@
 
 <button id="drawer-open" class="drawer-trigger" type="button" aria-label="Open drawer" hidden><span></span></button>
 <button id="quick-controls-open" class="quick-controls-trigger" type="button" aria-label="Open quick controls" aria-haspopup="dialog" aria-controls="controls" aria-expanded="false" title="Swipe down for quick controls" hidden><span class="controls-island" aria-hidden="true"><span class="island-idle"><span data-icon="sliders"></span><span class="island-grip"></span></span><span id="island-media" class="island-media" hidden><span class="island-art"><span id="island-art-fallback" data-icon="music"></span><img id="island-artwork" alt="" decoding="async" hidden></span><span class="island-track"><strong id="island-title"></strong><span id="island-artist"></span></span><span id="island-playback"></span></span></span></button>
+<button id="input-edge" class="input-edge" type="button" aria-label="Open touchpad and signature" title="Touchpad &amp; signature" hidden><span data-icon="touchpad"></span></button>
 <button id="edit-done" class="edit-done icon-button" type="button" aria-label="Done editing" hidden><span data-icon="check"></span></button>
 
 <dialog id="drawer" class="glass-drawer" aria-label="WinDock drawer">
@@ -59,6 +60,7 @@
   <div class="drawer-actions">
     <button id="drawer-apps" type="button"><span data-icon="plus"></span><span>Apps</span></button>
     <button id="drawer-settings" type="button"><span data-icon="sun"></span><span>Appearance</span></button>
+    <button id="drawer-input" type="button"><span data-icon="touchpad"></span><span>Touch &amp; sign</span></button>
     <button id="drawer-windows" type="button"><span data-icon="monitor"></span><span>Windows</span></button>
     <button id="drawer-edit" type="button"><span data-icon="edit"></span><span>Edit dock</span></button>
     <button id="drawer-updates" type="button"><span data-icon="updates"></span><span>Updates</span></button>
@@ -244,6 +246,9 @@
       </div>
       <label class="setting-row">Immersive mode<input id="immersive" class="switch" type="checkbox" role="switch" checked></label>
       <label class="setting-row">App names<input id="show-labels" class="switch" type="checkbox" role="switch"></label>
+      <label class="setting-row">Touch &amp; sign shortcut<input id="quick-input-toggle" class="switch" type="checkbox" role="switch" checked></label>
+      <p class="settings__tip">A side handle, or tap empty dock space three times, opens the touchpad.</p>
+      <label class="setting-row" for="rotation">Screen rotation<select id="rotation"><option value="auto">Auto</option><option value="landscape">Landscape</option><option value="portrait">Portrait</option></select></label>
       <label class="setting-row">Vibrate on tap<input id="haptics" class="switch" type="checkbox" role="switch" checked></label>
       <p class="settings__tip">Hold to arrange. Swipe up for the drawer; down for quick controls.</p>
     </section>

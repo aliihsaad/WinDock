@@ -238,6 +238,6 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
   document.addEventListener("visibilitychange", () => { if (document.hidden) { generation++; disconnect(); finishStroke(); if (dialog.open && mode === "touchpad") setStatus("Touchpad paused. Tap Reconnect to continue."); } });
   window.addEventListener("pagehide", disconnect);
   window.addEventListener("blur", () => { if (ready) release(); });
-  window.addEventListener("resize", () => { release(); finishStroke(); if (matchMedia("(orientation: portrait)").matches) { generation++; disconnect(); setStatus("Touchpad paused. Turn sideways and tap Reconnect."); } });
+  window.addEventListener("resize", () => { release(); finishStroke(); if (matchMedia("(orientation: portrait)").matches && !document.documentElement.hasAttribute("data-rotate-ok")) { generation++; disconnect(); setStatus("Touchpad paused. Turn sideways and tap Reconnect."); } });
   return { open(initialMode = mode) { $("drawer").close(); if (!dialog.open) dialog.showModal(); select(initialMode === "signature" ? "signature" : "touchpad"); }, disconnect };
 }

@@ -86,6 +86,34 @@ t.equal(buzz(12, { storage: off, vibrate: (p) => pulses.push(p) }), false, "buzz
 t.deepEqual(pulses, [12], "only the enabled buzz reached the device");
 t.equal(buzz(5, { storage: on, vibrate: () => { throw new Error("no motor"); } }), false, "a failing vibrator never throws");
 
+// ---- Touch & sign shortcuts and rotation ------------------------------------
+{
+  const { createTripleTap, isBackgroundTarget, quickInputEnabled, setQuickInput } = await import("../public/quick-access.js");
+  const { applyRotation, getRotation, normalizeRotation, portraitAllowed } = await import("../public/orientation.js");
+  let clock = 0;
+  const triple = createTripleTap({ now: () => clock });
+  t.equal(triple.tap(100, 100), false, "first tap does not trigger");
+  clock = 200; t.equal(triple.tap(104, 98), false, "second tap does not trigger");
+  clock = 400; t.equal(triple.tap(96, 103), true, "third quick tap in the same place triggers");
+  clock = 500; t.equal(triple.tap(100, 100), false, "counter restarts after a trigger");
+  clock = 1500; t.equal(triple.tap(100, 100), false, "slow taps do not add up");
+  clock = 1600; triple.tap(100, 100); clock = 1700; t.equal(triple.tap(400, 300), false, "taps far apart do not add up");
+  t.equal(isBackgroundTarget({ closest: () => null }), true, "bare dock space counts");
+  t.equal(isBackgroundTarget({ closest: () => ({}) }), false, "tiles and buttons do not count");
+  const mem = new Map(); const storage = { getItem: (k) => mem.get(k) ?? null, setItem: (k, v) => mem.set(k, v) };
+  t.equal(quickInputEnabled(storage), true, "shortcut is on by default");
+  setQuickInput(false, storage); t.equal(quickInputEnabled(storage), false, "shortcut can be turned off");
+  t.equal(normalizeRotation("sideways"), "auto", "unknown rotation falls back to auto");
+  t.equal(portraitAllowed("landscape"), false, "landscape lock blocks portrait");
+  t.equal(portraitAllowed("portrait") && portraitAllowed("auto"), true, "auto and portrait allow portrait");
+  const attrs = {}; const root = { dataset: {}, setAttribute: (k) => { attrs[k] = true; }, removeAttribute: (k) => { delete attrs[k]; } };
+  const calls = []; const android = { setOrientation: (m) => calls.push(m) };
+  t.equal(applyRotation("portrait", { root, android, storage }), "portrait", "applyRotation returns the mode");
+  t.ok(attrs["data-rotate-ok"] && getRotation(storage) === "portrait" && calls[0] === "portrait", "portrait is saved, allowed and sent to Android");
+  applyRotation("landscape", { root, android, storage });
+  t.ok(!attrs["data-rotate-ok"] && calls[1] === "landscape", "landscape removes the portrait allowance");
+}
+
 // ---- Two phones sharing one touchpad ----------------------------------------
 {
   const sessions = [], received = [];

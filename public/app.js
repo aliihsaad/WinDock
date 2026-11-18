@@ -2,6 +2,8 @@ import { renderNowPlaying, renderControlPicker, renderAppIcon, renderPowerContro
 import { icon, controlIcon } from "./icons.js";
 import { addAppTile, addControlTile, addMacroTile, addWakeTile, groupTiles, ungroupTile, removeFromGroup, removeTile, moveTile, toWireTiles, availableControls, tileKey, CONTROL_CATALOG } from "./tiles.js";
 import { buzz, hapticsEnabled, setHaptics } from "./haptics.js";
+import { createTripleTap, isBackgroundTarget, quickInputEnabled, setQuickInput } from "./quick-access.js";
+import { applyRotation, getRotation } from "./orientation.js";
 import { normalizeLayout, renderPages, pageCount, moveToTile } from "./launcher.js";
 import { createInputPad } from "./input-pad.js";
 import { pairingError } from "./pairing.js";
@@ -173,6 +175,7 @@ function syncLayout() {
   document.body.classList.toggle("is-immersive", layout.immersive);
   document.body.classList.toggle("show-labels", layout.showLabels);
   $("drawer-open").hidden = !layout.immersive || !paired;
+  $("input-edge").hidden = !paired || editing || !quickInputEnabled();
   $("quick-controls-open").hidden = !layout.immersive || !paired || editing;
   $("edit-done").hidden = !layout.immersive || !editing || !paired;
   $("immersive").checked = layout.immersive;
@@ -216,6 +219,7 @@ function paint() {
   $("host-name").textContent = state.hostName || state.platformName || "Your PC";
   $("drawer-host").textContent = $("host-name").textContent;
   document.body.classList.toggle("is-arranging", editing);
+  $("input-edge").hidden = !paired || editing || !quickInputEnabled();
   $("quick-controls-open").hidden = !layout.immersive || !paired || editing;
   $("edit-done").hidden = !layout.immersive || !editing || !paired;
   $("drawer-edit").innerHTML = icon(editing ? "check" : "edit") + "<span>" + (editing ? "Done" : "Edit dock") + "</span>";
@@ -789,6 +793,20 @@ const inputPad = createInputPad({ api, notify, WebSocketClass: DockWebSocket, st
 $("quick-files").hidden = typeof window.WinDockAndroid?.openFiles !== "function";
 $("quick-files").addEventListener("click", () => { $("controls").close(); window.WinDockAndroid?.openFiles?.(); });
 $("quick-input").addEventListener("click", () => { $("controls").close(); inputPad.open(); });
+function openInputPad() { if (!paired || editing) return; $("controls").close(); $("drawer").close(); buzz(12); inputPad.open(); }
+$("input-edge").addEventListener("click", openInputPad);
+$("drawer-input").addEventListener("click", openInputPad);
+$("quick-input-toggle").checked = quickInputEnabled();
+$("quick-input-toggle").addEventListener("change", (event) => { setQuickInput(event.target.checked); syncLayout(); });
+$("rotation").value = applyRotation(getRotation());
+syncSelects();
+$("rotation").addEventListener("change", (event) => { $("rotation").value = applyRotation(event.target.value); syncSelects(); });
+// Three quick taps on empty dock space open the touchpad. Taps on tiles and controls never count.
+const tripleTap = createTripleTap();
+$("app").addEventListener("pointerup", (event) => {
+  if (!quickInputEnabled() || editing || !event.isPrimary || !isBackgroundTarget(event.target)) { tripleTap.reset(); return; }
+  if (tripleTap.tap(event.clientX, event.clientY)) openInputPad();
+});
 $("quick-capture").addEventListener("click", () => { $("controls").close(); openCapture(); });
 $("quick-power").addEventListener("click", () => $("power-controls").showModal());
 $("capture-screenshot").addEventListener("click", () => captureAction("screenshot"));

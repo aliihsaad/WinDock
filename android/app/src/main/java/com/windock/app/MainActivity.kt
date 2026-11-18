@@ -43,6 +43,8 @@ import android.net.LinkProperties
 import com.google.zxing.integration.android.IntentIntegrator
 
 /** Native discovery/connection shell; the shared web UI owns pairing and the dock. */
+private val ORIENTATIONS = setOf("auto", "landscape", "portrait")
+
 class MainActivity : Activity() {
     private lateinit var web: WebView
     private lateinit var connection: View
@@ -98,6 +100,7 @@ class MainActivity : Activity() {
         connectButton = findViewById(R.id.connect)
         retryButton = findViewById(R.id.retry)
         securePairing = SecurePairing(this)
+        applyOrientation(storedOrientation())
         editingConnection = savedInstanceState?.getBoolean("editingConnection") == true
         files = NativeFiles(this, connection = { fileConnection() }, connectionState = { fileConnectionState() },
             connect = { showPcPicker() }, visibilityChanged = { syncIdleDisplay() })
@@ -318,6 +321,17 @@ class MainActivity : Activity() {
             web.visibility == View.VISIBLE && phoneDialog == null && (!::files.isInitialized || !files.isShowing()))
     }
 
+    private fun storedOrientation(): String =
+        getSharedPreferences("display", MODE_PRIVATE).getString("orientation", "auto").let { if (it in ORIENTATIONS) it!! else "auto" }
+
+    private fun applyOrientation(mode: String) {
+        requestedOrientation = when (mode) {
+            "landscape" -> android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            "portrait" -> android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+            else -> android.content.pm.ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
+        }
+    }
+
     private fun showUpdates() {
         if (phoneDialog == null) showPhoneDialog(appUpdates.dialog())
     }
@@ -472,6 +486,15 @@ class MainActivity : Activity() {
         @JavascriptInterface fun showPcPicker() { runOnUiThread { if (trustedKeyboardPage()) this@MainActivity.showPcPicker() } }
         @JavascriptInterface fun showConnectionSettings() { runOnUiThread { if (trustedKeyboardPage()) this@MainActivity.showConnectionSettings() } }
         @JavascriptInterface fun getAppVersion(): String = BuildConfig.VERSION_NAME
+        @JavascriptInterface fun getOrientation(): String = storedOrientation()
+        @JavascriptInterface fun setOrientation(mode: String) {
+            if (mode !in ORIENTATIONS) return
+            runOnUiThread {
+                if (!trustedKeyboardPage()) return@runOnUiThread
+                getSharedPreferences("display", MODE_PRIVATE).edit().putString("orientation", mode).apply()
+                applyOrientation(mode)
+            }
+        }
         @JavascriptInterface fun showUpdates() { runOnUiThread { if (trustedKeyboardPage()) this@MainActivity.showUpdates() } }
         @JavascriptInterface fun openPcRelease(version: String) { runOnUiThread { if (trustedKeyboardPage()) appUpdates.openPcRelease(version) } }
         @JavascriptInterface fun showPhoneSettings() { runOnUiThread { if (trustedKeyboardPage()) showPhoneOptions() } }
