@@ -799,7 +799,7 @@ body.is-immersive .group-grid .tile__label { display: block; font-size: 12px; te
 .touchpad-tools .text-tool[aria-pressed="true"] { color: #6be6b8; background: #6be6b826; }
 
 /* Top status glance, mini player, render watcher: same glass language as the island and drawer */
-.status-strip { position: fixed; z-index: 3; top: calc(env(safe-area-inset-top) + 54px); left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 2px; max-width: calc(100vw - 24px); padding: 4px 6px; border: 1px solid var(--glass-border); border-radius: 999px; background: var(--glass-bg); -webkit-backdrop-filter: blur(var(--glass-sheet-blur)); backdrop-filter: blur(var(--glass-sheet-blur)); color: var(--text); font-size: 11px; font-weight: 600; line-height: 1; letter-spacing: .02em; overflow: hidden; }
+.status-strip { position: fixed; z-index: 3; top: calc(env(safe-area-inset-top) + 54px); left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 2px; max-width: calc(100vw - 24px); padding: 4px 6px; border: 1px solid var(--glass-border); border-radius: 999px; background: #14222bd9; color: var(--text); font-size: 11px; font-weight: 600; line-height: 1; letter-spacing: .02em; overflow: hidden; }
 .status-strip:active:not(:disabled) { transform: translateX(-50%); }
 .status-strip:empty { display: none; }
 .stat-chip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px; white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--muted); }
@@ -812,7 +812,7 @@ html.perf .status-strip { background: #17252d; backdrop-filter: none; -webkit-ba
 .mini-float { position: fixed; z-index: 60; right: 14px; bottom: 14px; width: min(46vw, 320px); border: 1px solid var(--glass-border); border-radius: 18px; background: #050b12; box-shadow: 0 14px 40px #0008; overflow: hidden; touch-action: none; }
 .mini-float[data-size="large"] { width: min(86vw, 640px); }
 .mini-float video { display: block; width: 100%; aspect-ratio: 16 / 9; background: #000; touch-action: auto; }
-.mini-float__bar { display: flex; align-items: center; gap: 6px; padding: 5px 8px; background: var(--glass-bg); -webkit-backdrop-filter: blur(var(--glass-sheet-blur)); backdrop-filter: blur(var(--glass-sheet-blur)); cursor: grab; touch-action: none; }
+.mini-float__bar { display: flex; align-items: center; gap: 6px; padding: 5px 8px; background: #14222b; cursor: grab; touch-action: none; }
 .mini-float__bar span { flex: 1; height: 4px; max-width: 40px; border-radius: 4px; background: #ebf7f370; }
 .mini-float__bar button { min-width: 34px; min-height: 30px; border: 0; border-radius: 10px; background: var(--glass-card); color: var(--text); font-size: 14px; }
 #mini[data-tab="pc"] [data-mini-pane="youtube"], #mini[data-tab="youtube"] [data-mini-pane="pc"] { display: none; }

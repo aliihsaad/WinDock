@@ -815,7 +815,7 @@ async function pollCast() {
     }
   } catch { /* the next poll retries */ }
 }
-setInterval(pollCast, 3000);
+setInterval(pollCast, 5000);
 const miniPlayer = createMiniPlayer({ api, notify, secure: nativeTransport && location.protocol === "https:" });
 const openBench = () => { $("drawer").close(); statusBar.refresh(); $("status-toggle").checked = statusBar.enabled(); if (!$("bench").open) $("bench").showModal(); };
 $("drawer-bench").addEventListener("click", openBench);

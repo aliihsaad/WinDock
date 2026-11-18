@@ -29,7 +29,7 @@ export function watchText(watch = {}) {
   }
 }
 
-export function createStatusBar({ api, get = (id) => document.getElementById(id), isReady, notify, buzz = () => {}, storage, intervalMs = 5000, setTimer = setInterval, clearTimer = clearInterval }) {
+export function createStatusBar({ api, get = (id) => document.getElementById(id), isReady, notify, buzz = () => {}, storage, intervalMs = 8000, setTimer = setInterval, clearTimer = clearInterval }) {
   let timer = null, last = { phase: "off" }, busy = false;
   const strip = get("status-strip");
   const enabled = () => statusBarEnabled(storage);
