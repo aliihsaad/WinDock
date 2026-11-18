@@ -78,12 +78,17 @@ export const STATS_PS = [
   "$os=Get-CimInstance Win32_OperatingSystem;",
   "$cpu=(Get-CimInstance Win32_Processor | Measure-Object -Property LoadPercentage -Average).Average;",
   "$bat=Get-CimInstance Win32_Battery | Select-Object -First 1;",
+  // Wi-Fi signal strength only (never the network name), and NVIDIA GPU load when the driver tool exists.
+  "$sig=$null;try{foreach($l in (netsh wlan show interfaces)){if($l -match '^\\s*Signal\\s*:\\s*(\\d+)%'){$sig=[int]$matches[1]}}}catch{};",
+  "$gpu=$null;try{$g=nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total,temperature.gpu --format=csv,noheader,nounits 2>$null;if($g){$p=@(($g|Select-Object -First 1) -split ',' | ForEach-Object{$_.Trim()});$gpu=[pscustomobject]@{util=[int]$p[0];memUsed=[int]$p[1];memTotal=[int]$p[2];temp=[int]$p[3]}}}catch{};",
   "[pscustomobject]@{",
   "  cpu=$cpu;",
   "  memTotal=$os.TotalVisibleMemorySize;",
   "  memFree=$os.FreePhysicalMemory;",
   "  battery=$(if($bat){$bat.EstimatedChargeRemaining}else{$null});",
-  "  charging=$(if($bat){$bat.BatteryStatus -eq 2}else{$null})",
+  "  charging=$(if($bat){$bat.BatteryStatus -eq 2}else{$null});",
+  "  wifi=$sig;",
+  "  gpu=$gpu",
   "} | ConvertTo-Json -Compress",
 ].join(" ");
 
@@ -209,10 +214,18 @@ export function parseRunning(raw) {
   return out.sort((a, b) => a.pid - b.pid);
 }
 
+/** GPU numbers from nvidia-smi, or null when there is no NVIDIA GPU or the values are not sane. */
+function parseGpu(value) {
+  if (!value || typeof value !== "object") return null;
+  const n = (v, max) => Number.isFinite(Number(v)) && v !== null && Number(v) >= 0 && Number(v) <= max ? Math.round(Number(v)) : null;
+  const util = n(value.util, 100), memUsed = n(value.memUsed, 1e6), memTotal = n(value.memTotal, 1e6), temp = n(value.temp, 150);
+  return util === null ? null : { util, memUsed, memTotal, temp };
+}
+
 /** Parse the stats snapshot into normalized percentages. */
 export function parseStats(raw) {
   const [row] = jsonArray(raw);
-  if (!row) return { cpu: null, memory: null, battery: null, charging: null };
+  if (!row) return { cpu: null, memory: null, battery: null, charging: null, wifi: null, gpu: null };
   const total = Number(row.memTotal);
   const free = Number(row.memFree);
   const memory =
@@ -226,6 +239,8 @@ export function parseStats(raw) {
     memory,
     battery,
     charging: typeof row.charging === "boolean" ? row.charging : null,
+    wifi: Number.isFinite(Number(row.wifi)) && row.wifi !== null ? Math.max(0, Math.min(100, Math.round(Number(row.wifi)))) : null,
+    gpu: parseGpu(row.gpu),
   };
 }
 

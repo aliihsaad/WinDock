@@ -8,7 +8,7 @@ import { createApp } from "../server.js";
 import { TouchpadGestures } from "../public/touchpad-gestures.js";
 
 const t = createChecker("input");
-for (const bad of [null, [], {}, { type: "move", dx: 0.5, dy: 0 }, { type: "move", dx: 2049, dy: 0 }, { type: "move", dx: NaN, dy: 0 }, { type: "button", button: "middle", down: true }, { type: "button", button: "left", down: 1 }, { type: "release", path: "unsafe" }, { type: "launch" }]) t.equal(validateInput(bad), null, "invalid input rejected");
+for (const bad of [null, [], {}, { type: "move", dx: 0.5, dy: 0 }, { type: "move", dx: 2049, dy: 0 }, { type: "move", dx: NaN, dy: 0 }, { type: "button", button: "back", down: true }, { type: "button", button: "left", down: 1 }, { type: "release", path: "unsafe" }, { type: "launch" }]) t.equal(validateInput(bad), null, "invalid input rejected");
 for (const message of [{ type: "move", dx: -2048, dy: 2048 }, { type: "scroll", dx: 0, dy: -120 }, { type: "button", button: "left", down: false }, { type: "release" }, { type: "ping" }]) t.deepEqual(validateInput(message), message, "valid event preserved");
 for (const steps of [-8, -1, 1, 8]) t.deepEqual(validateInput({ type: "zoom", steps }), { type: "zoom", steps }, "bounded zoom accepted");
 for (const steps of [0, -9, 9, .5, "1", null, NaN, Infinity]) t.equal(validateInput({ type: "zoom", steps }), null, "invalid zoom rejected");

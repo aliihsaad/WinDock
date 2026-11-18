@@ -68,6 +68,7 @@ class MainActivity : Activity() {
     private var pcPicker: PcPicker? = null
     private lateinit var appUpdates: AppUpdates
     private lateinit var phoneUpdater: PhoneUpdater
+    private val miniPlayer by lazy { MiniPlayer(this) }
     private lateinit var appearance: AppearancePreferences
     private var wakingGesture = false
     private val wakingKeys = mutableSetOf<Int>()
@@ -500,6 +501,11 @@ class MainActivity : Activity() {
                 applyOrientation(mode)
             }
         }
+        @JavascriptInterface fun openYoutube(url: String) {
+            if (!MiniPlayerPolicy.isPlayable(url)) return
+            runOnUiThread { if (trustedKeyboardPage()) miniPlayer.open(url) }
+        }
+        @JavascriptInterface fun closeYoutube() { runOnUiThread { miniPlayer.close() } }
         @JavascriptInterface fun showUpdates() { runOnUiThread { if (trustedKeyboardPage()) this@MainActivity.showUpdates() } }
         @JavascriptInterface fun checkAppUpdate() { runOnUiThread { if (trustedKeyboardPage()) phoneUpdater.check() } }
         @JavascriptInterface fun installAppUpdate() { runOnUiThread { if (trustedKeyboardPage()) phoneUpdater.install() } }
@@ -812,6 +818,7 @@ class MainActivity : Activity() {
         super.onPause()
     }
     override fun onDestroy() {
+        miniPlayer.close()
         files.destroy()
         if (Build.VERSION.SDK_INT >= 33) backCallback?.let { onBackInvokedDispatcher.unregisterOnBackInvokedCallback(it) }
         appearance.select(null)

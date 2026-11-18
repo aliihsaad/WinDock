@@ -23,6 +23,9 @@ import { secureSessionStore } from "./src/secure-sessions.js";
 import { pairingInvites } from "./src/pairing-invites.js";
 import { networkSetup } from "./src/network-setup.js";
 import { createUpdateService } from "./src/updates.js";
+import { createRenderWatch } from "./src/render-watch.js";
+import { versionedSave } from "./src/versioned-save.js";
+import { defaultVideoRoots, listVideos, streamVideo, isVideoRootId } from "./src/videos.js";
 import { createSyncHub } from "./src/sync.js";
 import { createInputHub } from "./src/input-hub.js";
 import { createTransfers, transferError } from "./src/transfers.js";
@@ -153,6 +156,9 @@ export async function createApp({
   identity = null,
   transfers: suppliedTransfers = null,
   wakeSender = null,
+  videoRoots: suppliedVideoRoots = null,
+  renderWatch: suppliedRenderWatch = null,
+  versionedSaver = versionedSave,
 } = {}) {
   if (!isValidPinShape(pin)) throw new Error("Pairing PIN must contain exactly six ASCII digits.");
   if (!isValidPinShape(securePin)) throw new Error("Secure pairing PIN must contain exactly six ASCII digits.");
@@ -206,7 +212,26 @@ export async function createApp({
   }
 
   // One macro at a time: overlapping runs would interleave their launches and levels.
-  let macroRunning = false;
+  let macroRunning = false, statsCache = null;
+  // PowerShell is costly; phones poll, so every caller shares one reading for a few seconds.
+  const readStats = () => {
+    if (!statsCache || Date.now() - statsCache.at > 4000) statsCache = { at: Date.now(), value: provider.systemStats().catch(() => ({})) };
+    return statsCache.value;
+  };
+  const renderWatch = suppliedRenderWatch ?? createRenderWatch({
+    readStats,
+    act: async (action) => {
+      if (!allowDestructive) throw new Error("power actions disabled");
+      await provider.control(action === "shutdown" ? "shutdown" : "sleep", null);
+    },
+  });
+  // Folders a phone may browse for videos: the usual Windows folders plus folders pinned on the dock.
+  const videoRoots = suppliedVideoRoots ?? (async () => {
+    if (provider.id !== "windows") return [];
+    const pinned = flattenTiles((await configStore.load()).tiles).map(folderFromTile).filter(Boolean)
+      .map((f) => ({ id: "tile:" + f.id.slice(7, 23), name: f.name, path: f.target }));
+    return [...defaultVideoRoots(), ...pinned];
+  });
   async function runMacro(tile) {
     if (macroRunning) throw Object.assign(new Error("Another macro is still running."), { status: 409 });
     macroRunning = true;
@@ -586,7 +611,38 @@ export async function createApp({
       }
 
       if (path === "/api/stats" && req.method === "GET") {
-        return sendJson(res, 200, await provider.systemStats().catch(() => ({})));
+        return sendJson(res, 200, await readStats());
+      }
+
+      if (path === "/api/render-watch" && req.method === "GET") return sendJson(res, 200, renderWatch.state());
+      if (path === "/api/render-watch" && req.method === "POST") {
+        const body = await readJsonBody(req);
+        if (Object.keys(body).some((k) => k !== "action")) return sendJson(res, 400, { error: "render watch takes only an action" });
+        if (body.action === "off") return sendJson(res, 200, renderWatch.disarm());
+        if ((body.action === "sleep" || body.action === "shutdown") && !allowDestructive) return sendJson(res, 403, { error: "power actions disabled" });
+        try { return sendJson(res, 200, renderWatch.arm(body.action)); }
+        catch (error) { return sendJson(res, error.status || 400, { error: error.message }); }
+      }
+
+      // Copies the Blender file you just saved to scene_v002.blend next to it. Blender's title names the file.
+      if (path === "/api/versioned-save" && req.method === "POST") {
+        const body = await readJsonBody(req);
+        if (Object.keys(body).length) return sendJson(res, 400, { error: "versioned save takes no options" });
+        try { return sendJson(res, 200, await versionedSaver(await provider.listRunningApps())); }
+        catch (error) { return sendJson(res, error.status || 500, { error: error.status ? error.message : "Could not copy the file." }); }
+      }
+
+      if (path === "/api/videos/roots" && req.method === "GET") {
+        return sendJson(res, 200, { roots: (await videoRoots()).map(({ id, name }) => ({ id, name })) });
+      }
+      if ((path === "/api/videos/list" || path === "/api/videos/stream") && (req.method === "GET" || req.method === "HEAD")) {
+        const id = url.searchParams.get("root");
+        const root = isVideoRootId(id) ? (await videoRoots()).find((r) => r.id === id) : null;
+        if (!root) return sendJson(res, 404, { error: "Unknown folder." });
+        try {
+          if (path === "/api/videos/list") return sendJson(res, 200, await listVideos(root, url.searchParams.get("path") ?? ""));
+          return await streamVideo(root, url.searchParams.get("path") ?? "", req, res);
+        } catch (error) { return sendJson(res, error.status || 500, { error: error.status ? error.message : "Could not read that folder." }); }
       }
 
       if (path === "/api/input" && req.method === "GET") {
@@ -635,7 +691,7 @@ export async function createApp({
     }), 6 * 60 * 60000);
     renewalTimer.unref();
   }
-  server.on("close", () => { transferPromise?.then(t=>t.close()).catch(()=>{}); clearInterval(renewalTimer); managedServer?.close(); provider.capture?.dispose().catch(() => {}); provider.input?.dispose(); });
+  server.on("close", () => { transferPromise?.then(t=>t.close()).catch(()=>{}); clearInterval(renewalTimer); managedServer?.close(); provider.capture?.dispose().catch(() => {}); provider.input?.dispose(); renderWatch.dispose?.(); });
   return { server, secureServer, managedServer, managed, hub, inputHub, provider, configStore, dockState, state, sessions, secureSessions, lockout };
 }
 

@@ -9,7 +9,7 @@
  *    worse, replay a control action from cache. Neither is acceptable.
  */
 
-const VERSION = "windock-v39-upgrades";
+const VERSION = "windock-v40-upgrades";
 const SHELL = [
   "/",
   "/index.html",
@@ -26,6 +26,10 @@ const SHELL = [
   "/haptics.js",
   "/quick-access.js",
   "/orientation.js",
+  "/decks.js",
+  "/keys-pane.js",
+  "/status-bar.js",
+  "/mini-player.js",
   "/icons.js",
   "/folder.svg",
   "/link.svg",

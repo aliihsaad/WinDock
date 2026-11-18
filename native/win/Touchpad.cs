@@ -108,6 +108,7 @@ internal static class Touchpad
         var outputGate = new object();
         void Emit(object value) { lock (outputGate) { Console.Out.WriteLine(JsonSerializer.Serialize(value)); Console.Out.Flush(); } }
         var keyboard = new RemoteKeyboard(Send, Marshal.GetLastWin32Error);
+        var shortcuts = new Shortcuts(Send, Marshal.GetLastWin32Error, Inject);
         using var focus = new KeyboardFocus(Emit);
         using var input = new StreamReader(Console.OpenStandardInput(), new System.Text.UTF8Encoding(false, true));
         Emit(new { type = "ready" });
@@ -124,12 +125,17 @@ internal static class Touchpad
                 var root = message.RootElement;
                 var type = root.GetProperty("type").GetString();
                 if (type == "focus") { focus.Refresh(); continue; }
+                if (type == "chord") { shortcuts.Chord(root); continue; }
+                if (type == "modifier") { shortcuts.Modifier(root); continue; }
+                if (type == "button" && root.GetProperty("button").GetString() == "middle") { shortcuts.Middle(root.GetProperty("down").GetBoolean()); continue; }
+                if (type == "release") shortcuts.Release();
                 if (type is "text" or "key" or "paste")
                 {
                     try
                     {
                         if (!focus.Accepts(root.GetProperty("target").GetString() ?? "")) throw new InvalidOperationException("Focus changed.");
                         session.Release();
+                        shortcuts.Release();
                         if (type == "text") keyboard.Text(root.GetProperty("text").GetString() ?? "");
                         else if (type == "paste")
                         {
@@ -145,7 +151,7 @@ internal static class Touchpad
             }
         }
         catch (TimeoutException) { return 0; }
-        finally { session.Release(); }
+        finally { try { session.Release(); } finally { shortcuts.Release(); } }
         return 0;
     }
 }

@@ -114,6 +114,35 @@ t.equal(buzz(5, { storage: on, vibrate: () => { throw new Error("no motor"); } }
   t.ok(!attrs["data-rotate-ok"] && calls[1] === "landscape", "landscape removes the portrait allowance");
 }
 
+// ---- Shortcut chords, held modifiers and decks -----------------------------------
+{
+  const { validateInput } = await import("../src/input.js");
+  const { validateChord, KEYS } = await import("../src/chords.js");
+  const { DECKS, chordMessage, detectDeck, scrubSteps } = await import("../public/decks.js");
+  t.deepEqual(validateInput({ type: "chord", mods: ["shift", "ctrl"], key: "s" }), { type: "chord", mods: ["ctrl", "shift"], key: "s" }, "chord modifiers are normalized");
+  t.deepEqual(validateInput({ type: "chord", mods: [], key: "ArrowRight", repeat: 5 }), { type: "chord", mods: [], key: "ArrowRight", repeat: 5 }, "repeat is kept");
+  for (const bad of [{ type: "chord", mods: ["super"], key: "a" }, { type: "chord", mods: ["ctrl", "ctrl"], key: "a" }, { type: "chord", mods: [], key: "PrintScreen" },
+    { type: "chord", mods: [], key: "a", repeat: 21 }, { type: "chord", mods: [], key: "a", repeat: 0 }, { type: "chord", mods: "ctrl", key: "a" }, { type: "chord", mods: [], key: "a", extra: 1 }, { type: "chord", key: "a" }])
+    t.equal(validateInput(bad), null, "invalid chord rejected: " + JSON.stringify(bad));
+  t.deepEqual(validateInput({ type: "modifier", key: "shift", down: true }), { type: "modifier", key: "shift", down: true }, "modifier hold accepted");
+  t.equal(validateInput({ type: "modifier", key: "fn", down: true }), null, "unknown modifier rejected");
+  t.equal(validateInput({ type: "button", button: "middle", down: true })?.button, "middle", "middle mouse button accepted for 3D orbit");
+  // Every key a deck presses must be one the host accepts, or the button would silently do nothing.
+  let count = 0;
+  for (const deck of DECKS) for (const page of deck.pages) for (const entry of page.keys) {
+    count++;
+    t.ok(validateChord(chordMessage(entry)) !== null && KEYS.has(entry.key), `${deck.name}/${page.name}/${entry.label} is a valid chord`);
+  }
+  t.ok(count >= 60, "decks have plenty of keys");
+  t.equal(detectDeck([{ name: "blender", title: "Blender [scene.blend]" }]), "blender", "Blender window selects the Blender deck");
+  t.equal(detectDeck([{ id: "resolve", name: "Resolve", title: "DaVinci Resolve" }]), "resolve", "Resolve window selects the Resolve deck");
+  t.equal(detectDeck([{ name: "notepad" }]), null, "other apps select nothing");
+  t.deepEqual(scrubSteps(30, 0, 14), { steps: 2, carried: 2 }, "scrub turns distance into frames");
+  t.deepEqual(scrubSteps(-30, 0, 14), { steps: -2, carried: -2 }, "scrub works backwards");
+  t.deepEqual(scrubSteps(5, 10, 14), { steps: 1, carried: 1 }, "leftover distance carries over");
+  t.equal(chordMessage({ mods: [], key: "ArrowRight" }, 40).repeat, 20, "frame repeat is capped");
+}
+
 // ---- Two phones sharing one touchpad ----------------------------------------
 {
   const sessions = [], received = [];

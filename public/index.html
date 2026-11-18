@@ -52,6 +52,7 @@
 
 <button id="drawer-open" class="drawer-trigger" type="button" aria-label="Open drawer" hidden><span></span></button>
 <button id="quick-controls-open" class="quick-controls-trigger" type="button" aria-label="Open quick controls" aria-haspopup="dialog" aria-controls="controls" aria-expanded="false" title="Swipe down for quick controls" hidden><span class="controls-island" aria-hidden="true"><span class="island-idle"><span data-icon="sliders"></span><span class="island-grip"></span></span><span id="island-media" class="island-media" hidden><span class="island-art"><span id="island-art-fallback" data-icon="music"></span><img id="island-artwork" alt="" decoding="async" hidden></span><span class="island-track"><strong id="island-title"></strong><span id="island-artist"></span></span><span id="island-playback"></span></span></span></button>
+<button id="status-strip" class="status-strip" type="button" aria-label="PC status and render watcher" hidden></button>
 <button id="input-edge" class="input-edge" type="button" aria-label="Open touchpad and signature" title="Touchpad &amp; signature" hidden><span data-icon="touchpad"></span></button>
 <button id="edit-done" class="edit-done icon-button" type="button" aria-label="Done editing" hidden><span data-icon="check"></span></button>
 
@@ -61,6 +62,8 @@
     <button id="drawer-apps" type="button"><span data-icon="plus"></span><span>Apps</span></button>
     <button id="drawer-settings" type="button"><span data-icon="sun"></span><span>Appearance</span></button>
     <button id="drawer-input" type="button"><span data-icon="touchpad"></span><span>Touch &amp; sign</span></button>
+    <button id="drawer-bench" type="button"><span data-icon="monitor"></span><span>Render &amp; save</span></button>
+    <button id="drawer-mini" type="button"><span data-icon="play"></span><span>Mini player</span></button>
     <button id="drawer-windows" type="button"><span data-icon="monitor"></span><span>Windows</span></button>
     <button id="drawer-edit" type="button"><span data-icon="edit"></span><span>Edit dock</span></button>
     <button id="drawer-updates" type="button"><span data-icon="updates"></span><span>Updates</span></button>
@@ -85,6 +88,7 @@
   <header class="input-pad__header">
     <div class="input-pad__tabs" role="group" aria-label="Input mode">
       <button id="input-touchpad-tab" type="button" aria-pressed="true" aria-controls="touchpad-pane"><span data-icon="touchpad"></span>Touchpad</button>
+      <button id="input-keys-tab" type="button" aria-pressed="false" aria-controls="keys-pane"><span data-icon="keys"></span>Keys</button>
       <button id="input-signature-tab" type="button" aria-pressed="false" aria-controls="signature-pane"><span data-icon="edit"></span>Signature</button>
     </div>
     <button class="icon-button" type="button" data-close="input-pad" aria-label="Close touchpad and signature"><span data-icon="close"></span></button>
@@ -106,7 +110,7 @@
     </div>
     <div class="touchpad-toolbar" aria-label="Touchpad controls">
       <div class="touchpad-navigation"><button type="button" data-close="input-pad" aria-label="Back to dock" title="Back to dock"><span data-icon="left"></span></button></div>
-      <div class="touchpad-tools"><button id="touchpad-signature" type="button" aria-label="Open signature pad" title="Signature"><span data-icon="edit"></span></button><button id="touchpad-keyboard" type="button" aria-label="Open phone keyboard" aria-pressed="false" title="Keyboard" hidden><span data-icon="keyboard"></span></button></div>
+      <div class="touchpad-tools"><button id="touchpad-keys" type="button" aria-label="Open shortcut keys" title="Shortcut keys"><span data-icon="keys"></span></button><button id="touchpad-orbit" class="text-tool" type="button" aria-label="3D orbit mode" aria-pressed="false" title="3D mode: two fingers orbit, pinch zooms">3D</button><button id="touchpad-signature" type="button" aria-label="Open signature pad" title="Signature"><span data-icon="edit"></span></button><button id="touchpad-keyboard" type="button" aria-label="Open phone keyboard" aria-pressed="false" title="Keyboard" hidden><span data-icon="keyboard"></span></button></div>
       <div class="mouse-buttons"><button id="mouse-left" type="button" disabled><span data-icon="mouse-left"></span><span>Left click</span></button><button id="mouse-right" type="button" disabled><span data-icon="mouse-right"></span><span>Right click</span></button><button id="mouse-drag" type="button" aria-pressed="false" disabled><span data-icon="move"></span><span id="mouse-drag-label">Drag</span></button></div>
       <div class="touchpad-options"><button id="pointer-options-toggle" type="button" aria-label="Pointer speed" title="Pointer speed" aria-expanded="false" aria-controls="pointer-options"><span data-icon="sliders"></span></button>
         <div id="pointer-options" class="pointer-options" hidden><label class="pointer-speed" for="pointer-speed">Pointer speed <output id="pointer-speed-value" for="pointer-speed">1.5×</output></label><input id="pointer-speed" type="range" min="0.5" max="3" step="0.25" value="1.5" aria-label="Pointer speed"><div class="pointer-speed-scale" aria-hidden="true"><span>Precise</span><span>Fast</span></div></div>
@@ -136,6 +140,17 @@
       <button id="remote-keyboard-signature" type="button" aria-label="Draw and insert signature"><span data-icon="edit"></span></button>
     </div>
   </section>
+  <section id="keys-pane" class="input-pad__pane" aria-label="Shortcut keys" hidden>
+    <div id="keys-decks" class="keys-decks" role="group" aria-label="Apps"></div>
+    <div id="keys-pages" class="keys-pages" role="group" aria-label="Pages"></div>
+    <div id="keys-grid" class="keys-grid"></div>
+    <div id="scrub-strip" class="scrub-strip" data-active="false" role="slider" aria-label="Frame scrub strip: swipe to step frames" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" tabindex="-1"><span>◀ Swipe to step frames ▶</span></div>
+  </section>
+  <div id="mod-bar" class="mod-bar" role="group" aria-label="Hold a modifier key on the PC" hidden>
+    <button type="button" data-mod="ctrl" aria-pressed="false" disabled>Ctrl</button>
+    <button type="button" data-mod="shift" aria-pressed="false" disabled>Shift</button>
+    <button type="button" data-mod="alt" aria-pressed="false" disabled>Alt</button>
+  </div>
   <section id="signature-pane" class="input-pad__pane" aria-label="Signature" hidden>
     <div class="signature-space"><div class="signature-paper">
       <canvas id="signature-canvas" width="1600" height="600" aria-label="Draw your signature with a finger or stylus"></canvas>
@@ -263,6 +278,39 @@
     </section>
   </div>
 </dialog>
+
+<dialog id="bench" class="sheet" aria-labelledby="bench-title">
+  <div class="sheet-handle"></div>
+  <div class="sheet__heading"><div><p class="eyebrow">FOR LONG JOBS</p><h2 id="bench-title">Render &amp; save</h2></div><button class="icon-button" type="button" data-close="bench" aria-label="Close"><span data-icon="close"></span></button></div>
+  <div class="updates-content">
+    <section class="settings__card"><h3>Render watcher</h3><p id="bench-watch-status" role="status" aria-live="polite"></p>
+      <div class="settings__utilities">
+        <button class="button" type="button" data-watch="notify" aria-pressed="false">Tell my phone</button>
+        <button class="button" type="button" data-watch="sleep" aria-pressed="false">Then sleep</button>
+        <button class="button" type="button" data-watch="shutdown" aria-pressed="false">Then shut down</button>
+        <button class="button" type="button" data-watch="off" aria-pressed="false">Off</button>
+      </div>
+      <p class="settings__tip">Start your render first or after; it waits for the PC to get busy, then quiet.</p></section>
+    <section class="settings__card"><h3>Blender versions</h3>
+      <div class="settings__utilities"><button id="bench-version" class="button button--primary" type="button">Save a new version (_v002)</button></div>
+      <p id="bench-version-status" class="settings__tip" role="status">Press Save in Blender, then copy the file as the next numbered version. Resolve keeps projects in its own database, so this is Blender only.</p></section>
+    <section class="settings__card"><h3>Top bar</h3><label class="setting-row">Show battery, CPU, GPU and Wi-Fi<input id="status-toggle" class="switch" type="checkbox" role="switch" checked></label></section>
+  </div>
+</dialog>
+
+<dialog id="mini" class="sheet" aria-labelledby="mini-title" data-tab="pc">
+  <div class="sheet-handle"></div>
+  <div class="sheet__heading"><div><p class="eyebrow">WATCH WHILE YOU WORK</p><h2 id="mini-title">Mini player</h2></div><button class="icon-button" type="button" data-close="mini" aria-label="Close"><span data-icon="close"></span></button></div>
+  <div class="updates-content">
+    <div class="settings__utilities"><button class="button" type="button" data-mini-tab="pc" aria-pressed="true">PC videos</button><button class="button" type="button" data-mini-tab="youtube" aria-pressed="false">YouTube</button></div>
+    <section class="settings__card" data-mini-pane="pc"><p id="mini-path" class="settings__tip"></p><ul id="mini-list" class="window-list"></ul><p class="settings__tip">Plays MP4 and WebM from your PC folders. MKV and MOV are listed but most phones can’t play them.</p></section>
+    <section class="settings__card" data-mini-pane="youtube"><input id="mini-youtube-input" type="url" inputmode="url" placeholder="Paste a YouTube link" aria-label="YouTube link" autocomplete="off"><div class="settings__utilities"><button id="mini-youtube-go" class="button button--primary" type="button">Play</button></div></section>
+  </div>
+</dialog>
+<div id="mini-float" class="mini-float" data-size="small" hidden>
+  <div id="mini-drag" class="mini-float__bar" aria-label="Move player"><span></span><button id="mini-size" type="button" aria-label="Resize player">⤢</button><button id="mini-close" type="button" aria-label="Close player">✕</button></div>
+  <video id="mini-video" controls playsinline preload="metadata"></video>
+</div>
 
 <dialog id="updates" class="sheet" aria-labelledby="updates-title">
   <div class="sheet-handle"></div>

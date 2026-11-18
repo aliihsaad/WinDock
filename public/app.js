@@ -14,6 +14,8 @@ import { startGlass } from "./glass.js";
 import { enhanceSelects } from "./glass-select.js";
 import { createQuickControls } from "./quick-controls.js";
 import { showScene } from "./scenes.js";
+import { createStatusBar } from "./status-bar.js";
+import { createMiniPlayer } from "./mini-player.js";
 
 const $ = (id) => document.getElementById(id);
 const syncSelects = enhanceSelects();
@@ -795,6 +797,24 @@ $("quick-files").addEventListener("click", () => { $("controls").close(); window
 $("quick-input").addEventListener("click", () => { $("controls").close(); inputPad.open(); });
 function openInputPad() { if (!paired || editing) return; $("controls").close(); $("drawer").close(); buzz(12); inputPad.open(); }
 $("input-edge").addEventListener("click", openInputPad);
+document.addEventListener("windock-toast", (e) => notify(e.detail.message, e.detail.error));
+const statusBar = createStatusBar({ api, isReady: () => paired && online && !document.hidden, notify, buzz, storage: localStorage });
+statusBar.start();
+const miniPlayer = createMiniPlayer({ api, notify, secure: nativeTransport && location.protocol === "https:" });
+const openBench = () => { $("drawer").close(); statusBar.refresh(); $("status-toggle").checked = statusBar.enabled(); if (!$("bench").open) $("bench").showModal(); };
+$("drawer-bench").addEventListener("click", openBench);
+$("status-strip").addEventListener("click", openBench);
+$("drawer-mini").addEventListener("click", () => { $("drawer").close(); miniPlayer.open(); });
+$("status-toggle").addEventListener("change", (event) => statusBar.setEnabled(event.target.checked));
+$("bench").addEventListener("click", (event) => {
+  const watch = event.target.closest("[data-watch]");
+  if (watch) { buzz(10); statusBar.arm(watch.dataset.watch).catch((error) => notify(error.message, true)); }
+});
+$("bench-version").addEventListener("click", async () => {
+  const out = $("bench-version-status");
+  try { const saved = await api("/api/versioned-save", { method: "POST", body: "{}" }); out.textContent = "Saved a copy as " + saved.name + "."; notify("Saved " + saved.name); buzz(12); }
+  catch (error) { out.textContent = error.message; notify(error.message, true); }
+});
 $("drawer-input").addEventListener("click", openInputPad);
 $("quick-input-toggle").checked = quickInputEnabled();
 $("quick-input-toggle").addEventListener("change", (event) => { setQuickInput(event.target.checked); syncLayout(); });
