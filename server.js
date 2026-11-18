@@ -13,7 +13,8 @@ import { readFile } from "node:fs/promises";
 import { extname, join, normalize, resolve, sep } from "node:path";
 import { createProvider } from "./src/platform/index.js";
 import { validateControl, isDestructiveVerb, CONTROL_VERBS } from "./src/platform/contract.js";
-import { createConfigStore } from "./src/config.js";
+import { createConfigStore, flattenTiles } from "./src/config.js";
+import { sendWake } from "./src/wake.js";
 import { folderApp, folderFromTile, FOLDER_ICON } from "./src/folders.js";
 import { linkApp, linkFromTile, LINK_ICON } from "./src/links.js";
 import { hostIdentity } from "./src/host-identity.js";
@@ -151,6 +152,7 @@ export async function createApp({
   managed = null,
   identity = null,
   transfers: suppliedTransfers = null,
+  wakeSender = null,
 } = {}) {
   if (!isValidPinShape(pin)) throw new Error("Pairing PIN must contain exactly six ASCII digits.");
   if (!isValidPinShape(securePin)) throw new Error("Secure pairing PIN must contain exactly six ASCII digits.");
@@ -183,11 +185,51 @@ export async function createApp({
       });
     }
     const apps = await inventoryPromise;
+    // Tiles inside dock folders (groups) still need to be launchable.
     const folders = typeof provider.openFolder === "function"
-      ? (await configStore.load()).tiles.map(folderFromTile).filter(Boolean) : [];
+      ? flattenTiles((await configStore.load()).tiles).map(folderFromTile).filter(Boolean) : [];
     const links = typeof provider.openLink === "function"
-      ? (await configStore.load()).tiles.map(linkFromTile).filter(Boolean) : [];
+      ? flattenTiles((await configStore.load()).tiles).map(linkFromTile).filter(Boolean) : [];
     return [...apps, ...folders, ...links];
+  }
+
+  const markRunning = (tile, runningIds) => {
+    if (tile.kind === "app") return { ...tile, running: runningIds.has(tile.id) };
+    if (tile.kind === "group") return { ...tile, items: tile.items.map((item) => markRunning(item, runningIds)) };
+    return tile;
+  };
+
+  async function launchInstalled(app) {
+    if (app.source === "link") await provider.openLink(app);
+    else if (app.source === "folder") await provider.openFolder(app);
+    else await provider.launchApp(app);
+  }
+
+  // One macro at a time: overlapping runs would interleave their launches and levels.
+  let macroRunning = false;
+  async function runMacro(tile) {
+    if (macroRunning) throw Object.assign(new Error("Another macro is still running."), { status: 409 });
+    macroRunning = true;
+    try {
+      const apps = await installedApps();
+      let ran = 0;
+      for (const step of tile.steps) {
+        if (step.type === "wait") await new Promise((done) => setTimeout(done, step.ms));
+        else if (step.type === "app") {
+          const app = apps.find((a) => a.id === step.id);
+          if (!app) throw Object.assign(new Error(`${step.label} is not installed on this PC.`), { status: 404 });
+          await launchInstalled(app);
+        } else {
+          const checked = validateControl(step.verb, step.value ?? null);
+          if (!checked.ok || isDestructiveVerb(checked.verb)) throw Object.assign(new Error("Macro contains an unsupported action."), { status: 400 });
+          await provider.control(checked.verb, checked.value);
+        }
+        ran += 1;
+      }
+      return ran;
+    } finally {
+      macroRunning = false;
+    }
   }
 
   async function dockState() {
@@ -200,9 +242,7 @@ export async function createApp({
       platform: provider.id,
       platformName: provider.displayName,
       hostName,
-      tiles: config.tiles.map((tile) =>
-        tile.kind === "app" ? { ...tile, running: runningIds.has(tile.id) } : tile,
-      ),
+      tiles: config.tiles.map((tile) => markRunning(tile, runningIds)),
       running,
       verbs: CONTROL_VERBS,
       allowDestructive,
@@ -462,9 +502,7 @@ export async function createApp({
         const apps = await installedApps();
         const app = apps.find((a) => a.id === body.id);
         if (!app) return sendJson(res, 404, { error: "unknown app" });
-        if (app.source === "link") await provider.openLink(app);
-        else if (app.source === "folder") await provider.openFolder(app);
-        else await provider.launchApp(app);
+        await launchInstalled(app);
         await hub.broadcast();
         return sendJson(res, 200, { ok: true, id: app.id });
       }
@@ -496,6 +534,28 @@ export async function createApp({
         const result = await provider.control(checked.verb, checked.value);
         const warning = checked.verb === "brightness-set" && result?.warning === "hdr-active" ? { warning: "hdr-active" } : {};
         return sendJson(res, 200, { ok: true, verb: checked.verb, ...warning });
+      }
+
+      if (path === "/api/macros/run" && req.method === "POST") {
+        const body = await readJsonBody(req);
+        const tile = flattenTiles((await configStore.load()).tiles).find((t) => t.kind === "macro" && t.id === body.id);
+        if (!tile) return sendJson(res, 404, { error: "unknown macro" });
+        const ran = await runMacro(tile);
+        await hub.broadcast();
+        return sendJson(res, 200, { ok: true, id: tile.id, steps: ran });
+      }
+
+      // Only MAC addresses saved on a Wake tile can be woken; the phone never supplies one.
+      if (path === "/api/wake" && req.method === "POST") {
+        const body = await readJsonBody(req);
+        const tile = flattenTiles((await configStore.load()).tiles).find((t) => t.kind === "wake" && t.id === body.id);
+        if (!tile) return sendJson(res, 404, { error: "unknown wake tile" });
+        try {
+          const result = await (wakeSender || sendWake)(tile.mac);
+          return sendJson(res, 200, { ok: true, id: tile.id, ...result });
+        } catch {
+          return sendJson(res, 502, { error: "Could not send the wake signal from this PC's network." });
+        }
       }
 
       if (path === "/api/levels" && req.method === "GET") {
