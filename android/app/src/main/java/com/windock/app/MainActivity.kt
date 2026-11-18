@@ -10,6 +10,7 @@ import android.os.Build
 import android.window.OnBackInvokedCallback
 import android.window.OnBackInvokedDispatcher
 import android.view.View
+import android.view.WindowManager
 import android.view.MotionEvent
 import android.view.KeyEvent
 import android.view.Gravity
@@ -112,8 +113,15 @@ class MainActivity : Activity() {
         findViewById<Button>(R.id.app_updates).setOnClickListener { showUpdates() }
         setupRemoteKeyboard()
         WindowCompat.setDecorFitsSystemWindows(window, false)
+        // Let the dock draw behind the camera notch instead of letterboxing it.
+        if (Build.VERSION.SDK_INT >= 28) {
+            window.attributes = window.attributes.apply {
+                layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+            }
+        }
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.root)) { root, insets ->
-            val safe = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+            // No cutout padding: the web dock handles the notch via env(safe-area-inset-*).
+            val safe = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
             root.setPadding(safe.left, safe.top, safe.right, maxOf(safe.bottom, ime.bottom))
             insets
