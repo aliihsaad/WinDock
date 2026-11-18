@@ -58,7 +58,7 @@ internal object ApkUpdater {
     fun hex(bytes: ByteArray) = bytes.joinToString("") { "%02x".format(it) }
 
     /** GET following at most four redirects, each of which must stay on GitHub's own hosts. */
-    fun open(url: String): HttpURLConnection {
+    fun open(url: String, from: Long = 0): HttpURLConnection {
         var current = url
         repeat(5) {
             if (!allowed(current)) throw IOException("Unexpected download location")
@@ -67,13 +67,14 @@ internal object ApkUpdater {
             c.instanceFollowRedirects = false; c.useCaches = false
             c.setRequestProperty("User-Agent", "WinDock-Android/" + BuildConfig.VERSION_NAME)
             c.setRequestProperty("Cache-Control", "no-cache")
+            if (from > 0) c.setRequestProperty("Range", "bytes=$from-")
             val status = c.responseCode
             if (status in 300..399) {
                 val next = c.getHeaderField("Location")
                 c.disconnect()
                 if (next == null) throw IOException("Bad redirect")
                 current = URL(URL(current), next).toString()
-            } else if (status == 200) return c
+            } else if (status == 200 || (status == 206 && from > 0)) return c
             else { c.disconnect(); throw IOException("HTTP $status") }
         }
         throw IOException("Too many redirects")
@@ -95,31 +96,46 @@ internal object ApkUpdater {
         } finally { c.disconnect() }
     }
 
-    /** Downloads to [dest] and deletes it unless the SHA-256 matches the published feed. */
+    /**
+     * Downloads to [dest] and deletes it unless the SHA-256 matches the published feed.
+     * A stalled or dropped connection is retried up to four times, resuming where it stopped.
+     */
     fun download(release: ApkRelease, dest: File, cancelled: () -> Boolean, progress: (Int) -> Unit) {
-        val c = open(release.url)
+        dest.parentFile?.mkdirs()
+        val digest = MessageDigest.getInstance("SHA-256")
+        var read = 0L
+        var failures = 0
         try {
-            val total = c.contentLengthLong
-            if (total > MAX_APK_BYTES) throw IOException("Unexpectedly large update")
-            dest.parentFile?.mkdirs()
-            val digest = MessageDigest.getInstance("SHA-256")
-            var read = 0L
-            c.inputStream.use { input ->
-                dest.outputStream().use { out ->
-                    val buffer = ByteArray(16 * 1024)
-                    while (true) {
-                        if (cancelled()) throw InterruptedException()
-                        val n = input.read(buffer); if (n < 0) break
-                        read += n
-                        if (read > MAX_APK_BYTES) throw IOException("Unexpectedly large update")
-                        digest.update(buffer, 0, n); out.write(buffer, 0, n)
-                        if (total > 0) progress((read * 100 / total).toInt())
-                    }
+            while (true) {
+                try {
+                    val c = open(release.url, read)
+                    try {
+                        // A server that ignores Range sends the whole file again: start over.
+                        if (read > 0 && c.responseCode == 200) { read = 0; digest.reset() }
+                        val total = if (c.responseCode == 206) read + c.contentLengthLong else c.contentLengthLong
+                        if (total > MAX_APK_BYTES) throw SecurityException("Unexpectedly large update")
+                        c.inputStream.use { input ->
+                            java.io.FileOutputStream(dest, read > 0).use { out ->
+                                val buffer = ByteArray(16 * 1024)
+                                while (true) {
+                                    if (cancelled()) throw InterruptedException()
+                                    val n = input.read(buffer); if (n < 0) break
+                                    read += n
+                                    if (read > MAX_APK_BYTES) throw SecurityException("Unexpectedly large update")
+                                    digest.update(buffer, 0, n); out.write(buffer, 0, n)
+                                    if (total > 0) progress((read * 100 / total).toInt())
+                                }
+                            }
+                        }
+                    } finally { c.disconnect() }
+                    break
+                } catch (e: IOException) {
+                    if (++failures > 4 || cancelled()) throw e
+                    Thread.sleep(1_000L * failures)
                 }
             }
-            if (hex(digest.digest()) != release.sha256) { dest.delete(); throw SecurityException("checksum") }
+            if (hex(digest.digest()) != release.sha256) throw SecurityException("checksum")
         } catch (e: Exception) { dest.delete(); throw e }
-        finally { c.disconnect() }
     }
 }
 
