@@ -800,6 +800,22 @@ $("input-edge").addEventListener("click", openInputPad);
 document.addEventListener("windock-toast", (e) => notify(e.detail.message, e.detail.error));
 const statusBar = createStatusBar({ api, isReady: () => paired && online && !document.hidden, notify, buzz, storage: localStorage });
 statusBar.start();
+let castSeen = null;
+async function pollCast() {
+  if (!paired || !online || document.hidden) return;
+  try {
+    const cast = await api("/api/cast");
+    if (castSeen === null) { castSeen = cast.id; return; } // what was sent before we looked is not ours to play
+    if (cast.id === castSeen) return;
+    castSeen = cast.id;
+    if (cast.url && cast.ageMs < 120000) {
+      buzz(15);
+      if (typeof window.WinDockAndroid?.openYoutube === "function") window.WinDockAndroid.openYoutube(cast.url);
+      else notify("Your PC sent a YouTube video. Open Mini player → YouTube to watch it.");
+    }
+  } catch { /* the next poll retries */ }
+}
+setInterval(pollCast, 3000);
 const miniPlayer = createMiniPlayer({ api, notify, secure: nativeTransport && location.protocol === "https:" });
 const openBench = () => { $("drawer").close(); statusBar.refresh(); $("status-toggle").checked = statusBar.enabled(); if (!$("bench").open) $("bench").showModal(); };
 $("drawer-bench").addEventListener("click", openBench);

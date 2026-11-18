@@ -23,6 +23,7 @@ import { secureSessionStore } from "./src/secure-sessions.js";
 import { pairingInvites } from "./src/pairing-invites.js";
 import { networkSetup } from "./src/network-setup.js";
 import { createUpdateService } from "./src/updates.js";
+import { parseYouTube } from "./public/mini-player.js";
 import { createRenderWatch } from "./src/render-watch.js";
 import { versionedSave } from "./src/versioned-save.js";
 import { defaultVideoRoots, listVideos, streamVideo, isVideoRootId } from "./src/videos.js";
@@ -213,6 +214,8 @@ export async function createApp({
 
   // One macro at a time: overlapping runs would interleave their launches and levels.
   let macroRunning = false, statsCache = null;
+  // Last video sent from the PC. The phone picks it up once and never replays an old one.
+  let cast = { id: 0, url: "", at: 0 };
   // PowerShell is costly; phones poll, so every caller shares one reading for a few seconds.
   const readStats = () => {
     if (!statsCache || Date.now() - statsCache.at > 4000) statsCache = { at: Date.now(), value: provider.systemStats().catch(() => ({})) };
@@ -296,6 +299,20 @@ export async function createApp({
         res.writeHead(200,{"content-type":MIME[".html"],"cache-control":"no-store","x-frame-options":"DENY",
           "content-security-policy":"default-src 'self'; script-src 'self'; style-src 'self'; frame-ancestors 'none'; base-uri 'none'"});
         return res.end(body);
+      }
+      if (path === "/cast" || path === "/cast.html") {
+        if (!local) return sendJson(res, 403, { error: "Open Send to phone on the computer itself." });
+        res.writeHead(200, { "content-type": MIME[".html"], "cache-control": "no-store", "x-frame-options": "DENY", "referrer-policy": "no-referrer",
+          "content-security-policy": "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'" });
+        return res.end(await readFile(join(PUBLIC_DIR, "cast.html")));
+      }
+      if (path === "/api/cast/send" && req.method === "POST") {
+        if (!local || !sameOrigin(req) || req.headers["x-windock-cast"] !== "local") return sendJson(res, 403, { error: "Send from the computer itself." });
+        const body = await readJsonBody(req);
+        const watch = Object.keys(body).length === 1 && typeof body.url === "string" ? parseYouTube(body.url) : null;
+        if (!watch) return sendJson(res, 400, { error: "Drop a YouTube video link." });
+        cast = { id: cast.id + 1, url: watch, at: Date.now() };
+        return sendJson(res, 200, { ok: true });
       }
       if (path.startsWith("/api/transfers/local")) {
         if (!local || !sameOrigin(req) || req.headers["x-windock-files"] !== "local") return sendJson(res,403,{error:"Change receive settings on the computer."});
@@ -614,6 +631,7 @@ export async function createApp({
         return sendJson(res, 200, await readStats());
       }
 
+      if (path === "/api/cast" && req.method === "GET") return sendJson(res, 200, { id: cast.id, url: cast.url, ageMs: cast.id ? Date.now() - cast.at : null });
       if (path === "/api/render-watch" && req.method === "GET") return sendJson(res, 200, renderWatch.state());
       if (path === "/api/render-watch" && req.method === "POST") {
         const body = await readJsonBody(req);

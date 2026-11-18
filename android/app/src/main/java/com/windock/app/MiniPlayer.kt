@@ -30,6 +30,18 @@ object MiniPlayerPolicy {
         return ID.matches(v)
     }
 
+    fun videoId(url: String?): String? {
+        if (!isPlayable(url)) return null
+        return java.net.URI(url!!).rawQuery!!.split("&").first { it.startsWith("v=") }.substring(2)
+    }
+
+    /** Just the player: a bare page whose only content is YouTube's embedded video. */
+    fun embedHtml(id: String): String {
+        require(ID.matches(id))
+        return "<!doctype html><html><head><meta name=viewport content=\"width=device-width,initial-scale=1\"><style>html,body{margin:0;height:100%;background:#000;overflow:hidden}iframe{border:0;width:100%;height:100%}</style></head><body>" +
+            "<iframe src=\"https://www.youtube-nocookie.com/embed/$id?autoplay=1&playsinline=1&rel=0&modestbranding=1\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe></body></html>"
+    }
+
     /** Pages inside the player may only move around on YouTube/Google hosts over https. */
     fun mayNavigate(scheme: String?, host: String?): Boolean =
         scheme == "https" && host != null && NAVIGABLE.matches(host.lowercase())
@@ -46,7 +58,7 @@ class MiniPlayer(private val activity: Activity) {
 
     @SuppressLint("SetJavaScriptEnabled")
     fun open(url: String) {
-        if (!MiniPlayerPolicy.isPlayable(url)) return
+        val id = MiniPlayerPolicy.videoId(url) ?: return
         close()
         val density = activity.resources.displayMetrics.density
         fun dp(v: Int) = (v * density).toInt()
@@ -62,6 +74,7 @@ class MiniPlayer(private val activity: Activity) {
                     !MiniPlayerPolicy.mayNavigate(r.url.scheme, r.url.host)
             }
             setBackgroundColor(Color.BLACK)
+            settings.setSupportMultipleWindows(false)
         }
         fun button(label: String, onTap: () -> Unit) = TextView(activity).apply {
             text = label; setTextColor(Color.WHITE); textSize = 16f; gravity = Gravity.CENTER
@@ -95,7 +108,8 @@ class MiniPlayer(private val activity: Activity) {
         }
         activity.addContentView(box, FrameLayout.LayoutParams(dp(300), dp(190), Gravity.BOTTOM or Gravity.END).apply { setMargins(dp(12), dp(12), dp(12), dp(12)) })
         root = box; web = view; large = false
-        view.loadUrl(url)
+        // The embed page, not youtube.com itself, so there is no search bar, feed or "Open App" banner.
+        view.loadDataWithBaseURL("https://www.youtube.com", MiniPlayerPolicy.embedHtml(id), "text/html", "utf-8", null)
     }
 
     private fun toggleSize(view: WebView) {

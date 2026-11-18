@@ -82,6 +82,17 @@ try {
   t.equal((await call("/api/render-watch", { method: "POST", body: { action: "notify", extra: 1 } })).status, 400, "unknown fields rejected");
   t.equal((await call("/api/versioned-save", { method: "POST", body: {} })).json.name, "scene_v002.blend", "versioned save runs");
   t.equal(saves.length, 1, "saver got running windows");
+  // PC -> phone cast: only the local PC may send, only YouTube links are accepted.
+  const castHeaders = { "x-windock-cast": "local" };
+  t.equal((await call("/api/cast")).json.id, 0, "nothing cast yet");
+  t.equal((await call("/api/cast/send", { method: "POST", body: { url: "https://youtu.be/dQw4w9WgXcQ" } })).status, 403, "send needs the local header");
+  t.equal((await call("/api/cast/send", { method: "POST", headers: castHeaders, body: { url: "https://evil.com/watch?v=dQw4w9WgXcQ" } })).status, 400, "non-YouTube link refused");
+  t.equal((await call("/api/cast/send", { method: "POST", headers: castHeaders, body: { url: "https://youtu.be/dQw4w9WgXcQ", extra: 1 } })).status, 400, "extra fields refused");
+  t.equal((await call("/api/cast/send", { method: "POST", headers: castHeaders, body: { url: "https://youtu.be/dQw4w9WgXcQ" } })).status, 200, "local PC can send a YouTube link");
+  const got = (await call("/api/cast")).json;
+  t.deepEqual([got.id, got.url, got.ageMs < 5000], [1, "https://m.youtube.com/watch?v=dQw4w9WgXcQ", true], "phone sees the normalised link once");
+  t.equal((await call("/api/cast", { auth: false })).status, 401, "unpaired client cannot read the cast");
+  t.equal((await call("/cast")).status, 200, "send-to-phone page opens on the PC");
 } finally {
   app.hub.close(); app.inputHub.close(); app.server.closeAllConnections();
   await new Promise((r) => app.server.close(r));

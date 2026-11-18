@@ -22,4 +22,11 @@ class MiniPlayerPolicyTest {
         assertFalse(MiniPlayerPolicy.mayNavigate("https", "youtube.com.evil.com"))
         assertFalse(MiniPlayerPolicy.mayNavigate("https", null))
     }
+    @Test fun embedPageHoldsOnlyTheVideo() {
+        assertTrue(MiniPlayerPolicy.videoId("https://m.youtube.com/watch?v=dQw4w9WgXcQ") == "dQw4w9WgXcQ")
+        val html = MiniPlayerPolicy.embedHtml("dQw4w9WgXcQ")
+        assertTrue(html.contains("youtube-nocookie.com/embed/dQw4w9WgXcQ"))
+        assertFalse(html.contains("<script"))
+        assertTrue(MiniPlayerPolicy.videoId("https://evil.com/watch?v=dQw4w9WgXcQ") == null)
+    }
 }
