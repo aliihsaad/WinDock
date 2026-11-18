@@ -1,6 +1,7 @@
-import { renderNowPlaying, renderControlPicker, renderAppIcon, renderPowerControls, escapeHtml } from "./dock.js";
+import { renderNowPlaying, renderControlPicker, renderAppIcon, renderPowerControls, renderTile, escapeHtml } from "./dock.js";
 import { icon, controlIcon } from "./icons.js";
-import { addAppTile, addControlTile, removeTile, moveTile, toWireTiles, availableControls, tileKey } from "./tiles.js";
+import { addAppTile, addControlTile, addMacroTile, addWakeTile, groupTiles, ungroupTile, removeFromGroup, removeTile, moveTile, toWireTiles, availableControls, tileKey, CONTROL_CATALOG } from "./tiles.js";
+import { buzz, hapticsEnabled, setHaptics } from "./haptics.js";
 import { normalizeLayout, renderPages, pageCount, moveToTile } from "./launcher.js";
 import { createInputPad } from "./input-pad.js";
 import { pairingError } from "./pairing.js";
@@ -204,7 +205,9 @@ function showPageHint() {
 }
 function paint() {
   const running = new Set(state.running.map((app) => app.id));
-  const view = { ...state, tiles: state.tiles.map((tile) => tile.kind === "app" ? { ...tile, running: running.has(tile.id) } : tile) };
+  const markRunning = (tile) => tile.kind === "app" ? { ...tile, running: running.has(tile.id) }
+    : tile.kind === "group" ? { ...tile, items: tile.items.map(markRunning) } : tile;
+  const view = { ...state, tiles: state.tiles.map(markRunning) };
   const pages = pageCount(state.tiles, layout);
   currentPage = Math.min(currentPage, pages - 1);
   $("dock").innerHTML = renderPages(view, layout, editing);
@@ -221,6 +224,7 @@ function paint() {
   $("edit").setAttribute("aria-pressed", String(editing));
   $("edit").setAttribute("aria-label", editing ? "Done editing" : "Edit dock");
   $("edit").innerHTML = icon(editing ? "check" : "edit") + "<span>" + (editing ? "Done" : "Edit") + "</span>";
+  if ($("group-view").open) drawGroup();
   $("page-dots").innerHTML = Array.from({ length: pages }, (_, i) => '<button class="page-dot" type="button" data-page="' + i + '" aria-label="Go to page ' + (i + 1) + '"' + (i === currentPage ? ' aria-current="page"' : "") + '></button>').join("");
 }
 function pageTo(page, smooth = true) {
@@ -293,10 +297,33 @@ function confirmPower(verb) {
     dialog.showModal();
   });
 }
+const allTiles = () => state.tiles.flatMap((tile) => tile.kind === "group" ? [tile, ...tile.items] : [tile]);
+let openGroupKey = "";
+function drawGroup() {
+  const group = state.tiles.find((tile) => tile.kind === "group" && tile.id === openGroupKey);
+  if (!group) { if ($("group-view").open) $("group-view").close(); return; }
+  $("group-title").textContent = group.label;
+  $("group-hint").textContent = editing ? "Tap a tile to take it out of this folder." : "";
+  $("group-grid").innerHTML = group.items.map((item) => renderTile(item, { launcher: true })).join("");
+}
+function openGroup(key) {
+  openGroupKey = key;
+  drawGroup();
+  if (state.tiles.some((tile) => tile.id === key) && !$("group-view").open) $("group-view").showModal();
+}
 async function activate(button) {
+  if (editing && button.closest("#group-view") && button.dataset.tileKey) {
+    try { await commitTiles(removeFromGroup(state.tiles, openGroupKey, button.dataset.tileKey)); notify("Moved out of the folder"); }
+    catch (error) { report(error); }
+    return;
+  }
   if (editing && button.dataset.tileKey) return openTileOptions(button.dataset.tileKey);
-  if (!online) return notify("Your PC is disconnected. Wait for it to reconnect.", true);
   const { action, key } = button.dataset;
+  if (action === "group") { buzz(10); return openGroup(key); }
+  // The folder redraws while the request is in flight, which detaches this button.
+  const fromFolder = Boolean(button.closest("#group-view"));
+  if (!online) return notify("Your PC is disconnected. Wait for it to reconnect.", true);
+  buzz(10);
   if (action === "control" && powerActions[key] && !await confirmPower(key)) return;
   button.disabled = true;
   button.setAttribute("aria-busy", "true");
@@ -310,10 +337,18 @@ async function activate(button) {
       } else notify(powerActions[key] ? "Command sent to your PC" : "Control sent");
     } else if (action === "launch") {
       const running = state.running.find((item) => item.id === key);
-      const title = state.tiles.find((item) => item.id === key)?.label || "App";
+      const title = allTiles().find((item) => item.id === key)?.label || "App";
       await api(running ? "/api/apps/focus" : "/api/apps/launch", { method: "POST", body: JSON.stringify(running ? { pid: running.pid, id: running.id } : { id: key }) });
       notify((running ? "Brought forward: " : "Opened: ") + title);
+    } else if (action === "macro") {
+      const title = allTiles().find((item) => item.id === key)?.label || "Macro";
+      await api("/api/macros/run", { method: "POST", body: JSON.stringify({ id: key }) });
+      notify(title + " finished");
+    } else if (action === "wake") {
+      await api("/api/wake", { method: "POST", body: JSON.stringify({ id: key }) });
+      notify("Wake signal sent. The PC can take a minute to start.");
     }
+    if (action !== "control" && fromFolder) $("group-view").close();
   } catch (error) { report(error); }
   finally { button.disabled = false; button.removeAttribute("aria-busy"); }
 }
@@ -323,7 +358,9 @@ function openTileOptions(key) {
   const tile = state.tiles[index];
   if (!tile) return;
   $("tile-options-title").textContent = tile.label;
-  $("tile-options-icon").innerHTML = tile.kind === "app" ? renderAppIcon(tile) : controlIcon(tile.verb);
+  const kindIcon = { macro: "bolt", wake: "wake", group: "group" }[tile.kind];
+  $("tile-options-icon").innerHTML = tile.kind === "app" ? renderAppIcon(tile) : kindIcon ? icon(kindIcon) : controlIcon(tile.verb);
+  $("tile-ungroup").hidden = tile.kind !== "group";
   $("tile-earlier").disabled = index === 0;
   $("tile-later").disabled = index === state.tiles.length - 1;
   $("tile-options").showModal();
@@ -340,23 +377,45 @@ function drawControls() {
   $("control-list").innerHTML = renderControlPicker(groups);
   $("picker-status").textContent = "Pin the controls you reach for most";
 }
+const PICKER_TABS = {
+  apps: ["tab-apps", "picker-list"], folders: ["tab-folders", "folder-panel"], controls: ["tab-controls", "control-list"],
+  links: ["tab-links", "link-panel"], macros: ["tab-macros", "macro-panel"], groups: ["tab-groups", "group-panel"], wake: ["tab-wake", "wake-panel"],
+};
+let macroDraft = [];
+function macroChoices(kind) {
+  if (kind === "app") return installedApps.filter((app) => !["folder", "link"].includes(app.source)).map((app) => ({ value: app.id, label: app.name }));
+  if (kind === "control") return CONTROL_CATALOG.filter((group) => group.group !== "Power").flatMap((group) => group.items)
+    .filter((item) => state.verbs.includes(item.verb)).map((item) => ({ value: item.verb + (item.value == null ? "" : ":" + item.value), label: item.label }));
+  return [1, 2, 3, 5].map((sec) => ({ value: String(sec * 1000), label: sec + (sec === 1 ? " second" : " seconds") }));
+}
+function drawMacroChoices() {
+  const choices = macroChoices($("macro-kind").value);
+  $("macro-choice").innerHTML = choices.length ? choices.map((c) => '<option value="' + escapeHtml(c.value) + '">' + escapeHtml(c.label) + "</option>").join("") : '<option value="">Nothing available yet</option>';
+}
+function drawMacroSteps() {
+  $("macro-steps").innerHTML = macroDraft.map((step, i) => "<li><span>" + escapeHtml(step.type === "wait" ? "Wait " + step.ms / 1000 + " s" : step.label) + '</span><button type="button" data-remove-step="' + i + '" aria-label="Remove step ' + (i + 1) + '">Remove</button></li>').join("");
+  $("macro-status").textContent = macroDraft.length ? macroDraft.length + " step" + (macroDraft.length === 1 ? "" : "s") + ". Steps run in order." : "Add at least one step.";
+}
+function drawGroupChoices() {
+  const eligible = state.tiles.filter((tile) => tile.kind !== "group");
+  $("group-choices").innerHTML = eligible.length ? eligible.map((tile) => '<li><label class="group-choice"><input type="checkbox" value="' + escapeHtml(tileKey(tile)) + '"><span>' + escapeHtml(tile.label) + "</span></label></li>").join("") : '<li class="picker__empty">Pin some apps or controls first.</li>';
+}
 function selectTab(which) {
-  const apps = which === "apps";
-  const folders = which === "folders";
-  for (const [id, active] of [["tab-apps", apps], ["tab-folders", folders], ["tab-controls", which === "controls"], ["tab-links", which === "links"]]) {
-    $(id).classList.toggle("is-active", active);
-    $(id).setAttribute("aria-selected", String(active));
-    $(id).tabIndex = active ? 0 : -1;
+  for (const [name, [tab, panel]] of Object.entries(PICKER_TABS)) {
+    const active = name === which;
+    $(tab).classList.toggle("is-active", active);
+    $(tab).setAttribute("aria-selected", String(active));
+    $(tab).tabIndex = active ? 0 : -1;
+    $(panel).hidden = !active;
   }
-  $("picker-list").hidden = !apps;
-  $("control-list").hidden = which !== "controls";
-  $("folder-panel").hidden = !folders;
-  $("link-panel").hidden = which !== "links";
-  $("picker-search").hidden = !apps;
-  if (apps && appsLoaded) drawApps();
-  else if (folders) $("picker-status").textContent = "Pin a folder from your PC";
+  $("picker-search").hidden = which !== "apps";
+  if (which === "apps") { if (appsLoaded) drawApps(); }
+  else if (which === "folders") $("picker-status").textContent = "Pin a folder from your PC";
   else if (which === "links") $("picker-status").textContent = "Pin a website to open on your PC";
-  else if (!apps) drawControls();
+  else if (which === "macros") { $("picker-status").textContent = "Build a tile that runs several actions"; drawMacroChoices(); drawMacroSteps(); }
+  else if (which === "groups") { $("picker-status").textContent = "Group tiles into a folder"; drawGroupChoices(); }
+  else if (which === "wake") $("picker-status").textContent = "Turn on another PC from your dock";
+  else drawControls();
 }
 async function openPicker() {
   $("tab-folders").hidden = state.canPickFolders !== true;
@@ -369,6 +428,7 @@ async function openPicker() {
     const { apps } = await api("/api/apps/installed");
     installedApps = apps; appsLoaded = true;
     if ($("tab-apps").getAttribute("aria-selected") === "true") drawApps();
+    if ($("tab-macros").getAttribute("aria-selected") === "true") drawMacroChoices();
   } catch (error) { $("picker-status").textContent = "Couldn’t load apps. Close the library and try again."; report(error); }
 }
 function openSettings() {
@@ -434,7 +494,7 @@ $("dock").addEventListener("pointerdown", (event) => {
   if (state.tiles.length && !editing) gesture.holdTimer = setTimeout(() => {
     if (!gesture) return;
     gesture.held = true; suppressClickUntil = Date.now() + 600;
-    enterEditing(); navigator.vibrate?.(18);
+    enterEditing(); buzz(18);
   }, 450);
 });
 $("dock").addEventListener("touchmove", (event) => {
@@ -450,7 +510,7 @@ document.addEventListener("pointermove", (event) => {
   if (!gesture.key || Math.hypot(dx, dy) < 9 && !gesture.dragging) return;
   event.preventDefault();
   if (!gesture.dragging) {
-    gesture.dragging = true;
+    gesture.dragging = true; buzz(8);
     const original = Array.from($("dock").querySelectorAll("[data-tile-key]")).find((el) => el.dataset.tileKey === gesture.key);
     if (!original) return cleanupGesture(true);
     const bounds = original.getBoundingClientRect();
@@ -544,6 +604,9 @@ $("picker-close").addEventListener("click", () => $("picker").close());
 $("tab-apps").addEventListener("click", () => selectTab("apps"));
 $("tab-folders").addEventListener("click", () => selectTab("folders"));
 $("tab-controls").addEventListener("click", () => selectTab("controls"));
+$("tab-macros").addEventListener("click", () => selectTab("macros"));
+$("tab-groups").addEventListener("click", () => selectTab("groups"));
+$("tab-wake").addEventListener("click", () => selectTab("wake"));
 $("folder-pick").addEventListener("click", async () => {
   if (!online || saving) return notify("Wait for your PC to reconnect or your last change to finish.", true);
   if (state.tiles.length >= 64) return notify("Your dock is full. Remove a tile before adding another.", true);
@@ -567,6 +630,71 @@ $("folder-pick").addEventListener("click", async () => {
   finally { button.disabled = false; button.removeAttribute("aria-busy"); }
 });
 $("tab-links").addEventListener("click", () => selectTab("links"));
+$("macro-kind").addEventListener("change", drawMacroChoices);
+$("macro-add-step").addEventListener("click", () => {
+  const kind = $("macro-kind").value, raw = $("macro-choice").value;
+  if (!raw) return;
+  const label = $("macro-choice").selectedOptions[0]?.textContent || raw;
+  if (macroDraft.length >= 12) return notify("A macro can have up to 12 steps.", true);
+  let step;
+  if (kind === "app") step = { type: "app", id: raw, label };
+  else if (kind === "control") {
+    const [verb, value] = raw.split(":");
+    step = value === undefined ? { type: "control", verb, label } : { type: "control", verb, value: Number(value), label };
+  } else {
+    step = { type: "wait", ms: Number(raw) };
+    if (macroDraft.reduce((sum, s) => sum + (s.type === "wait" ? s.ms : 0), 0) + step.ms > 15000) return notify("Waits in one macro can total up to 15 seconds.", true);
+  }
+  macroDraft.push(step);
+  drawMacroSteps();
+});
+$("macro-steps").addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-remove-step]");
+  if (!button) return;
+  macroDraft.splice(Number(button.dataset.removeStep), 1);
+  drawMacroSteps();
+});
+$("macro-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (saving) return;
+  if (!macroDraft.length) return notify("Add at least one step first.", true);
+  if (state.tiles.length >= 64) return notify("Your dock is full. Remove a tile before adding another.", true);
+  try {
+    await commitTiles(addMacroTile(state.tiles, $("macro-name").value, macroDraft));
+    macroDraft = []; $("macro-name").value = ""; drawMacroSteps();
+    notify("Macro added to your dock");
+  } catch (error) { report(error); }
+});
+$("group-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (saving) return;
+  const keys = [...$("group-choices").querySelectorAll("input:checked")].map((box) => box.value);
+  if (!keys.length) return notify("Choose at least one tile for the folder.", true);
+  try {
+    await commitTiles(groupTiles(state.tiles, keys, $("group-name").value));
+    $("group-name").value = ""; drawGroupChoices();
+    notify("Folder added to your dock");
+  } catch (error) { report(error); }
+});
+$("wake-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (saving) return;
+  if (state.tiles.length >= 64) return notify("Your dock is full. Remove a tile before adding another.", true);
+  const next = addWakeTile(state.tiles, $("wake-name").value, $("wake-mac").value);
+  if (next.length === state.tiles.length) return notify("Enter a valid MAC address, like AA:BB:CC:DD:EE:FF, that is not already on your dock.", true);
+  try {
+    await commitTiles(next);
+    $("wake-name").value = ""; $("wake-mac").value = "";
+    notify("Wake tile added to your dock");
+  } catch (error) { report(error); }
+});
+$("tile-ungroup").addEventListener("click", async () => {
+  $("tile-options").close();
+  try { await commitTiles(ungroupTile(state.tiles, selectedKey)); notify("Folder dissolved"); }
+  catch (error) { report(error); }
+});
+$("haptics").checked = hapticsEnabled();
+$("haptics").addEventListener("change", (event) => { setHaptics(event.target.checked); if (event.target.checked) buzz(20); });
 $("link-form").addEventListener("submit", async event => {
   event.preventDefault();
   const button = $("link-add"), status = $("link-status");
@@ -591,7 +719,7 @@ $("link-form").addEventListener("submit", async event => {
 document.querySelector(".picker__tabs").addEventListener("keydown", (event) => {
   if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
   event.preventDefault();
-  const tabs = ["apps", "folders", "controls", "links"].filter(name => !$("tab-" + name).hidden);
+  const tabs = ["apps", "folders", "controls", "links", "macros", "groups", "wake"].filter(name => !$("tab-" + name).hidden);
   const current = tabs.findIndex(name => $("tab-" + name).getAttribute("aria-selected") === "true");
   const index = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1
     : (current + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;

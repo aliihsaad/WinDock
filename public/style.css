@@ -731,3 +731,20 @@ html.perf .touchpad-feedback > span::before, html.perf .touchpad-feedback > span
 .updates-content .settings__utilities { flex-wrap: wrap; }
 .updates-content a { text-decoration: none; }
 @media (max-width: 650px) { .drawer-actions { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+
+/* Macros, dock folders and wake tiles */
+.macro-steps { display: grid; gap: 8px; margin: 4px 0; padding: 0; list-style: none; counter-reset: step; }
+.macro-steps li { counter-increment: step; display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 12px; background: var(--surface); font-size: 13px; }
+.macro-steps li::before { content: counter(step); display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #88e9c433; color: #88e9c4; font-size: 12px; }
+.macro-steps li span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.macro-steps button { min-height: 36px; padding: 4px 10px; border: 0; border-radius: 10px; background: transparent; color: var(--muted); font: inherit; }
+.group-choices { display: grid; gap: 6px; max-height: 38vh; margin: 4px 0; padding: 0; overflow-y: auto; list-style: none; }
+.group-choice { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 6px 10px; border-radius: 12px; background: var(--surface); font-size: 14px; }
+.group-choice input { width: 20px; height: 20px; flex: none; }
+.group-view { width: min(92vw, 560px); }
+.group-view p:empty { display: none; }
+.group-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 12px; margin: 14px 0; }
+.group-grid .tile { min-height: 112px; }
+/* Names are always shown inside a folder, where icons alone are ambiguous. */
+body.is-immersive .group-grid .tile { gap: 7px; }
+body.is-immersive .group-grid .tile__label { display: block; font-size: 12px; text-align: center; }

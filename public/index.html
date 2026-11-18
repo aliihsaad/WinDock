@@ -154,6 +154,9 @@
     <button id="tab-folders" class="picker__tab" type="button" role="tab" aria-selected="false" aria-controls="folder-panel" tabindex="-1" hidden>Folders</button>
     <button id="tab-controls" class="picker__tab" type="button" role="tab" aria-selected="false" aria-controls="control-list" tabindex="-1">Controls</button>
     <button id="tab-links" class="picker__tab" type="button" role="tab" aria-selected="false" aria-controls="link-panel" tabindex="-1" hidden>Links</button>
+    <button id="tab-macros" class="picker__tab" type="button" role="tab" aria-selected="false" aria-controls="macro-panel" tabindex="-1">Macros</button>
+    <button id="tab-groups" class="picker__tab" type="button" role="tab" aria-selected="false" aria-controls="group-panel" tabindex="-1">Folders</button>
+    <button id="tab-wake" class="picker__tab" type="button" role="tab" aria-selected="false" aria-controls="wake-panel" tabindex="-1">Wake</button>
   </div><label id="picker-search" class="search-box"><span data-icon="search"></span><input id="filter" placeholder="Find an app…" aria-label="Search apps" autocomplete="off"></label></div>
   <p id="picker-status" class="picker__status" role="status">Loading your apps…</p>
   <ul id="picker-list" class="picker__list" role="tabpanel" aria-labelledby="tab-apps"></ul>
@@ -175,6 +178,44 @@
       <button id="link-add" class="button button--primary" type="submit">Add link</button>
     </form>
     <p id="link-status" role="status">Use an http:// or https:// address.</p>
+  </section>
+  <section id="macro-panel" class="folder-picker" role="tabpanel" aria-labelledby="tab-macros" hidden>
+    <h3>One tap, several actions.</h3>
+    <p>Chain apps, volume and media into a single tile. Steps run in order. Power actions are not allowed in macros.</p>
+    <form id="macro-form" class="link-form">
+      <label for="macro-name">Name</label>
+      <input id="macro-name" maxlength="40" placeholder="Study mode" autocomplete="off">
+      <label for="macro-kind">Add a step</label>
+      <select id="macro-kind" data-native aria-label="Step type"><option value="app">Open an app</option><option value="control">Volume or media</option><option value="wait">Wait</option></select>
+      <select id="macro-choice" data-native aria-label="Step choice"></select>
+      <button id="macro-add-step" class="button" type="button">Add step</button>
+      <ol id="macro-steps" class="macro-steps" aria-label="Macro steps"></ol>
+      <button id="macro-save" class="button button--primary" type="submit">Save macro</button>
+    </form>
+    <p id="macro-status" role="status">Add at least one step.</p>
+  </section>
+  <section id="group-panel" class="folder-picker" role="tabpanel" aria-labelledby="tab-groups" hidden>
+    <h3>Tidy your dock.</h3>
+    <p>Put several tiles into one folder tile. Tap the folder to open it.</p>
+    <form id="group-form" class="link-form">
+      <label for="group-name">Folder name</label>
+      <input id="group-name" maxlength="40" placeholder="Work" autocomplete="off">
+      <ul id="group-choices" class="group-choices"></ul>
+      <button id="group-save" class="button button--primary" type="submit">Make folder</button>
+    </form>
+    <p id="group-status" role="status">Choose the tiles to put inside.</p>
+  </section>
+  <section id="wake-panel" class="folder-picker" role="tabpanel" aria-labelledby="tab-wake" hidden>
+    <h3>Wake another PC.</h3>
+    <p>Turn on a sleeping or shut-down computer on the same network. It needs Wake-on-LAN switched on in its BIOS and network adapter, and a wired connection works best. This PC sends the signal, so it must be on.</p>
+    <form id="wake-form" class="link-form">
+      <label for="wake-name">Name <span>(optional)</span></label>
+      <input id="wake-name" maxlength="40" placeholder="Desk PC" autocomplete="off">
+      <label for="wake-mac">MAC address of that PC</label>
+      <input id="wake-mac" maxlength="17" placeholder="AA:BB:CC:DD:EE:FF" required autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="wake-status">
+      <button id="wake-add" class="button button--primary" type="submit">Add wake tile</button>
+    </form>
+    <p id="wake-status" role="status">On that PC, open Command Prompt, run ipconfig /all and copy the Physical Address of its network adapter.</p>
   </section>
 </dialog>
 
@@ -202,6 +243,7 @@
       </div>
       <label class="setting-row">Immersive mode<input id="immersive" class="switch" type="checkbox" role="switch" checked></label>
       <label class="setting-row">App names<input id="show-labels" class="switch" type="checkbox" role="switch"></label>
+      <label class="setting-row">Vibrate on tap<input id="haptics" class="switch" type="checkbox" role="switch" checked></label>
       <p class="settings__tip">Hold to arrange. Swipe up for the drawer; down for quick controls.</p>
     </section>
     <section class="settings__card"><h3>Appearance</h3>
@@ -261,9 +303,16 @@
   <div id="power-controls-grid" class="controls-grid"></div>
 </dialog>
 
+<dialog id="group-view" class="options group-view" aria-labelledby="group-title"><div class="dialog-scroll">
+  <h2 id="group-title">Folder</h2>
+  <p id="group-hint"></p>
+  <div id="group-grid" class="group-grid"></div>
+  <button class="button options__done" type="button" data-close="group-view">Done</button>
+</div></dialog>
+
 <dialog id="tile-options" class="options" aria-labelledby="tile-options-title"><div class="dialog-scroll">
   <span id="tile-options-icon" class="options__icon"></span><h2 id="tile-options-title">App options</h2><p>Make a little room. Keep it in reach.</p>
-  <div class="options__actions"><button id="tile-earlier" type="button"><span data-icon="left"></span>Move earlier</button><button id="tile-later" type="button"><span data-icon="right"></span>Move later</button><button id="tile-remove" class="danger-text" type="button"><span data-icon="trash"></span>Remove from dock</button></div>
+  <div class="options__actions"><button id="tile-earlier" type="button"><span data-icon="left"></span>Move earlier</button><button id="tile-later" type="button"><span data-icon="right"></span>Move later</button><button id="tile-ungroup" type="button" hidden><span data-icon="group"></span>Ungroup folder</button><button id="tile-remove" class="danger-text" type="button"><span data-icon="trash"></span>Remove from dock</button></div>
   <button class="button options__done" type="button" data-close="tile-options">Done</button>
 </div></dialog>
 

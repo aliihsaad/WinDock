@@ -5,6 +5,7 @@ import { createChecker } from "./lib/assert.mjs";
 import { normalizeMac, magicPacket, broadcastAddresses, sendWake } from "../src/wake.js";
 import { normalizeTiles, normalizeTile, createConfigStore, flattenTiles, MAX_MACRO_STEPS } from "../src/config.js";
 import { addAppTile, addMacroTile, addWakeTile, groupTiles, ungroupTile, removeFromGroup, toWireTiles, tileKey } from "../public/tiles.js";
+import { buzz, hapticsEnabled } from "../public/haptics.js";
 import { createApp } from "../server.js";
 
 const t = createChecker("upgrades");
@@ -70,6 +71,16 @@ t.deepEqual(partly.map(tileKey).slice(0, 2), ["group:work01", "app:calc"], "tile
 const emptied = removeFromGroup(removeFromGroup(grouped, "group:work01", "app:calc"), "group:work01", "app:notes");
 t.ok(!emptied.some((x) => x.kind === "group"), "emptied folder disappears");
 t.equal(groupTiles(tiles, ["nothing"], "X").length, tiles.length, "grouping nothing changes nothing");
+
+// ---- Haptics -----------------------------------------------------------------
+const pulses = [];
+const on = { getItem: () => null }, off = { getItem: () => "off" };
+t.equal(hapticsEnabled(on), true, "haptics default to on");
+t.equal(hapticsEnabled(off), false, "haptics can be turned off");
+t.equal(buzz(12, { storage: on, vibrate: (p) => pulses.push(p) }), true, "buzz vibrates when enabled");
+t.equal(buzz(12, { storage: off, vibrate: (p) => pulses.push(p) }), false, "buzz stays silent when disabled");
+t.deepEqual(pulses, [12], "only the enabled buzz reached the device");
+t.equal(buzz(5, { storage: on, vibrate: () => { throw new Error("no motor"); } }), false, "a failing vibrator never throws");
 
 // ---- Host API ----------------------------------------------------------------
 const dir = await mkdtemp(join(tmpdir(), "windock-upgrades-"));
