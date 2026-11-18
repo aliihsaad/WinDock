@@ -748,3 +748,10 @@ html.perf .touchpad-feedback > span::before, html.perf .touchpad-feedback > span
 /* Names are always shown inside a folder, where icons alone are ambiguous. */
 body.is-immersive .group-grid .tile { gap: 7px; }
 body.is-immersive .group-grid .tile__label { display: block; font-size: 12px; text-align: center; }
+
+.windows-list { display: grid; gap: 8px; margin: 12px 0; padding: 0; list-style: none; max-height: 48vh; overflow-y: auto; }
+.windows-list li { display: flex; gap: 8px; align-items: stretch; }
+.window-row { flex: 1; min-width: 0; min-height: 48px; padding: 8px 14px; border: 0; border-radius: 14px; background: var(--surface); color: var(--text); font: inherit; text-align: left; display: grid; gap: 2px; }
+.window-row__title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.window-row small { color: var(--muted); font-size: 11px; }
+.window-close { width: 48px; flex: none; border: 0; border-radius: 14px; background: var(--surface); color: var(--muted); display: grid; place-items: center; }

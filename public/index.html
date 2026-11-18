@@ -59,6 +59,7 @@
   <div class="drawer-actions">
     <button id="drawer-apps" type="button"><span data-icon="plus"></span><span>Apps</span></button>
     <button id="drawer-settings" type="button"><span data-icon="sun"></span><span>Appearance</span></button>
+    <button id="drawer-windows" type="button"><span data-icon="monitor"></span><span>Windows</span></button>
     <button id="drawer-edit" type="button"><span data-icon="edit"></span><span>Edit dock</span></button>
     <button id="drawer-updates" type="button"><span data-icon="updates"></span><span>Updates</span></button>
   </div>
@@ -302,6 +303,13 @@
   <div class="sheet__heading"><div><h2 id="power-controls-title">Power</h2></div><button class="icon-button" type="button" data-close="power-controls" aria-label="Back to quick controls" autofocus><span data-icon="close"></span></button></div>
   <div id="power-controls-grid" class="controls-grid"></div>
 </dialog>
+
+<dialog id="windows" class="options group-view" aria-labelledby="windows-title"><div class="dialog-scroll">
+  <h2 id="windows-title">Open windows</h2>
+  <p>Tap a window to bring it forward. The cross asks the app to close.</p>
+  <ul id="windows-list" class="windows-list"></ul>
+  <button class="button options__done" type="button" data-close="windows">Done</button>
+</div></dialog>
 
 <dialog id="group-view" class="options group-view" aria-labelledby="group-title"><div class="dialog-scroll">
   <h2 id="group-title">Folder</h2>

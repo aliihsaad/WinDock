@@ -225,6 +225,7 @@ function paint() {
   $("edit").setAttribute("aria-label", editing ? "Done editing" : "Edit dock");
   $("edit").innerHTML = icon(editing ? "check" : "edit") + "<span>" + (editing ? "Done" : "Edit") + "</span>";
   if ($("group-view").open) drawGroup();
+  if ($("windows").open) drawWindows();
   $("page-dots").innerHTML = Array.from({ length: pages }, (_, i) => '<button class="page-dot" type="button" data-page="' + i + '" aria-label="Go to page ' + (i + 1) + '"' + (i === currentPage ? ' aria-current="page"' : "") + '></button>').join("");
 }
 function pageTo(page, smooth = true) {
@@ -296,6 +297,13 @@ function confirmPower(verb) {
     dialog.addEventListener("close", () => resolve(dialog.returnValue === "yes"), { once: true });
     dialog.showModal();
   });
+}
+function drawWindows() {
+  const items = Array.isArray(state.running) ? state.running : [];
+  $("windows-list").innerHTML = items.length ? items.map((app) => {
+    const name = escapeHtml(app.title || app.name || "Window");
+    return '<li><button type="button" class="window-row" data-pid="' + app.pid + '" data-id="' + escapeHtml(app.id) + '"><span class="window-row__title">' + name + "</span>" + (app.title && app.name ? "<small>" + escapeHtml(app.name) + "</small>" : "") + '</button><button type="button" class="window-close" data-close-pid="' + app.pid + '" data-id="' + escapeHtml(app.id) + '" aria-label="Close ' + name + '">' + icon("close") + "</button></li>";
+  }).join("") : '<li class="picker__empty">No open windows right now.</li>';
 }
 const allTiles = () => state.tiles.flatMap((tile) => tile.kind === "group" ? [tile, ...tile.items] : [tile]);
 let openGroupKey = "";
@@ -692,6 +700,23 @@ $("tile-ungroup").addEventListener("click", async () => {
   $("tile-options").close();
   try { await commitTiles(ungroupTile(state.tiles, selectedKey)); notify("Folder dissolved"); }
   catch (error) { report(error); }
+});
+$("drawer-windows").addEventListener("click", () => {
+  $("drawer").close();
+  drawWindows();
+  if (!$("windows").open) $("windows").showModal();
+});
+$("windows-list").addEventListener("click", async (event) => {
+  const focusButton = event.target.closest("button.window-row"), closeButton = event.target.closest("button.window-close");
+  const button = focusButton || closeButton;
+  if (!button) return;
+  if (!online) return notify("Your PC is disconnected. Wait for it to reconnect.", true);
+  buzz(10);
+  const pid = Number(focusButton ? button.dataset.pid : button.dataset.closePid);
+  try {
+    await api(focusButton ? "/api/apps/focus" : "/api/apps/close", { method: "POST", body: JSON.stringify({ pid, id: button.dataset.id }) });
+    if (focusButton) $("windows").close(); else notify("Asked the app to close");
+  } catch (error) { report(error); }
 });
 $("haptics").checked = hapticsEnabled();
 $("haptics").addEventListener("change", (event) => { setHaptics(event.target.checked); if (event.target.checked) buzz(20); });

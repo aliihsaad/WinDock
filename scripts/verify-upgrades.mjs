@@ -6,6 +6,10 @@ import { normalizeMac, magicPacket, broadcastAddresses, sendWake } from "../src/
 import { normalizeTiles, normalizeTile, createConfigStore, flattenTiles, MAX_MACRO_STEPS } from "../src/config.js";
 import { addAppTile, addMacroTile, addWakeTile, groupTiles, ungroupTile, removeFromGroup, toWireTiles, tileKey } from "../public/tiles.js";
 import { buzz, hapticsEnabled } from "../public/haptics.js";
+import { createServer } from "node:http";
+import { once } from "node:events";
+import { WebSocket } from "ws";
+import { createInputHub } from "../src/input-hub.js";
 import { createApp } from "../server.js";
 
 const t = createChecker("upgrades");
@@ -81,6 +85,40 @@ t.equal(buzz(12, { storage: on, vibrate: (p) => pulses.push(p) }), true, "buzz v
 t.equal(buzz(12, { storage: off, vibrate: (p) => pulses.push(p) }), false, "buzz stays silent when disabled");
 t.deepEqual(pulses, [12], "only the enabled buzz reached the device");
 t.equal(buzz(5, { storage: on, vibrate: () => { throw new Error("no motor"); } }), false, "a failing vibrator never throws");
+
+// ---- Two phones sharing one touchpad ----------------------------------------
+{
+  const sessions = [], received = [];
+  const input = { open(_fail, emit) { const s = { closed: false, ready: Promise.resolve(), send: (m) => received.push(m), close() { s.closed = true; } }; sessions.push(s); return s; } };
+  const http = createServer();
+  const hub = createInputHub({ server: http, isAuthorized: () => true, input, takeoverIdleMs: 200 });
+  await new Promise((resolve) => http.listen(0, "127.0.0.1", resolve));
+  const base = "http://127.0.0.1:" + http.address().port;
+  const open = () => new Promise((resolve, reject) => {
+    const ws = new WebSocket(base.replace("http:", "ws:") + "/input", { headers: { origin: base } });
+    const log = [];
+    ws.on("message", (d) => { const m = JSON.parse(d.toString()); log.push(m.type === "error" ? m.error : m.type); if (log.length === 1) resolve({ ws, log }); });
+    ws.on("error", reject);
+  });
+  const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const a = await open();
+  t.deepEqual(a.log, ["ready"], "first phone gets the touchpad");
+  a.ws.send(JSON.stringify({ type: "move", dx: 1, dy: 1 }));
+  const early = await open();
+  t.equal(early.log[0], "Another device is using the touchpad.", "second phone is refused while the first is active");
+  await pause(300);
+  const takeover = await open();
+  t.deepEqual(takeover.log, ["ready"], "second phone takes over once the first has been idle");
+  await pause(50);
+  t.ok(sessions[0].closed, "old owner's native session was released first");
+  t.ok(a.log.includes("Another device took over the touchpad."), "old phone is told why it was disconnected");
+  takeover.ws.send(JSON.stringify({ type: "move", dx: 2, dy: 2 }));
+  const refused = await open();
+  t.equal(refused.log[0], "Another device is using the touchpad.", "an active owner cannot be taken over");
+  takeover.ws.close(); await pause(50);
+  for (const client of [a, early, refused]) client.ws.terminate();
+  await hub.close(); http.closeAllConnections(); await new Promise((resolve) => http.close(resolve));
+}
 
 // ---- Host API ----------------------------------------------------------------
 const dir = await mkdtemp(join(tmpdir(), "windock-upgrades-"));
