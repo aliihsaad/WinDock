@@ -21,8 +21,9 @@ android {
         applicationId 'com.windock.app'
         minSdk 24
         targetSdk 36
-        versionCode 12
-        versionName '0.3.2'
+        // CI passes -PwindockVersionCode/-PwindockVersionName so every build is newer than the last.
+        versionCode((project.findProperty('windockVersionCode') ?: '12') as Integer)
+        versionName((project.findProperty('windockVersionName') ?: '0.3.2') as String)
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
 

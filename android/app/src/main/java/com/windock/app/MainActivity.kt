@@ -67,6 +67,7 @@ class MainActivity : Activity() {
     private var phoneDialog: AlertDialog? = null
     private var pcPicker: PcPicker? = null
     private lateinit var appUpdates: AppUpdates
+    private lateinit var phoneUpdater: PhoneUpdater
     private lateinit var appearance: AppearancePreferences
     private var wakingGesture = false
     private val wakingKeys = mutableSetOf<Int>()
@@ -112,6 +113,9 @@ class MainActivity : Activity() {
             hideRemoteKeyboard()
         })
         appUpdates = AppUpdates(this)
+        phoneUpdater = PhoneUpdater(this) { json ->
+            web.evaluateJavascript("window.windockAppUpdate&&window.windockAppUpdate(" + JSONObject.quote(json) + ")", null)
+        }
         appearance = AppearancePreferences(getSharedPreferences("appearance", MODE_PRIVATE))
         findViewById<Button>(R.id.app_updates).setOnClickListener { showUpdates() }
         setupRemoteKeyboard()
@@ -333,7 +337,8 @@ class MainActivity : Activity() {
     }
 
     private fun showUpdates() {
-        if (phoneDialog == null) showPhoneDialog(appUpdates.dialog())
+        // Debug/preview builds update themselves from this fork; Play builds keep the Play dialog.
+        if (phoneDialog == null) showPhoneDialog(if (BuildConfig.PLAY_DISTRIBUTION) appUpdates.dialog() else phoneUpdater.dialog())
     }
 
     private fun showPhoneOptions() {
@@ -496,6 +501,8 @@ class MainActivity : Activity() {
             }
         }
         @JavascriptInterface fun showUpdates() { runOnUiThread { if (trustedKeyboardPage()) this@MainActivity.showUpdates() } }
+        @JavascriptInterface fun checkAppUpdate() { runOnUiThread { if (trustedKeyboardPage()) phoneUpdater.check() } }
+        @JavascriptInterface fun installAppUpdate() { runOnUiThread { if (trustedKeyboardPage()) phoneUpdater.install() } }
         @JavascriptInterface fun openPcRelease(version: String) { runOnUiThread { if (trustedKeyboardPage()) appUpdates.openPcRelease(version) } }
         @JavascriptInterface fun showPhoneSettings() { runOnUiThread { if (trustedKeyboardPage()) showPhoneOptions() } }
     }
@@ -812,6 +819,7 @@ class MainActivity : Activity() {
         phoneDialog?.setOnDismissListener(null)
         phoneDialog?.dismiss()
         appUpdates.close()
+        phoneUpdater.close()
         idleDisplay.close()
         io.shutdownNow()
         generation++; secureJob?.cancel(true); secureBridge?.close(); secureTransport?.close()

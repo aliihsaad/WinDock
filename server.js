@@ -441,6 +441,12 @@ export async function createApp({
         if (Object.keys(body).length) return sendJson(res, 400, { error: "update check takes no options" });
         return sendJson(res, 200, await updates.check());
       }
+      if (path === "/api/updates/install" && req.method === "POST") {
+        const body = await readJsonBody(req);
+        if (Object.keys(body).length) return sendJson(res, 400, { error: "update install takes no options" });
+        try { return sendJson(res, 202, await updates.install()); }
+        catch (error) { return sendJson(res, error.status || 502, { error: error.message }); }
+      }
 
       if (path === "/api/state" && req.method === "GET") {
         return sendJson(res, 200, await dockState());

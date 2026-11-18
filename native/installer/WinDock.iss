@@ -69,6 +69,8 @@ Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueName: 
 
 [Run]
 Filename: "{app}\WinDockTray.exe"; Description: "Open WinDock"; WorkingDir: "{app}"; Flags: nowait postinstall skipifsilent
+; An update started from the phone runs silently; bring WinDock back up afterwards.
+Filename: "{app}\WinDockTray.exe"; WorkingDir: "{app}"; Flags: nowait runasoriginaluser; Check: WizardSilent
 
 [Messages]
 FinishedHeadingLabel=WinDock is ready.
