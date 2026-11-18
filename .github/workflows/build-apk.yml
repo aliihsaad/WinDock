@@ -1,0 +1,64 @@
+name: Build upgraded Android APK
+
+# Builds the debug APK for the `upgrades` branch and publishes it as a
+# pre-release with a stable download URL, so a phone can fetch it directly.
+on:
+  push:
+    branches: [upgrades]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - run: npm ci
+      - run: npm test
+
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Prepare Android SDK
+        run: '"$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.1.0"'
+      - name: Build APK and run unit tests
+        working-directory: android
+        run: bash ./gradlew assembleDebug testDebugUnitTest --no-daemon --console=plain
+      - name: Verify APK and give it a stable name
+        run: |
+          "$ANDROID_HOME/build-tools/36.1.0/apksigner" verify --verbose android/app/build/outputs/apk/debug/app-debug.apk
+          mkdir -p artifacts
+          cp android/app/build/outputs/apk/debug/app-debug.apk artifacts/WinDock-android-debug.apk
+          sha256sum artifacts/WinDock-android-debug.apk | tee artifacts/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-upgraded
+          path: artifacts/WinDock-android-debug.apk
+          if-no-files-found: error
+      - name: Publish pre-release with stable download link
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG=upgrades-latest
+          gh release delete "$TAG" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes || true
+          gh release create "$TAG" artifacts/WinDock-android-debug.apk artifacts/SHA256SUMS.txt \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
+            --title "WinDock upgraded build ($GITHUB_SHA)" \
+            --notes "Debug-signed APK built from the upgrades branch. Install over the old app; if Android refuses, uninstall the old WinDock first."
