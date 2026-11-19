@@ -25,7 +25,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -e
-          gh api repos/ggml-org/whisper.cpp/releases/latest -q '.tag_name, (.assets[] | "\(.name) \(.browser_download_url)")' | tee whisper-assets.txt
+          # The newest release may ship no binaries, so look through the recent ones.
+          gh api 'repos/ggml-org/whisper.cpp/releases?per_page=40' -q '.[] | .tag_name as $t | .assets[] | "\(.name) \(.browser_download_url)"' | tee whisper-assets.txt
           # The plain 64-bit Windows CPU build: not CUDA, BLAS, Vulkan or 32-bit.
           LINE=$(grep -iE '^[^ ]*x64[^ ]*\.zip ' whisper-assets.txt | grep -viE 'cublas|cuda|blas|vulkan|win32|arm' | head -1)
           [ -n "$LINE" ] || { echo "::error::No plain Windows x64 zip among the whisper.cpp assets listed above"; exit 1; }
