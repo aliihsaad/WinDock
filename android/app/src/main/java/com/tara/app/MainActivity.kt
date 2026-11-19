@@ -515,6 +515,7 @@ class MainActivity : Activity() {
         @JavascriptInterface fun downloadVoiceModel() { runOnUiThread { if (trustedKeyboardPage()) voice.downloadModel() } }
         @JavascriptInterface fun wakeNames(): String = voice.wakeNames()
         @JavascriptInterface fun wakeStrict(): Boolean = voice.wakeStrict()
+        @JavascriptInterface fun setVoiceVocabulary(json: String) { runOnUiThread { if (trustedKeyboardPage()) try { val a = org.json.JSONArray(json); voice.setVocabulary((0 until minOf(a.length(), 400)).map { a.getString(it).take(60) }) } catch (_: Exception) {} } }
         @JavascriptInterface fun setWakeStrict(on: Boolean) { runOnUiThread { if (trustedKeyboardPage()) voice.setWakeStrict(on) } }
         @JavascriptInterface fun setWakeNames(names: String) { runOnUiThread { if (trustedKeyboardPage()) voice.setWakeNames(names.take(120)) } }
         @JavascriptInterface fun pauseListening(on: Boolean) { runOnUiThread { voice.pauseListening(on) } }
@@ -815,8 +816,19 @@ class MainActivity : Activity() {
         networkMonitor = callback
     }
 
+    private var wifiLock: android.net.wifi.WifiManager.WifiLock? = null
+    /** Keeps the Wi-Fi radio out of power-saving while Tara is on screen, which is what makes links drop. */
+    private fun holdWifi() {
+        try {
+            val wifi = applicationContext.getSystemService(android.content.Context.WIFI_SERVICE) as android.net.wifi.WifiManager
+            val lock = wifiLock ?: wifi.createWifiLock(if (Build.VERSION.SDK_INT >= 29) android.net.wifi.WifiManager.WIFI_MODE_FULL_LOW_LATENCY else @Suppress("DEPRECATION") android.net.wifi.WifiManager.WIFI_MODE_FULL_HIGH_PERF, "tara:link").also { it.setReferenceCounted(false); wifiLock = it }
+            if (!lock.isHeld) lock.acquire()
+        } catch (_: Exception) { /* optional */ }
+    }
+    private fun releaseWifi() { try { wifiLock?.takeIf { it.isHeld }?.release() } catch (_: Exception) { /* optional */ } }
+
     override fun onResume() {
-        super.onResume(); resumed = true
+        super.onResume(); resumed = true; holdWifi()
         if (::web.isInitialized) {
             web.onResume(); retryAttempt = 0
             if (!editingConnection && !connecting && ::securePairing.isInitialized && securePairing.hasSelected()) web.post(secureRetry)
@@ -826,6 +838,7 @@ class MainActivity : Activity() {
         voice.onResume()
     }
     override fun onPause() {
+        releaseWifi()
         voice.onPause()
         files.pause()
         resumed = false; wakingGesture = false; wakingKeys.clear(); syncIdleDisplay(); hideRemoteKeyboard()

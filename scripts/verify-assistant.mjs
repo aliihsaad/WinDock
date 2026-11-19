@@ -1,5 +1,5 @@
 import { createChecker } from "./lib/assert.mjs";
-import { parseIntent, matchApp, statsSentence, askGemini, createKeyStore, GEMINI_ENDPOINT } from "../src/assistant.js";
+import { parseIntent, matchApp, fuzzyApp, statsSentence, askGemini, createKeyStore, GEMINI_ENDPOINT } from "../src/assistant.js";
 const t = createChecker("assistant");
 const intent = (s) => parseIntent(s);
 t.deepEqual([intent("Hey Tara, volume down").verb, intent("make it quieter please").verb, intent("louder").verb], ["volume-down", "volume-down", "volume-up"], "volume words");
@@ -19,6 +19,10 @@ t.equal(matchApp("blender", apps).id, "1", "exact app");
 t.equal(matchApp("resolve", apps).id, "2", "word inside the name");
 t.equal(matchApp("chrome", apps).id, "3", "shorter name wins a tie");
 t.equal(matchApp("photoshop", apps), null, "unknown app is not guessed");
+t.equal(fuzzyApp("blend her", apps)?.id, "1", "a misheard name that sounds like an app is matched");
+t.equal(fuzzyApp("blinder", apps)?.id, "1", "one wrong letter is tolerated");
+t.equal(fuzzyApp("photoshop", apps), null, "fuzzy matching still does not guess unknown apps");
+t.equal(fuzzyApp("cat", apps), null, "very short words are never fuzzy-matched");
 t.ok(statsSentence("battery", { battery: 80.4, charging: true }).includes("80 percent and charging"), "battery sentence");
 t.ok(statsSentence("gpu", {}).includes("can't"), "missing reading is said plainly");
 // Gemini

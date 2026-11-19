@@ -20,6 +20,7 @@ object WakeGrammar {
         return names.ifEmpty { DEFAULT_NAMES }
     }
 
+    internal fun spoken(name: String): List<String> = listOf(name) + (ALIASES[name] ?: emptyList())
     private fun spoken(names: List<String>) = names.flatMap { listOf(it) + (ALIASES[it] ?: emptyList()) }.distinct()
 
     /** JSON array for the recogniser: the bare name, every greeting with every name, plus an "unknown" bucket for everything else. */

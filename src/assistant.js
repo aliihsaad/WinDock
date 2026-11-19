@@ -32,6 +32,33 @@ export function matchApp(name, apps) {
   return ranked[0].app;
 }
 
+const squash = (text) => text.replace(/\s+/g, "");
+function distance(a, b) {
+  const row = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    let diagonal = row[0]; row[0] = i;
+    for (let j = 1; j <= b.length; j++) { const keep = row[j]; row[j] = Math.min(row[j] + 1, row[j - 1] + 1, diagonal + (a[i - 1] === b[j - 1] ? 0 : 1)); diagonal = keep; }
+  }
+  return row[b.length];
+}
+/** For when the phone misheard an app name ("blend her" for Blender). Needs one clearly closest app, else null. */
+export function fuzzyApp(name, apps) {
+  const want = squash(norm(name).replace(/^(?:the|my)\s+/, ""));
+  if (want.length < 4) return null;
+  const close = [];
+  for (const app of apps) {
+    const full = norm(app.name || ""); let best = Infinity;
+    for (const token of [squash(full), ...full.split(" ").filter((w) => w.length >= 4)]) {
+      const allowed = Math.max(1, Math.floor(Math.max(token.length, want.length) / 4));
+      const d = distance(want, token); if (d <= allowed) best = Math.min(best, d);
+    }
+    if (best < Infinity) close.push({ app, d: best });
+  }
+  close.sort((a, b) => a.d - b.d);
+  if (!close.length || (close[1] && close[1].d === close[0].d)) return null;
+  return close[0].app;
+}
+
 export function parseIntent(input) {
   const text = norm(input);
   if (!text) return { type: "none" };

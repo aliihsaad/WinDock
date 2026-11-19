@@ -4,9 +4,9 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class ReconnectPolicyTest {
-    @Test fun retriesAreBoundedAndBackOff() {
+    @Test fun retriesBackOffAndNeverGiveUpOnScreen() {
         val delays = (0..8).mapNotNull { ReconnectPolicy.delay(it, true, ConnectionFailure.OFFLINE) }
-        assertEquals(listOf(1000L, 2000L, 4000L, 8000L, 16000L, 30000L), delays)
+        assertEquals(listOf(1000L, 2000L, 4000L, 8000L, 16000L, 30000L, 30000L, 30000L, 30000L), delays)
     }
     @Test fun noRetriesInBackgroundOrForSecurityFailures() {
         for (failure in ConnectionFailure.values()) assertNull(ReconnectPolicy.delay(0, false, failure))
@@ -24,6 +24,6 @@ class ReconnectPolicyTest {
         for (failure in listOf(ConnectionFailure.IDENTITY, ConnectionFailure.EXPIRED, ConnectionFailure.AUTH, ConnectionFailure.PAIRING))
             assertEquals(failure, failure.withDiscovery(true))
         assertEquals(1000L, ReconnectPolicy.delay(0, true, ConnectionFailure.UNREACHABLE))
-        assertNull(ReconnectPolicy.delay(6, true, ConnectionFailure.UNREACHABLE))
+        assertEquals(30000L, ReconnectPolicy.delay(60, true, ConnectionFailure.UNREACHABLE))
     }
 }

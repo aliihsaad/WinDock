@@ -4,6 +4,7 @@ import { createRemoteKeyboard } from "./remote-keyboard.js";
 import { createPcClipboard } from "./pc-clipboard.js";
 import { createKeysPane } from "./keys-pane.js";
 import { buzz, hapticsEnabled, setHaptics } from "./haptics.js";
+import { logConn } from "./connlog.js";
 
 export function createInputPad({ api, notify, WebSocketClass = WebSocket, storage = localStorage }) {
   const $ = (id) => document.getElementById(id), dialog = $("input-pad"), canvas = $("signature-canvas");
@@ -172,11 +173,16 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
       ws.onmessage = (event) => {
         if (socket !== ws) return;
         let message; try { message = JSON.parse(event.data); } catch { return; }
-        if (message.type === "error") { disconnect(); setStatus(message.error); return; }
+        if (message.type === "error") {
+          disconnect(); logConn("Touchpad refused", message.error);
+          // Our own dropped link can linger on the PC for a moment; try again instead of giving up.
+          if (/is using the touchpad/.test(message.error) && dialog.open && autoRetries < 8) { autoRetries++; setStatus("Reconnecting…"); setTimeout(() => { if (dialog.open && !socket && !connecting) select(mode); }, 800); return; }
+          setStatus(message.error); return;
+        }
         if (["focus", "input-error", "paste-result"].includes(message.type)) { keyboard.message(message); clipboard.message(message); return; }
         if (message.type === "ready") {
           clearTimeout(startup); ready = true; connecting = false; autoRetries = 0;
-          heartbeat = setInterval(() => raw({ type: "ping" }), 1000); // the PC allows 5s of silence
+          heartbeat = setInterval(() => raw({ type: "ping" }), 1000); // the PC waits 12s of silence
           raw({ type: "ping" }); measureLatency(); latencyTimer = setInterval(measureLatency, 4000); paint(); if (wantsKeyboard && mode === "touchpad") { wantsKeyboard = false; keyboard.request(); } if (mode === "keys") keys.open(); setStatus(demo ? "Demo only · No cursor control or files saved." : mode === "keys" ? "Tap a key to press it on your PC. Tap Ctrl, Shift or Alt to hold it." : "Tap to click · Two fingers: scroll, tap for right-click · Three fingers: swipe");
         }
       };
@@ -185,9 +191,10 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
         const wasReady = ready;
         disconnect();
         // A brief Wi-Fi stall should not make you tap Reconnect: try again quietly a few times.
-        if (wasReady && autoRetries < 3 && dialog.open && !document.hidden) {
+        logConn("Touchpad dropped", wasReady ? "connection lost" : "could not connect");
+        if ((wasReady || autoRetries > 0) && autoRetries < 8 && dialog.open) {
           autoRetries++; setStatus("Reconnecting…");
-          setTimeout(() => { if (dialog.open && !socket && !connecting && !document.hidden) select(mode); }, 600 * autoRetries);
+          setTimeout(() => { if (dialog.open && !socket && !connecting) select(mode); }, Math.min(600 * autoRetries, 3000));
         } else setStatus("Touchpad disconnected. Tap Reconnect to continue.");
       };
     } catch (error) { if (ticket === generation) { connecting = false; setStatus(error.message); paint(); } }
@@ -259,7 +266,11 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
     try { storage.setItem("tara-orbit", orbit ? "on" : "off"); } catch { /* optional */ }
     paint(); setStatus(orbit ? "3D mode · Two fingers orbit (hold Shift to pan, Ctrl to zoom) · Pinch zooms" : "Tap to click · Two fingers: scroll, tap for right-click · Three fingers: swipe");
   });
-  $("input-reconnect").addEventListener("click", () => select("touchpad"));
+  $("input-reconnect").addEventListener("click", () => { autoRetries = 0; select(mode === "keys" ? "keys" : "touchpad"); });
+  // Coming back to the app or to Wi-Fi reconnects on its own.
+  const resume = () => { if (dialog.open && usesPc() && !ready && !connecting && !socket && !unsupported) { autoRetries = 0; logConn("Touchpad resumed"); select(mode); } };
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) resume(); });
+  window.addEventListener("online", resume);
 
   function redraw() {
     context.clearRect(0, 0, canvas.width, canvas.height);

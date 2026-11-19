@@ -55,6 +55,10 @@ function rig({ ai = false, android = {} } = {}) {
   t.equal(orb.dataset.state, "error", "silence shows the error state");
   rig2.e["tara-orb-core"].dispatchEvent({ type: "click" });
   t.equal(orb.hidden, true, "tapping the orb dismisses it");
+  rig2.v.listenNow();
+  t.deepEqual([orb.hidden, orb.dataset.state, rig2.e.voice.open], [false, "listening", false], "the Tara button listens behind the orb, without the dialog");
+  rig2.v.listenNow();
+  t.equal(orb.hidden, true, "pressing the Tara button again stops listening");
 }
 { // hands-free needs the model
   const r = rig(); r.els["voice-handsfree"].checked = true; globalThis.TaraVoice.onNeedModel();

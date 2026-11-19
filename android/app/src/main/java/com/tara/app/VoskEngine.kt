@@ -34,6 +34,7 @@ internal class VoskEngine(
     @Volatile private var wantWake = false
     @Volatile private var wantCommand = false
     @Volatile private var rebuildWake = false
+    @Volatile private var vocabulary: List<String> = emptyList()
 
     @Synchronized private fun ensureRunning() {
         if (running && thread?.isAlive == true) return
@@ -48,6 +49,7 @@ internal class VoskEngine(
     fun cancelCommand() { wantCommand = false }
     fun pause(on: Boolean) { paused = on }
     fun refreshNames() { rebuildWake = true }
+    fun setVocabulary(words: List<String>) { vocabulary = words }
     fun shutdown() { running = false; wantWake = false; wantCommand = false; thread?.interrupt() }
 
     @SuppressLint("MissingPermission")
@@ -67,6 +69,16 @@ internal class VoskEngine(
         return (Math.sqrt(sum / count) / 6000.0).toFloat().coerceIn(0f, 1f)
     }
 
+    /** Open-speech transcript of already-recorded audio; used when the command had words outside the grammar. */
+    private fun transcribeOpen(model: Model, pcm: ByteArray): String {
+        val r = Recognizer(model, RATE.toFloat())
+        return try {
+            var at = 0
+            while (at < pcm.size) { val n = minOf(3200, pcm.size - at); r.acceptWaveForm(pcm.copyOfRange(at, at + n), n); at += n }
+            JSONObject(r.finalResult).optString("text").trim()
+        } catch (_: Exception) { "" } finally { r.close() }
+    }
+
     private fun closeRecorder(r: AudioRecord?) { try { r?.stop() } catch (_: Exception) {}; try { r?.release() } catch (_: Exception) {} }
 
     private fun loop() {
@@ -80,6 +92,7 @@ internal class VoskEngine(
         var levelTick = 0
         var retried = false
         var seed: ByteArray? = null
+        val said = java.io.ByteArrayOutputStream() // everything heard in this command, kept for a second, open-speech pass
         val recent = java.io.ByteArrayOutputStream()
         val buf = ByteArray(1600) // 50 ms of 16 kHz mono PCM16
         try {
@@ -96,9 +109,9 @@ internal class VoskEngine(
                 if (rec == null) { rec = openRecorder(); if (rec == null) { onFailure("Could not open the microphone."); return } }
                 if (rebuildWake) { wake?.close(); wake = null; rebuildWake = false; recent.reset() }
                 if (wantCommand && !inCommand) {
-                    cmd?.close(); cmd = Recognizer(model, RATE.toFloat()); commandStart = System.currentTimeMillis(); inCommand = true
-                    wake?.reset(); retried = false
-                    val pre = seed; if (pre != null) { cmd!!.acceptWaveForm(pre, pre.size); seed = null }
+                    cmd?.close(); cmd = Recognizer(model, RATE.toFloat(), CommandGrammar.grammar(names(), vocabulary)); commandStart = System.currentTimeMillis(); inCommand = true
+                    wake?.reset(); retried = false; said.reset()
+                    val pre = seed; if (pre != null) { cmd!!.acceptWaveForm(pre, pre.size); said.write(pre); seed = null }
                 }
                 if (!wantCommand && inCommand) { cmd?.close(); cmd = null; inCommand = false; viaWake = false }
                 if (!inCommand && wake == null) wake = Recognizer(model, RATE.toFloat(), WakeGrammar.grammar(names(), strict()))
@@ -106,16 +119,20 @@ internal class VoskEngine(
                 if (n <= 0) { Thread.sleep(20); continue }
                 if (inCommand) {
                     if (++levelTick % 2 == 0) onLevel(level(buf, n))
+                    if (said.size() < MAX_SAID_BYTES) said.write(buf, 0, n)
                     val r = cmd!!
                     val done = r.acceptWaveForm(buf, n)
                     val elapsed = System.currentTimeMillis() - commandStart
                     val silent = !done && elapsed > NO_SPEECH_MS && JSONObject(r.partialResult).optString("partial").isBlank()
                     if (done || silent || elapsed > MAX_COMMAND_MS) {
-                        val heard = JSONObject(if (done) r.result else r.finalResult).optString("text").trim()
+                        val grammarText = JSONObject(if (done) r.result else r.finalResult).optString("text").trim()
+                        // Known words only: trust it. Otherwise listen again to the same audio as open speech.
+                        val heard = if (CommandGrammar.trusted(grammarText) || said.size() == 0) CommandGrammar.clean(grammarText)
+                            else transcribeOpen(model, said.toByteArray()).ifBlank { CommandGrammar.clean(grammarText) }
                         val text = if (viaWake) (WakeGrammar.command(heard, names()) ?: heard).trim() else heard
                         if (viaWake && text.isEmpty() && !retried && elapsed < MAX_COMMAND_MS) {
                             // Only the name was said: give a fresh recogniser the rest of the time for the command itself.
-                            retried = true; r.close(); cmd = Recognizer(model, RATE.toFloat()); commandStart = System.currentTimeMillis()
+                            retried = true; r.close(); cmd = Recognizer(model, RATE.toFloat(), CommandGrammar.grammar(names(), vocabulary)); commandStart = System.currentTimeMillis(); said.reset()
                         } else {
                             r.close(); cmd = null; inCommand = false; wantCommand = false; viaWake = false
                             onUtterance(text)
@@ -149,6 +166,7 @@ internal class VoskEngine(
         const val RATE = 16000
         const val MAX_COMMAND_MS = 10000L
         const val NO_SPEECH_MS = 4500L
+        const val MAX_SAID_BYTES = RATE * 2 * 14
         const val RECENT_BYTES = RATE * 2 * 3 // the last three seconds of 16-bit audio
     }
 }

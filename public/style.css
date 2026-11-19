@@ -885,3 +885,12 @@ html.perf .status-strip { background: #17252d; backdrop-filter: none; -webkit-ba
 :root.lite, :root.lite[data-theme] { --glass-blur: 10px; --glass-lens-blur: 5; --glass-sheet-blur: 10px; }
 .input-latency { margin-left: 8px; color: #8fe5d8; font-variant-numeric: tabular-nums; }
 .input-latency[data-slow="true"] { color: #f2b4b6; }
+
+/* Tara button: always-there way to talk. */
+.tara-fab { position: fixed; left: max(14px, env(safe-area-inset-left)); bottom: max(14px, env(safe-area-inset-bottom)); z-index: 30; width: 52px; height: 52px; padding: 0; border: 0; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle at 35% 30%, #7fb4ff, #5b3df0 62%, #1a1650); box-shadow: 0 0 22px #6f7dff77, 0 6px 18px #0007; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.tara-fab[hidden] { display: none; }
+.tara-fab svg { width: 46%; fill: #fff; filter: drop-shadow(0 0 6px #fffa); }
+.tara-fab:active { transform: scale(.92); }
+.conn-log { margin: 8px 0 0; max-height: 140px; overflow: auto; padding: 8px 10px; border-radius: 10px; background: #0006; font: 11px/1.45 ui-monospace, monospace; white-space: pre-wrap; user-select: text; }
+.conn-log__clear { margin-top: 8px; padding: 6px 10px; border: 1px solid #ffffff22; border-radius: 10px; background: transparent; color: inherit; font: inherit; font-size: 11px; }
+@media (max-height: 450px) { .tara-fab { width: 44px; height: 44px; } }

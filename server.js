@@ -24,7 +24,7 @@ import { pairingInvites } from "./src/pairing-invites.js";
 import { networkSetup } from "./src/network-setup.js";
 import { createUpdateService } from "./src/updates.js";
 import { parseYouTube } from "./public/mini-player.js";
-import { askGemini, createKeyStore, matchApp, parseIntent, statsSentence } from "./src/assistant.js";
+import { askGemini, createKeyStore, fuzzyApp, matchApp, parseIntent, statsSentence } from "./src/assistant.js";
 import { createRenderWatch } from "./src/render-watch.js";
 import { versionedSave } from "./src/versioned-save.js";
 import { defaultVideoRoots, listVideos, streamVideo, isVideoRootId } from "./src/videos.js";
@@ -243,9 +243,9 @@ export async function createApp({
         return { say: intent.say };
       }
       case "stats": return { say: statsSentence(intent.what, await readStats()) };
-      case "launch": { const app = matchApp(intent.name, await installedApps()); if (!app) return { say: "I couldn't find " + intent.name + " on this PC." }; await launchInstalled(app); await hub.broadcast(); return { say: "Opening " + app.name + "." }; }
+      case "launch": { const apps = await installedApps(); const exact = matchApp(intent.name, apps), app = exact ?? fuzzyApp(intent.name, apps); if (!app) return { say: "I couldn't find " + intent.name + " on this PC." }; await launchInstalled(app); await hub.broadcast(); return { say: exact ? "Opening " + app.name + "." : "I heard “" + intent.name + "”, so I'm opening " + app.name + "." }; }
       case "focus": case "close": {
-        const target = matchApp(intent.name, (await provider.listRunningApps()).map((r) => ({ ...r, name: r.name || r.title || "" })));
+        const running = (await provider.listRunningApps()).map((r) => ({ ...r, name: r.name || r.title || "" })), target = matchApp(intent.name, running) ?? fuzzyApp(intent.name, running);
         if (!target) return { say: "I don't see " + intent.name + " running." };
         if (intent.type === "focus") await provider.focusApp(target); else await provider.closeApp(target);
         await hub.broadcast(); return { say: (intent.type === "focus" ? "Switching to " : "Closing ") + (target.name || intent.name) + "." };

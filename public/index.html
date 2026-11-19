@@ -53,6 +53,7 @@
 </main>
 
 <button id="drawer-open" class="drawer-trigger" type="button" aria-label="Open drawer" hidden><span></span></button>
+<button id="tara-fab" class="tara-fab" type="button" aria-label="Talk to Tara" title="Tap to talk · hold for Hey Tara on/off" hidden><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 4C54 32 68 46 96 50 68 54 54 68 50 96 46 68 32 54 4 50 32 46 46 32 50 4Z"/></svg></button>
 <button id="quick-controls-open" class="quick-controls-trigger" type="button" aria-label="Open quick controls" aria-haspopup="dialog" aria-controls="controls" aria-expanded="false" title="Swipe down for quick controls" hidden><span class="controls-island" aria-hidden="true"><span class="island-idle"><span data-icon="sliders"></span><span class="island-grip"></span></span><span id="island-media" class="island-media" hidden><span class="island-art"><span id="island-art-fallback" data-icon="music"></span><img id="island-artwork" alt="" decoding="async" hidden></span><span class="island-track"><strong id="island-title"></strong><span id="island-artist"></span></span><span id="island-playback"></span></span></span></button>
 <button id="status-strip" class="status-strip" type="button" aria-label="PC status and render watcher" hidden></button>
 <button id="input-edge" class="input-edge" type="button" aria-label="Open touchpad and signature" title="Touchpad &amp; signature" hidden><span data-icon="touchpad"></span></button>
@@ -279,6 +280,7 @@
     <section class="settings__card"><h3>Appearance</h3>
       <label class="setting-row" for="performance-mode">Performance mode<select id="performance-mode" aria-describedby="performance-status"><option value="auto">Auto</option><option value="on">On</option><option value="off">Off</option></select></label>
       <p id="performance-status" class="settings__tip" role="status"></p>
+      <details id="conn-log-details" class="gesture-guide"><summary>Connection log</summary><pre id="conn-log" class="conn-log"></pre><button id="conn-log-clear" type="button" class="conn-log__clear">Clear log</button></details>
       <label class="setting-row" for="glass-theme">Glass style<select id="glass-theme" aria-describedby="glass-hint"><option value="glass">Clear</option><option value="frost">Frosted</option><option value="smoke">Smoked</option></select></label>
       <p id="glass-hint" class="settings__tip" hidden>Glass effects return when Performance mode is off.</p>
       <div class="settings__utilities"><button id="fullscreen" class="button" type="button"><span data-icon="monitor"></span>Fullscreen</button><button id="refresh" class="button" type="button"><span data-icon="refresh"></span>Refresh</button></div>

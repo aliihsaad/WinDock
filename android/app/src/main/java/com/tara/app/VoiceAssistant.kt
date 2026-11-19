@@ -46,6 +46,9 @@ class VoiceAssistant(private val activity: Activity, private val run: (String) -
     fun modelState(): String = JSONObject().put("ready", modelReady()).put("busy", downloading).toString()
     private fun strictWake() = prefs.getBoolean("strict", false)
     fun wakeStrict(): Boolean = strictWake()
+    private var vocabulary: List<String> = emptyList()
+    /** Words from the apps on this PC's dock, so commands that name them are heard precisely. */
+    fun setVocabulary(words: List<String>) { vocabulary = words; engine?.setVocabulary(words) }
     fun setWakeStrict(on: Boolean) { prefs.edit().putBoolean("strict", on).apply(); engine?.refreshNames() }
     fun wakeNames(): String = names().joinToString(", ")
     fun setWakeNames(raw: String) { prefs.edit().putString("names", WakeGrammar.cleanNames(raw).joinToString(",")).apply(); engine?.refreshNames() }
@@ -87,7 +90,7 @@ class VoiceAssistant(private val activity: Activity, private val run: (String) -
         if (!(pressToTalk || handsFree) || waitingForPermission) return
         if (!hasMic()) { waitingForPermission = true; activity.requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), REQUEST); return }
         if (useVosk()) {
-            val e = engine ?: makeEngine().also { engine = it }
+            val e = engine ?: makeEngine().also { engine = it; it.setVocabulary(vocabulary) }
             if (pressToTalk) e.commandOnce()
             if (handsFree) e.startWake()
         } else if (pressToTalk) beginFallback()

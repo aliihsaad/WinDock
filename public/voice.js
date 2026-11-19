@@ -112,5 +112,12 @@ export function createVoice({ api, get = (id) => document.getElementById(id), no
   get("voice-yes").addEventListener("click", () => { if (confirmVerb) send("", confirmVerb); });
   get("voice-no").addEventListener("click", () => { confirmBar.hidden = true; confirmVerb = null; show(undefined, "Okay, cancelled."); });
   dialog.addEventListener("close", () => { orbHide(); stop(); speech?.cancel?.(); android?.stopSpeaking?.(); });
-  return { open(autoListen = false) { show("", ""); confirmBar.hidden = true; paint(); paintModel(); refreshKey(); if (!dialog.open) dialog.showModal(); if (autoListen) start(); }, send, onResult, onError, onUtterance, refresh: refreshKey };
+  /** Tara button: listen straight away behind the floating orb, no dialog. */
+  function listenNow() {
+    if (listening) { stop(); orbHide(); return; }
+    if (!canListen) { show("", ""); if (!dialog.open) dialog.showModal(); return start(); }
+    orbShow(); orbState("listening", { words: "", reply: "" }); start();
+  }
+  function setVocabulary(words) { try { android?.setVoiceVocabulary?.(JSON.stringify(words)); } catch { /* older shell */ } }
+  return { listenNow, setVocabulary, open(autoListen = false) { show("", ""); confirmBar.hidden = true; paint(); paintModel(); refreshKey(); if (!dialog.open) dialog.showModal(); if (autoListen) start(); }, send, onResult, onError, onUtterance, refresh: refreshKey };
 }

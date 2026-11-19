@@ -18,6 +18,7 @@ import { idleGate } from "./idle.js";
 import { createStatusBar } from "./status-bar.js";
 import { createMiniPlayer } from "./mini-player.js";
 import { createVoice } from "./voice.js";
+import { logConn, connLogText, clearConnLog } from "./connlog.js";
 
 const $ = (id) => document.getElementById(id);
 const syncSelects = enhanceSelects();
@@ -160,6 +161,7 @@ function showPair(message = "") {
 }
 function showApp() { paired = true; $("pair").hidden = true; $("app").hidden = false; syncLayout(); paintCapture(); }
 function setConn(on) {
+  if (online !== on) logConn(on ? "Dock connected" : "Dock connection lost");
   online = on;
   if (!on) inputPad.disconnect();
   $("conn").dataset.state = on ? "on" : "off";
@@ -234,6 +236,8 @@ function paint() {
   $("edit").innerHTML = icon(editing ? "check" : "edit") + "<span>" + (editing ? "Done" : "Edit") + "</span>";
   if ($("group-view").open) drawGroup();
   if ($("windows").open) drawWindows();
+  $("tara-fab").hidden = !paired || editing;
+  pushVoiceVocabulary();
   $("page-dots").innerHTML = Array.from({ length: pages }, (_, i) => '<button class="page-dot" type="button" data-page="' + i + '" aria-label="Go to page ' + (i + 1) + '"' + (i === currentPage ? ' aria-current="page"' : "") + '></button>').join("");
 }
 function pageTo(page, smooth = true) {
@@ -803,6 +807,17 @@ document.addEventListener("tara-toast", (e) => notify(e.detail.message, e.detail
 const statusBar = createStatusBar({ gate: idleGate(), api, isReady: () => paired && online && !document.hidden, notify, buzz, storage: localStorage });
 statusBar.start();
 const voice = createVoice({ api, notify, buzz });
+// The recogniser listens for the names of apps on this dock first, which makes "open Blender" far more reliable.
+let vocabularySent = "";
+function pushVoiceVocabulary() {
+  try {
+    const labels = [];
+    const walk = (tile) => { if (tile?.label) labels.push(tile.label); (tile?.items ?? []).forEach(walk); };
+    (state.tiles ?? []).forEach(walk); installedApps.forEach((app) => labels.push(app.name));
+    const joined = [...new Set(labels)].join("|"); if (joined === vocabularySent) return;
+    vocabularySent = joined; voice.setVocabulary([...new Set(labels)]);
+  } catch { /* voice is optional */ }
+}
 const handsFreeOn = () => { try { return localStorage.getItem("tara-handsfree") === "1"; } catch { return false; } };
 const applyHandsFree = () => { try { window.TaraAndroid?.setHandsFree?.(handsFreeOn()); } catch { /* older Android shell */ } };
 applyHandsFree();
@@ -811,6 +826,20 @@ $("voice-handsfree").addEventListener("change", (event) => { try { localStorage.
 // Once the offline model finishes downloading, honour a hands-free switch that was waiting for it.
 $("voice-handsfree").addEventListener("voice-model-ready", () => { $("voice-handsfree").checked = true; try { localStorage.setItem("tara-handsfree", "1"); } catch { /* private mode */ } applyHandsFree(); });
 $("drawer-voice").addEventListener("click", () => { $("drawer").close(); voice.open(true); });
+// The Tara button: tap to talk right now, hold to switch "Hey Tara" on or off.
+{
+  let hold = null, held = false;
+  const fab = $("tara-fab");
+  fab.addEventListener("pointerdown", () => { held = false; hold = setTimeout(() => { held = true; const box = $("voice-handsfree"); box.checked = !box.checked; box.dispatchEvent(new Event("change")); buzz(25); notify(box.checked ? "Hey Tara is on." : "Hey Tara is off."); }, 650); });
+  for (const type of ["pointerup", "pointercancel", "pointerleave"]) fab.addEventListener(type, () => clearTimeout(hold));
+  fab.addEventListener("click", () => { if (held) { held = false; return; } buzz(12); voice.listenNow(); });
+}
+// Connection log in settings.
+{
+  const box = $("conn-log"), paintLog = () => { box.textContent = connLogText(); };
+  $("conn-log-details").addEventListener("toggle", () => { if ($("conn-log-details").open) paintLog(); });
+  $("conn-log-clear").addEventListener("click", () => { clearConnLog(); paintLog(); });
+}
 // Holding a finger on empty dock space for a moment starts listening too.
 {
   let hold = null, from = null;
