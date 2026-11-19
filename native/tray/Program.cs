@@ -43,6 +43,8 @@ internal sealed partial class TrayApp : ApplicationContext
     private string _lastError = "";
     private string _portNotice = "";
     private readonly HttpClient _captureHttp = new() { Timeout = TimeSpan.FromSeconds(35) };
+    // The host downloads the whole installer before it answers, so installing gets a long timeout.
+    private readonly HttpClient _installHttp = new() { Timeout = TimeSpan.FromMinutes(12) };
     private readonly System.Windows.Forms.Timer _captureTimer = new() { Interval = 2000 };
     private ToolStripMenuItem _stopRecording = null!;
     private bool _checkingCapture;
@@ -95,7 +97,7 @@ internal sealed partial class TrayApp : ApplicationContext
         _icon.ContextMenuStrip.Items.Add(captures);
         _icon.ContextMenuStrip.Items.Add(new ToolStripSeparator());
         _checkUpdates = new ToolStripMenuItem("Check for updates…", null, async (_, _) => await CheckUpdates(true));
-        _downloadUpdate = new ToolStripMenuItem("Download update…", null, (_, _) => OpenRelease(_availableUpdate?.ReleasePage)) { Visible = false };
+        _downloadUpdate = new ToolStripMenuItem("Download update…", null, async (_, _) => await InstallUpdate()) { Visible = false };
         _icon.ContextMenuStrip.Items.Add(_checkUpdates);
         _icon.ContextMenuStrip.Items.Add(_downloadUpdate);
         _icon.ContextMenuStrip.Items.Add("Quit WinDock", null, async (_, _) => { if (await StopRecording()) ExitThread(); });
@@ -376,24 +378,24 @@ internal sealed partial class TrayApp : ApplicationContext
         _checkUpdates.Text = "Checking for updates…";
         try
         {
-            var result = await new UpdateChecker(_updateHttp, UpdateChecker.InstalledVersion).CheckAsync(_shutdown.Token);
+            var result = await HostCheckUpdates();
             if (_stopping) return;
             if (result.Status != UpdateStatus.Failed)
             {
                 _availableUpdate = result.Status == UpdateStatus.Available ? result : null;
                 _downloadUpdate.Visible = _availableUpdate is not null;
-                _downloadUpdate.Text = "Download WinDock " + result.Version + "…";
+                _downloadUpdate.Text = "Install WinDock " + result.Version + " now…";
             }
             if (!result.ShouldNotify(interactive)) return;
             if (result.Status == UpdateStatus.Available)
             {
-                if (!interactive) ShowBalloon("WinDock update available", $"Version {result.Version} is ready. Click to open the WinDock download page.", result.ReleasePage);
-                else if (MessageBox.Show($"WinDock {result.Version} is available.\nYou have {UpdateChecker.InstalledVersion}.\n\nOpen the WinDock download page? Download the installer, quit WinDock, then run it. Your dock settings are kept.",
-                    "WinDock update", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes) OpenRelease(result.ReleasePage);
+                if (!interactive) ShowBalloon("WinDock update available", $"Version {result.Version} is ready. Right-click WinDock and choose Install to update.", null);
+                else if (MessageBox.Show($"WinDock {result.Version} is available.\nYou have {UpdateChecker.InstalledVersion}.\n\nDownload and install it now? WinDock closes and reopens by itself, and your dock settings are kept.",
+                    "WinDock update", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes) await InstallUpdate();
             }
             else MessageBox.Show(result.Status == UpdateStatus.Current
                 ? $"You’re up to date.\nInstalled version: {UpdateChecker.InstalledVersion}"
-                : "Couldn’t check for updates. Check your internet connection and try again. You can also find downloads at windock.vercel.app/#download.",
+                : "Couldn’t check for updates. Check that WinDock is running and this PC is online, then try again.",
                 "WinDock updates", MessageBoxButtons.OK, result.Status == UpdateStatus.Current ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
         }
         finally
@@ -403,6 +405,56 @@ internal sealed partial class TrayApp : ApplicationContext
                 _checkUpdates.Enabled = true; _checkUpdates.Text = "Check for updates…";
                 if (_connectionUpdates is { IsDisposed: false }) { _connectionUpdates.Enabled = true; _connectionUpdates.Text = "Check for updates…"; }
             }
+        }
+    }
+
+    private Uri? UpdateEndpoint(string action) => Uri.TryCreate(_endpoint, UriKind.Absolute, out var endpoint)
+        && endpoint.Scheme == "http" ? new Uri($"http://127.0.0.1:{endpoint.Port}/api/updates/local/{action}") : null;
+
+    private async Task<(HttpResponseMessage? Response, string Body)> PostUpdate(string action)
+    {
+        if (UpdateEndpoint(action) is not { } endpoint) return (null, "");
+        using var request = new HttpRequestMessage(HttpMethod.Post, endpoint) { Content = new StringContent("{}", System.Text.Encoding.UTF8, "application/json") };
+        request.Headers.Add("X-WinDock-Update", "local");
+        var response = await (action == "install" ? _installHttp : _captureHttp).SendAsync(request, _shutdown.Token);
+        return (response, await response.Content.ReadAsStringAsync(_shutdown.Token));
+    }
+
+    // The host already knows how to find, download, verify and run the fork's installer.
+    private async Task<UpdateResult> HostCheckUpdates()
+    {
+        try
+        {
+            var (response, body) = await PostUpdate("check");
+            if (response is null || !response.IsSuccessStatusCode) return new(UpdateStatus.Failed);
+            using var document = JsonDocument.Parse(body);
+            var root = document.RootElement;
+            var status = root.TryGetProperty("status", out var s) ? s.GetString() : null;
+            var latest = root.TryGetProperty("latestVersion", out var v) ? v.GetString() : null;
+            return status switch
+            {
+                "available" when latest is not null => new(UpdateStatus.Available, latest, new Uri(UpdateChecker.DownloadsPageUrl)),
+                "current" => new(UpdateStatus.Current, latest),
+                _ => new(UpdateStatus.Failed),
+            };
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or OperationCanceledException or JsonException) { return new(UpdateStatus.Failed); }
+    }
+
+    private async Task InstallUpdate()
+    {
+        try
+        {
+            var (response, body) = await PostUpdate("install");
+            if (response is null) { MessageBox.Show("WinDock is still starting. Try again in a moment.", "WinDock update", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
+            if (response.IsSuccessStatusCode) { ShowBalloon("Updating WinDock", "Downloading the update. WinDock will close and reopen by itself.", null); return; }
+            var message = "The update could not be installed.";
+            try { using var document = JsonDocument.Parse(body); if (document.RootElement.TryGetProperty("error", out var e) && e.GetString() is { Length: > 0 } text) message = text; } catch (JsonException) { }
+            MessageBox.Show(message, "WinDock update", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or OperationCanceledException)
+        {
+            MessageBox.Show("Couldn’t reach WinDock to install the update. Try again.", "WinDock update", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
     }
 
@@ -479,6 +531,7 @@ internal sealed partial class TrayApp : ApplicationContext
             _shutdown.Dispose();
             _captureTimer.Dispose();
             _captureHttp.Dispose();
+            _installHttp.Dispose();
             _smokeTimer?.Dispose();
             _icon.Visible = false;
             _icon.ContextMenuStrip?.Dispose();

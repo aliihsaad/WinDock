@@ -306,6 +306,14 @@ export async function createApp({
           "content-security-policy": "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'" });
         return res.end(await readFile(join(PUBLIC_DIR, "cast.html")));
       }
+      // The tray app asks the host (not the original project's website) for updates. Local PC only.
+      if ((path === "/api/updates/local/check" || path === "/api/updates/local/install") && req.method === "POST") {
+        if (!local || !sameOrigin(req) || req.headers["x-windock-update"] !== "local") return sendJson(res, 403, { error: "Update from the computer itself." });
+        const body = await readJsonBody(req);
+        if (Object.keys(body).length) return sendJson(res, 400, { error: "update takes no options" });
+        try { return path.endsWith("/check") ? sendJson(res, 200, await updates.check()) : sendJson(res, 202, await updates.install()); }
+        catch (error) { return sendJson(res, error.status || 502, { error: error.exposed || error.status ? error.message : "The update could not be completed." }); }
+      }
       if (path === "/api/cast/send" && req.method === "POST") {
         if (!local || !sameOrigin(req) || req.headers["x-windock-cast"] !== "local") return sendJson(res, 403, { error: "Send from the computer itself." });
         const body = await readJsonBody(req);

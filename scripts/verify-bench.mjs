@@ -101,6 +101,10 @@ try {
   t.deepEqual([got.id, got.url, got.ageMs < 5000], [1, "https://m.youtube.com/watch?v=dQw4w9WgXcQ", true], "phone sees the normalised link once");
   t.equal((await call("/api/cast", { auth: false })).status, 401, "unpaired client cannot read the cast");
   t.equal((await call("/cast")).status, 200, "send-to-phone page opens on the PC");
+  t.equal((await call("/api/updates/local/check", { method: "POST", body: {} })).status, 403, "tray update check needs its local header");
+  t.equal((await call("/api/updates/local/install", { method: "POST", body: {} })).status, 403, "tray install needs its local header");
+  t.equal((await call("/api/updates/local/check", { method: "POST", headers: { "x-windock-update": "local" }, body: { x: 1 } })).status, 400, "tray update takes no options");
+  t.ok([409, 501].includes((await call("/api/updates/local/install", { method: "POST", headers: { "x-windock-update": "local" }, body: {} })).status), "install before a check (or off Windows) is refused");
 } finally {
   app.hub.close(); app.inputHub.close(); app.server.closeAllConnections();
   await new Promise((r) => app.server.close(r));
