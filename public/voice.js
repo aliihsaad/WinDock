@@ -20,6 +20,8 @@ export function createVoice({ api, get = (id) => document.getElementById(id), no
     } catch (error) { show(undefined, error.message); speak(error.message); }
   }
   function onResult(text, final = true) {
+    // Hands-free speech can arrive while the screen is closed. Open it so a "Yes/No" question can be answered.
+    if (final && !dialog.open) { confirmBar.hidden = true; dialog.showModal(); paint(); }
     show("“" + text + "”");
     if (!final) return;
     listening = false; paint();
