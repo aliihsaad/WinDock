@@ -5,7 +5,7 @@ const bytesFromBase64 = (b64) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(
 export function createVoice({ api, rawFetch = (...a) => fetch(...a), get = (id) => document.getElementById(id), notify, buzz = () => {}, android = globalThis.WinDockAndroid, SpeechRecognition = globalThis.SpeechRecognition || globalThis.webkitSpeechRecognition, speech = globalThis.speechSynthesis, makeAudio = (url) => new Audio(url) }) {
   const dialog = get("voice"), heard = get("voice-heard"), said = get("voice-said"), mic = get("voice-mic"), confirmBar = get("voice-confirm");
   const modelNote = get("voice-model-note"), modelButton = get("voice-model-button"), namesInput = get("voice-names");
-  const packNote = get("voice-pack-note"), packButton = get("voice-pack-button");
+  const packNote = get("voice-pack-note"), packButton = get("voice-pack-button"), keyNote = get("voice-key-note"), keyLink = get("voice-key-link");
   let listening = false, recognizer = null, confirmVerb = null, pack = { installed: false, stt: false, tts: false, installing: false, progress: 0, error: "" }, packTimer = null, player = null;
   const nativeVoice = typeof android?.startListening === "function";
   const offlineCapable = typeof android?.downloadVoiceModel === "function";
@@ -91,8 +91,16 @@ export function createVoice({ api, rawFetch = (...a) => fetch(...a), get = (id) 
     packButton.textContent = pack.installed ? "Remove" : "Install on PC"; packButton.disabled = pack.installing;
     try { android?.setSendAudio?.(pack.stt); } catch { /* older shell */ }
   }
+  /** The key lives on the PC for safety, so the phone says where to paste it and opens the page that makes one. */
+  function paintKey(configured) {
+    if (!keyNote) return;
+    const port = globalThis.location?.port;
+    keyNote.textContent = configured ? "A Google AI key is saved on the PC, so you can ask general questions."
+      : "PC commands work without it. To ask general questions: tap below to get a free key, copy it, then on the PC open http://localhost:" + (port || "<dock port>") + "/cast and paste it into the box.";
+    if (keyLink) keyLink.hidden = configured || typeof android?.openAiKeyPage !== "function";
+  }
   async function refresh() {
-    try { const info = await api("/api/assistant"); pack = { ...pack, ...(info.voice || {}) }; } catch { return; }
+    try { const info = await api("/api/assistant"); pack = { ...pack, ...(info.voice || {}) }; paintKey(info.ai === true); } catch { return; }
     paintPack();
     clearTimeout(packTimer);
     if (pack.installing) packTimer = setTimeout(refresh, 2000);
@@ -121,6 +129,7 @@ export function createVoice({ api, rawFetch = (...a) => fetch(...a), get = (id) 
   mic.addEventListener("click", start);
   modelButton?.addEventListener("click", () => { try { android.downloadVoiceModel(); paintModel({ ready: false, progress: 0 }); } catch { /* older shell */ } });
   packButton?.addEventListener("click", packAction);
+  keyLink?.addEventListener("click", () => { try { android.openAiKeyPage(); } catch { /* older shell */ } });
   namesInput?.addEventListener("change", () => { try { android.setWakeNames(namesInput.value); namesInput.value = android.wakeNames(); } catch { /* older shell */ } });
   get("voice-yes").addEventListener("click", () => { if (confirmVerb) send("", confirmVerb); });
   get("voice-no").addEventListener("click", () => { confirmBar.hidden = true; confirmVerb = null; show(undefined, "Okay, cancelled."); });

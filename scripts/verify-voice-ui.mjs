@@ -4,7 +4,7 @@ const t = createChecker("voice-ui");
 const el = (extra = {}) => ({ listeners: {}, hidden: false, textContent: "", value: "", checked: false, disabled: false, attrs: {}, setAttribute(k, v) { this.attrs[k] = v; }, addEventListener(n, f) { (this.listeners[n] ||= []).push(f); }, dispatchEvent(e) { for (const f of this.listeners[e.type] || []) f(e); }, ...extra });
 function rig({ voice = { installed: true, stt: true, tts: true, installing: false, progress: 100, error: "" }, rawFetch, android = {} } = {}) {
   const els = {};
-  for (const id of ["voice-heard", "voice-said", "voice-mic", "voice-confirm", "voice-model-button", "voice-names", "voice-pack-note", "voice-pack-button", "voice-handsfree", "voice-yes", "voice-no"]) els[id] = el();
+  for (const id of ["voice-key-note", "voice-key-link", "voice-heard", "voice-said", "voice-mic", "voice-confirm", "voice-model-button", "voice-names", "voice-pack-note", "voice-pack-button", "voice-handsfree", "voice-yes", "voice-no"]) els[id] = el();
   els["voice-model-note"] = el({ parentElement: { hidden: true } });
   els.voice = el({ open: false, showModal() { this.open = true; }, close() { this.open = false; } });
   const calls = []; const heard = [];
@@ -73,5 +73,13 @@ const b64 = Buffer.alloc(6400).toString("base64");
   r.els["voice-handsfree"].checked = true; globalThis.WinDockVoice.onNeedModel();
   t.deepEqual([r.els["voice-handsfree"].checked, r.els.voice.open], [false, true], "hands-free switch turns off and the dialog explains");
   t.ok(r.els["voice-said"].textContent.includes("Download"), "tells the person what to do");
+}
+{ // the AI key note: says where to paste it, and hides itself once a key exists
+  const r = rig({ voice: { installed: false, stt: false, tts: false }, rawFetch: async () => new Response("{}"), android: { openAiKeyPage() { r.opened = true; } } });
+  globalThis.location = { port: "8620" };
+  await r.v.refresh();
+  t.ok(r.els["voice-key-note"].textContent.includes("localhost:8620/cast"), "tells where to paste the key");
+  t.equal(r.els["voice-key-link"].hidden, false, "get-a-key button shown without a key");
+  r.els["voice-key-link"].listeners.click[0](); t.ok(r.opened, "button opens the key page");
 }
 t.done("voice-ui verification passed");

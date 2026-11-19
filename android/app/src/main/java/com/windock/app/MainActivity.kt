@@ -524,6 +524,8 @@ class MainActivity : Activity() {
         @JavascriptInterface fun showUpdates() { runOnUiThread { if (trustedKeyboardPage()) this@MainActivity.showUpdates() } }
         @JavascriptInterface fun checkAppUpdate() { runOnUiThread { if (trustedKeyboardPage()) phoneUpdater.check() } }
         @JavascriptInterface fun installAppUpdate() { runOnUiThread { if (trustedKeyboardPage()) phoneUpdater.install() } }
+        // Fixed address only: the page cannot ask the phone to open anything else.
+        @JavascriptInterface fun openAiKeyPage() { runOnUiThread { if (trustedKeyboardPage()) try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://aistudio.google.com/apikey"))) } catch (_: Exception) {} } }
         @JavascriptInterface fun openPcRelease(version: String) { runOnUiThread { if (trustedKeyboardPage()) appUpdates.openPcRelease(version) } }
         @JavascriptInterface fun showPhoneSettings() { runOnUiThread { if (trustedKeyboardPage()) showPhoneOptions() } }
     }

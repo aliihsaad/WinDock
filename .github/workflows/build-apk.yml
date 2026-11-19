@@ -146,3 +146,22 @@ jobs:
             --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
             --title "WinDock ${VERSION}" \
             --notes "Build ${VERSION} from the upgrades branch. WinDockSetup.exe installs the PC app; WinDock-android-debug.apk is the phone app. The apps update themselves from latest.json."
+      - name: Publish the phone voice model (once)
+        # The app downloads this 40 MB model on demand. It is published only when missing, so builds stay fast.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          if gh api "repos/${GITHUB_REPOSITORY}/releases/tags/voicepack-v1" -q '.assets[].name' 2>/dev/null | grep -qx 'vosk-model.json'; then
+            echo "Voice model already published."; exit 0
+          fi
+          curl -fL --retry 4 --retry-delay 5 -o vosk-model.zip https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip
+          test -s vosk-model.zip
+          unzip -tq vosk-model.zip > /dev/null
+          SHA=$(sha256sum vosk-model.zip | cut -d' ' -f1); SIZE=$(stat -c %s vosk-model.zip)
+          BASE="https://github.com/${GITHUB_REPOSITORY}/releases/download/voicepack-v1"
+          printf '{"version":"1","url":"%s/vosk-model.zip","sha256":"%s","size":%s}\n' "$BASE" "$SHA" "$SIZE" > vosk-model.json
+          cat vosk-model.json
+          gh release delete voicepack-v1 --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes || true
+          gh release create voicepack-v1 vosk-model.zip vosk-model.json --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
+            --title "WinDock phone voice model" --notes "Offline speech model the phone app downloads once for hands-free voice. Checked by SHA-256."
