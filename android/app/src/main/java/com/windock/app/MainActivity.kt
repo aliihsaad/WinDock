@@ -36,6 +36,7 @@ import org.json.JSONObject
 import java.io.ByteArrayInputStream
 import java.util.concurrent.Executors
 import android.content.Intent
+import android.net.Uri
 import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.net.Network
