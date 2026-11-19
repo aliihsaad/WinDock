@@ -8,7 +8,7 @@ import { validateInput } from "./input.js";
  * the owner has been idle for `takeoverIdleMs` the newcomer takes over, so two
  * phones can share one PC without anyone having to close the other's touchpad.
  */
-export function createInputHub({ server, servers = [server], isAuthorized, input, leaseMs = 2000, takeoverIdleMs = 3000 }) {
+export function createInputHub({ server, servers = [server], isAuthorized, input, leaseMs = 5000, takeoverIdleMs = 3000 }) {
   const wss = new WebSocketServer({ noServer: true, maxPayload: 262144, perMessageDeflate: false });
   let owner = null;
   for (const listener of servers) listener.on("upgrade", (req, socket, head) => {

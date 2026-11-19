@@ -2,7 +2,7 @@ import { renderNowPlaying, renderControlPicker, renderAppIcon, renderPowerContro
 import { icon, controlIcon } from "./icons.js";
 import { addAppTile, addControlTile, addMacroTile, addWakeTile, groupTiles, ungroupTile, removeFromGroup, removeTile, moveTile, toWireTiles, availableControls, tileKey, CONTROL_CATALOG } from "./tiles.js";
 import { buzz, hapticsEnabled, setHaptics } from "./haptics.js";
-import { createTripleTap, isBackgroundTarget, quickInputEnabled, setQuickInput } from "./quick-access.js";
+import { createTapCounter, isBackgroundTarget, quickInputEnabled, setQuickInput } from "./quick-access.js";
 import { applyRotation, getRotation } from "./orientation.js";
 import { normalizeLayout, renderPages, pageCount, moveToTile } from "./launcher.js";
 import { createInputPad } from "./input-pad.js";
@@ -795,8 +795,8 @@ const inputPad = createInputPad({ api, notify, WebSocketClass: DockWebSocket, st
 $("quick-files").hidden = typeof window.WinDockAndroid?.openFiles !== "function";
 $("quick-files").addEventListener("click", () => { $("controls").close(); window.WinDockAndroid?.openFiles?.(); });
 $("quick-input").addEventListener("click", () => { $("controls").close(); inputPad.open(); });
-function openInputPad() { if (!paired || editing) return; $("controls").close(); $("drawer").close(); buzz(12); inputPad.open(); }
-$("input-edge").addEventListener("click", openInputPad);
+function openInputPad(options = {}) { if (!paired || editing) return; $("controls").close(); $("drawer").close(); buzz(options.keyboard ? [12, 40, 12] : 12); inputPad.open("touchpad", { keyboard: options.keyboard === true }); }
+$("input-edge").addEventListener("click", () => openInputPad());
 document.addEventListener("windock-toast", (e) => notify(e.detail.message, e.detail.error));
 const statusBar = createStatusBar({ api, isReady: () => paired && online && !document.hidden, notify, buzz, storage: localStorage });
 statusBar.start();
@@ -831,17 +831,22 @@ $("bench-version").addEventListener("click", async () => {
   try { const saved = await api("/api/versioned-save", { method: "POST", body: "{}" }); out.textContent = "Saved a copy as " + saved.name + "."; notify("Saved " + saved.name); buzz(12); }
   catch (error) { out.textContent = error.message; notify(error.message, true); }
 });
-$("drawer-input").addEventListener("click", openInputPad);
+$("drawer-input").addEventListener("click", () => openInputPad());
 $("quick-input-toggle").checked = quickInputEnabled();
 $("quick-input-toggle").addEventListener("change", (event) => { setQuickInput(event.target.checked); syncLayout(); });
 $("rotation").value = applyRotation(getRotation());
 syncSelects();
 $("rotation").addEventListener("change", (event) => { $("rotation").value = applyRotation(event.target.value); syncSelects(); });
-// Three quick taps on empty dock space open the touchpad. Taps on tiles and controls never count.
-const tripleTap = createTripleTap();
+// Quick taps on empty dock space: 3 open Touch & sign, 5 open the touchpad with the PC keyboard.
+// Taps on tiles and controls never count. After the third tap we wait a moment to see whether a fifth is coming.
+const tapCounter = createTapCounter();
+let tapOpen = null;
 $("app").addEventListener("pointerup", (event) => {
-  if (!quickInputEnabled() || editing || !event.isPrimary || !isBackgroundTarget(event.target)) { tripleTap.reset(); return; }
-  if (tripleTap.tap(event.clientX, event.clientY)) openInputPad();
+  if (!quickInputEnabled() || editing || !event.isPrimary || !isBackgroundTarget(event.target)) { clearTimeout(tapOpen); tapCounter.reset(); return; }
+  const taps = tapCounter.tap(event.clientX, event.clientY);
+  clearTimeout(tapOpen);
+  if (taps >= 5) { tapCounter.reset(); openInputPad({ keyboard: true }); }
+  else if (taps >= 3) tapOpen = setTimeout(() => { tapCounter.reset(); openInputPad(); }, 480);
 });
 $("quick-capture").addEventListener("click", () => { $("controls").close(); openCapture(); });
 $("quick-power").addEventListener("click", () => $("power-controls").showModal());

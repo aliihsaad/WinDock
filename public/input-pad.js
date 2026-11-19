@@ -20,6 +20,7 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
   const usesPc = (value = mode) => value === "touchpad" || value === "keys";
   // The PC answered and has no touchpad support: retrying cannot change that.
   let unsupported = false;
+  let autoRetries = 0, wantsKeyboard = false;
   const keyboard = createRemoteKeyboard({ send: raw, isReady: () => ready && mode === "touchpad", onSignature: () => select("signature"), notify });
   const clipboard = createPcClipboard({ api, send: raw, isReady: () => ready && mode === "touchpad", keyboard });
   const keys = createKeysPane({ api, send: raw, isReady: () => ready && mode === "keys", storage });
@@ -153,12 +154,21 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
         if (message.type === "error") { disconnect(); setStatus(message.error); return; }
         if (["focus", "input-error", "paste-result"].includes(message.type)) { keyboard.message(message); clipboard.message(message); return; }
         if (message.type === "ready") {
-          clearTimeout(startup); ready = true; connecting = false;
+          clearTimeout(startup); ready = true; connecting = false; autoRetries = 0;
           heartbeat = setInterval(() => raw({ type: "ping" }), 500);
-          raw({ type: "ping" }); paint(); if (mode === "keys") keys.open(); setStatus(demo ? "Demo only · No cursor control or files saved." : mode === "keys" ? "Tap a key to press it on your PC. Tap Ctrl, Shift or Alt to hold it." : "Tap to click · Two fingers: slide to scroll, tap for right-click · Pinch to zoom");
+          raw({ type: "ping" }); paint(); if (wantsKeyboard && mode === "touchpad") { wantsKeyboard = false; keyboard.request(); } if (mode === "keys") keys.open(); setStatus(demo ? "Demo only · No cursor control or files saved." : mode === "keys" ? "Tap a key to press it on your PC. Tap Ctrl, Shift or Alt to hold it." : "Tap to click · Two fingers: slide to scroll, tap for right-click · Pinch to zoom");
         }
       };
-      ws.onclose = ws.onerror = () => { if (socket === ws) { disconnect(); setStatus("Touchpad disconnected. Tap Reconnect to continue."); } };
+      ws.onclose = ws.onerror = () => {
+        if (socket !== ws) return;
+        const wasReady = ready;
+        disconnect();
+        // A brief Wi-Fi stall should not make you tap Reconnect: try again quietly a few times.
+        if (wasReady && autoRetries < 3 && dialog.open && !document.hidden) {
+          autoRetries++; setStatus("Reconnecting…");
+          setTimeout(() => { if (dialog.open && !socket && !connecting && !document.hidden) select(mode); }, 600 * autoRetries);
+        } else setStatus("Touchpad disconnected. Tap Reconnect to continue.");
+      };
     } catch (error) { if (ticket === generation) { connecting = false; setStatus(error.message); paint(); } }
   }
   const pad = $("touchpad-surface");
@@ -267,5 +277,5 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
   window.addEventListener("pagehide", disconnect);
   window.addEventListener("blur", () => { if (ready) release(); });
   window.addEventListener("resize", () => { release(); finishStroke(); if (matchMedia("(orientation: portrait)").matches && !document.documentElement.hasAttribute("data-rotate-ok")) { generation++; disconnect(); setStatus("Touchpad paused. Turn sideways and tap Reconnect."); } });
-  return { open(initialMode = mode) { $("drawer").close(); if (!dialog.open) dialog.showModal(); select(["signature", "keys"].includes(initialMode) ? initialMode : "touchpad"); }, disconnect };
+  return { open(initialMode = mode, { keyboard: wantKeyboard = false } = {}) { $("drawer").close(); wantsKeyboard = wantKeyboard; if (!dialog.open) dialog.showModal(); select(["signature", "keys"].includes(initialMode) ? initialMode : "touchpad"); }, disconnect };
 }

@@ -34,6 +34,20 @@ export function createTripleTap({ windowMs = 650, slop = 48, now = () => Date.no
   };
 }
 
+/** Counts consecutive nearby taps (3 opens the touchpad, 5 the keyboard). Returns the running count. */
+export function createTapCounter({ windowMs = 650, slop = 48, now = () => Date.now() } = {}) {
+  let hits = [];
+  return {
+    tap(x, y) {
+      const t = now();
+      hits = hits.filter((h) => t - h.t <= windowMs && Math.hypot(h.x - x, h.y - y) <= slop);
+      hits.push({ t, x, y });
+      return hits.length;
+    },
+    reset() { hits = []; },
+  };
+}
+
 /** True for a tap on bare dock background rather than a control, tile or scrolling gesture. */
 export function isBackgroundTarget(target) {
   return !!target && !target.closest?.("button, a, input, select, textarea, label, dialog, .tile, [role=button], .page-dot");

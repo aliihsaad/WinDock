@@ -7,7 +7,15 @@ import { findBlendPath, nextVersionName } from "../src/versioned-save.js";
 import { createConfigStore } from "../src/config.js";
 import { createApp } from "../server.js";
 
+import { createTapCounter } from "../public/quick-access.js";
 const t = createChecker("bench");
+{
+  let clock = 0; const c = createTapCounter({ now: () => clock });
+  const counts = []; for (let i = 0; i < 5; i++) { clock += 150; counts.push(c.tap(100, 100)); }
+  t.deepEqual(counts, [1, 2, 3, 4, 5], "quick nearby taps count up to five");
+  clock += 2000; t.equal(c.tap(100, 100), 1, "a pause starts a new count");
+  clock += 100; t.equal(c.tap(400, 400), 1, "a tap far away starts a new count");
+}
 
 // ---- Render watcher with a fake clock ----------------------------------------
 {

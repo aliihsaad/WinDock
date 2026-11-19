@@ -117,8 +117,8 @@ internal static class Touchpad
         {
             while (true)
             {
-                // Also releases buttons if Node crashes or stops forwarding the phone heartbeat.
-                var line = await input.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(2));
+                // Also releases buttons if Node crashes or stops forwarding the phone heartbeat. Longer than the host's own 5s lease, so a brief Wi-Fi stall never ends the session.
+                var line = await input.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(7));
                 if (line is null) break;
                 if (line.Length > 262144) throw new ArgumentException("Input too large.");
                 using var message = JsonDocument.Parse(line);
