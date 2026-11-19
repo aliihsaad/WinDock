@@ -45,7 +45,7 @@ it also stops when you log out.
 
 The package sets up the touchpad's udev rule. If the touchpad cannot start,
 log out and back in or reboot. Optional desktop tools for recording and
-brightness are listed in the [setup guide](https://github.com/aliihsaad/WinDock/blob/main/README.md#linux-preview).
+brightness are listed in the [setup guide](https://github.com/yeshwanthkumardomala/Tara/blob/main/README.md#linux-preview).
 Run `tara network` and choose **Check connection** before pairing if your firewall
 restricts incoming connections. The page shows the actual listening ports, including
 managed HTTPS (usually TCP 8621, or 8622 alongside external TLS, possibly another
@@ -55,7 +55,7 @@ to review and run with administrator permission. It never changes rules itself.
 USB tethering can create another interface/subnet; check again with tethering enabled.
 
 If pairing is paused for all devices, the PC-local recovery command is in the
-[development guide](https://github.com/aliihsaad/WinDock/blob/main/docs/DEVELOPMENT.md#pairing-recovery-and-older-clients).
+[development guide](https://github.com/yeshwanthkumardomala/Tara/blob/main/docs/DEVELOPMENT.md#pairing-recovery-and-older-clients).
 
 To update, install the new package with the same command. A background Tara
 restarts with the update and shows a new PIN. If a Tara window from an older

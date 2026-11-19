@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="75%"><stop offset="0" stop-color="#0b2d66"/><stop offset="0.55" stop-color="#051a40"/><stop offset="1" stop-color="#020a1c"/></radialGradient>
+    <radialGradient id="core" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#ffffff"/><stop offset="0.45" stop-color="#9fd0ff"/><stop offset="1" stop-color="#2f7dff"/></radialGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="9" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="6"/></filter>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <g filter="url(#glow)">
+    <path d="M256 92 Q272 240 420 256 Q272 272 256 420 Q240 272 92 256 Q240 240 256 92 Z" fill="none" stroke="#eaf4ff" stroke-width="9" stroke-linejoin="round"/>
+  </g>
+  <path d="M256 196 Q262 250 316 256 Q262 262 256 316 Q250 262 196 256 Q250 250 256 196 Z" fill="#2f7dff" filter="url(#soft)" opacity=".9"/>
+  <path d="M256 204 Q261 251 308 256 Q261 261 256 308 Q251 261 204 256 Q251 251 256 204 Z" fill="url(#core)"/>
+</svg>

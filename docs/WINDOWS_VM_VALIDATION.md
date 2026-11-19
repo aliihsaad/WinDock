@@ -8,24 +8,24 @@ blocker 2.
 
 ## Environment confirmed by owner screenshots
 
-- Hyper-V VM `WinDock-Play-QA`, generation 2, new 80 GB dynamic virtual disk,
+- Hyper-V VM `Tara-Play-QA`, generation 2, new 80 GB dynamic virtual disk,
   4 GB static RAM, two virtual processors, Secure Boot and virtual TPM.
 - The owner ran the VM creation helper in Administrator PowerShell. It recorded
   VM ID `af7e7d92-b59f-45a1-9eb3-f64e8b18b88e` under ignored
   `artifacts/vm-validation/vm-created.json`.
-- Windows 11 Enterprise Evaluation installed with local user `WinDockTest`.
+- Windows 11 Enterprise Evaluation installed with local user `TaraTest`.
   The initial expired watermark was transient: a later screenshot shows
   Activation state Active and a 90-day evaluation. No activation key was changed.
   The second guest report records Windows 11 Enterprise Evaluation version
   `10.0.26300`, build `26300`, and PowerShell `5.1.26100.9444`. The older build
   shown in the desktop watermark is not used as the OS-version evidence.
 - Owner shut down the guest and created/renamed the checkpoint
-  `Clean Windows — before WinDock`; screenshot confirms it and VM state Off.
+  `Clean Windows — before Tara`; screenshot confirms it and VM state Off.
 - Existing internal Default Switch used. No physical disk passthrough, external
   switch, host firewall change or shared host folders were configured. Basic
   VMConnect session is used; enhanced-session drive/clipboard sharing is avoided.
 - The owner's installed companion is separate at
-  `%LOCALAPPDATA%\Programs\WinDock\WinDockTray.exe` (PID 2004 observed before
+  `%LOCALAPPDATA%\Programs\Tara\TaraTray.exe` (PID 2004 observed before
   rebuilding). No installer, uninstall or tray test ran against that installation.
   The Home Assistant VM shown in Hyper-V Manager is unrelated and was untouched.
 
@@ -34,15 +34,15 @@ blocker 2.
 Version: package `0.3.0`, application release `0.3.0-preview.1`; uncommitted
 `play-store-integration-v0.2.6` working tree. These are local QA artifacts.
 
-- `artifacts/installer/WinDockSetup.exe`
+- `artifacts/installer/TaraSetup.exe`
   SHA-256 `093D7A2F274CE53AFA5A350FA8AE145B65811124B5ABB1402508E609BEED4C86`.
-- `artifacts/vm-validation/WinDock-Installer-QA.iso`, 122,699,776 bytes.
+- `artifacts/vm-validation/Tara-Installer-QA.iso`, 122,699,776 bytes.
   SHA-256 `D59977A53577CA916C0070E5A647070D8C41FAB953A28A908BE9DA5D95073EF0`.
 - Current native helper/tray Release publishes passed. Initial restricted build
   failed during npm packaging with `Exit handler never called`; retry with normal
   cache/network access passed. Inno Setup compilation passed.
 - Previous staging retained at
-  `artifacts/WinDock-win-x64-before-vm-20261103-153531`; new staging was created to
+  `artifacts/Tara-win-x64-before-vm-20261103-153531`; new staging was created to
   avoid shipping stale source files. All 62 staged `src`/`public` files match the
   current source, with no extra source files. The bounded sensitive-filename scan
   found no `.key`, `.pfx`, `.p12`, `.jks`, `.keystore`, `.env`, or exact
@@ -78,7 +78,7 @@ The conflict reproduces with a fresh temporary config, mock provider and an
 available custom HTTP port. It is a product startup bug exposed by the harness,
 not evidence of another installed application occupying the guest port:
 `serverPortChoice` defaulted its second argument to `process.env.PORT`.
-Passing an unset `WINDOCK_MANAGED_TLS_PORT` therefore reused HTTP's custom port;
+Passing an unset `TARA_MANAGED_TLS_PORT` therefore reused HTTP's custom port;
 HTTP bound first and managed HTTPS collided with it. The external TLS listener
 had the same unintended fallback. Default-port installations without `PORT`
 were unaffected, explaining previous successful device tests.
@@ -106,9 +106,9 @@ needed for the next run after the confirmed uninstall; existing-data guards rema
 
 Corrected local media:
 
-- Installer `artifacts/installer-port-fix/WinDockSetup.exe`, SHA-256
+- Installer `artifacts/installer-port-fix/TaraSetup.exe`, SHA-256
   `22421166DCC322A6C587123E1F2E930993AC3954A74AF2459EB149B401A587E1`.
-- Disc `artifacts/vm-validation/WinDock-Installer-QA-port-fix.iso`, SHA-256
+- Disc `artifacts/vm-validation/Tara-Installer-QA-port-fix.iso`, SHA-256
   `3A4C4A90C08B3FFA80535EA535988B3793FE8934E25277592EECB4CFF92FBECC`.
 - Inno Setup compile passed. Only the two changed JS files were refreshed in a
   separate copy of the previously built runtime; no native code changed. All 62
@@ -132,7 +132,7 @@ the same three installation/cleanup PASS lines, and:
   PASS line and reinstall step. It did not record the actual exit-code value.
 
 An inert Windows GUI executable reproduces the failure on host Windows
-PowerShell `5.1.26100.9711` without running an installer or WinDock. With the
+PowerShell `5.1.26100.9711` without running an installer or Tara. With the
 same redirected `Start-Process -PassThru` and timed `WaitForExit` sequence,
 `ExitCode` is null for both exit 0 and exit 7, even though `HasExited` is true.
 PowerShell evaluates `$null -ne 0` as true. Retaining the process handle before
@@ -158,7 +158,7 @@ Regression evidence in `artifacts/vm-validation`:
 
 Third-run media:
 
-- `artifacts/vm-validation/WinDock-Installer-QA-process-fix.iso`, SHA-256
+- `artifacts/vm-validation/Tara-Installer-QA-process-fix.iso`, SHA-256
   `26C9E5A4D5EF99C3C60DF5C2E9F1689F237842E8C281426B6EC87F6BBA761B4B`.
 - Installer is byte-for-byte identical to the port-fix installer above.
 - Test-script SHA-256:
@@ -171,8 +171,8 @@ Third-run media:
 
 ## Third guest result — complete installer smoke pass
 
-The owner's screenshot `WinDock-2026-11-03-163340-163-907aff.png` shows the
-`-process-fix` run finishing in `WinDock-Play-QA` with:
+The owner's screenshot `Tara-2026-11-03-163340-163-907aff.png` shows the
+`-process-fix` run finishing in `Tara-Play-QA` with:
 
 - Windows 11 Enterprise Evaluation `10.0.26300`, build `26300`, PowerShell
   `5.1.26100.9444`.
@@ -187,7 +187,7 @@ The owner's screenshot `WinDock-2026-11-03-163340-163-907aff.png` shows the
 
 This is owner-supplied visual evidence, not a direct retrieval of the guest log.
 The console identifies the guest result file as
-`C:\Users\WinDockTest\AppData\Local\WinDock-Installer-QA-20261103-process-fix\results.txt`.
+`C:\Users\TaraTest\AppData\Local\Tara-Installer-QA-20261103-process-fix\results.txt`.
 Original failed-run logs and the clean checkpoint remain available separately.
 
 The completed smoke test covers fresh silent install, bundled runtime files,
@@ -195,7 +195,7 @@ shortcut/registration, installed tray/server startup, same-version reinstall
 with an unrelated sentinel, uninstall and unchanged personal config. It cleans
 up its own guest installation. It does not prove an older-version upgrade or
 real authenticated pairing/identity preservation. The wrapper rejects a physical
-PC, a user other than WinDockTest, an elevated token, existing WinDock data or a
+PC, a user other than TaraTest, an elevated token, existing Tara data or a
 previous QA directory. The copied test retains its own installation guards.
 
 ## Interactive setup, first launch and restart
@@ -209,12 +209,12 @@ availability only, not HTTPS pairing or remote reachability. Keep the phone
 connection test pending rather than treating this as an application failure or
 a secure-pairing pass.
 
-1. Keep using Basic Session in `WinDock-Play-QA`, signed in as `WinDockTest`.
+1. Keep using Basic Session in `Tara-Play-QA`, signed in as `TaraTest`.
    Close the completed test console; do not rerun the smoke wrapper.
-2. Inside the guest, open `This PC` → `WINDOCK_QA` DVD → `artifacts` →
-   `installer` → `WinDockSetup.exe`. Run normally, without elevation.
+2. Inside the guest, open `This PC` → `TARA_QA` DVD → `artifacts` →
+   `installer` → `TaraSetup.exe`. Run normally, without elevation.
 3. Exercise the optional desktop shortcut and start-at-sign-in choices. Finish
-   with `Open WinDock` selected, then inspect the tray menu and
+   with `Open Tara` selected, then inspect the tray menu and
    `Pair a phone securely` window. Record any warning/error before proceeding.
 4. Confirm that the QR window opens. A later guest sign-out/sign-in checks
    autostart; installation alone does not establish it.
@@ -225,7 +225,7 @@ host networking, import the owner's pairing state or share host drives for it.
 
 Restart-check procedure: sign into the guest's browser with the guest companion's PIN,
 create one synthetic tile, then restart only the guest and sign in as
-`WinDockTest`. If start-at-sign-in was selected during installation, verify the
+`TaraTest`. If start-at-sign-in was selected during installation, verify the
 tray appears automatically before launching anything manually. Reopen the guest
 browser address and check that the tile remains. This does not establish Android
 pairing persistence, an older-version upgrade, or a real standard-user install.
@@ -243,9 +243,9 @@ HTTP sessions in memory. Managed HTTPS uses the separate durable store in
 secure Android pairing regression, nor does this VM check establish HTTPS
 pairing preservation.
 
-Same-version reinstall procedure: quit only the guest's WinDock from its tray, rerun the same
-`WinDockSetup.exe` from the test DVD interactively, retain the chosen installer
-options and open WinDock. Sign into the guest browser if prompted and verify the
+Same-version reinstall procedure: quit only the guest's Tara from its tray, rerun the same
+`TaraSetup.exe` from the test DVD interactively, retain the chosen installer
+options and open Tara. Sign into the guest browser if prompted and verify the
 same tile. This exercises real synthetic dock state during same-version reinstall;
 it is separate from the smoke test's sentinel check and an older-version upgrade.
 
@@ -254,7 +254,7 @@ and the synthetic tile remained. Record same-version interactive reinstall with
 actual synthetic dock state as owner-reported PASS. This does not establish
 older-version upgrade or authenticated HTTPS pairing preservation.
 
-Uninstall/reinstall procedure: quit the guest companion, uninstall WinDock through the guest's
+Uninstall/reinstall procedure: quit the guest companion, uninstall Tara through the guest's
 Installed apps, then reinstall from the same test DVD. Do not manually remove
 application data or restore the clean checkpoint. Open the companion and its
 HTTP address in the guest browser, authenticate if prompted, and check the
@@ -265,11 +265,11 @@ and the same synthetic tile remained. Record interactive uninstall/reinstall
 with synthetic dock retention as owner-reported PASS. No real HTTPS pairing was
 established in this guest, so its preservation is still unverified here.
 
-Next guest check: create a separate local Standard User named `WinDockStandard`
-inside the VM, retaining the existing `WinDockTest` administrator account and its
-test data. Fully sign out of `WinDockTest` before signing into the new account to
+Next guest check: create a separate local Standard User named `TaraStandard`
+inside the VM, retaining the existing `TaraTest` administrator account and its
+test data. Fully sign out of `TaraTest` before signing into the new account to
 avoid two companion sessions competing for the same ports. Run only the DVD's
-`artifacts/installer/WinDockSetup.exe` normally, select the optional desktop
+`artifacts/installer/TaraSetup.exe` normally, select the optional desktop
 shortcut and verify installation, shortcut and browser first use without
 administrator credentials. Do not run the smoke wrapper, which is restricted
 to the original test user. Record any installation or firewall prompt separately.
@@ -283,7 +283,7 @@ administrator password does not establish that an operation was unelevated.
 Verify only inside the guest; no host account or network changes are required.
 
 Owner clarified that the new guest account is actually `Ali-VM`, not the suggested
-`WinDockStandard`. The 17:17 screenshot of `net user ali-vm` shows local group
+`TaraStandard`. The 17:17 screenshot of `net user ali-vm` shows local group
 membership `Users` only and no global groups. Standard-account membership is now
 verified by the supplied screenshot; fresh dock, shortcut, tray and browser
 behavior remain owner-reported functional passes. This does not identify the
@@ -291,7 +291,7 @@ earlier skipped password prompt or independently establish installer elevation.
 
 Follow-up under `Ali-VM`: after quitting the guest companion and rerunning the
 same DVD installer normally, the owner reports that no administrator/password
-prompt appeared and WinDock opened successfully in the browser. Record the
+prompt appeared and Tara opened successfully in the browser. Record the
 same-version installer rerun and browser launch from a verified standard account
 without administrator approval as owner-reported PASS. This confirms the rerun,
 not a separately observed first installation with no previous application state.
@@ -307,18 +307,18 @@ evidence, not a completed phone pairing or a test of guest network reachability.
 ## Public-release upgrade test — owner walkthrough passed
 
 The actual public baseline is `v0.2.6-preview.1`, not a release tagged `v0.2.6`.
-Its `WinDockSetup.exe` was downloaded from the repository's public GitHub release;
+Its `TaraSetup.exe` was downloaded from the repository's public GitHub release;
 its SHA-256 matches both the release asset digest and `SHA256SUMS.txt`:
 `DFFBCE5D810ED2D64D9EF772E0275AB9B28EADAC9EA4703E5FC3596D9CEF9B7E`
 (123,360,249 bytes; PE product version 0.2.6). No installer was run on the host.
 
 A separate, manually operated DVD is prepared:
 
-- `artifacts/vm-validation/WinDock-Installer-QA-upgrade.iso`, label
-  `WINDOCK_UPGRADE`, 246,046,720 bytes.
+- `artifacts/vm-validation/Tara-Installer-QA-upgrade.iso`, label
+  `TARA_UPGRADE`, 246,046,720 bytes.
 - ISO SHA-256: `11BB6AFA826877B450682017FC0774E8BE827E0F0789733488888EA36B8FA7B4`.
-- `01-Public-0.2.6/WinDockSetup.exe`: the verified public baseline.
-- `02-Candidate/WinDockSetup.exe`: existing unpublished candidate, unchanged
+- `01-Public-0.2.6/TaraSetup.exe`: the verified public baseline.
+- `02-Candidate/TaraSetup.exe`: existing unpublished candidate, unchanged
   SHA-256 `22421166DCC322A6C587123E1F2E930993AC3954A74AF2459EB149B401A587E1`.
 - The other two files are manual instructions and a provenance/checksum manifest.
   ISO integrity, extraction, four-file allowlist and all payload hashes passed.
@@ -331,7 +331,7 @@ After shutting down only the guest, the owner can run `Attach-TestDisc.ps1
 guards require the exact powered-off QA VM, expected virtual disk and clean
 checkpoint. Only the guest DVD/boot order are changed; checkpoints are retained.
 
-Use a new guest Standard User named `WinDockUpgrade`, retaining the existing
+Use a new guest Standard User named `TaraUpgrade`, retaining the existing
 accounts and results. Fully sign out of other guest accounts to stop their
 companions. Install the public baseline normally, create and launch a synthetic
 Calculator tile, then quit its tray and install the candidate under that same
@@ -348,7 +348,7 @@ phone pairing. Default Switch NAT reachability limitations still apply.
 
 During the public-baseline setup walkthrough, the supplied screenshot shows a
 guest UAC prompt for **Windows Firewall**, verified publisher Microsoft Windows,
-requesting the guest administrator `WinDockTest` credentials. It is not a request
+requesting the guest administrator `TaraTest` credentials. It is not a request
 to create a password for the new standard account. The owner says this matches
 the prompt previously skipped under `Ali-VM`, and reports that the new account
 also has no password. The first `Ali-VM` prompt is therefore owner-identified as
@@ -360,7 +360,7 @@ elevation or a completed upgrade.
 ### Loopback first use confirmed — 4 November, 00:50
 
 The owner reports that the dock opened without entering a PIN. The supplied
-00:50 screenshot shows Edge inside `WinDock-Play-QA` at `127.0.0.1:8620`, with
+00:50 screenshot shows Edge inside `Tara-Play-QA` at `127.0.0.1:8620`, with
 an empty dock and Connected status. Record local-browser first use as confirmed;
 the screenshot does not independently establish the installed version or the
 firewall prompt's final disposition.
@@ -375,7 +375,7 @@ Owner confirmation at 01:12 on 4 November: version `0.2.6-preview.1` and Calcula
 
 Original baseline procedure: confirm the guest companion reports `0.2.6-preview.1`, then add and
 launch a synthetic Calculator tile inside the guest. After that passes, quit
-the guest tray and install `02-Candidate/WinDockSetup.exe` from `WINDOCK_UPGRADE`
+the guest tray and install `02-Candidate/TaraSetup.exe` from `TARA_UPGRADE`
 under the same guest account without uninstalling or clearing data. Check tile
 retention and launch before proceeding through the remaining upgrade checks.
 Local-browser success does not establish inbound phone access or firewall
@@ -400,8 +400,8 @@ The owner reports that the loopback tab appears to remain on the old version,
 while opening the installed app's address in another tab shows 0.3.0 with the
 same Calculator tile and asks for a PIN. Screenshots show HTTP addresses
 `127.0.0.1:8620` and `172.19.139.213:8620`; both display the top controls island
-and Calculator tile. The Installed apps screenshot shows one WinDock 0.3.0
-entry under account WinDockUpgrade. It does not show a version readout in either
+and Calculator tile. The Installed apps screenshot shows one Tara 0.3.0
+entry under account TaraUpgrade. It does not show a version readout in either
 browser tab, and the native pairing window's contents are obscured.
 
 The PIN difference is explained by the source: HTTP loopback peer plus loopback
@@ -415,7 +415,7 @@ verification. The installed 0.3.0 entry and owner confirmation remain the eviden
 
 The owner explicitly confirmed all remaining requested checks: native pairing QR
 renders, tray starts automatically after restarting the VM and signing into the
-same account, desktop shortcut opens WinDock, and the saved Calculator tile still
+same account, desktop shortcut opens Tara, and the saved Calculator tile still
 launches. Together with the earlier installation, no-administrator-prompt and
 single Installed apps entry evidence, mark the public v0.2.6-preview.1 to candidate
 0.3.0 Windows VM walkthrough as owner-reported PASS.
@@ -426,13 +426,13 @@ remote firewall-denial recovery, clean Linux installation or Play delivery.
 
 ## November 6 final GitHub candidate acceptance
 
-The owner installed the final WINDOCK_030 candidate under the new standard guest
-account WinDockFirewall. Installation completed without reported installer
+The owner installed the final TARA_030 candidate under the new standard guest
+account TaraFirewall. Installation completed without reported installer
 elevation; a screenshot separately identifies the Node.js Windows Firewall
 prompt. The owner cancelled it. Local dock and connection help worked, while
 main-PC checks over an established on-link route timed out on both ports.
 
-The owner used the guest WinDockTest administrator to change Ethernet from Public
+The owner used the guest TaraTest administrator to change Ethernet from Public
 to Private and apply the help page's generated rule for this account's bundled
 node.exe, TCP 8621, guest address 172.19.130.151 and subnet 172.19.128.0/20.
 Public-only block rules were retained. Remote 8621 then connected; 8620 remained

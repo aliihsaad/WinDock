@@ -7,7 +7,7 @@ no deployment, publication, Play upload, or production signing operation.
 
 - Android: Files & Media in the swipe-down controls curtain and connection screen.
   Review photos, videos or documents selected through the system picker, or use
-  another app's Share → WinDock. Both single and multiple content-URI shares work
+  another app's Share → Tara. Both single and multiple content-URI shares work
   through the same review screen; sending always requires an explicit action.
 - Photos/videos use the system Photo Picker on API 33+; documents and the fallback
   on older devices use `ACTION_OPEN_DOCUMENT`. No broad storage permission,
@@ -19,11 +19,11 @@ no deployment, publication, Play upload, or production signing operation.
 - Windows: tray → Files & Media opens native receive settings, progress/receipts,
   Cancel selected batch, destination picker, and explicit Open folder. Tray balloons
   report incoming/completed/failed batches without exposing filenames.
-- Linux: `windock files` opens the loopback-only receive dashboard. The existing
+- Linux: `tara files` opens the loopback-only receive dashboard. The existing
   host receives files using the same Node implementation; `notify-send` notifications
   are best effort. `xdg-open` opens the configured folder only on an explicit action.
 - Securely paired phones can send immediately. Only the computer can disable
-  receiving or change the destination. Default: the user's Downloads/WinDock
+  receiving or change the destination. Default: the user's Downloads/Tara
   (XDG Downloads on Linux). There is no remote file browser or arbitrary PC path API.
 
 ## Transport and storage contract
@@ -46,7 +46,7 @@ file at a time. Both ends use 64 KiB streaming buffers and incremental SHA-256;
 the receiver verifies the staged disk bytes before publication. Cloud content is
 read through its selected provider without making another complete phone copy.
 
-Partial files have fixed random-ID names inside private `.windock-incoming`
+Partial files have fixed random-ID names inside private `.tara-incoming`
 staging. Incoming names are sanitized for Windows and Linux, including separators,
 reserved names, control/bidi characters and length. Symlink destinations are
 rejected. No file is automatically opened or executed. Final publication uses an
@@ -60,7 +60,7 @@ hour overall. Verification allows five minutes on Android. Large files on very s
 devices/networks may require a smaller selection. The 8 GiB limit is a safety cap,
 not a claim that physical-device 8 GiB performance has been accepted.
 
-Transfers are foreground-only. Leaving WinDock or losing the connection cancels
+Transfers are foreground-only. Leaving Tara or losing the connection cancels
 the active request. Completed files remain on the PC. Explicit Retry/check status
 reuses the batch/file IDs and verifies receipts, skipping files already completed;
 there is no automatic retry/resume and no automatic new batch after uncertainty.
@@ -72,7 +72,7 @@ Private bounded receipts retain names, sizes, hashes, destination, and a hash of
 authorization session for up to 24 hours (64 batches / 500 files). Partial files are
 cleaned on cancellation/failure, next host startup, or after ten minutes inactive
 (checked once a minute). Saved files are not deleted when receipts expire. Only
-WinDock's fixed-ID staging files are cleaned. If the host is stopped, startup does
+Tara's fixed-ID staging files are cleaned. If the host is stopped, startup does
 the deferred cleanup. After receipt expiry or lost phone selection state, inspect
 the destination before beginning a new batch to avoid intentional duplicate copies.
 
@@ -85,7 +85,7 @@ capture, app/folder tiles, playback, pairing and updater behavior remain. The to
 island and simplified controls curtain remain; Files & Media replaces the voice
 shortcut. No new library or version increment was introduced for this feature.
 
-Package ID remains `com.windock.app`, version code 10 / `0.3.0-preview.1`, minimum
+Package ID remains `com.tara.app`, version code 10 / `0.3.0-preview.1`, minimum
 API 24 and target API 36. The local APK uses the existing debug signer. It is not a
 Play release candidate. The approved Play build still requires a secure companion;
 older HTTP-only desktop versions do not gain file reception. Older Android clients
@@ -113,15 +113,15 @@ synthetic content; they never use the owner's Downloads folder or live companion
 
 ## Local test kit and update steps
 
-1. Use `artifacts/WinDock-files-local-test.apk` and extract
-   `artifacts/WinDock-files-local-test-windows.zip` into a new folder.
-2. On Windows, finish any active task, then quit the existing WinDock tray app.
+1. Use `artifacts/Tara-files-local-test.apk` and extract
+   `artifacts/Tara-files-local-test-windows.zip` into a new folder.
+2. On Windows, finish any active task, then quit the existing Tara tray app.
    Run the new folder's `Start-SecureTest.ps1` in PowerShell. It reuses the existing
    local-test configuration and pairing identity, refuses to stop another instance,
    and does not require installing a CA or rescanning a code for a remembered PC.
 3. Install the APK as an update. Do not uninstall the existing app; that removes
    saved pairing/settings. If Android reports a signer mismatch, stop and report it.
-4. Open WinDock. It should reconnect and retain tiles. Confirm the PC tray's Files
+4. Open Tara. It should reconnect and retain tiles. Confirm the PC tray's Files
    & Media window shows receiving enabled and your intended destination.
 
 ## Physical-device acceptance checklist
@@ -139,7 +139,7 @@ Run on both the Huawei and Samsung Galaxy S24 Ultra, using non-sensitive files.
    Media. Send one photo, several photos, a video and a PDF. Check bytes/content on
    the PC; each should appear only after verification, with completion on the phone.
 2. In Gallery and Files (and a cloud provider if used), select one file then several
-   files → Share → WinDock. Review and Send to PC. Try sharing while disconnected;
+   files → Share → Tara. Review and Send to PC. Try sharing while disconnected;
    connect and verify the selection remains. Cancel the system picker once.
 3. Repeat the same filename, Unicode/emoji/spaces, and two identical basenames
    from different folders. Confirm existing contents remain and suffixes are used.
@@ -157,7 +157,7 @@ Run on both the Huawei and Samsung Galaxy S24 Ultra, using non-sensitive files.
 8. Confirm apps/folder tiles, touchpad, clipboard paste/history, screen capture,
    ordinary typing, emoji, composition, Gboard/Huawei keyboard microphone dictation,
    updates UI, and saved pairing all still work. Dedicated Voice to PC should be absent.
-9. Repeat receiver tests on a real supported Linux desktop, including `windock files`,
+9. Repeat receiver tests on a real supported Linux desktop, including `tara files`,
    XDG destination, notifications, cancellation, Unicode filenames and permissions.
 10. Test API24/older-provider fallback, denied/revoked grants, offline cloud files,
     receiver crash around completion, slow storage, long sessions, and production
@@ -205,8 +205,8 @@ No APK update is required. The user's live companion was not stopped during the 
 
 ## Follow-up: Android Photos → Send opened Switch PC — 2 November 2026
 
-The owner reported this from **WinDock → Files & Media → Photos**, not Android's
-Share menu. The system picker pauses the Activity; WinDock intentionally closes
+The owner reported this from **Tara → Files & Media → Photos**, not Android's
+Share menu. The system picker pauses the Activity; Tara intentionally closes
 its managed HTTPS transport while paused and reconnects to the saved PC on resume.
 Previously the Send button checked only the selected files, not connection readiness.
 `NativeFiles.start()` treated every missing transport as a reason to dismiss Files
@@ -228,13 +228,13 @@ checks that a premature tap keeps the selection open, reconnect enables explicit
 Send, and the PC receives a completed file. A separate real revoked-session case
 checks that only the explicit Connect button opens Switch PC. Existing single and
 multiple Android shares and denied URI grants remain covered. The pre-fix
-`WinDock-links-local-test.apk` reproduced the premature-tap failure; the old debug
+`Tara-links-local-test.apk` reproduced the premature-tap failure; the old debug
 build also reproduced the exact Switch PC popup after rejection.
 
-Local test artifact: `artifacts/WinDock-files-reconnect-local-test.apk`. It uses the
+Local test artifact: `artifacts/Tara-files-reconnect-local-test.apk`. It uses the
 release configuration (non-debuggable, HTTPS required) with the **existing debug
 test certificate**, matching the previously installed local APK. It is not signed
-for publication. Package `com.windock.app`, version code `10`, minimum API `24`
+for publication. Package `com.tara.app`, version code `10`, minimum API `24`
 and target API `36` are unchanged. No key was generated or modified.
 
 Validation for this fix:

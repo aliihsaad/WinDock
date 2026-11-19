@@ -1,4 +1,4 @@
-# WinDock website
+# Tara website
 
 A static product website with a small public download-count endpoint. No framework,
 external fonts, or connection to a visitor's PC. The published site is
@@ -14,7 +14,7 @@ https://windock.vercel.app; pushes to `main` deploy through the existing Vercel 
 - `style.css`: the shared ivory/charcoal, blue and sage identity, glass surfaces,
   typography, responsive layouts and accessible focus states.
 - `symbols.js`, `theme.js`, `navigation.js`: shared page controls. Desktop navigation
-  expands from the compact WinDock icon on hover or keyboard focus, then collapses
+  expands from the compact Tara icon on hover or keyboard focus, then collapses
   when leaving. Mobile uses a native modal with scroll locking and focus return.
 - `demo.js`: parent-side demo controls and the readable PC picker overlay.
 - `downloads.js`: validates the existing release manifest and displays public counts.
@@ -33,13 +33,13 @@ that link directly. This feature does not change analytics consent.
 
 Giscus is free and open source. Comments, replies and reactions are stored publicly
 in GitHub Discussions; contributing requires GitHub sign-in. We do not maintain a
-review database, invent a rating score, or collect a separate WinDock login.
+review database, invent a rating score, or collect a separate Tara login.
 
 Repository setup is `aliihsaad/WinDock` (`R_kgDOUfO7Ig`), Announcements category
 (`DIC_kwDOUfO7Is4DJr27`). Discussions must be enabled and the official Giscus GitHub
 App installed for this repository. Both were verified during implementation.
 The `number` mapping points to the existing [discussion #39](https://github.com/aliihsaad/WinDock/discussions/39),
-`WinDock community feedback`, which already contains the maintainer's welcome comment.
+`Tara community feedback`, which already contains the maintainer's welcome comment.
 Localhost, preview deployments and production share this conversation. Its backlink
 is always the production community section, and the fallback link opens the same
 discussion even when Giscus cannot load.
@@ -55,7 +55,7 @@ transparent even when the system appearance and saved website theme differ.
 
 Reference: https://giscus.app/ and https://github.com/giscus/giscus/blob/main/ADVANCED-USAGE.md.
 The theme follows the device until the visitor chooses one; that choice is saved
-in `windock-website-theme`. `theme.js` applies it before styles load.
+in `tara-website-theme`. `theme.js` applies it before styles load.
 
 ## Local review
 
@@ -132,7 +132,7 @@ Screenshots go to ignored `output/playwright/`.
 
 `analytics.js` asks before loading Vercel Web Analytics. **Allow analytics** and
 **No thanks** have equal prominence; neither is preselected. The choice is saved
-in `windock-website-analytics-v1`. **Analytics preferences** in every footer lets
+in `tara-website-analytics-v1`. **Analytics preferences** in every footer lets
 visitors change it. Storage failures keep the choice in memory for the page only.
 
 Only `windock.vercel.app` loads the analytics script; local and preview deployments

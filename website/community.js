@@ -62,7 +62,7 @@ function load() {
   script.addEventListener('error', unavailable, { once: true });
   script.addEventListener('load', () => {
     if (!frame()) return unavailable();
-    frame().title = 'WinDock community feedback on GitHub';
+    frame().title = 'Tara community feedback on GitHub';
   }, { once: true });
   document.head.append(script);
 }
@@ -80,7 +80,7 @@ window.addEventListener('message', event => {
     return;
   }
   if (data.discussion) {
-    if (/^https:\/\/github\.com\/aliihsaad\/WinDock\/discussions\/\d+$/.test(data.discussion.url)) {
+    if (/^https:\/\/github\.com\/aliihsaad\/Tara\/discussions\/\d+$/.test(data.discussion.url)) {
       discussionLink.href = data.discussion.url;
       discussionLink.textContent = 'View discussion on GitHub ↗';
     }

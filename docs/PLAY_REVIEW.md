@@ -35,12 +35,12 @@ source and release metadata, not a future proposal.
 These findings are not evidence that every old Android APK fails basic pairing:
 the shell loads its dock UI from the host, so the host can supply its own PIN UI.
 They are evidence that this branch is a functional/security regression relative
-to released WinDock and cannot be certified as a compatible upgrade.
+to released Tara and cannot be certified as a compatible upgrade.
 
 ## What the preparation changes do preserve
 
 Against their own older baseline, HTTP and UDP v1 remain available with the same
-probe/reply strings, port defaults, `windock_session` cookie, four-digit pairing,
+probe/reply strings, port defaults, `tara_session` cookie, four-digit pairing,
 API route bodies and WS snapshot format. The HTTPS listener adds v2 discovery,
 an independent secure PIN/token store and a Secure `__Host-` cookie. Both listeners
 share dock state, the input lease and capture provider. The changes to
@@ -88,7 +88,7 @@ bundle checks and Play-generated APK/upgrade tests after separate authorization.
 
 ## Google Play and owner prerequisites
 
-- AliDevLab is a newly created personal account; no WinDock listing exists.
+- AliDevLab is a newly created personal account; no Tara listing exists.
   Dashboard access/Create App availability does not establish production access.
   For personal accounts created after 13 November 2023, Google requires at least
   12 opted-in testers continuously for 14 days before applying for production
@@ -132,18 +132,18 @@ Paths are repository-relative. M = modified tracked file; A = new preparation fi
 | M `.gitignore` | Key-format exclusions added; no substitute for staged-secret inspection. |
 | M `android/README.md` | Preparation instructions; compatibility/version caveats need review notice. |
 | M `android/app/build.gradle` | SDK36/min24/release flags/signing; code9 collision and unsigned-mode caveat. |
-| M `android/app/src/main/java/com/windock/app/Discovery.kt` | v1 default retained, release v2 added; missing released multi-PC scan. |
-| M `android/app/src/main/java/com/windock/app/EndpointPolicy.kt` | HTTPS predicate added; released CGNAT range absent. |
-| M `android/app/src/main/java/com/windock/app/MainActivity.kt` | Insets/Back/HTTPS/privacy/bridge checks; released picker/appearance/update changes absent. |
+| M `android/app/src/main/java/com/tara/app/Discovery.kt` | v1 default retained, release v2 added; missing released multi-PC scan. |
+| M `android/app/src/main/java/com/tara/app/EndpointPolicy.kt` | HTTPS predicate added; released CGNAT range absent. |
+| M `android/app/src/main/java/com/tara/app/MainActivity.kt` | Insets/Back/HTTPS/privacy/bridge checks; released picker/appearance/update changes absent. |
 | M `android/app/src/main/res/layout/activity_main.xml` | Responsive address field/privacy button; integrate with released screen controls. |
 | M `android/app/src/main/res/values/strings.xml` | Privacy and secure-host explanation added. |
-| M `android/app/src/test/java/com/windock/app/EndpointPolicyTest.kt` | Downgrade checks added; released tests must also be retained. |
+| M `android/app/src/test/java/com/tara/app/EndpointPolicyTest.kt` | Downgrade checks added; released tests must also be retained. |
 | M `android/build.gradle` | AGP update only. |
 | M `android/gradle/wrapper/gradle-wrapper.properties` | Gradle update with verified checksum. |
-| M `native/installer/WinDock.iss` | AliDevLab publisher and explicit helper/guide allowlist; AppId retained. |
+| M `native/installer/Tara.iss` | AliDevLab publisher and explicit helper/guide allowlist; AppId retained. |
 | M `native/tray/Program.cs` | Additional HTTPS banner/display; released recovery/port features absent. |
 | M `native/tray/UpdateChecker.cs` | Fallback version only; internet feed is privacy-relevant. |
-| M `native/tray/WinDockTray.csproj` | Version only; no application protocol change. |
+| M `native/tray/TaraTray.csproj` | Version only; no application protocol change. |
 | M `package-lock.json` | Root version only; dependency lock entries unchanged by this preparation. |
 | M `package.json` | Version only; app remains free. |
 | M `public/app.js` | Secure-PIN hint on HTTPS; current released UI features absent. |
@@ -159,9 +159,9 @@ Paths are repository-relative. M = modified tracked file; A = new preparation fi
 | M `src/sync.js` | Same snapshot handler on both listeners. |
 | M `test/run.mjs` | Adds TLS test; newer release test inventory absent. |
 | M `website/index.html` | Local privacy link; website baseline also older than production. |
-| A `android/app/src/androidTest/java/com/windock/app/PrivacyTest.kt` | Offline dialog/Back test; not evidence of data-flow correctness. |
-| A `android/app/src/androidTest/java/com/windock/app/ReleasePolicyTest.kt` | Opt-in non-debuggable/cleartext-denial test. |
-| A `android/app/src/androidTest/java/com/windock/app/SecureDockTest.kt` | Opt-in trusted/revoked CA mock tests; no production signer. |
+| A `android/app/src/androidTest/java/com/tara/app/PrivacyTest.kt` | Offline dialog/Back test; not evidence of data-flow correctness. |
+| A `android/app/src/androidTest/java/com/tara/app/ReleasePolicyTest.kt` | Opt-in non-debuggable/cleartext-denial test. |
+| A `android/app/src/androidTest/java/com/tara/app/SecureDockTest.kt` | Opt-in trusted/revoked CA mock tests; no production signer. |
 | A `android/app/src/main/assets/privacy.txt` | Reviewed and corrected during this review; final release scope unresolved. |
 | A `android/app/src/release/AndroidManifest.xml` | Release cleartext override; no added permissions/components. |
 | A `android/app/src/release/res/values/strings.xml` | HTTPS address examples. |

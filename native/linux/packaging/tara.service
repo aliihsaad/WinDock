@@ -1,6 +1,6 @@
 [Unit]
 Description=Tara phone companion host
-Documentation=https://github.com/aliihsaad/WinDock#linux-preview
+Documentation=https://github.com/yeshwanthkumardomala/Tara#linux-preview
 # Ends with the desktop session when a session manager such as uwsm runs it.
 PartOf=graphical-session.target
 After=graphical-session.target

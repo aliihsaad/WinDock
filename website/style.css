@@ -1,5 +1,5 @@
 @charset "UTF-8";
-/* WinDock's shared palette and type scale. */
+/* Tara's shared palette and type scale. */
 :root{color-scheme:light;--bg:#f6f5f0;--fg:#222822;--muted:#626c66;--mint:#3264da;--line:#263d291c;--surface:#ffffff75;--solid:#fafbf8;--button-bg:#222822;--button-fg:#fff;--glow:#dce9f6;--font:Arial,Helvetica,sans-serif;--mono:"Cascadia Code",Consolas,monospace;font-family:var(--font);color:var(--fg);background:var(--bg);font-synthesis:none;scroll-behavior:smooth;scroll-padding-top:110px;scrollbar-gutter:stable}
 :root[data-theme="dark"]{color-scheme:dark;--bg:#101613;--fg:#eaf0e7;--muted:#adb9aa;--mint:#91b5ff;--line:#efffdf20;--surface:#ffffff06;--solid:#18211c;--button-bg:#dcebd5;--button-fg:#162019;--glow:#23372e}
 *{box-sizing:border-box}
@@ -35,7 +35,7 @@ h3{font-size:22px;line-height:1.2;letter-spacing:-.6px}
 .skip-link{position:fixed;left:20px;top:10px;padding:12px;background:var(--mint);color:var(--bg);z-index:100;transform:translateY(-200%)}
 .skip-link:focus{transform:none}
 
-/* The familiar glass navigation expands from the WinDock icon. */
+/* The familiar glass navigation expands from the Tara icon. */
 .header{position:sticky;top:14px;z-index:20;height:52px;margin-top:14px;pointer-events:none}
 .nav-shell{position:relative;width:min(820px,100%);height:52px;padding:3px;border:1px solid #ffffffb3;border-radius:26px;background:#fafbf8e6;backdrop-filter:blur(24px);box-shadow:0 8px 30px #263a3e14;pointer-events:auto;overflow:hidden}
 .header[data-nav-ready] .nav-shell{width:52px;border-radius:18px;transition:width .68s cubic-bezier(.22,1,.36,1),border-radius .68s cubic-bezier(.22,1,.36,1)}

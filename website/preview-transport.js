@@ -23,7 +23,7 @@ export function selectPreviewPc(id) {
     .map(app => ({ ...app, kind: 'app', label: app.name }));
   return true;
 }
-const values = new Map([['windock-layout', JSON.stringify({ perPage: 6 })]]);
+const values = new Map([['tara-layout', JSON.stringify({ perPage: 6 })]]);
 const captures = new Map();
 function currentCapture() {
   const id = pcs.current().id;
@@ -39,9 +39,9 @@ const clipboardItems = [
   'Shopping list\nCoffee\nBread\nSomething sweet 🙂',
   'A useful link: https://example.com',
 ];
-const showTyping = () => parent.postMessage({ type: 'windock-preview-typed', text: typedText }, location.origin);
+const showTyping = () => parent.postMessage({ type: 'tara-preview-typed', text: typedText }, location.origin);
 window.addEventListener('message', event => {
-  if (event.source === parent && event.origin === location.origin && event.data?.type === 'windock-preview-clear-text') { typedText = ''; showTyping(); }
+  if (event.source === parent && event.origin === location.origin && event.data?.type === 'tara-preview-clear-text') { typedText = ''; showTyping(); }
 });
 
 function finishRecording(capture = currentCapture()) {
@@ -60,9 +60,9 @@ export const localStorage = {
   getItem: key => values.get(key) ?? null,
   setItem(key, value) {
     values.set(key, value);
-    if (key === 'windock-layout') {
+    if (key === 'tara-layout') {
       const layout = JSON.parse(value);
-      parent.postMessage({ type: 'windock-preview-layout', perPage: layout.perPage }, location.origin);
+      parent.postMessage({ type: 'tara-preview-layout', perPage: layout.perPage }, location.origin);
     }
   },
 };
@@ -149,7 +149,7 @@ export class WebSocket {
       queueMicrotask(() => { if (this.readyState === WebSocket.OPEN) this.onmessage?.({ data: JSON.stringify({ type: 'paste-result' }) }); });
     }
     if (message.type === 'key') {
-      parent.postMessage({ type: 'windock-preview-key', key: message.key }, location.origin);
+      parent.postMessage({ type: 'tara-preview-key', key: message.key }, location.origin);
       if (message.key === 'Backspace') typedText = Array.from(typedText).slice(0, -1).join('');
       if (message.key === 'Enter') typedText = (typedText + '\n').slice(-500);
       if (message.key === 'Tab') typedText = (typedText + '  ').slice(-500);

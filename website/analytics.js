@@ -1,5 +1,5 @@
 // The website's optional analytics never runs in the dock or embedded demo.
-const consentKey = 'windock-website-analytics-v1';
+const consentKey = 'tara-website-analytics-v1';
 const notice = document.querySelector('#analytics-notice');
 const preferences = document.querySelector('#analytics-preferences');
 const choiceLabel = document.querySelector('#analytics-choice');

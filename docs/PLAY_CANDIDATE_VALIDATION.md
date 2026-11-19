@@ -11,7 +11,7 @@ clipboard and photo-transfer checks passed on Windows and Omarchy Linux.
 The supplied settings identify a Xiaomi Pad 6 (Android 14 / HyperOS 2.0.14.0),
 Galaxy S24 Ultra (SM-S928B/DS), and Huawei Mate 10 Pro (BLA-L09 / EMUI 12.0.0).
 The Samsung/Huawei screenshots do not establish the underlying Android version.
-This is owner-reported acceptance of `WinDock-local-address-secure-test.apk`,
+This is owner-reported acceptance of `Tara-local-address-secure-test.apk`,
 not an independently measured complete device/host matrix. Device identifiers,
 phone numbers and original settings screenshots are not copied into this report.
 
@@ -47,7 +47,7 @@ update mechanism, package identifier or minimum SDK changed in this validation.
 | --- | --- | --- |
 | Debug JVM tests | 51 passed, zero failures/errors | `play-freeze-final-test-build.log`; Gradle XML reports |
 | Release JVM tests, lint and unsigned AAB | 51 passed; lint zero errors / 31 warnings; bundle build passed | `play-freeze-final-bundle-build.log`; Gradle reports |
-| Bundletool validation and artifact inspection | Passed; target 36, minimum 24, package `com.windock.app`, code 10, `0.3.0-preview.1`; no native `.so` libraries | `play-freeze-final-bundle-validation.txt`, `play-freeze-final-manifest.xml`, `play-freeze-final-bundle-inspection.json` |
+| Bundletool validation and artifact inspection | Passed; target 36, minimum 24, package `com.tara.app`, code 10, `0.3.0-preview.1`; no native `.so` libraries | `play-freeze-final-bundle-validation.txt`, `play-freeze-final-manifest.xml`, `play-freeze-final-bundle-inspection.json` |
 | Original Google API 24 image, fixed release splits | Six native/privacy/release-policy checks passed after the startup fix | `play-api24-final-native-tests.txt`, `play-api24-final-crash.txt` |
 | API 24 with updated official AOSP WebView | 15 executed tests passed; two expected skips | `play-api24-updated-webview-tests.txt`, `play-api24-updated-webview-version.txt`, `play-api24-updated-webview-crash.txt` |
 | Official Android 36.1 16 KB x86-64 image | `getconf PAGESIZE` returned 16384; 16 executed tests passed; one expected skip | `play-16k-final-regressions.txt`, `play-16k-final-regression-crash.txt` |
@@ -80,7 +80,7 @@ The old emulator preload has a different certificate, so ordinary installation
 was rejected. The official prebuilt was placed only in the disposable emulator's
 temporary writable system copy and Android services restarted. This is test
 provisioning, not an instruction to root or alter users' phones. No WebView APK is
-bundled with WinDock or offered as an end-user download.
+bundled with Tara or offered as an end-user download.
 
 Users should update WebView/Chrome using their device's official update source.
 On Android 7–9, Chrome can provide WebView; see the
@@ -110,10 +110,10 @@ No physical device, installed companion, dock or real pairing was changed.
 
 ## Artifact identity and security
 
-- Unsigned inspection AAB: `artifacts/play/WinDock-inspection-only.aab`;
+- Unsigned inspection AAB: `artifacts/play/Tara-inspection-only.aab`;
   SHA-256 `5903DB62726DCC90589F5BF6AB049A56120ACBC6FDA06B3D3A80BD5D376C6AA8`.
 - Local installable APK from that bundle:
-  `artifacts/WinDock-play-validation-secure-test.apk`;
+  `artifacts/Tara-play-validation-secure-test.apk`;
   SHA-256 `F6F7AD5CCA80484C40404BEB86870F6FDA843D464F3D83ABA93F8DADDB86939D`.
 - APK certificate SHA-256:
   `488186d4c2e70bd171bafd8fe7a11b8cce7d0fa7863113f334e07f66f57f83c1`.
@@ -149,7 +149,7 @@ The 31 warnings were reviewed rather than treated as zero findings:
 
 Next: validate clean companion install/upgrade/uninstall and state/firewall
 behavior in isolation, then finalize reviewer instructions and signing custody.
-The current Windows host has real WinDock data and must not be used as a clean
+The current Windows host has real Tara data and must not be used as a clean
 uninstall test target. An isolated VM on this PC can avoid needing another
 physical computer, but Hyper-V management currently requires additional OS
 permission and a suitable Windows installation image.

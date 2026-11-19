@@ -29,8 +29,8 @@ function openDemo(action) {
     : action === 'music'
       ? 'Skip tracks, or pause and resume to see the music notch update. These fictional tracks are silent; the demo never controls your music.'
       : 'A safe space to explore. PCs, clipboard items, and silent music tracks are samples; this demo never connects to your devices.';
-  if (action === 'touchpad' || action === 'signature') send({ type: 'windock-preview-input', mode: action });
-  else send({ type: `windock-preview-${action}` });
+  if (action === 'touchpad' || action === 'signature') send({ type: 'tara-preview-input', mode: action });
+  else send({ type: `tara-preview-${action}` });
   document.querySelectorAll('.demo-shortcuts [data-demo-action]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.demoAction === action)));
   if (action !== 'pc-picker') experience.scrollIntoView({ block: 'start', behavior: reducedMotion.matches ? 'instant' : 'smooth' });
 }
@@ -38,8 +38,8 @@ document.querySelectorAll('[data-demo-action]').forEach(button => button.addEven
   opener = button;
   openDemo(button.dataset.demoAction);
 }));
-document.querySelectorAll('[data-density-choice]').forEach(button => button.addEventListener('click', () => send({ type: 'windock-preview-density', perPage: Number(button.dataset.densityChoice) })));
-document.querySelector('#demo-clear-text').addEventListener('click', () => send({ type: 'windock-preview-clear-text' }));
+document.querySelectorAll('[data-density-choice]').forEach(button => button.addEventListener('click', () => send({ type: 'tara-preview-density', perPage: Number(button.dataset.densityChoice) })));
+document.querySelector('#demo-clear-text').addEventListener('click', () => send({ type: 'tara-preview-clear-text' }));
 
 function showList() { confirmation.hidden = true; list.hidden = false; forgottenId = null; }
 function renderPcs() {
@@ -56,7 +56,7 @@ function renderPcs() {
       choose.append(name, detail, address);
       choose.addEventListener('click', () => {
         status.textContent = pc.online ? `Opening ${pc.name}…` : `${pc.name} is offline in this demo. Choose an available PC.`;
-        if (pc.online) send({ type: 'windock-preview-pc-action', action: 'select', id: pc.id });
+        if (pc.online) send({ type: 'tara-preview-pc-action', action: 'select', id: pc.id });
       });
       row.append(choose);
       if (pc.saved) {
@@ -76,11 +76,11 @@ document.querySelector('#pc-demo-cancel').addEventListener('click', () => {
   const id = forgottenId; showList(); list.querySelector(`[data-pc="${id}"] .pc-demo-forget`)?.focus();
 });
 document.querySelector('#pc-demo-forget').addEventListener('click', () => {
-  send({ type: 'windock-preview-pc-action', action: 'forget', id: forgottenId });
+  send({ type: 'tara-preview-pc-action', action: 'forget', id: forgottenId });
   showList(); document.querySelector('#pc-demo-refresh').focus();
 });
 document.querySelector('#pc-demo-refresh').addEventListener('click', () => {
-  showList(); send({ type: 'windock-preview-pc-action', action: 'refresh' });
+  showList(); send({ type: 'tara-preview-pc-action', action: 'refresh' });
 });
 document.querySelector('#pc-demo-close').addEventListener('click', () => dialog.close());
 dialog.addEventListener('close', () => {
@@ -91,19 +91,19 @@ dialog.addEventListener('close', () => {
 window.addEventListener('message', event => {
   if (event.source !== frame.contentWindow || event.origin !== location.origin) return;
   const data = event.data;
-  if (data?.type === 'windock-preview-key' && ['Escape', 'Tab', 'Delete', 'Home', 'End', 'ArrowLeft', 'ArrowUp', 'ArrowDown', 'ArrowRight', 'Backspace', 'Enter'].includes(data.key)) {
+  if (data?.type === 'tara-preview-key' && ['Escape', 'Tab', 'Delete', 'Home', 'End', 'ArrowLeft', 'ArrowUp', 'ArrowDown', 'ArrowRight', 'Backspace', 'Enter'].includes(data.key)) {
     const feedback = document.querySelector('#demo-key-feedback');
     const label = { Escape: 'Esc', ArrowLeft: '←', ArrowUp: '↑', ArrowDown: '↓', ArrowRight: '→' }[data.key] || data.key;
     feedback.textContent = `Demo key: ${label} · No key is sent to your PC.`;
     feedback.hidden = false;
   }
-  if (data?.type === 'windock-preview-ready') { ready = true; if (pendingAction) { openDemo(pendingAction); pendingAction = null; } }
-  if (data?.type === 'windock-preview-layout') document.querySelectorAll('[data-density-choice]').forEach(button => button.setAttribute('aria-pressed', String(Number(button.dataset.densityChoice) === data.perPage)));
-  if (data?.type === 'windock-preview-typed' && typeof data.text === 'string') {
+  if (data?.type === 'tara-preview-ready') { ready = true; if (pendingAction) { openDemo(pendingAction); pendingAction = null; } }
+  if (data?.type === 'tara-preview-layout') document.querySelectorAll('[data-density-choice]').forEach(button => button.setAttribute('aria-pressed', String(Number(button.dataset.densityChoice) === data.perPage)));
+  if (data?.type === 'tara-preview-typed' && typeof data.text === 'string') {
     document.querySelector('#demo-typing').hidden = false;
     document.querySelector('#demo-typed-text').textContent = data.text.slice(0, 500) || 'Your demo text will appear here.';
   }
-  if (data?.type === 'windock-preview-pcs' && Array.isArray(data.pcs)) {
+  if (data?.type === 'tara-preview-pcs' && Array.isArray(data.pcs)) {
     pcs = data.pcs; renderPcs();
     status.textContent = data.action === 'refresh' ? 'Sample PCs refreshed. No devices were scanned.' : data.action === 'forget' ? 'Removed from saved PCs. Available PCs can still be selected.' : 'Your dock stays open while you choose.';
     if (data.open && !dialog.open) {
@@ -122,8 +122,8 @@ window.addEventListener('message', event => {
   }
 });
 
-frame.addEventListener('load', () => send({ type: 'windock-preview-ping' }));
-send({ type: 'windock-preview-ping' });
+frame.addEventListener('load', () => send({ type: 'tara-preview-ping' }));
+send({ type: 'tara-preview-ping' });
 
 // Keep the iframe mounted when expanding, preserving all sample state.
 expand.hidden = !document.fullscreenEnabled;

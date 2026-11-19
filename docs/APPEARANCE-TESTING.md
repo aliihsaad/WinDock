@@ -13,9 +13,9 @@ overrides, paging and input. The native preferences test uses a separate test st
 For process restart coverage, run these instrumentation phases separately:
 
 ```sh
-adb -s emulator-5554 shell am instrument -w -e class com.windock.app.AppearancePersistenceTest -e appearancePhase seed com.windock.app.test/androidx.test.runner.AndroidJUnitRunner
-adb -s emulator-5554 shell am force-stop com.windock.app
-adb -s emulator-5554 shell am instrument -w -e class com.windock.app.AppearancePersistenceTest -e appearancePhase verify com.windock.app.test/androidx.test.runner.AndroidJUnitRunner
+adb -s emulator-5554 shell am instrument -w -e class com.tara.app.AppearancePersistenceTest -e appearancePhase seed com.tara.app.test/androidx.test.runner.AndroidJUnitRunner
+adb -s emulator-5554 shell am force-stop com.tara.app
+adb -s emulator-5554 shell am instrument -w -e class com.tara.app.AppearancePersistenceTest -e appearancePhase verify com.tara.app.test/androidx.test.runner.AndroidJUnitRunner
 ```
 
 The seed phase uses the real settings handlers to choose On, Frost, eight icons
@@ -23,7 +23,7 @@ and visible labels. Verify never reselects these settings. Restart the fixture
 without deleting `artifacts/android-smoke` (which holds its stable host ID), then
 force-stop and verify again. The test skips ordinary suite runs without a phase.
 
-Start another fixture with `WINDOCK_SMOKE_PORT=18623` in the same checkout and add
+Start another fixture with `TARA_SMOKE_PORT=18623` in the same checkout and add
 `-e appearanceEndpoint http://10.0.2.2:18623` to verify. This exercises a new web
 origin for the same physical PC. The original app fails this case with Auto in
 place of On. With the fix, performance, layout, labels and theme all restore.

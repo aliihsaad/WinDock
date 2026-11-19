@@ -1,4 +1,4 @@
-# WinDock 0.3.2 — release overview
+# Tara 0.3.2 — release overview
 
 Full glass, eight rendered backgrounds, live quick controls, Windows song artwork,
 and an expanded now-playing notch. The website demo includes three silent sample

@@ -6,8 +6,8 @@ Reviewed baseline: `e6ab859` on `main`, cloned from
 ## Capture follow-up — 2026-09-18
 
 Added PNG screenshots and silent H.264 MP4 recording of the main monitor using
-the Windows helper and built-in encoder. Files stay in Pictures/WinDock and
-Videos/WinDock. The phone drawer has Capture, an active recording timer and
+the Windows helper and built-in encoder. Files stay in Pictures/Tara and
+Videos/Tara. The phone drawer has Capture, an active recording timer and
 Stop; the tray provides Stop recording and folder shortcuts. Recordings fit
 within 1920×1080 at up to 15 fps and stop after 60 minutes.
 
@@ -40,7 +40,7 @@ since been fixed and verified in the working tree:
 - Microsoft-signed installer installed .NET SDK 8.0.425 in ignored `.tools/dotnet`.
   Brightness compilation and Core Audio COM signatures are corrected.
 - `npm run build:windows` produces a self-contained helper and tray, with Node,
-  server code, web assets and ws under `artifacts/WinDock-win-x64`. It also stages
+  server code, web assets and ws under `artifacts/Tara-win-x64`. It also stages
   the helper in the development root. No system PATH change is needed.
 - `npm run test:windows` passed on this PC: real launch arguments (spaces and
   ampersands), running-window enumeration, foreground focus, polite close, Core
@@ -48,7 +48,7 @@ since been fixed and verified in the working tree:
   An isolated off-screen fixture was used; no existing user application was closed.
 - The packaged tray passed its startup/cleanup check from a different working
   directory using bundled Node. Callbacks now marshal onto its UI thread.
-- Discovery selects Ethernet before Tailscale/Hyper-V. `WINDOCK_HOST` can select
+- Discovery selects Ethernet before Tailscale/Hyper-V. `TARA_HOST` can select
   another IPv4 address assigned to the computer.
 - Argument-bearing shortcuts retain distinct IDs and pass their argument strings
   intact. These tiles launch the requested shortcut mode each time; executable-only
@@ -62,15 +62,15 @@ completion, media-key effects with an active player, and real-panel brightness
 are still outstanding. The later product gaps below remain open unless listed
 as fixed above. `ROADMAP.md` now contains the current next-step order.
 
-WinDock has a useful, working JavaScript foundation. It is ready for a Windows
+Tara has a useful, working JavaScript foundation. It is ready for a Windows
 stabilization milestone, but the current checkout is not yet ready for a complete
 phone-to-PC control demonstration. The Linux-era “all passing” status in the
 README and roadmap does not describe the results on this machine.
 
 ## Project continuity
 
-- Created the **WinDock** work project in Vault, linked to this repository and
-  `C:\Users\Mini\Desktop\Projects\WinDock`.
+- Created the **Tara** work project in Vault, linked to this repository and
+  `C:\Users\Mini\Desktop\Projects\Tara`.
 - Recorded the user's context: this was an experiment on another Linux machine,
   published on GitHub and cloned here to continue development on Windows.
 - The initial Git working tree was clean. This review installed the locked npm
@@ -175,7 +175,7 @@ collapse into one tile candidate.
 
 - **Registry inventory:** the parser accepts registry fixtures, but the actual
   inventory PowerShell only enumerates Start Menu shortcuts.
-- **Live running/media state:** broadcasts follow WinDock tile/app actions, but
+- **Live running/media state:** broadcasts follow Tara tile/app actions, but
   there is no provider watcher or periodic refresh for changes made directly on
   the PC. Now-playing is fetched only during an explicit refresh/initial load.
 - **Persistent pairing:** sessions live in an in-memory `Map`; restarting the

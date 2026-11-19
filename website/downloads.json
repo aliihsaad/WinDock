@@ -3,12 +3,12 @@
   "available": true,
   "generatedAt": "2026-11-08T16:42:09.784Z",
   "windows": {
-    "url": "https://github.com/aliihsaad/WinDock/releases/download/v0.3.2/WinDockSetup.exe",
+    "url": "https://github.com/aliihsaad/WinDock/releases/download/v0.3.2/TaraSetup.exe",
     "bytes": 124177673,
     "sha256": "97c0122792c916e4612121a6437e1c3ccbd021de03bd8b5e57c160a1187815fe"
   },
   "android": {
-    "url": "https://github.com/aliihsaad/WinDock/releases/download/v0.3.2/WinDock-android-debug.apk",
+    "url": "https://github.com/aliihsaad/WinDock/releases/download/v0.3.2/Tara-android-debug.apk",
     "bytes": 3110218,
     "sha256": "9cde96449b12171ec2f66d1b14fdcb8114f85d317f439a7e4ab97a35951aaf61",
     "versionName": "0.3.2",
@@ -17,12 +17,12 @@
   "checksums": "https://github.com/aliihsaad/WinDock/releases/download/v0.3.2/SHA256SUMS.txt",
   "linux": {
     "arch": {
-      "url": "https://github.com/aliihsaad/WinDock/releases/download/v0.3.2/WinDock-linux-x64.pkg.tar.zst",
+      "url": "https://github.com/aliihsaad/WinDock/releases/download/v0.3.2/Tara-linux-x64.pkg.tar.zst",
       "bytes": 44855182,
       "sha256": "fc6d1c8eaefd720fb79341a2d85e380940f2b72ae41e6017c3ba770810c5d66b"
     },
     "debian": {
-      "url": "https://github.com/aliihsaad/WinDock/releases/download/v0.3.2/WinDock-linux-amd64.deb",
+      "url": "https://github.com/aliihsaad/WinDock/releases/download/v0.3.2/Tara-linux-amd64.deb",
       "bytes": 31891084,
       "sha256": "02ca601a68b212de113349c72d8ded396a3b3bcbac22bdf7b6f169e76a7a5d04"
     },
