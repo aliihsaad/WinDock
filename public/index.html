@@ -312,6 +312,13 @@
     </section>
     <section class="settings__card"><label class="setting-row">Hands-free “Hey Dock”<input id="voice-handsfree" class="switch" type="checkbox" role="switch"></label>
       <p class="settings__tip">Listens only while the dock is open on screen. Uses more battery.</p></section>
+    <section class="settings__card" hidden><p class="settings__tip"><strong>Offline voice (this phone)</strong></p>
+      <p id="voice-model-note" class="settings__tip"></p>
+      <button id="voice-model-button" class="button" type="button">Download voice model</button>
+      <label class="setting-row">Wake names<input id="voice-names" class="text-input" type="text" maxlength="60" placeholder="dock, sid" autocomplete="off" autocapitalize="none" spellcheck="false"></label></section>
+    <section class="settings__card"><p class="settings__tip"><strong>Voice pack (on the PC)</strong></p>
+      <p id="voice-pack-note" class="settings__tip"></p>
+      <button id="voice-pack-button" class="button" type="button">Install on PC</button></section>
   </div>
 </dialog>
 

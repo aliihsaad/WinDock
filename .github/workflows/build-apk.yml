@@ -5,7 +5,7 @@ name: Build upgraded apps
 # The apps read latest.json to offer one-tap updates.
 on:
   push:
-    branches: [upgrades]
+    branches: [upgrades, 'ci-check/**']
   workflow_dispatch:
 
 permissions:
@@ -104,7 +104,8 @@ jobs:
 
   release:
     needs: [meta, web-tests, android, windows]
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    # Scratch branches (ci-check/**) compile and test everything but never publish.
+    if: github.ref == 'refs/heads/upgrades' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4

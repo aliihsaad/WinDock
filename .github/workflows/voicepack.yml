@@ -1,0 +1,69 @@
+name: Publish voice pack
+
+# Run once by hand (Actions > Publish voice pack > Run workflow). It downloads the open-source
+# speech engines, repackages them for WinDock, and publishes them with checksums to the
+# `voicepack-v1` release that the apps download from on demand. Any 404 or empty file fails the run.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  pack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      WHISPER_ZIP: https://github.com/ggml-org/whisper.cpp/releases/latest/download/whisper-bin-x64.zip
+      WHISPER_MODEL: https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en-q5_1.bin
+      PIPER_ZIP: https://github.com/rhasspy/piper/releases/download/2023.11.14-2/piper_windows_amd64.zip
+      PIPER_VOICE: https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx
+      PIPER_VOICE_JSON: https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json
+      VOSK_ZIP: https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip
+    steps:
+      - name: Download engines and voices
+        run: |
+          mkdir -p dl && cd dl
+          for pair in "whisper.zip $WHISPER_ZIP" "whisper-model.bin $WHISPER_MODEL" "piper.zip $PIPER_ZIP" "voice.onnx $PIPER_VOICE" "voice.onnx.json $PIPER_VOICE_JSON" "vosk.zip $VOSK_ZIP"; do
+            set -- $pair
+            curl -fL --retry 4 --retry-delay 5 -o "$1" "$2"
+            test -s "$1" || { echo "::error::$1 is empty"; exit 1; }
+          done
+          ls -l
+      - name: Assemble the PC voice pack
+        run: |
+          set -e
+          mkdir -p pack/whisper pack/piper w p
+          unzip -q dl/whisper.zip -d w
+          unzip -q dl/piper.zip -d p
+          CLI=$(find w -iname 'whisper-cli.exe' | head -1)
+          test -n "$CLI" || { echo "::error::whisper-cli.exe not found in the whisper download"; exit 1; }
+          cp "$(dirname "$CLI")"/* pack/whisper/
+          cp dl/whisper-model.bin pack/whisper/model.bin
+          PIPER=$(find p -iname 'piper.exe' | head -1)
+          test -n "$PIPER" || { echo "::error::piper.exe not found in the piper download"; exit 1; }
+          cp -r "$(dirname "$PIPER")"/* pack/piper/
+          cp dl/voice.onnx pack/piper/voice.onnx
+          cp dl/voice.onnx.json pack/piper/voice.onnx.json
+          test -d pack/piper/espeak-ng-data || { echo "::error::espeak-ng-data missing"; exit 1; }
+          (cd pack && zip -qr ../WinDock-voicepack-windows.zip whisper piper)
+          ls -l WinDock-voicepack-windows.zip
+      - name: Write manifests
+        run: |
+          set -e
+          BASE="https://github.com/${GITHUB_REPOSITORY}/releases/download/voicepack-v1"
+          PACK_SHA=$(sha256sum WinDock-voicepack-windows.zip | cut -d' ' -f1); PACK_SIZE=$(stat -c %s WinDock-voicepack-windows.zip)
+          cp dl/vosk.zip vosk-model.zip
+          VOSK_SHA=$(sha256sum vosk-model.zip | cut -d' ' -f1); VOSK_SIZE=$(stat -c %s vosk-model.zip)
+          printf '{"version":"1","pack":{"url":"%s/WinDock-voicepack-windows.zip","sha256":"%s","size":%s}}\n' "$BASE" "$PACK_SHA" "$PACK_SIZE" > voicepack.json
+          printf '{"version":"1","url":"%s/vosk-model.zip","sha256":"%s","size":%s}\n' "$BASE" "$VOSK_SHA" "$VOSK_SIZE" > vosk-model.json
+          cat voicepack.json vosk-model.json
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete voicepack-v1 --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes || true
+          gh release create voicepack-v1 WinDock-voicepack-windows.zip vosk-model.zip voicepack.json vosk-model.json \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
+            --title "WinDock voice pack" \
+            --notes "Open-source speech engines for WinDock (Whisper, Piper, Vosk). The apps download these on demand and check their SHA-256."

@@ -23,6 +23,14 @@ t.ok(statsSentence("battery", { battery: 80.4, charging: true }).includes("80 pe
 t.ok(statsSentence("gpu", {}).includes("can't"), "missing reading is said plainly");
 // Gemini
 const KEY = "AIzaSyA-fake_key_for_tests_0123456789abcdef";
+const DOTTED = "AQ.Ab8RN6fakefakefakefakefakefakefake_0123456789-x";
+for (const [label, key] of [["classic AIza key", KEY], ["dotted AQ. key", DOTTED]]) {
+  const saved = []; const dir = null;
+  t.deepEqual(createKeyStore({ dir, env: { GEMINI_API_KEY: key } }).status().configured, true, label + " is accepted");
+}
+for (const bad of ["", "short", "has space in the middle of the key 0123456789", "key\nwith-newline-0123456789abcdef", "<script>alert(1)</script>0123456789", "x".repeat(300)])
+  t.deepEqual(createKeyStore({ dir: null, env: { GEMINI_API_KEY: bad } }).status().configured, false, "refused: " + JSON.stringify(bad).slice(0, 30));
+t.equal(await askGemini("x", { key: DOTTED, fetchImpl: async () => ({ ok: true, status: 200, json: async () => ({ candidates: [{ content: { parts: [{ text: "ok" }] } }] }) }) }), "ok", "a dotted key can be used to ask");
 let seen;
 const ok = async (url, init) => { seen = { url, init }; return { ok: true, status: 200, json: async () => ({ candidates: [{ content: { parts: [{ text: "A **normal map** stores surface direction." }] } }] }) }; };
 t.equal(await askGemini("what is a normal map", { key: KEY, fetchImpl: ok }), "A normal map stores surface direction.", "answer cleaned of markdown");

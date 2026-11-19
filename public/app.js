@@ -802,12 +802,14 @@ $("input-edge").addEventListener("click", () => openInputPad());
 document.addEventListener("windock-toast", (e) => notify(e.detail.message, e.detail.error));
 const statusBar = createStatusBar({ gate: idleGate(), api, isReady: () => paired && online && !document.hidden, notify, buzz, storage: localStorage });
 statusBar.start();
-const voice = createVoice({ api, notify, buzz });
+const voice = createVoice({ api, rawFetch: dockFetch, notify, buzz });
 const handsFreeOn = () => { try { return localStorage.getItem("windock-handsfree") === "1"; } catch { return false; } };
 const applyHandsFree = () => { try { window.WinDockAndroid?.setHandsFree?.(handsFreeOn()); } catch { /* older Android shell */ } };
 applyHandsFree();
 $("voice-handsfree").checked = handsFreeOn();
 $("voice-handsfree").addEventListener("change", (event) => { try { localStorage.setItem("windock-handsfree", event.target.checked ? "1" : "0"); } catch { /* private mode */ } applyHandsFree(); });
+// Once the offline model finishes downloading, honour a hands-free switch that was waiting for it.
+$("voice-handsfree").addEventListener("voice-model-ready", () => { $("voice-handsfree").checked = true; try { localStorage.setItem("windock-handsfree", "1"); } catch { /* private mode */ } applyHandsFree(); });
 $("drawer-voice").addEventListener("click", () => { $("drawer").close(); voice.open(true); });
 // Holding a finger on empty dock space for a moment starts listening too.
 {

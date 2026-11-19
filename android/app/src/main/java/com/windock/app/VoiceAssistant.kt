@@ -4,7 +4,11 @@ import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.AudioManager
+import android.media.ToneGenerator
 import android.os.Bundle
+import android.util.Base64
+import java.io.File
 import android.os.Handler
 import android.os.Looper
 import android.speech.RecognitionListener
@@ -39,16 +43,64 @@ class VoiceAssistant(private val activity: Activity, private val run: (String) -
     private var wantCommand = false   // wake word already heard, the next phrase is the command
     private var pressToTalk = false
     private var waitingForPermission = false
+    private val prefs = activity.getSharedPreferences("windock-voice", android.content.Context.MODE_PRIVATE)
+    private val modelDir = File(activity.filesDir, "vosk-model")
+    private var engine: VoskEngine? = null
+    private var voskFailed = false
+    @Volatile private var downloading = false
+    @Volatile private var sendAudio = false
+
+    fun modelReady() = VoskModel.installed(modelDir)
+    private fun useVosk() = modelReady() && !voskFailed
+    fun modelState(): String = JSONObject().put("ready", modelReady()).put("busy", downloading).toString()
+    fun wakeNames(): String = WakeGrammar.cleanNames(prefs.getString("names", "")).joinToString(", ")
+    fun setWakeNames(raw: String) { prefs.edit().putString("names", WakeGrammar.cleanNames(raw).joinToString(",")).apply(); engine?.refreshNames() }
+    fun setSendAudio(on: Boolean) { sendAudio = on }
+    fun pauseListening(on: Boolean) { engine?.pause(on) }
+
+    fun downloadModel() {
+        if (downloading) return
+        downloading = true
+        Thread {
+            try {
+                VoskModel.install(modelDir, activity.cacheDir) { pct -> main.post { js("onModelState(" + JSONObject().put("ready", false).put("progress", pct) + ")") } }
+                voskFailed = false
+                main.post { js("onModelState(" + JSONObject().put("ready", true).put("progress", 100) + ")") }
+            } catch (e: Throwable) {
+                main.post { js("onModelState(" + JSONObject().put("ready", false).put("error", "The voice model could not be downloaded. Check the connection and try again.") + ")") }
+            } finally { downloading = false }
+        }.start()
+    }
+
+    private fun makeEngine() = VoskEngine(
+        modelDir = modelDir,
+        names = { WakeGrammar.cleanNames(prefs.getString("names", "")) },
+        keepAudio = { sendAudio },
+        onWake = { main.post { beep(); js("onWake()") } },
+        onUtterance = { text, audio -> main.post {
+            pressToTalk = false
+            val b64 = audio?.let { Base64.encodeToString(it, Base64.NO_WRAP) }
+            js("onUtterance(${JSONObject.quote(text)},${if (b64 == null) "null" else JSONObject.quote(b64)})")
+        } },
+        onFailure = { message -> main.post {
+            voskFailed = true; engine?.shutdown(); engine = null
+            js("onError(${JSONObject.quote(message)})")
+            if (pressToTalk || handsFree) begin()
+        } },
+    )
+
+    private fun beep() { try { ToneGenerator(AudioManager.STREAM_MUSIC, 60).startTone(ToneGenerator.TONE_PROP_BEEP, 120) } catch (_: Exception) {} }
 
     private fun js(call: String) = run("window.WinDockVoice&&window.WinDockVoice.$call")
     private fun hasMic() = activity.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
 
     fun startListening() { pressToTalk = true; wantCommand = true; begin() }
-    fun stopListening() { pressToTalk = false; wantCommand = false; recognizer?.cancel(); if (!handsFree) destroyRecognizer() }
+    fun stopListening() { pressToTalk = false; wantCommand = false; engine?.cancelCommand(); recognizer?.cancel(); if (!handsFree) destroyRecognizer() }
 
     fun setHandsFree(on: Boolean) {
+        if (on && !useVosk()) { handsFree = false; js("onNeedModel()"); return }
         handsFree = on
-        if (on) begin() else if (!pressToTalk) { recognizer?.cancel(); destroyRecognizer() }
+        if (on) begin() else { engine?.stopWake(); if (!pressToTalk) { recognizer?.cancel(); destroyRecognizer() } }
     }
 
     fun onPermission(granted: Boolean) {
@@ -56,13 +108,20 @@ class VoiceAssistant(private val activity: Activity, private val run: (String) -
         if (granted) begin() else { pressToTalk = false; js("onError(${JSONObject.quote("Allow the microphone for WinDock to use voice.")})") }
     }
 
-    fun onPause() { recognizer?.cancel(); destroyRecognizer(); stopSpeaking() }
+    fun onPause() { recognizer?.cancel(); destroyRecognizer(); stopSpeaking(); engine?.shutdown(); engine = null }
     fun onResume() { if (handsFree) begin() }
-    fun destroy() { handsFree = false; pressToTalk = false; destroyRecognizer(); tts?.shutdown(); tts = null }
+    fun destroy() { handsFree = false; pressToTalk = false; engine?.shutdown(); engine = null; destroyRecognizer(); tts?.shutdown(); tts = null }
 
     private fun begin() {
         if (speaking || waitingForPermission) return
         if (!(pressToTalk || handsFree)) return
+        if (useVosk()) {
+            if (!hasMic()) { waitingForPermission = true; activity.requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), REQUEST); return }
+            val e = engine ?: makeEngine().also { engine = it }
+            if (pressToTalk) e.commandOnce()
+            if (handsFree) e.startWake()
+            return
+        }
         if (!SpeechRecognizer.isRecognitionAvailable(activity)) { pressToTalk = false; js("onError(${JSONObject.quote("This phone has no speech recognition service.")})"); return }
         if (!hasMic()) { waitingForPermission = true; activity.requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), REQUEST); return }
         val r = recognizer ?: SpeechRecognizer.createSpeechRecognizer(activity).also { recognizer = it; it.setRecognitionListener(listener) }
@@ -118,7 +177,7 @@ class VoiceAssistant(private val activity: Activity, private val run: (String) -
 
     fun speak(text: String) {
         val clean = text.take(500)
-        recognizer?.cancel()
+        recognizer?.cancel(); engine?.pause(true)
         val engine = tts ?: TextToSpeech(activity) { status ->
             ttsReady = status == TextToSpeech.SUCCESS
             if (ttsReady) { tts?.language = java.util.Locale.getDefault(); say(clean) }
@@ -126,8 +185,8 @@ class VoiceAssistant(private val activity: Activity, private val run: (String) -
             tts = it
             it.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
                 override fun onStart(id: String?) { speaking = true }
-                override fun onDone(id: String?) { speaking = false; main.post { if (wantCommand || handsFree) begin() } }
-                @Deprecated("Deprecated in Java") override fun onError(id: String?) { speaking = false; main.post { if (handsFree) begin() } }
+                override fun onDone(id: String?) { speaking = false; main.post { engine?.pause(false); if (wantCommand || handsFree) begin() } }
+                @Deprecated("Deprecated in Java") override fun onError(id: String?) { speaking = false; main.post { engine?.pause(false); if (handsFree) begin() } }
             })
         }
         if (ttsReady) say(clean) else if (engine === tts && tts != null && !ttsReady) { /* first call speaks once the engine is ready */ }

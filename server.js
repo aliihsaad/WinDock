@@ -25,6 +25,7 @@ import { networkSetup } from "./src/network-setup.js";
 import { createUpdateService } from "./src/updates.js";
 import { parseYouTube } from "./public/mini-player.js";
 import { askGemini, createKeyStore, matchApp, parseIntent, statsSentence } from "./src/assistant.js";
+import { createVoicePack, MAX_AUDIO_BYTES } from "./src/voicepack.js";
 import { createRenderWatch } from "./src/render-watch.js";
 import { versionedSave } from "./src/versioned-save.js";
 import { defaultVideoRoots, listVideos, streamVideo, isVideoRootId } from "./src/videos.js";
@@ -80,6 +81,17 @@ function sendJson(res, status, body, headers = {}) {
 }
 
 /** Read a bounded JSON body. Oversized or malformed input is rejected. */
+/** Read a bounded raw body (voice clips). Over the cap is refused after draining. */
+async function readBinaryBody(req, max) {
+  req.setTimeout(15000, () => req.destroy());
+  let size = 0; const chunks = [];
+  await new Promise((resolve, reject) => {
+    req.on("data", (chunk) => { if (size > max) return; size += chunk.length; if (size > max) { chunks.length = 0; reject(Object.assign(new Error("body too large"), { status: 413 })); } else chunks.push(chunk); });
+    req.once("end", resolve); req.once("error", reject);
+  });
+  return Buffer.concat(chunks);
+}
+
 async function readJsonBody(req) {
   req.setTimeout(15000, () => req.destroy());
   let size = 0;
@@ -160,6 +172,7 @@ export async function createApp({
   wakeSender = null,
   assistantKeys = null,
   fetchAi = fetch,
+  voicePackImpl = null,
   videoRoots: suppliedVideoRoots = null,
   renderWatch: suppliedRenderWatch = null,
   versionedSaver = versionedSave,
@@ -217,6 +230,7 @@ export async function createApp({
 
   // One macro at a time: overlapping runs would interleave their launches and levels.
   const keyStore = assistantKeys ?? createKeyStore({ dir: join(dirname(process.env.APPDATA ? join(process.env.APPDATA, "windock", "x") : join(homedir(), ".config", "windock", "x")), "assistant") });
+  const voicePack = voicePackImpl ?? createVoicePack({ dir: join(dirname(process.env.APPDATA ? join(process.env.APPDATA, "windock", "x") : join(homedir(), ".config", "windock", "x")), "voicepack") });
   let macroRunning = false, statsCache = null;
   // Last video sent from the PC. The phone picks it up once and never replays an old one.
   let cast = { id: 0, url: "", at: 0 };
@@ -676,7 +690,28 @@ export async function createApp({
       }
 
       // Voice assistant: understands PC commands itself; anything else goes to the AI key held on this PC.
-      if (path === "/api/assistant" && req.method === "GET") return sendJson(res, 200, { ai: keyStore.status().configured, destructive: allowDestructive });
+      if (path === "/api/assistant" && req.method === "GET") return sendJson(res, 200, { ai: keyStore.status().configured, destructive: allowDestructive, voice: voicePack.status() });
+      if (path === "/api/assistant/audio" && req.method === "POST") {
+        if (req.headers["x-windock-assistant"] !== "voice") return sendJson(res, 403, { error: "Voice requests come from the dock." });
+        try { return sendJson(res, 200, { text: await voicePack.transcribe(await readBinaryBody(req, MAX_AUDIO_BYTES + 1)) }); }
+        catch (error) { return sendJson(res, error.status || 500, { error: error.exposed || error.status ? error.message : "Could not understand that audio." }); }
+      }
+      if (path === "/api/assistant/speak" && req.method === "POST") {
+        if (req.headers["x-windock-assistant"] !== "voice") return sendJson(res, 403, { error: "Voice requests come from the dock." });
+        const body = await readJsonBody(req);
+        if (Object.keys(body).some((k) => k !== "text") || typeof body.text !== "string") return sendJson(res, 400, { error: "Send text to speak." });
+        try { const wav = await voicePack.speak(body.text); res.writeHead(200, { "content-type": "audio/wav", "content-length": wav.length, "cache-control": "no-store" }); return res.end(wav); }
+        catch (error) { return sendJson(res, error.status || 500, { error: error.exposed || error.status ? error.message : "Could not speak that." }); }
+      }
+      if (path === "/api/assistant/voicepack" && req.method === "POST") {
+        if (req.headers["x-windock-assistant"] !== "voice") return sendJson(res, 403, { error: "Voice requests come from the dock." });
+        const body = await readJsonBody(req);
+        if (Object.keys(body).some((k) => k !== "action") || !["install", "remove"].includes(body.action)) return sendJson(res, 400, { error: "Choose install or remove." });
+        try {
+          if (body.action === "install") { voicePack.install(); return sendJson(res, 202, voicePack.status()); }
+          return sendJson(res, 200, await voicePack.remove());
+        } catch (error) { return sendJson(res, error.status || 500, { error: error.exposed ? error.message : "Voice pack change failed." }); }
+      }
       if (path === "/api/assistant" && req.method === "POST") {
         const body = await readJsonBody(req);
         if (Object.keys(body).some((k) => k !== "text" && k !== "confirm") || (body.text !== undefined && typeof body.text !== "string")) return sendJson(res, 400, { error: "The assistant takes text only." });

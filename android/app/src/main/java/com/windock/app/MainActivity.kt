@@ -199,6 +199,8 @@ class MainActivity : Activity() {
         web.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
+            // The PC's spoken replies are played by the page after a network fetch, not directly by a tap.
+            mediaPlaybackRequiresUserGesture = false
             allowFileAccess = false
             allowContentAccess = false
             mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
@@ -508,6 +510,12 @@ class MainActivity : Activity() {
         @JavascriptInterface fun setHandsFree(on: Boolean) { runOnUiThread { if (trustedKeyboardPage()) voice.setHandsFree(on) } }
         @JavascriptInterface fun speak(text: String) { runOnUiThread { if (trustedKeyboardPage()) voice.speak(text) } }
         @JavascriptInterface fun stopSpeaking() { runOnUiThread { voice.stopSpeaking() } }
+        @JavascriptInterface fun voiceModelState(): String = voice.modelState()
+        @JavascriptInterface fun downloadVoiceModel() { runOnUiThread { if (trustedKeyboardPage()) voice.downloadModel() } }
+        @JavascriptInterface fun wakeNames(): String = voice.wakeNames()
+        @JavascriptInterface fun setWakeNames(names: String) { runOnUiThread { if (trustedKeyboardPage()) voice.setWakeNames(names.take(120)) } }
+        @JavascriptInterface fun setSendAudio(on: Boolean) { runOnUiThread { if (trustedKeyboardPage()) voice.setSendAudio(on) } }
+        @JavascriptInterface fun pauseListening(on: Boolean) { runOnUiThread { voice.pauseListening(on) } }
         @JavascriptInterface fun openYoutube(url: String) {
             if (!MiniPlayerPolicy.isPlayable(url)) return
             runOnUiThread { if (trustedKeyboardPage()) miniPlayer.open(url) }
