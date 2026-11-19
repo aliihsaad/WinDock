@@ -14,13 +14,32 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      WHISPER_ZIP: https://github.com/ggml-org/whisper.cpp/releases/latest/download/whisper-bin-x64.zip
       WHISPER_MODEL: https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en-q5_1.bin
       PIPER_ZIP: https://github.com/rhasspy/piper/releases/download/2023.11.14-2/piper_windows_amd64.zip
       PIPER_VOICE: https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx
       PIPER_VOICE_JSON: https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json
       VOSK_ZIP: https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip
     steps:
+      - name: Find the Whisper Windows build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          gh api repos/ggml-org/whisper.cpp/releases/latest -q '.tag_name, (.assets[] | "\(.name) \(.browser_download_url)")' | tee whisper-assets.txt
+          # The plain 64-bit Windows CPU build: not CUDA, BLAS, Vulkan or 32-bit.
+          LINE=$(grep -iE '^[^ ]*x64[^ ]*\.zip ' whisper-assets.txt | grep -viE 'cublas|cuda|blas|vulkan|win32|arm' | head -1)
+          [ -n "$LINE" ] || { echo "::error::No plain Windows x64 zip among the whisper.cpp assets listed above"; exit 1; }
+          echo "WHISPER_ZIP=${LINE#* }" >> "$GITHUB_ENV"
+          echo "Using ${LINE#* }"
+      - name: Check every download link
+        run: |
+          bad=0
+          for u in "$WHISPER_ZIP" "$WHISPER_MODEL" "$PIPER_ZIP" "$PIPER_VOICE" "$PIPER_VOICE_JSON" "$VOSK_ZIP"; do
+            code=$(curl -sL -o /dev/null -r 0-0 -w '%{http_code}' "$u")
+            echo "$code $u"
+            case "$code" in 200|206) ;; *) bad=1; echo "::error::Broken link ($code): $u";; esac
+          done
+          exit $bad
       - name: Download engines and voices
         run: |
           mkdir -p dl && cd dl
