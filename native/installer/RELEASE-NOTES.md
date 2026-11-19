@@ -1,4 +1,4 @@
-## WinDock 0.3.2
+## Tara 0.3.2
 
 Glass controls, eight backgrounds, and your music at a glance.
 
@@ -23,10 +23,10 @@ when saving one of the four new scenes. Your other layout settings are preserved
 
 ### Upgrade
 
-1. Quit the Windows companion and run WinDockSetup.exe under the same Windows
+1. Quit the Windows companion and run TaraSetup.exe under the same Windows
    account, or update the Linux package. Keep your existing data; do not uninstall
    or clear it. Keep start-at-sign-in selected if you use it.
-2. Install WinDock-android-debug.apk over the existing Android app. Version 0.3.2
+2. Install Tara-android-debug.apk over the existing Android app. Version 0.3.2
    uses version code 12 and the existing GitHub signing certificate. The historical
    filename is retained for compatibility with update checks.
    Public APKs older than 0.2.2 used a different signing key and require uninstalling
@@ -37,7 +37,7 @@ when saving one of the four new scenes. Your other layout settings are preserved
    file transfer requires the new secure connection.
 
 Android 7 or newer and an up-to-date compatible WebView are required. Android's
-App updates checks the WinDock download feed and opens the website download page; it does not use
+App updates checks the Tara download feed and opens the website download page; it does not use
 Google Play or silently install updates. Updating this GitHub version requires
 the same signing certificate. Google Play delivery is a separate future channel.
 

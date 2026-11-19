@@ -1,5 +1,5 @@
 {
-  "name": "windock",
+  "name": "tara",
   "version": "0.3.2",
   "releaseVersion": "0.3.2",
   "private": true,
@@ -12,7 +12,7 @@
     "build:website-demo": "node scripts/build-website-demo.mjs",
     "package:downloads": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/package-downloads.ps1",
     "build:windows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/build-windows.ps1",
-    "build:linux": "cargo build --release --locked --manifest-path native/linux/Cargo.toml && install -m 755 native/linux/target/release/windock-input windock-input",
+    "build:linux": "cargo build --release --locked --manifest-path native/linux/Cargo.toml && install -m 755 native/linux/target/release/tara-input tara-input",
     "package:linux": "docker build --platform linux/amd64 -f native/linux/packaging/Dockerfile --target packages --output type=local,dest=artifacts/linux .",
     "build:installer": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/build-installer.ps1",
     "test:installer": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/test-installer.ps1",

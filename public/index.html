@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#101719">
 <meta name="color-scheme" content="dark">
-<title>WinDock</title>
+<title>Tara</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <script src="/appearance.js"></script>
 <script src="/performance.js"></script>
@@ -15,13 +15,13 @@
 <div id="wallpaper" class="wallpaper" aria-hidden="true"></div>
 <div id="rotate" class="rotate">
   <div class="rotate__device" data-icon="monitor"></div><h1>A wider point of view.</h1>
-  <p>Turn your phone sideways to use WinDock.</p><span class="eyebrow">YOUR DESKTOP, WITHIN REACH</span>
+  <p>Turn your phone sideways to use Tara.</p><span class="eyebrow">YOUR DESKTOP, WITHIN REACH</span>
 </div>
 <div id="pair" class="pair" hidden>
-  <div class="pair__intro"><div class="brand"><span data-icon="grid"></span>WinDock<span class="brand__dot"></span></div><h1>Your PC.<br><em>Within reach.</em></h1><p>Your favorites. Your controls. A space of your own.</p></div>
+  <div class="pair__intro"><div class="brand"><span data-icon="tara"></span>Tara<span class="brand__dot"></span></div><h1>Your PC.<br><em>Within reach.</em></h1><p>Your favorites. Your controls. A space of your own.</p></div>
   <form id="pair-form" class="pair__card">
     <p class="eyebrow">MAKE THE CONNECTION</p><h2>Hello, desktop.</h2>
-    <p class="pair__hint">Enter the PIN from your PC’s WinDock tray<br>→ Show connection info.</p>
+    <p class="pair__hint">Enter the PIN from your PC’s Tara tray<br>→ Show connection info.</p>
     <input id="pin" class="pair__pin" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="······" autocomplete="one-time-code" aria-label="PIN" required>
     <p id="pair-error" class="pair__error" role="alert"></p>
     <button class="button button--primary pair__go" type="submit">Connect to your PC <span data-icon="arrow"></span></button>
@@ -31,7 +31,7 @@
 
 <main id="app" class="app" hidden>
   <header class="bar">
-    <div class="brand"><span data-icon="grid"></span>WinDock<span class="brand__dot"></span></div>
+    <div class="brand"><span data-icon="tara"></span>Tara<span class="brand__dot"></span></div>
     <span class="bar__divider"></span><span id="host-name" class="bar__host">Your PC</span>
     <span id="conn" class="bar__state" data-state="off" role="status">Connecting</span>
     <button id="edit" class="button button--small" type="button" aria-label="Edit dock" aria-pressed="false"><span data-icon="edit"></span><span>Edit</span></button>
@@ -56,7 +56,7 @@
 <button id="input-edge" class="input-edge" type="button" aria-label="Open touchpad and signature" title="Touchpad &amp; signature" hidden><span data-icon="touchpad"></span></button>
 <button id="edit-done" class="edit-done icon-button" type="button" aria-label="Done editing" hidden><span data-icon="check"></span></button>
 
-<dialog id="drawer" class="glass-drawer" aria-label="WinDock drawer">
+<dialog id="drawer" class="glass-drawer" aria-label="Tara drawer">
   <button id="drawer-close" class="drawer-grip" type="button" aria-label="Close drawer"><span></span></button>
   <div class="drawer-actions">
     <button id="drawer-apps" type="button"><span data-icon="plus"></span><span>Apps</span></button>
@@ -80,9 +80,9 @@
     <button id="capture-screenshot" type="button"><span data-icon="camera"></span><strong>Screenshot</strong><small>PNG · Full resolution</small></button>
     <button id="capture-record" type="button"><span id="capture-record-icon" data-icon="record"></span><strong id="capture-record-label">Start recording</strong><small id="capture-record-detail">MP4 · Video only</small></button>
   </div>
-  <p id="capture-status" class="capture-status" role="status">Screenshots → Pictures / WinDock. Recordings → Videos / WinDock.</p>
+  <p id="capture-status" class="capture-status" role="status">Screenshots → Pictures / Tara. Recordings → Videos / Tara.</p>
   <p id="capture-file" class="capture-file" hidden></p>
-  <p class="capture-tip">Recordings stop after 60 minutes.<span id="capture-tray-tip" hidden> You can also stop from your PC’s WinDock tray.</span></p>
+  <p class="capture-tip">Recordings stop after 60 minutes.<span id="capture-tray-tip" hidden> You can also stop from your PC’s Tara tray.</span></p>
 </dialog>
 
 <dialog id="input-pad" class="input-pad" data-mode="touchpad" aria-label="Touchpad and signature">
@@ -310,7 +310,7 @@
       <button id="voice-mic" class="button button--primary voice-mic" type="button" aria-pressed="false">🎤 Tap and speak</button>
       <p class="settings__tip">Try “open Blender”, “volume down”, “tell me when my render finishes”, or ask a question.</p>
     </section>
-    <section class="settings__card"><label class="setting-row">Hands-free “Hey Dock”<input id="voice-handsfree" class="switch" type="checkbox" role="switch"></label>
+    <section class="settings__card"><label class="setting-row">Hands-free “Hey Tara”<input id="voice-handsfree" class="switch" type="checkbox" role="switch"></label>
       <p class="settings__tip">Listens only while the dock is open on screen. Uses more battery.</p></section>
     <section class="settings__card" hidden><p class="settings__tip"><strong>Offline voice (this phone)</strong></p>
       <p id="voice-model-note" class="settings__tip"></p>
@@ -341,7 +341,7 @@
   <div class="sheet__heading"><div><p class="eyebrow">KEEP THINGS CURRENT</p><h2 id="updates-title">Updates</h2></div><button class="icon-button" type="button" data-close="updates" aria-label="Close updates"><span data-icon="close"></span></button></div>
   <div class="updates-content">
     <section class="settings__card"><h3>Your PC</h3><p id="updates-version">Reading installed version…</p><p id="updates-status" role="status" aria-live="polite"></p>
-      <div class="settings__utilities"><button id="updates-check" class="button" type="button">Check for updates</button><button id="updates-install" class="button button--primary" type="button" hidden>Update PC now</button><a id="updates-download" class="button button--primary" href="https://github.com/yeshwanthkumardomala/WinDock/releases/tag/upgrades-latest" target="_blank" rel="noopener noreferrer" hidden>Open release page</a></div>
+      <div class="settings__utilities"><button id="updates-check" class="button" type="button">Check for updates</button><button id="updates-install" class="button button--primary" type="button" hidden>Update PC now</button><a id="updates-download" class="button button--primary" href="https://github.com/yeshwanthkumardomala/Tara/releases/tag/upgrades-latest" target="_blank" rel="noopener noreferrer" hidden>Open release page</a></div>
       <p class="settings__tip">One tap downloads, checks and installs the PC update. Your dock settings are kept.</p>
     </section>
     <section id="updates-android" class="settings__card" hidden><h3>This Android phone</h3><p id="updates-android-version"></p><p id="updates-phone-status" role="status" aria-live="polite"></p>

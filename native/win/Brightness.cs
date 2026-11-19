@@ -2,7 +2,7 @@
 using System.Management;
 using System.Runtime.InteropServices;
 
-namespace WinDock;
+namespace Tara;
 
 internal static class Brightness
 {

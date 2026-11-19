@@ -1,10 +1,10 @@
 # Rasterize the tray's simple vector mark into a multi-resolution Windows ICO.
-# Run only when changing Assets/WinDock.svg; the generated ICO is checked in.
+# Run only when changing Assets/Tara.svg; the generated ICO is checked in.
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $assetDir = Join-Path $projectRoot 'native\tray\Assets'
-[xml]$source = Get-Content -LiteralPath (Join-Path $assetDir 'WinDock.svg') -Raw
+[xml]$source = Get-Content -LiteralPath (Join-Path $assetDir 'Tara.svg') -Raw
 $frames = @()
 foreach ($size in @(16, 20, 24, 32, 40, 48, 64, 128, 256)) {
     # Render each size from vectors, with pixel-aligned edges and antialiased corners.
@@ -36,7 +36,7 @@ foreach ($size in @(16, 20, 24, 32, 40, 48, 64, 128, 256)) {
     $graphics.Dispose()
     $bitmap.Dispose()
 }
-$output = [IO.File]::Create((Join-Path $assetDir 'WinDock.ico'))
+$output = [IO.File]::Create((Join-Path $assetDir 'Tara.ico'))
 $writer = [IO.BinaryWriter]::new($output)
 try {
     $writer.Write([uint16]0)
@@ -57,4 +57,4 @@ try {
     }
     foreach ($frame in $frames) { $writer.Write([byte[]]$frame.Bytes) }
 } finally { $writer.Dispose(); $output.Dispose() }
-Write-Output 'WinDock.ico generated: 16, 20, 24, 32, 40, 48, 64, 128, 256 pixels.'
+Write-Output 'Tara.ico generated: 16, 20, 24, 32, 40, 48, 64, 128, 256 pixels.'

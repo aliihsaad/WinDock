@@ -1,0 +1,16 @@
+[Unit]
+Description=Tara phone companion host
+Documentation=https://github.com/aliihsaad/WinDock#linux-preview
+# Ends with the desktop session when a session manager such as uwsm runs it.
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=exec
+# Written by the tara command from the desktop session that opened it.
+EnvironmentFile=-%t/tara-session.env
+# The host publishes its address and PIN here; apps it opens get their own scopes.
+Environment=TARA_STATUS_FILE=%t/tara/host.json TARA_APP_SCOPES=1
+ExecStart=/usr/lib/tara/node /usr/lib/tara/src/platform/linux-service.js
+RuntimeDirectory=tara
+RuntimeDirectoryMode=0700

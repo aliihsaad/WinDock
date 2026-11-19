@@ -9,9 +9,9 @@ async (page) => {
       const response = await route.fetch();
       let body = await response.text();
       body = body.replace('import { fetch, WebSocket,', 'import { fetch as previewFetch, WebSocket,');
-      body = body.replace("window.WinDockAndroid = { showPcPicker: showPreviewPcPicker, openFiles: () => document.getElementById('demo-files').showModal() };", `
+      body = body.replace("window.TaraAndroid = { showPcPicker: showPreviewPcPicker, openFiles: () => document.getElementById('demo-files').showModal() };", `
         window.__filesOpened = 0;
-        window.WinDockAndroid = { showPcPicker: showPreviewPcPicker,
+        window.TaraAndroid = { showPcPicker: showPreviewPcPicker,
           ...(location.search.includes('android') ? { showKeyboard() {}, showPhoneSettings() {}, openFiles() { window.__filesOpened++; } } : {}) };
         async function fetch(url, options) {
           if (url === '/api/state') {

@@ -35,10 +35,10 @@ final class HealthProbe: NSObject, URLSessionDataDelegate {
         callback?(success)
     }
 
-    static func isWinDock(_ body: Data) -> Bool {
+    static func isTara(_ body: Data) -> Bool {
         guard body.count <= 4096,
               let object = try? JSONSerialization.jsonObject(with: body) as? [String: Any] else { return false }
-        return object["app"] as? String == "windock" && object["ok"] as? Bool == true
+        return object["app"] as? String == "tara" && object["ok"] as? Bool == true
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask,
@@ -62,6 +62,6 @@ final class HealthProbe: NSObject, URLSessionDataDelegate {
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
         guard session === self.session else { return }
-        finish(error == nil && validResponse && Self.isWinDock(body))
+        finish(error == nil && validResponse && Self.isTara(body))
     }
 }

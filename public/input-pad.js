@@ -24,8 +24,8 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
   const keyboard = createRemoteKeyboard({ send: raw, isReady: () => ready && mode === "touchpad", onSignature: () => select("signature"), notify });
   const clipboard = createPcClipboard({ api, send: raw, isReady: () => ready && mode === "touchpad", keyboard });
   const keys = createKeysPane({ api, send: raw, isReady: () => ready && mode === "keys", storage });
-  try { orbit = storage.getItem("windock-orbit") === "on"; } catch { /* optional */ }
-  try { const saved = Number(storage.getItem("windock-pointer-speed")); if (saved >= .5 && saved <= 3) speed = saved; } catch { /* optional preference */ }
+  try { orbit = storage.getItem("tara-orbit") === "on"; } catch { /* optional */ }
+  try { const saved = Number(storage.getItem("tara-pointer-speed")); if (saved >= .5 && saved <= 3) speed = saved; } catch { /* optional preference */ }
   $("pointer-speed").value = speed;
   $("pointer-speed-value").value = speed + "×";
   const setStatus = (text) => { $("input-status").textContent = text; };
@@ -131,7 +131,7 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
     const ticket = ++generation;
     disconnect(); mode = next; available = false; unsupported = false; connecting = true; demo = false; paint();
     $("touchpad-surface").dataset.used = "false";
-    setStatus(usesPc(next) ? "Connecting to your PC…" : "Draw here. Save a transparent PNG to Pictures / WinDock / Signatures.");
+    setStatus(usesPc(next) ? "Connecting to your PC…" : "Draw here. Save a transparent PNG to Pictures / Tara / Signatures.");
     try {
       const status = await api("/api/input");
       if (ticket !== generation || !dialog.open) return;
@@ -141,7 +141,7 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
       clipboard.configure(status.clipboard);
       demo = Boolean(status.demo);
       if (demo) setStatus("Demo only · No cursor control or files saved.");
-      if (!available) { connecting = false; unsupported = true; setStatus("Touchpad and signature saving need an updated WinDock on your PC."); paint(); return; }
+      if (!available) { connecting = false; unsupported = true; setStatus("Touchpad and signature saving need an updated Tara on your PC."); paint(); return; }
       if (!usesPc()) connecting = false;
       paint();
       if (!usesPc()) return;
@@ -200,7 +200,7 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
     const value = Number(event.target.value);
     if (!Number.isFinite(value) || value < .5 || value > 3) return;
     speed = value; $("pointer-speed-value").value = speed + "×";
-    try { storage.setItem("windock-pointer-speed", String(speed)); } catch { /* optional preference */ }
+    try { storage.setItem("tara-pointer-speed", String(speed)); } catch { /* optional preference */ }
   });
   $("pointer-options-toggle").addEventListener("click", () => {
     if (dragging) release();
@@ -213,7 +213,7 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
   $("touchpad-keys").addEventListener("click", () => select("keys"));
   $("touchpad-orbit").addEventListener("click", () => {
     endOrbit(); orbit = !orbit;
-    try { storage.setItem("windock-orbit", orbit ? "on" : "off"); } catch { /* optional */ }
+    try { storage.setItem("tara-orbit", orbit ? "on" : "off"); } catch { /* optional */ }
     paint(); setStatus(orbit ? "3D mode · Two fingers orbit (hold Shift to pan, Ctrl to zoom) · Pinch zooms" : "Tap to click · Two fingers: slide to scroll, tap for right-click · Pinch to zoom");
   });
   $("input-reconnect").addEventListener("click", () => select("touchpad"));

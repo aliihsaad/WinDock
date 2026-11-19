@@ -1,8 +1,8 @@
-const RELEASE_PAGE = "https://github.com/yeshwanthkumardomala/WinDock/releases/tag/upgrades-latest";
+const RELEASE_PAGE = "https://github.com/yeshwanthkumardomala/Tara/releases/tag/upgrades-latest";
 
 export function updateStatusText(result) {
   if (result.status === "current") return "You’re up to date.";
-  if (result.status === "available") return "WinDock " + result.latestVersion + " is available.";
+  if (result.status === "available") return "Tara " + result.latestVersion + " is available.";
   if (result.status === "failed") return "Couldn’t check for updates. Check your internet connection and try again.";
   return "Check for the latest release when you’re ready.";
 }
@@ -11,16 +11,16 @@ export function phoneStatusText(phone) {
   switch (phone.status) {
     case "checking": return "Checking for updates…";
     case "current": return "You’re up to date.";
-    case "available": return "WinDock " + phone.version + " is available for this phone.";
+    case "available": return "Tara " + phone.version + " is available for this phone.";
     case "downloading": return "Downloading… " + (Number.isFinite(phone.percent) ? Math.max(0, Math.min(100, Math.round(phone.percent))) + "%" : "");
     case "installing": return "Ready. Tap Install when Android asks.";
-    case "permission": return "Allow WinDock to install updates in the screen that just opened, then come back and tap Update again.";
+    case "permission": return "Allow Tara to install updates in the screen that just opened, then come back and tap Update again.";
     case "failed": return phone.message || "Couldn’t check for phone updates. Check your internet connection and try again.";
     default: return "Check for the latest release when you’re ready.";
   }
 }
 
-export function createUpdates({ api, get = id => document.getElementById(id), android = window.WinDockAndroid }) {
+export function createUpdates({ api, get = id => document.getElementById(id), android = window.TaraAndroid }) {
   let busy = false, result = { status: "unchecked" }, pcInstalling = false, pcError = "";
   let phone = { status: "unchecked" };
   const hasPhoneUpdater = typeof android?.checkAppUpdate === "function" && typeof android?.installAppUpdate === "function";
@@ -28,7 +28,7 @@ export function createUpdates({ api, get = id => document.getElementById(id), an
 
   function paint() {
     get("updates-version").textContent = result.installedVersion ? "Installed on your PC: " + result.installedVersion : "Installed version unavailable";
-    status.textContent = pcInstalling ? "Installing the update. WinDock will close and reopen on your PC, so this phone may disconnect for about a minute."
+    status.textContent = pcInstalling ? "Installing the update. Tara will close and reopen on your PC, so this phone may disconnect for about a minute."
       : pcError ? pcError : busy ? "Checking for updates…" : updateStatusText(result);
     const phoneBusy = phone.status === "checking" || phone.status === "downloading";
     check.disabled = busy || phoneBusy || pcInstalling;
@@ -79,7 +79,7 @@ export function createUpdates({ api, get = id => document.getElementById(id), an
     get("updates-android-version").textContent = "Installed on this phone: " + android.getAppVersion();
     get("updates-phone-install").addEventListener("click", () => { phone = { status: "downloading", percent: 0 }; paint(); try { android.installAppUpdate(); } catch { phone = { status: "failed" }; paint(); } });
     // Called by the Android app as the check and download progress.
-    window.windockAppUpdate = json => {
+    window.taraAppUpdate = json => {
       try { const next = JSON.parse(json); if (next && typeof next.status === "string") { phone = { ...next, retry: next.status === "failed" && !!next.retry }; paint(); } } catch { /* ignore malformed native messages */ }
     };
   } else if (typeof android?.showUpdates === "function" && typeof android?.getAppVersion === "function") {

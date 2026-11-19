@@ -16,7 +16,7 @@ export function parseYouTube(text) {
 export const videoSrc = (root, path) => "/api/videos/stream?root=" + encodeURIComponent(root) + "&path=" + encodeURIComponent(path);
 const join = (dir, name) => (dir ? dir + "/" + name : name);
 
-export function createMiniPlayer({ api, get = (id) => document.getElementById(id), notify, android = globalThis.WinDockAndroid, open = (u) => globalThis.open(u, "_blank", "noopener,noreferrer"), secure = false }) {
+export function createMiniPlayer({ api, get = (id) => document.getElementById(id), notify, android = globalThis.TaraAndroid, open = (u) => globalThis.open(u, "_blank", "noopener,noreferrer"), secure = false }) {
   const dialog = get("mini"), list = get("mini-list"), crumbs = get("mini-path"), float = get("mini-float"), video = get("mini-video");
   let roots = [], rootId = "", dir = "";
   const tab = (name) => { dialog.dataset.tab = name; for (const b of dialog.querySelectorAll("[data-mini-tab]")) b.setAttribute("aria-pressed", String(b.dataset.miniTab === name)); };

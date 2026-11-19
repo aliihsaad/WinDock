@@ -7,7 +7,7 @@ const t = createChecker("performance");
 const read = (path) => readFileSync(new URL("../" + path, import.meta.url), "utf8");
 const source = read("public/performance.js");
 function boot({ search = "", saved, blocked = false, memoryOnly = false, reducedMotion = false } = {}) {
-  const values = new Map(saved === undefined ? [] : [["windock-performance", saved]]);
+  const values = new Map(saved === undefined ? [] : [["tara-performance", saved]]);
   const classes = new Set();
   let reads = 0, writes = 0;
   const window = { matchMedia: () => ({ matches: reducedMotion }) };
@@ -23,7 +23,7 @@ function boot({ search = "", saved, blocked = false, memoryOnly = false, reduced
     },
   };
   runInNewContext(source, context);
-  return { mode: window.WinDockPerformance, classes, values, get reads() { return reads; }, get writes() { return writes; } };
+  return { mode: window.TaraPerformance, classes, values, get reads() { return reads; }, get writes() { return writes; } };
 }
 
 for (const hint of ["", "?perf=0", "?perf=false", "?perf", "?perf=1"]) {
@@ -39,7 +39,7 @@ for (const hint of ["", "?perf=0", "?perf=false", "?perf", "?perf=1"]) {
 const selected = boot({ search: "?perf=1" });
 selected.mode.setPreference("off");
 t.equal(selected.classes.has("perf"), false, "turning off restores normal rendering immediately");
-t.equal(boot({ search: "?perf=1", saved: selected.values.get("windock-performance") }).mode.enabled, false, "off survives reload on a low-RAM device");
+t.equal(boot({ search: "?perf=1", saved: selected.values.get("tara-performance") }).mode.enabled, false, "off survives reload on a low-RAM device");
 selected.mode.setPreference("auto");
 t.equal(selected.mode.enabled, true, "returning to Auto follows the device again");
 const noStorage = boot({ blocked: true, search: "?perf=1" });

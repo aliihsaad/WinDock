@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using System.Text.Json;
 
-namespace WinDock;
+namespace Tara;
 
 /// <summary>
 /// Key chords (modifiers + one key), held modifiers and the middle mouse button for the touchpad

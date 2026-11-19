@@ -14,7 +14,7 @@ import { createLinuxProvider, LINUX_CONTROL } from "../src/platform/linux.js";
 import { renderPowerControls } from "../public/dock.js";
 
 const t = createChecker("control");
-const HELPER = "WinDockHelper.exe";
+const HELPER = "TaraHelper.exe";
 
 // Completeness: no declared verb may be silently unimplemented on either OS.
 t.deepEqual(unmappedVerbs(), [], "every contract verb is mapped on Windows");
@@ -108,7 +108,7 @@ let busPlayers = {
   "org.mpris.MediaPlayer2.chromium.instance42": "Playing",
 };
 const lin = createLinuxProvider({
-  backlightDir: "/nonexistent/windock-backlight",
+  backlightDir: "/nonexistent/tara-backlight",
   exec: async (file, args) => {
     linCalls.push({ file, args });
     if (file === "busctl" && args.includes("ListNames")) {
@@ -142,7 +142,7 @@ const backlit = createLinuxProvider({
 await backlit.control("brightness-set", 60);
 t.deepEqual(linCalls.at(-1), { file: "brightnessctl", args: ["set", "60%"] }, "a laptop panel uses brightnessctl");
 const brokenDdc = createLinuxProvider({
-  backlightDir: "/nonexistent/windock-backlight",
+  backlightDir: "/nonexistent/tara-backlight",
   exec: async () => { throw new Error("private i2c diagnostics"); },
 });
 const ddcError = await brokenDdc.control("brightness-set", 20).catch((error) => error);

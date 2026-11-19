@@ -3,8 +3,8 @@
  * VIBRATE permission) and in browsers that support it; everywhere else this is
  * a silent no-op. A saved preference lets people turn it off.
  */
-const KEY = "windock-haptics";
-// Not WinDockPreferences: that store only accepts its own fixed list of keys.
+const KEY = "tara-haptics";
+// Not TaraPreferences: that store only accepts its own fixed list of keys.
 const store = () => { try { return typeof localStorage !== "undefined" ? localStorage : null; } catch { return null; } };
 
 export function hapticsEnabled(storage = store()) {

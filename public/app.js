@@ -23,9 +23,9 @@ const $ = (id) => document.getElementById(id);
 const syncSelects = enhanceSelects();
 startGlass();
 if (location.protocol === 'https:') {
-  document.querySelector('.pair__hint').textContent = 'Enter the secure pairing PIN from your PC’s WinDock tray → Show connection info.';
+  document.querySelector('.pair__hint').textContent = 'Enter the secure pairing PIN from your PC’s Tara tray → Show connection info.';
 }
-const performanceMode = window.WinDockPerformance;
+const performanceMode = window.TaraPerformance;
 let state = { tiles: [], running: [], verbs: [] };
 let editing = false, paired = false, online = false, saving = false;
 let socket = null, reconnectTimer = null, installedApps = [], appsLoaded = false;
@@ -45,27 +45,27 @@ const nowPlaying = createNowPlayingPoller({
   },
 });
 let layout;
-try { layout = normalizeLayout(JSON.parse((window.WinDockPreferences || localStorage).getItem("windock-layout"))); } catch { layout = normalizeLayout(); }
+try { layout = normalizeLayout(JSON.parse((window.TaraPreferences || localStorage).getItem("tara-layout"))); } catch { layout = normalizeLayout(); }
 document.querySelectorAll("[data-icon]").forEach((el) => { el.innerHTML = icon(el.dataset.icon); });
-if (typeof window.WinDockAndroid?.showConnectionSettings === "function") {
+if (typeof window.TaraAndroid?.showConnectionSettings === "function") {
   $("connection-open").hidden = false;
   $("connection-open").addEventListener("click", () => {
     $("drawer").close();
-    window.WinDockAndroid.showConnectionSettings();
+    window.TaraAndroid.showConnectionSettings();
   });
 }
-if (typeof window.WinDockAndroid?.showPcPicker === "function") {
+if (typeof window.TaraAndroid?.showPcPicker === "function") {
   $("drawer-switch-pc").hidden = false;
   $("drawer-switch-pc").addEventListener("click", () => {
     $("drawer").close();
-    window.WinDockAndroid.showPcPicker();
+    window.TaraAndroid.showPcPicker();
   });
 }
 // Native Android already runs fullscreen, including older keyboard-capable clients.
-$("fullscreen").hidden = nativeTransport || typeof window.WinDockAndroid?.showKeyboard === "function";
-if (typeof window.WinDockAndroid?.showPhoneSettings === "function") {
+$("fullscreen").hidden = nativeTransport || typeof window.TaraAndroid?.showKeyboard === "function";
+if (typeof window.TaraAndroid?.showPhoneSettings === "function") {
   $("phone-options-row").hidden = false;
-  $("phone-options").addEventListener("click", () => window.WinDockAndroid.showPhoneSettings());
+  $("phone-options").addEventListener("click", () => window.TaraAndroid.showPhoneSettings());
 }
 document.addEventListener("error", (event) => {
   if (event.target instanceof HTMLImageElement && event.target.closest(".app-icon")) event.target.parentElement.classList.add("icon-failed");
@@ -84,7 +84,7 @@ function notify(message, error = false, warning = false) {
 }
 function report(error) {
   if (error.message === "unauthorized") return;
-  notify(error.message === "Failed to fetch" ? "Connection lost. Check that WinDock is running on your PC." : error.message, true);
+  notify(error.message === "Failed to fetch" ? "Connection lost. Check that Tara is running on your PC." : error.message, true);
 }
 function captureActive() { return ["starting", "recording", "stopping"].includes(captureState.phase); }
 function captureTime() {
@@ -106,7 +106,7 @@ function paintCapture() {
   // Only the Windows host has a tray to stop a recording from.
   const tray = state.platform === "windows";
   $("capture-tray-tip").hidden = !tray;
-  $("capture-status").textContent = !online ? "PC disconnected. Any recording continues on the PC. " + (tray ? "Reconnect or stop from its tray menu." : "Reconnect to stop it, or it stops after 60 minutes.") : captureState.error || (!captureState.available ? "Screen capture needs an updated WinDock on your PC." : active ? "Recording your main monitor. Stop to save the video." : "Screenshots → Pictures / WinDock. Recordings → Videos / WinDock.");
+  $("capture-status").textContent = !online ? "PC disconnected. Any recording continues on the PC. " + (tray ? "Reconnect or stop from its tray menu." : "Reconnect to stop it, or it stops after 60 minutes.") : captureState.error || (!captureState.available ? "Screen capture needs an updated Tara on your PC." : active ? "Recording your main monitor. Stop to save the video." : "Screenshots → Pictures / Tara. Recordings → Videos / Tara.");
   const last = captureState.lastCapture;
   $("capture-file").hidden = !last;
   $("capture-file").textContent = last ? "Last saved: " + last.path : "";
@@ -126,7 +126,7 @@ async function captureAction(action) {
     captureState = await api("/api/capture/" + action, { method: "POST", body: "{}" });
     captureReceivedAt = Date.now();
     if (action === "start") { $("capture").close(); notify("Recording started · Tap Stop to save"); }
-    else notify(action === "screenshot" ? "Screenshot saved in Pictures / WinDock" : "Recording saved in Videos / WinDock");
+    else notify(action === "screenshot" ? "Screenshot saved in Pictures / Tara" : "Recording saved in Videos / Tara");
   } catch (error) { report(error); }
   finally { captureBusy = false; paintCapture(); }
 }
@@ -202,7 +202,7 @@ function syncPerformance() {
 }
 function saveLayout(changes) {
   layout = normalizeLayout({ ...layout, ...changes });
-  try { (window.WinDockPreferences || localStorage).setItem("windock-layout", JSON.stringify(layout)); } catch { /* Device preferences are optional. */ }
+  try { (window.TaraPreferences || localStorage).setItem("tara-layout", JSON.stringify(layout)); } catch { /* Device preferences are optional. */ }
   currentPage = 0; syncLayout(); paint();
 }
 function showPageHint() {
@@ -290,8 +290,8 @@ async function refresh() {
 }
 const powerActions = {
   lock: ["Lock your PC?", "Your computer will return to its lock screen.", "Lock PC"],
-  sleep: ["Put your PC to sleep?", "WinDock will disconnect until you wake your computer.", "Sleep"],
-  restart: ["Restart your PC?", "Save your work first. WinDock will disconnect while your computer restarts.", "Restart"],
+  sleep: ["Put your PC to sleep?", "Tara will disconnect until you wake your computer.", "Sleep"],
+  restart: ["Restart your PC?", "Save your work first. Tara will disconnect while your computer restarts.", "Restart"],
   shutdown: ["Shut down your PC?", "Save your work first. You’ll need to turn your computer back on to reconnect.", "Shut down"],
 };
 function confirmPower(verb) {
@@ -794,22 +794,22 @@ $("settings-updates").addEventListener("click", () => updatesScreen.open());
 $("drawer-settings").addEventListener("click", openSettings);
 $("drawer-apps").addEventListener("click", () => { $("drawer").close(); openPicker(); });
 const inputPad = createInputPad({ api, notify, WebSocketClass: DockWebSocket, storage: localStorage });
-$("quick-files").hidden = typeof window.WinDockAndroid?.openFiles !== "function";
-$("quick-files").addEventListener("click", () => { $("controls").close(); window.WinDockAndroid?.openFiles?.(); });
+$("quick-files").hidden = typeof window.TaraAndroid?.openFiles !== "function";
+$("quick-files").addEventListener("click", () => { $("controls").close(); window.TaraAndroid?.openFiles?.(); });
 $("quick-input").addEventListener("click", () => { $("controls").close(); inputPad.open(); });
 function openInputPad(options = {}) { if (!paired || editing) return; $("controls").close(); $("drawer").close(); buzz(options.keyboard ? [12, 40, 12] : 12); inputPad.open("touchpad", { keyboard: options.keyboard === true }); }
 $("input-edge").addEventListener("click", () => openInputPad());
-document.addEventListener("windock-toast", (e) => notify(e.detail.message, e.detail.error));
+document.addEventListener("tara-toast", (e) => notify(e.detail.message, e.detail.error));
 const statusBar = createStatusBar({ gate: idleGate(), api, isReady: () => paired && online && !document.hidden, notify, buzz, storage: localStorage });
 statusBar.start();
-const voice = createVoice({ api, rawFetch: dockFetch, notify, buzz });
-const handsFreeOn = () => { try { return localStorage.getItem("windock-handsfree") === "1"; } catch { return false; } };
-const applyHandsFree = () => { try { window.WinDockAndroid?.setHandsFree?.(handsFreeOn()); } catch { /* older Android shell */ } };
+const voice = createVoice({ api, notify, buzz });
+const handsFreeOn = () => { try { return localStorage.getItem("tara-handsfree") === "1"; } catch { return false; } };
+const applyHandsFree = () => { try { window.TaraAndroid?.setHandsFree?.(handsFreeOn()); } catch { /* older Android shell */ } };
 applyHandsFree();
 $("voice-handsfree").checked = handsFreeOn();
-$("voice-handsfree").addEventListener("change", (event) => { try { localStorage.setItem("windock-handsfree", event.target.checked ? "1" : "0"); } catch { /* private mode */ } applyHandsFree(); });
+$("voice-handsfree").addEventListener("change", (event) => { try { localStorage.setItem("tara-handsfree", event.target.checked ? "1" : "0"); } catch { /* private mode */ } applyHandsFree(); });
 // Once the offline model finishes downloading, honour a hands-free switch that was waiting for it.
-$("voice-handsfree").addEventListener("voice-model-ready", () => { $("voice-handsfree").checked = true; try { localStorage.setItem("windock-handsfree", "1"); } catch { /* private mode */ } applyHandsFree(); });
+$("voice-handsfree").addEventListener("voice-model-ready", () => { $("voice-handsfree").checked = true; try { localStorage.setItem("tara-handsfree", "1"); } catch { /* private mode */ } applyHandsFree(); });
 $("drawer-voice").addEventListener("click", () => { $("drawer").close(); voice.open(true); });
 // Holding a finger on empty dock space for a moment starts listening too.
 {
@@ -834,7 +834,7 @@ async function pollCast() {
     castSeen = cast.id;
     if (cast.url && cast.ageMs < 120000) {
       buzz(15);
-      if (typeof window.WinDockAndroid?.openYoutube === "function") window.WinDockAndroid.openYoutube(cast.url);
+      if (typeof window.TaraAndroid?.openYoutube === "function") window.TaraAndroid.openYoutube(cast.url);
       else notify("Your PC sent a YouTube video. Open Mini player → YouTube to watch it.");
     }
   } catch { /* the next poll retries */ }
@@ -954,7 +954,7 @@ if (!nativeTransport && "serviceWorker" in navigator) {
 syncLayout();
 (async function boot() {
   try { await refresh(); showApp(); connect(); }
-  catch (error) { showPair(error.message === "unauthorized" ? "" : "Start WinDock on your PC, then connect with its PIN."); }
+  catch (error) { showPair(error.message === "unauthorized" ? "" : "Start Tara on your PC, then connect with its PIN."); }
 })();
 // Refresh when returning to the dock. No background native polling while hidden.
 document.addEventListener("visibilitychange", () => { if (!document.hidden && paired) refresh().then(connect).catch(report); });

@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 // Updates come from this fork's rolling `upgrades-latest` release, which CI refreshes on every build.
-export const RELEASES_URL = "https://github.com/yeshwanthkumardomala/WinDock/releases";
+export const RELEASES_URL = "https://github.com/yeshwanthkumardomala/Tara/releases";
 export const FEED_BASE = RELEASES_URL + "/download/upgrades-latest/";
 export const DOWNLOADS_PAGE_URL = RELEASES_URL + "/tag/upgrades-latest";
 export const MANIFEST_URL = FEED_BASE + "latest.json";
@@ -64,7 +64,7 @@ export function parseUpdateManifest(manifest, installedVersion, platform) {
   parseVersion(version);
   if (manifest.available !== true) throw new Error("Release unavailable");
   if (platform !== "windows") throw new Error("Unsupported platform");
-  if (manifest.windows?.url !== FEED_BASE + "WinDockSetup.exe") throw new Error("Unexpected installer");
+  if (manifest.windows?.url !== FEED_BASE + "TaraSetup.exe") throw new Error("Unexpected installer");
   const sha256 = String(manifest.windows?.sha256 || "").toLowerCase();
   if (!/^[0-9a-f]{64}$/.test(sha256)) throw new Error("Installer checksum missing");
   const status = compareVersions(version, installedVersion) > 0 ? "available" : "current";
@@ -91,7 +91,7 @@ async function readLimited(response, limit) {
 // contacts the release feed. Never send a PIN, session, or PC address.
 export function createUpdateService({ installedVersion = INSTALLED_VERSION, platform = "windows",
   fetchImpl = fetch, now = Date.now, timeoutMs = 12000, downloadTimeoutMs = 10 * 60 * 1000,
-  tempDir = join(tmpdir(), "windock-update"), spawnImpl = spawn, log = () => {} } = {}) {
+  tempDir = join(tmpdir(), "tara-update"), spawnImpl = spawn, log = () => {} } = {}) {
   parseVersion(installedVersion);
   let result = { status: "unchecked", installedVersion }, pending, checkedAt = -Infinity, installing = false;
   const service = {
@@ -104,7 +104,7 @@ export function createUpdateService({ installedVersion = INSTALLED_VERSION, plat
         const timer = setTimeout(() => controller.abort(), timeoutMs);
         try {
           const response = await fetchAsset(MANIFEST_URL, { fetchImpl, signal: controller.signal,
-            headers: { "cache-control": "no-cache", "user-agent": "WinDock/" + installedVersion } });
+            headers: { "cache-control": "no-cache", "user-agent": "Tara/" + installedVersion } });
           const body = await readLimited(response, LIMIT);
           result = { ...parseUpdateManifest(JSON.parse(body.toString("utf8")), installedVersion, platform), checkedAt: new Date(now()).toISOString() };
         } catch { result = { status: "failed", installedVersion }; }
@@ -123,12 +123,12 @@ export function createUpdateService({ installedVersion = INSTALLED_VERSION, plat
       if (installing) throw fail("An update is already being installed.", 409);
       installing = true;
       const { sha256, url, latestVersion } = result;
-      const file = join(tempDir, "WinDockSetup-" + latestVersion + ".exe");
+      const file = join(tempDir, "TaraSetup-" + latestVersion + ".exe");
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), downloadTimeoutMs);
       try {
         await mkdir(tempDir, { recursive: true });
-        const response = await fetchAsset(url, { fetchImpl, signal: controller.signal, headers: { "user-agent": "WinDock/" + installedVersion } });
+        const response = await fetchAsset(url, { fetchImpl, signal: controller.signal, headers: { "user-agent": "Tara/" + installedVersion } });
         if (!response.ok || !response.body) throw fail("The update could not be downloaded.");
         const hash = createHash("sha256"); let size = 0;
         const out = createWriteStream(file, { flags: "w", mode: 0o600 });

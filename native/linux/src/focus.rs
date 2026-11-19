@@ -50,7 +50,7 @@ impl Focus {
         atspi::watch(a11y.clone(), wake.clone());
         let focus = Self { state: Arc::default(), requested: Arc::default(), wake, hyprland };
         let (state, requested, hyprland) = (focus.state.clone(), focus.requested.clone(), focus.hyprland.clone());
-        let spawned = std::thread::Builder::new().name("windock-focus".into()).spawn(move || {
+        let spawned = std::thread::Builder::new().name("tara-focus".into()).spawn(move || {
             let mut first = true;
             loop {
                 let window = hyprland.as_ref().and_then(|h| h.active_window().ok().flatten());

@@ -178,7 +178,7 @@ t.equal(buzz(5, { storage: on, vibrate: () => { throw new Error("no motor"); } }
 }
 
 // ---- Host API ----------------------------------------------------------------
-const dir = await mkdtemp(join(tmpdir(), "windock-upgrades-"));
+const dir = await mkdtemp(join(tmpdir(), "tara-upgrades-"));
 const store = createConfigStore({ path: join(dir, "config.json") });
 const calls = [];
 const provider = {

@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 using System.Text.Json;
 using System.Net.Http;
 
-namespace WinDock.Tray;
+namespace Tara.Tray;
 
 internal static class Program
 {
@@ -13,11 +13,11 @@ internal static class Program
     {
         ApplicationConfiguration.Initialize();
         var smoke = args.Contains("--smoke-test");
-        using var instance = new Mutex(true, smoke ? null : @"Local\WinDock.Tray", out var firstInstance);
+        using var instance = new Mutex(true, smoke ? null : @"Local\Tara.Tray", out var firstInstance);
         if (!firstInstance)
         {
-            MessageBox.Show("WinDock is already running. Find its icon in the Windows system tray.",
-                "WinDock", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show("Tara is already running. Find its icon in the Windows system tray.",
+                "Tara", MessageBoxButtons.OK, MessageBoxIcon.Information);
             return 0;
         }
         using var app = new TrayApp(smoke);
@@ -78,7 +78,7 @@ internal sealed partial class TrayApp : ApplicationContext
         {
             Icon = _trayImage,
             Visible = !smoke,
-            Text = "WinDock",
+            Text = "Tara",
             ContextMenuStrip = new ContextMenuStrip(),
         };
         _icon.ContextMenuStrip.Items.Add("Show connection info", null, (_, _) => ShowInfo());
@@ -100,7 +100,7 @@ internal sealed partial class TrayApp : ApplicationContext
         _downloadUpdate = new ToolStripMenuItem("Download update…", null, async (_, _) => await InstallUpdate()) { Visible = false };
         _icon.ContextMenuStrip.Items.Add(_checkUpdates);
         _icon.ContextMenuStrip.Items.Add(_downloadUpdate);
-        _icon.ContextMenuStrip.Items.Add("Quit WinDock", null, async (_, _) => { if (await StopRecording()) ExitThread(); });
+        _icon.ContextMenuStrip.Items.Add("Quit Tara", null, async (_, _) => { if (await StopRecording()) ExitThread(); });
         _icon.DoubleClick += (_, _) => ShowInfo();
         _icon.BalloonTipClicked += (_, _) => { if (_balloonFiles) OpenTransfers(); else if (_balloonRelease is { } page) OpenRelease(page); };
         _updateTimer.Tick += async (_, _) => { _updateTimer.Stop(); await CheckUpdates(false); };
@@ -131,8 +131,8 @@ internal sealed partial class TrayApp : ApplicationContext
 
     private static Icon LoadTrayIcon()
     {
-        using var stream = typeof(TrayApp).Assembly.GetManifestResourceStream("WinDock.Tray.WinDock.ico")
-            ?? throw new InvalidOperationException("The WinDock tray icon is missing.");
+        using var stream = typeof(TrayApp).Assembly.GetManifestResourceStream("Tara.Tray.Tara.ico")
+            ?? throw new InvalidOperationException("The Tara tray icon is missing.");
         using var source = new Icon(stream, SystemInformation.SmallIconSize);
         return (Icon)source.Clone();
     }
@@ -210,19 +210,19 @@ internal sealed partial class TrayApp : ApplicationContext
         _portNotice = "";
         _recording = false;
         _stopRecording.Enabled = false;
-        _icon.Text = "WinDock — not running";
+        _icon.Text = "Tara — not running";
         _captureTimer.Stop();
         RefreshConnectionInfo();
-        if (MessageBox.Show($"WinDock could not run its server.\n\n{message}\n\nOpen Server port settings? You can also open them later from the tray menu.",
-            "WinDock", MessageBoxButtons.YesNo, MessageBoxIcon.Error) == DialogResult.Yes) ConfigureServerPort();
+        if (MessageBox.Show($"Tara could not run its server.\n\n{message}\n\nOpen Server port settings? You can also open them later from the tray menu.",
+            "Tara", MessageBoxButtons.YesNo, MessageBoxIcon.Error) == DialogResult.Yes) ConfigureServerPort();
     }
 
     private void ConfigureServerPort()
     {
         if (!ServerPortDialog.Show()) return;
         if (_server is null || _endpoint == "not running") { StartServer(); return; }
-        MessageBox.Show("Port setting saved. Quit WinDock from its tray menu and reopen it to apply the change, then find your PC again on the phone.",
-            "WinDock", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        MessageBox.Show("Port setting saved. Quit Tara from its tray menu and reopen it to apply the change, then find your PC again on the phone.",
+            "Tara", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
     private void ReadBanner(string? line)
@@ -239,11 +239,11 @@ internal sealed partial class TrayApp : ApplicationContext
         if (!pin.Success) return;
         _pin = pin.Groups[1].Value;
         RefreshConnectionInfo();
-        _icon.Text = "WinDock — running";
+        _icon.Text = "Tara — running";
         if (!_smoke) _captureTimer.Start();
         if (!_smoke)
         {
-            ShowBalloon("WinDock is running", $"{_endpoint}\nPIN {_pin}");
+            ShowBalloon("Tara is running", $"{_endpoint}\nPIN {_pin}");
             if (!_startupCheckScheduled) { _startupCheckScheduled = true; _updateTimer.Start(); }
         }
     }
@@ -257,7 +257,7 @@ internal sealed partial class TrayApp : ApplicationContext
                 { Timeout = TimeSpan.FromSeconds(5) };
             using var request = new HttpRequestMessage(HttpMethod.Post,
                 $"http://127.0.0.1:{endpoint.Port}/api/pairing/reset");
-            request.Headers.Add("X-WinDock-Local-Action", "allow-pairing");
+            request.Headers.Add("X-Tara-Local-Action", "allow-pairing");
             request.Content = new StringContent("{}", System.Text.Encoding.UTF8, "application/json");
             using var response = await http.SendAsync(request, _shutdown.Token);
             response.EnsureSuccessStatusCode();
@@ -266,8 +266,8 @@ internal sealed partial class TrayApp : ApplicationContext
         catch (OperationCanceledException) when (_stopping) { }
         catch (Exception)
         {
-            if (!_stopping) MessageBox.Show("Could not reopen pairing. Check that WinDock is running and try again.",
-                "WinDock", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            if (!_stopping) MessageBox.Show("Could not reopen pairing. Check that Tara is running and try again.",
+                "Tara", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
     }
 
@@ -293,18 +293,18 @@ internal sealed partial class TrayApp : ApplicationContext
             var form = new PairingWindow(new PairingClient(uri), () => {
                 // Keep the existing local management tools available on explicit request.
                 try { Process.Start(new ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true }); }
-                catch (Exception) { MessageBox.Show("Couldn't open the local connection tools. Try again in a moment.", "WinDock"); }
+                catch (Exception) { MessageBox.Show("Couldn't open the local connection tools. Try again in a moment.", "Tara"); }
             }) { Icon = _trayImage };
             form.FormClosed += (_, _) => _pairingWindow = null;
             _pairingWindow = form; form.Show();
         }
-        else MessageBox.Show("Secure pairing is starting. Try again in a moment. If it stays unavailable, check WinDock's connection diagnostics.", "WinDock");
+        else MessageBox.Show("Secure pairing is starting. Try again in a moment. If it stays unavailable, check Tara's connection diagnostics.", "Tara");
     }
 
     private void ShowInfo()
     {
         if (_connectionWindow is { IsDisposed: false }) { RefreshConnectionInfo(); _connectionWindow.Activate(); return; }
-        var form = new Form { Text = "WinDock", AutoScaleMode = AutoScaleMode.Dpi,
+        var form = new Form { Text = "Tara", AutoScaleMode = AutoScaleMode.Dpi,
             ClientSize = new Size(520, 480), MinimumSize = new Size(520, 500),
             StartPosition = FormStartPosition.CenterScreen, MaximizeBox = false };
         var panel = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(24), ColumnCount = 1, RowCount = 5 };
@@ -313,7 +313,7 @@ internal sealed partial class TrayApp : ApplicationContext
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        panel.Controls.Add(new Label { Text = "WinDock " + UpdateChecker.InstalledVersion, AutoSize = true,
+        panel.Controls.Add(new Label { Text = "Tara " + UpdateChecker.InstalledVersion, AutoSize = true,
             Font = new Font(SystemFonts.MessageBoxFont!, FontStyle.Bold), Margin = new Padding(0, 0, 0, 16) });
         _connectionDetails = new Label { AutoSize = true, Dock = DockStyle.Fill };
         RefreshConnectionInfo(); panel.Controls.Add(_connectionDetails);
@@ -355,7 +355,7 @@ internal sealed partial class TrayApp : ApplicationContext
         if(_checkingTransfers||_stopping||TransferEndpoint() is not { } endpoint)return;
         _checkingTransfers=true;
         try {
-            using var request=new HttpRequestMessage(HttpMethod.Get,endpoint); request.Headers.Add("x-windock-files","local");
+            using var request=new HttpRequestMessage(HttpMethod.Get,endpoint); request.Headers.Add("x-tara-files","local");
             using var response=await _captureHttp.SendAsync(request); if(!response.IsSuccessStatusCode)return;
             using var document=JsonDocument.Parse(await response.Content.ReadAsStringAsync()); if(_stopping)return;
             foreach(var item in document.RootElement.GetProperty("events").EnumerateArray()) {
@@ -384,19 +384,19 @@ internal sealed partial class TrayApp : ApplicationContext
             {
                 _availableUpdate = result.Status == UpdateStatus.Available ? result : null;
                 _downloadUpdate.Visible = _availableUpdate is not null;
-                _downloadUpdate.Text = "Install WinDock " + result.Version + " now…";
+                _downloadUpdate.Text = "Install Tara " + result.Version + " now…";
             }
             if (!result.ShouldNotify(interactive)) return;
             if (result.Status == UpdateStatus.Available)
             {
-                if (!interactive) ShowBalloon("WinDock update available", $"Version {result.Version} is ready. Right-click WinDock and choose Install to update.", null);
-                else if (MessageBox.Show($"WinDock {result.Version} is available.\nYou have {UpdateChecker.InstalledVersion}.\n\nDownload and install it now? WinDock closes and reopens by itself, and your dock settings are kept.",
-                    "WinDock update", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes) await InstallUpdate();
+                if (!interactive) ShowBalloon("Tara update available", $"Version {result.Version} is ready. Right-click Tara and choose Install to update.", null);
+                else if (MessageBox.Show($"Tara {result.Version} is available.\nYou have {UpdateChecker.InstalledVersion}.\n\nDownload and install it now? Tara closes and reopens by itself, and your dock settings are kept.",
+                    "Tara update", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes) await InstallUpdate();
             }
             else MessageBox.Show(result.Status == UpdateStatus.Current
                 ? $"You’re up to date.\nInstalled version: {UpdateChecker.InstalledVersion}"
-                : "Couldn’t check for updates. Check that WinDock is running and this PC is online, then try again.",
-                "WinDock updates", MessageBoxButtons.OK, result.Status == UpdateStatus.Current ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
+                : "Couldn’t check for updates. Check that Tara is running and this PC is online, then try again.",
+                "Tara updates", MessageBoxButtons.OK, result.Status == UpdateStatus.Current ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
         }
         finally
         {
@@ -415,7 +415,7 @@ internal sealed partial class TrayApp : ApplicationContext
     {
         if (UpdateEndpoint(action) is not { } endpoint) return (null, "");
         using var request = new HttpRequestMessage(HttpMethod.Post, endpoint) { Content = new StringContent("{}", System.Text.Encoding.UTF8, "application/json") };
-        request.Headers.Add("X-WinDock-Update", "local");
+        request.Headers.Add("X-Tara-Update", "local");
         var response = await (action == "install" ? _installHttp : _captureHttp).SendAsync(request, _shutdown.Token);
         return (response, await response.Content.ReadAsStringAsync(_shutdown.Token));
     }
@@ -446,15 +446,15 @@ internal sealed partial class TrayApp : ApplicationContext
         try
         {
             var (response, body) = await PostUpdate("install");
-            if (response is null) { MessageBox.Show("WinDock is still starting. Try again in a moment.", "WinDock update", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
-            if (response.IsSuccessStatusCode) { ShowBalloon("Updating WinDock", "Downloading the update. WinDock will close and reopen by itself.", null); return; }
+            if (response is null) { MessageBox.Show("Tara is still starting. Try again in a moment.", "Tara update", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
+            if (response.IsSuccessStatusCode) { ShowBalloon("Updating Tara", "Downloading the update. Tara will close and reopen by itself.", null); return; }
             var message = "The update could not be installed.";
             try { using var document = JsonDocument.Parse(body); if (document.RootElement.TryGetProperty("error", out var e) && e.GetString() is { Length: > 0 } text) message = text; } catch (JsonException) { }
-            MessageBox.Show(message, "WinDock update", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(message, "Tara update", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or OperationCanceledException)
         {
-            MessageBox.Show("Couldn’t reach WinDock to install the update. Try again.", "WinDock update", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show("Couldn’t reach Tara to install the update. Try again.", "Tara update", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
     }
 
@@ -462,7 +462,7 @@ internal sealed partial class TrayApp : ApplicationContext
     {
         if (page is null) return;
         try { Process.Start(new ProcessStartInfo(page.AbsoluteUri) { UseShellExecute = true }); }
-        catch (Exception ex) { MessageBox.Show($"Couldn’t open your browser. Visit {page}\n\n{ex.Message}", "WinDock updates", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
+        catch (Exception ex) { MessageBox.Show($"Couldn’t open your browser. Visit {page}\n\n{ex.Message}", "Tara updates", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
     }
 
     private void CopyUrl()
@@ -485,8 +485,8 @@ internal sealed partial class TrayApp : ApplicationContext
             var phase = document.RootElement.GetProperty("phase").GetString();
             var active = phase is "starting" or "recording" or "stopping";
             _stopRecording.Enabled = active && phase != "stopping";
-            _icon.Text = active ? "WinDock — screen recording" : "WinDock — running";
-            if (active && !_recording) ShowBalloon("Screen recording started", "Your main monitor is being recorded without audio. Right-click WinDock to stop.");
+            _icon.Text = active ? "Tara — screen recording" : "Tara — running";
+            if (active && !_recording) ShowBalloon("Screen recording started", "Your main monitor is being recorded without audio. Right-click Tara to stop.");
             _recording = active;
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException) { }
@@ -504,7 +504,7 @@ internal sealed partial class TrayApp : ApplicationContext
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
-            MessageBox.Show("Could not save the recording. Check the connection and try stopping again before quitting.", "WinDock", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show("Could not save the recording. Check the connection and try stopping again before quitting.", "Tara", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return false;
         }
     }
@@ -512,9 +512,9 @@ internal sealed partial class TrayApp : ApplicationContext
     {
         var root = Environment.GetFolderPath(video ? Environment.SpecialFolder.MyVideos : Environment.SpecialFolder.MyPictures);
         if (string.IsNullOrEmpty(root)) root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), video ? "Videos" : "Pictures");
-        var folder = signature ? Path.Combine(root, "WinDock", "Signatures") : Path.Combine(root, "WinDock");
+        var folder = signature ? Path.Combine(root, "Tara", "Signatures") : Path.Combine(root, "Tara");
         try { Directory.CreateDirectory(folder); Process.Start(new ProcessStartInfo(folder) { UseShellExecute = true }); }
-        catch (Exception ex) { MessageBox.Show(ex.Message, "WinDock captures", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
+        catch (Exception ex) { MessageBox.Show(ex.Message, "Tara captures", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
     }
 
     protected override void Dispose(bool disposing)

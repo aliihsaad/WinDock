@@ -8,7 +8,7 @@ $env:NUGET_PACKAGES = Join-Path $projectRoot '.tools\nuget'
 $env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
 Push-Location $projectRoot
 try {
-    & $dotnetPath publish native\probe\WinDockProbe.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o artifacts\probe --nologo
+    & $dotnetPath publish native\probe\TaraProbe.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o artifacts\probe --nologo
     if ($LASTEXITCODE -ne 0) { throw 'Native probe build failed' }
     $smokeArgs = @('scripts\smoke-windows.mjs')
     if ($FocusDebugControl) { $smokeArgs += '--focus-debug-control' }

@@ -5,7 +5,7 @@
     "http://localhost:4173"
   ],
   "originsRegex": [
-    "^https://windock-[a-z0-9-]+-alis-projects-310d9f5c\\.vercel\\.app$"
+    "^https://tara-[a-z0-9-]+-alis-projects-310d9f5c\\.vercel\\.app$"
   ],
   "defaultCommentOrder": "newest"
 }

@@ -5,8 +5,8 @@
  * side handle and a triple tap on empty dock space open the pad directly. Both can
  * be switched off; the default is on.
  */
-const KEY = "windock-quick-input";
-// Not WinDockPreferences: that store only accepts its own fixed list of keys.
+const KEY = "tara-quick-input";
+// Not TaraPreferences: that store only accepts its own fixed list of keys.
 const store = () => { try { return typeof localStorage !== "undefined" ? localStorage : null; } catch { return null; } };
 
 export function quickInputEnabled(storage = store()) {

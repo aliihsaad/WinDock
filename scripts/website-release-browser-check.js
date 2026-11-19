@@ -22,7 +22,7 @@ async (page) => {
     await tab.getByRole('button', { name: 'No thanks', exact: true }).click();
     const demo = tab.frameLocator('#demo-frame');
     await demo.locator('#app:not([hidden])').waitFor();
-    check(await tab.locator('#desktop-navigation').isHidden() && (await tab.locator('.nav-shell').boundingBox()).width === 52, 'Desktop navigation starts as the compact WinDock icon with reduced motion');
+    check(await tab.locator('#desktop-navigation').isHidden() && (await tab.locator('.nav-shell').boundingBox()).width === 52, 'Desktop navigation starts as the compact Tara icon with reduced motion');
     await tab.locator('#nav-toggle').hover();
     await tab.locator('.desktop-nav').waitFor({ state: 'visible' });
     check((await tab.locator('.nav-shell').boundingBox()).width > 700, 'Hover expands the desktop navigation');

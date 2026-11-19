@@ -43,12 +43,12 @@ export function firewallCommands({ platform, backend, scope, ports, executable, 
   return ports.filter(port => Number.isInteger(port.port) && port.port > 0 && port.port <= 65535 && ['tcp', 'udp'].includes(port.protocol)).map(port => {
     let commands = [];
     if (platform === 'linux' && backend === 'ufw') {
-      commands = [`sudo ufw allow in on ${quoteSh(scope.name)} from ${scope.subnet} to any port ${port.port} proto ${port.protocol} comment 'WinDock local network'`];
+      commands = [`sudo ufw allow in on ${quoteSh(scope.name)} from ${scope.subnet} to any port ${port.port} proto ${port.protocol} comment 'Tara local network'`];
     } else if (platform === 'linux' && backend === 'firewalld' && /^[A-Za-z0-9_-]{1,64}$/.test(zone || '')) {
       const rule = `rule family="ipv4" source address="${scope.subnet}" port port="${port.port}" protocol="${port.protocol}" accept`;
       commands = [false, true].map(permanent => `sudo firewall-cmd --zone=${quoteSh(zone)} ${permanent ? '--permanent ' : ''}--add-rich-rule=${quoteSh(rule)}`);
     } else if (platform === 'win32' && validText(executable) && /^[A-Za-z]:\\/.test(executable)) {
-      commands = [`New-NetFirewallRule -DisplayName 'WinDock ${port.protocol.toUpperCase()} ${port.port}' -Direction Inbound -Action Allow -Profile Private -Program ${quotePs(executable)} -Protocol ${port.protocol.toUpperCase()} -LocalPort ${port.port} -LocalAddress ${scope.address} -RemoteAddress ${scope.subnet}`];
+      commands = [`New-NetFirewallRule -DisplayName 'Tara ${port.protocol.toUpperCase()} ${port.port}' -Direction Inbound -Action Allow -Profile Private -Program ${quotePs(executable)} -Protocol ${port.protocol.toUpperCase()} -LocalPort ${port.port} -LocalAddress ${scope.address} -RemoteAddress ${scope.subnet}`];
     }
     return { ...port, commands };
   });
@@ -83,7 +83,7 @@ export async function networkSetup({ ports, platform = process.platform, interfa
     }
   } else if (platform === 'win32') {
     backend = 'windows';
-    status = 'Windows setup relies on the Windows firewall prompt. Allow the bundled WinDock runtime on your trusted Private network. If needed, review the commands below in PowerShell opened as administrator. Existing block or organization policies can override allow rules.';
+    status = 'Windows setup relies on the Windows firewall prompt. Allow the bundled Tara runtime on your trusted Private network. If needed, review the commands below in PowerShell opened as administrator. Existing block or organization policies can override allow rules.';
   }
   const networks = await Promise.all(scopes.map(async scope => {
     let zone;
@@ -94,5 +94,5 @@ export async function networkSetup({ ports, platform = process.platform, interfa
     return { ...scope, zone, rules: firewallCommands({ platform, backend, scope, ports, executable, zone }) };
   }));
   return { platform, backend, status, ports, networks,
-    note: 'Choose only the network shared with your phone. Review before running any command; your computer will request administrator permission. WinDock has not changed your firewall. After changes, generate a fresh QR and test from the phone. USB tethering can use a different interface/subnet. Recheck after a port or network change. Never disable the firewall or forward router ports.' };
+    note: 'Choose only the network shared with your phone. Review before running any command; your computer will request administrator permission. Tara has not changed your firewall. After changes, generate a fresh QR and test from the phone. USB tethering can use a different interface/subnet. Recheck after a port or network change. Never disable the firewall or forward router ports.' };
 }

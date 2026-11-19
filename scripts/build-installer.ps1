@@ -1,6 +1,6 @@
 param(
     [string]$Compiler = '',
-    [string]$PackageDirectory = 'artifacts\WinDock-win-x64'
+    [string]$PackageDirectory = 'artifacts\Tara-win-x64'
 )
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
@@ -12,12 +12,12 @@ if (-not $Compiler) {
     if (-not $Compiler) { $command = Get-Command ISCC.exe -ErrorAction SilentlyContinue; if ($command) { $Compiler = $command.Source } }
 }
 if (-not $Compiler) { throw 'Install Inno Setup 7 or pass -Compiler with the path to ISCC.exe.' }
-foreach ($name in @('WinDockTray.exe','WinDockHelper.exe','node.exe','server.js','package.json','package-lock.json','src\platform\windows.js','public\index.html','node_modules\ws\index.js','scripts\create-local-tls.ps1','docs\PLAY_RELEASE.md')) {
+foreach ($name in @('TaraTray.exe','TaraHelper.exe','node.exe','server.js','package.json','package-lock.json','src\platform\windows.js','public\index.html','node_modules\ws\index.js','scripts\create-local-tls.ps1','docs\PLAY_RELEASE.md')) {
     if (-not (Test-Path -LiteralPath (Join-Path $packageRoot $name) -PathType Leaf)) { throw "Build Windows first. Missing: $name" }
 }
 $version = (Get-Content -LiteralPath (Join-Path $projectRoot 'package.json') -Raw | ConvertFrom-Json).version
 if ($version -notmatch '^\d+\.\d+\.\d+$') { throw 'Installer version must have three numeric components.' }
 New-Item -ItemType Directory -Path $outputRoot -Force | Out-Null
-& $Compiler "/DAppVersion=$version" "/DPackageDir=$packageRoot" "/DOutputDir=$outputRoot" (Join-Path $projectRoot 'native\installer\WinDock.iss')
+& $Compiler "/DAppVersion=$version" "/DPackageDir=$packageRoot" "/DOutputDir=$outputRoot" (Join-Path $projectRoot 'native\installer\Tara.iss')
 if ($LASTEXITCODE -ne 0) { throw "Installer compilation failed ($LASTEXITCODE)" }
-Write-Output "Windows installer ready: $outputRoot\WinDockSetup.exe"
+Write-Output "Windows installer ready: $outputRoot\TaraSetup.exe"

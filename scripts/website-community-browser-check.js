@@ -24,10 +24,10 @@ async (page) => {
     await comments.locator('.gsc-comment-box').waitFor();
     check((await comments.locator('body').innerText()).includes('Sign in with GitHub'), 'Opening with the keyboard loads the real GitHub sign-in and comment interface');
     const config = await tab.locator('script[src="https://giscus.app/client.js"]').evaluate(el => ({ ...el.dataset }));
-    check(config.repo === 'aliihsaad/WinDock' && config.repoId === 'R_kgDOUfO7Ig' && config.categoryId === 'DIC_kwDOUfO7Is4DJr27', 'Embed is connected to the verified WinDock repository and category');
+    check(config.repo === 'aliihsaad/WinDock' && config.repoId === 'R_kgDOUfO7Ig' && config.categoryId === 'DIC_kwDOUfO7Is4DJr27', 'Embed is connected to the verified Tara repository and category');
     check(config.mapping === 'number' && config.term === '39', 'Previews and production share discussion #39');
     check(config.reactionsEnabled === '1' && config.inputPosition === 'top', 'Reactions and comment entry are enabled');
-    check(await tab.evaluate(() => localStorage.getItem('windock-website-analytics-v1')) === 'declined', 'Functional comments preserve the separate analytics choice');
+    check(await tab.evaluate(() => localStorage.getItem('tara-website-analytics-v1')) === 'declined', 'Functional comments preserve the separate analytics choice');
     await comments.locator('#giscus-theme[href*="noborder_light"]').waitFor({ state: 'attached' });
     await tab.locator('#community').screenshot({ path: 'output/playwright/community-live-light.png' });
     const frameIdentity = await tab.locator('.giscus-frame').elementHandle();
@@ -72,7 +72,7 @@ async (page) => {
     for (const systemTheme of ['light', 'dark']) {
       for (const savedTheme of ['light', 'dark']) {
         const appearanceContext = await createContext({ colorScheme: systemTheme, deviceScaleFactor: 1 });
-        await appearanceContext.addInitScript(theme => localStorage.setItem('windock-website-theme', theme), savedTheme);
+        await appearanceContext.addInitScript(theme => localStorage.setItem('tara-website-theme', theme), savedTheme);
         const appearance = await appearanceContext.newPage();
         await appearance.goto('http://127.0.0.1:4173/');
         await appearance.getByRole('button', { name: 'No thanks', exact: true }).click();

@@ -12,7 +12,7 @@ async (page) => {
       return canvas.toDataURL('image/jpeg');
     }));
     const live = await page.evaluate(() => window.__liveMedia || null);
-    const first = live?.artwork ? { ...live, playing: true } : { title: 'Evening drive', artist: 'WinDock preview', playing: true, artwork: pictures[0] };
+    const first = live?.artwork ? { ...live, playing: true } : { title: 'Evening drive', artist: 'Tara preview', playing: true, artwork: pictures[0] };
     await context.addInitScript(media => { window.__mediaFixture = media; window.__mediaCommands = []; }, first);
     await context.route('**/demo/app.js', async route => {
       const response = await route.fetch();

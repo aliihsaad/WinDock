@@ -2,12 +2,12 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Text.Json;
 
-namespace WinDock.Tray;
+namespace Tara.Tray;
 
 internal sealed record ServerPortSettings(int? Port)
 {
     internal static string SettingsPath => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "windock", "server-port.json");
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "tara", "server-port.json");
 
     internal static ServerPortSettings? Load(string path)
     {

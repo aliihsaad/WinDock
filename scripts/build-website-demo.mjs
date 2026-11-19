@@ -17,7 +17,7 @@ export async function buildWebsiteDemo() {
   html = replaceOnce(html, 'src="/app.js"', 'src="./app.js"');
   html = replaceOnce(html, 'src="/performance.js"', 'src="./performance.js" data-memory-only');
   html = replaceOnce(html, 'src="/appearance.js"', 'src="./appearance.js" data-memory-only');
-  html = replaceOnce(html, '<title>WinDock</title>', '<title>WinDock interactive preview</title>');
+  html = replaceOnce(html, '<title>Tara</title>', '<title>Tara interactive preview</title>');
   html = replaceOnce(html, 'Main monitor · Saved on your PC', 'Demo · Nothing is captured or saved');
   html = replaceOnce(html, 'Recordings stop after 60 minutes.<span', 'In the app, captures are saved to your PC.<span');
   html = replaceOnce(html, '>Paste to PC</button>', '>Try paste</button>');
@@ -58,9 +58,9 @@ export async function buildWebsiteDemo() {
 // frame too, so it stays readable on phones instead of scaling with the dock.
 function showPreviewPcPicker() {
   for (const dialog of document.querySelectorAll('dialog[open]')) dialog.close();
-  parent.postMessage({ type: 'windock-preview-pcs', pcs: getPreviewPcs(), open: true }, location.origin);
+  parent.postMessage({ type: 'tara-preview-pcs', pcs: getPreviewPcs(), open: true }, location.origin);
 }
-window.WinDockAndroid = { showPcPicker: showPreviewPcPicker, openFiles: () => document.getElementById('demo-files').showModal() };
+window.TaraAndroid = { showPcPicker: showPreviewPcPicker, openFiles: () => document.getElementById('demo-files').showModal() };
 // Sandbox forbids form submission. Dispatch only the app's in-memory handler.
 const previewLinkForm = document.getElementById('link-form');
 const submitPreviewLink = () => previewLinkForm.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
@@ -73,13 +73,13 @@ document.getElementById('demo-files-send').addEventListener('click', () => {
 ${app}`;
   // The preview must never install a worker that could outlive the frame.
   app = replaceOnce(app, 'if (!nativeTransport && "serviceWorker" in navigator) {', 'if (false) { // Service workers are disabled in the website preview.');
-  app = replaceOnce(app, 'try { await refresh(); showApp(); connect(); }', "try { await refresh(); showApp(); connect(); parent.postMessage({ type: 'windock-preview-ready' }, location.origin); }");
+  app = replaceOnce(app, 'try { await refresh(); showApp(); connect(); }', "try { await refresh(); showApp(); connect(); parent.postMessage({ type: 'tara-preview-ready' }, location.origin); }");
   for (const [from, to] of [
     ['Recording started · Tap Stop to save', 'Demo recording started · Tap Stop to finish'],
-    ['Screenshot saved in Pictures / WinDock', 'Screenshot preview · No file created'],
-    ['Recording saved in Videos / WinDock', 'Recording preview finished · No file created'],
+    ['Screenshot saved in Pictures / Tara', 'Screenshot preview · No file created'],
+    ['Recording saved in Videos / Tara', 'Recording preview finished · No file created'],
     ['Recording your main monitor. Stop to save the video.', 'Demo timer running. Nothing is being recorded.'],
-    ['Screenshots → Pictures / WinDock. Recordings → Videos / WinDock.', 'Try a screenshot or a recording. No files are created in this demo.'],
+    ['Screenshots → Pictures / Tara. Recordings → Videos / Tara.', 'Try a screenshot or a recording. No files are created in this demo.'],
     ['Last saved: ', 'Preview result: '],
   ]) app = replaceOnce(app, from, to);
   app += `
@@ -87,9 +87,9 @@ ${app}`;
 let clipboardObserver;
 window.addEventListener('message', async (event) => {
   if (event.source !== parent || event.origin !== location.origin) return;
-  if (event.data?.type === 'windock-preview-ping' && paired) parent.postMessage({ type: 'windock-preview-ready' }, location.origin);
-  if (event.data?.type === 'windock-preview-pc-picker' && paired) showPreviewPcPicker();
-  if (event.data?.type === 'windock-preview-pc-action' && paired) {
+  if (event.data?.type === 'tara-preview-ping' && paired) parent.postMessage({ type: 'tara-preview-ready' }, location.origin);
+  if (event.data?.type === 'tara-preview-pc-picker' && paired) showPreviewPcPicker();
+  if (event.data?.type === 'tara-preview-pc-action' && paired) {
     const { action, id } = event.data;
     if (!['select', 'forget', 'refresh'].includes(action)) return;
     let selected = false;
@@ -98,9 +98,9 @@ window.addEventListener('message', async (event) => {
       if (selected) { editing = false; currentPage = 0; appsLoaded = false; await refresh(); }
     }
     if (action === 'forget') forgetPreviewPc(id);
-    parent.postMessage({ type: 'windock-preview-pcs', pcs: getPreviewPcs(), selected, action }, location.origin);
+    parent.postMessage({ type: 'tara-preview-pcs', pcs: getPreviewPcs(), selected, action }, location.origin);
   }
-  if (event.data?.type === 'windock-preview-clipboard' && paired) {
+  if (event.data?.type === 'tara-preview-clipboard' && paired) {
     clipboardObserver?.disconnect();
     const dialog = document.getElementById('input-pad'), toggle = document.getElementById('pc-clipboard-toggle');
     for (const other of document.querySelectorAll('dialog[open]')) if (other !== dialog) other.close();
@@ -115,38 +115,38 @@ window.addEventListener('message', async (event) => {
     clipboardObserver = new MutationObserver(showClipboard);
     clipboardObserver.observe(dialog, { attributes: true, attributeFilter: ['data-ready', 'open'] });
     showClipboard();
-    parent.postMessage({ type: 'windock-preview-opened' }, location.origin);
+    parent.postMessage({ type: 'tara-preview-opened' }, location.origin);
   }
-  if (event.data?.type === 'windock-preview-input' && paired && ['touchpad', 'signature'].includes(event.data.mode)) {
+  if (event.data?.type === 'tara-preview-input' && paired && ['touchpad', 'signature'].includes(event.data.mode)) {
     // Keep this dialog open while switching modes: its queued close event
     // would otherwise disconnect the newly opened demo touchpad.
     for (const dialog of document.querySelectorAll('dialog[open]')) if (dialog.id !== 'input-pad') dialog.close();
     inputPad.open(event.data.mode);
-    parent.postMessage({ type: 'windock-preview-opened' }, location.origin);
+    parent.postMessage({ type: 'tara-preview-opened' }, location.origin);
   }
-  if (event.data?.type === 'windock-preview-density' && [4, 6, 8].includes(event.data.perPage)) saveLayout({ perPage: event.data.perPage });
-  if (event.data?.type === 'windock-preview-drawer' && paired) {
+  if (event.data?.type === 'tara-preview-density' && [4, 6, 8].includes(event.data.perPage)) saveLayout({ perPage: event.data.perPage });
+  if (event.data?.type === 'tara-preview-drawer' && paired) {
     for (const dialog of document.querySelectorAll('dialog[open]')) if (dialog.id !== 'drawer') dialog.close();
     openDrawer();
-    parent.postMessage({ type: 'windock-preview-opened' }, location.origin);
+    parent.postMessage({ type: 'tara-preview-opened' }, location.origin);
   }
-  if (event.data?.type === 'windock-preview-capture' && paired) {
+  if (event.data?.type === 'tara-preview-capture' && paired) {
     for (const dialog of document.querySelectorAll('dialog[open]')) dialog.close();
     openCapture();
-    parent.postMessage({ type: 'windock-preview-opened' }, location.origin);
+    parent.postMessage({ type: 'tara-preview-opened' }, location.origin);
   }
-  if (event.data?.type === 'windock-preview-music' && paired) {
+  if (event.data?.type === 'tara-preview-music' && paired) {
     for (const dialog of document.querySelectorAll('dialog[open]')) if (dialog.id !== 'controls') dialog.close();
     openControls();
-    parent.postMessage({ type: 'windock-preview-opened' }, location.origin);
+    parent.postMessage({ type: 'tara-preview-opened' }, location.origin);
   }
 });
-parent.postMessage({ type: 'windock-preview-layout', perPage: layout.perPage }, location.origin);
+parent.postMessage({ type: 'tara-preview-layout', perPage: layout.perPage }, location.origin);
 `;
   await writeFile(resolve(destination, 'app.js'), app);
   await writeFile(resolve(destination, 'verbs.js'), `export default ${JSON.stringify(CONTROL_VERBS)};\n`);
 }
 if (process.argv[1] && resolve(process.argv[1]) === resolve(import.meta.filename)) {
   await buildWebsiteDemo();
-  console.log('Website preview generated from the current WinDock UI.');
+  console.log('Website preview generated from the current Tara UI.');
 }

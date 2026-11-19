@@ -44,7 +44,7 @@ const provider = createWindowsProvider({
   },
 });
 
-const dir = await mkdtemp(join(tmpdir(), "windock-sync-"));
+const dir = await mkdtemp(join(tmpdir(), "tara-sync-"));
 const configStore = createConfigStore({ path: join(dir, "config.json") });
 const app = await createApp({ provider, configStore, pin: PIN, trustLoopback: false });
 await new Promise((r) => app.server.listen(0, "127.0.0.1", r));
@@ -76,7 +76,7 @@ function firstMessage(headers, timeoutMs = 2500) {
 
 // An unpaired socket must be refused.
 t.equal(await firstMessage({}), null, "an unpaired client receives no snapshot");
-t.equal(await firstMessage({ cookie: "windock_session=bogus" }), null, "an invalid session is refused");
+t.equal(await firstMessage({ cookie: "tara_session=bogus" }), null, "an invalid session is refused");
 
 // Pair, then connect for real.
 const auth = await fetch(`${base}/api/auth`, {

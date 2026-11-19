@@ -7,7 +7,7 @@ import { createApp } from "../server.js";
 import { createConfigStore } from "../src/config.js";
 import { managedTls } from "../src/managed-tls.js";
 import { createTransfers } from "../src/transfers.js";
-const directory = await mkdtemp(join(tmpdir(), "windock-secure-android-"));
+const directory = await mkdtemp(join(tmpdir(), "tara-secure-android-"));
 const id = "44444444-4444-4444-8444-444444444444";
 const configStore = createConfigStore({ path: join(directory, "config.json") });
 const fixture = { id: "secure-fixture", name: "Fixture Editor", kind: "app", label: "Fixture Editor", target: "fixture.exe", args: "", icon: "" };
@@ -57,11 +57,11 @@ const control = createServer(async (req, res) => {
     let result = { ok: true };
     if (req.url === "/invitation" || req.url === "/other-invitation") {
       const port = req.url === "/other-invitation" ? 18631 : 18624;
-      const response = await fetch(`http://127.0.0.1:${port}/api/pairing/invite`, { method: "POST", headers: { "x-windock-pair": "local", "content-type": "application/json" }, body: "{}" });
+      const response = await fetch(`http://127.0.0.1:${port}/api/pairing/invite`, { method: "POST", headers: { "x-tara-pair": "local", "content-type": "application/json" }, body: "{}" });
       const value = await response.json();
-      const parsed = JSON.parse(Buffer.from(value.invitation.slice(13), "base64url"));
+      const parsed = JSON.parse(Buffer.from(value.invitation.slice("tara-pair:".length), "base64url"));
       parsed.address = "10.0.2.2";
-      result = { invitation: "windock-pair:" + Buffer.from(JSON.stringify(parsed)).toString("base64url") };
+      result = { invitation: "tara-pair:" + Buffer.from(JSON.stringify(parsed)).toString("base64url") };
     } else if (req.url === "/hold-state") { stateGate ??= new Promise(resolve => { releaseState = resolve; }); }
     else if (req.url === "/release-state") { releaseState?.(); stateGate = null; releaseState = null; }
     else if (req.url === "/media-slow") { mediaDelay=20000; }
@@ -76,7 +76,7 @@ const control = createServer(async (req, res) => {
     else if (req.url === "/move") { await stop(); tlsPort = tlsPort === 18626 ? 18627 : 18626; await boot(); result = { port: tlsPort }; }
     else if (req.url === "/revoke") { app.secureSessions.revokeAll(); }
     else if (req.url === "/files") {
-      const response=await fetch("http://127.0.0.1:18624/api/transfers/local",{headers:{"x-windock-files":"local"}}); result=await response.json();
+      const response=await fetch("http://127.0.0.1:18624/api/transfers/local",{headers:{"x-tara-files":"local"}}); result=await response.json();
     }
     else { res.writeHead(404); res.end(); return; }
     const body = JSON.stringify(result);

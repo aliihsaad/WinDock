@@ -57,16 +57,16 @@ jobs:
           cp android/ci-debug.keystore ~/.android/debug.keystore
       - name: Build APK and run unit tests
         working-directory: android
-        run: bash ./gradlew assembleDebug testDebugUnitTest -PwindockVersionName=${{ needs.meta.outputs.version }} -PwindockVersionCode=${{ needs.meta.outputs.code }} --no-daemon --console=plain
+        run: bash ./gradlew assembleDebug testDebugUnitTest -PtaraVersionName=${{ needs.meta.outputs.version }} -PtaraVersionCode=${{ needs.meta.outputs.code }} --no-daemon --console=plain
       - name: Verify APK and give it a stable name
         run: |
           "$ANDROID_HOME/build-tools/36.1.0/apksigner" verify --verbose --print-certs android/app/build/outputs/apk/debug/app-debug.apk
           mkdir -p artifacts
-          cp android/app/build/outputs/apk/debug/app-debug.apk artifacts/WinDock-android-debug.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk artifacts/Tara-android-debug.apk
       - uses: actions/upload-artifact@v4
         with:
           name: android-upgraded
-          path: artifacts/WinDock-android-debug.apk
+          path: artifacts/Tara-android-debug.apk
           if-no-files-found: error
 
   windows:
@@ -86,7 +86,7 @@ jobs:
       - name: Stamp this build's version
         shell: bash
         run: |
-          node -e "const fs=require('fs');const v=process.argv[1];const p=JSON.parse(fs.readFileSync('package.json','utf8'));p.version=v;p.releaseVersion=v;fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n');const c='native/tray/WinDockTray.csproj';fs.writeFileSync(c,fs.readFileSync(c,'utf8').replace(/<InformationalVersion>[^<]+<\/InformationalVersion>/,'<InformationalVersion>'+v+'</InformationalVersion>'))" "${{ needs.meta.outputs.version }}"
+          node -e "const fs=require('fs');const v=process.argv[1];const p=JSON.parse(fs.readFileSync('package.json','utf8'));p.version=v;p.releaseVersion=v;fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n');const c='native/tray/TaraTray.csproj';fs.writeFileSync(c,fs.readFileSync(c,'utf8').replace(/<InformationalVersion>[^<]+<\/InformationalVersion>/,'<InformationalVersion>'+v+'</InformationalVersion>'))" "${{ needs.meta.outputs.version }}"
       - name: Build bundled Windows app
         shell: pwsh
         run: ./scripts/build-windows.ps1
@@ -99,7 +99,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: windows-installer
-          path: artifacts/installer/WinDockSetup.exe
+          path: artifacts/installer/TaraSetup.exe
           if-no-files-found: error
 
   release:
@@ -123,17 +123,17 @@ jobs:
         run: |
           cd out
           BASE="https://github.com/${GITHUB_REPOSITORY}/releases/download/upgrades-latest"
-          APK_SHA=$(sha256sum WinDock-android-debug.apk | cut -d' ' -f1)
-          EXE_SHA=$(sha256sum WinDockSetup.exe | cut -d' ' -f1)
+          APK_SHA=$(sha256sum Tara-android-debug.apk | cut -d' ' -f1)
+          EXE_SHA=$(sha256sum TaraSetup.exe | cut -d' ' -f1)
           cat > latest.json <<JSON
           {
             "available": true,
             "version": "${VERSION}",
-            "android": { "url": "${BASE}/WinDock-android-debug.apk", "versionName": "${VERSION}", "versionCode": ${CODE}, "sha256": "${APK_SHA}" },
-            "windows": { "url": "${BASE}/WinDockSetup.exe", "sha256": "${EXE_SHA}" }
+            "android": { "url": "${BASE}/Tara-android-debug.apk", "versionName": "${VERSION}", "versionCode": ${CODE}, "sha256": "${APK_SHA}" },
+            "windows": { "url": "${BASE}/TaraSetup.exe", "sha256": "${EXE_SHA}" }
           }
           JSON
-          sha256sum WinDock-android-debug.apk WinDockSetup.exe > SHA256SUMS.txt
+          sha256sum Tara-android-debug.apk TaraSetup.exe > SHA256SUMS.txt
           cat latest.json
       - name: Publish pre-release with stable download links
         env:
@@ -142,10 +142,10 @@ jobs:
         run: |
           TAG=upgrades-latest
           gh release delete "$TAG" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes || true
-          gh release create "$TAG" out/WinDock-android-debug.apk out/WinDockSetup.exe out/latest.json out/SHA256SUMS.txt \
+          gh release create "$TAG" out/Tara-android-debug.apk out/TaraSetup.exe out/latest.json out/SHA256SUMS.txt \
             --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
-            --title "WinDock ${VERSION}" \
-            --notes "Build ${VERSION} from the upgrades branch. WinDockSetup.exe installs the PC app; WinDock-android-debug.apk is the phone app. The apps update themselves from latest.json."
+            --title "Tara ${VERSION}" \
+            --notes "Build ${VERSION} from the upgrades branch. TaraSetup.exe installs the PC app; Tara-android-debug.apk is the phone app. The apps update themselves from latest.json."
       - name: Publish the phone voice model (once)
         # The app downloads this 40 MB model on demand. It is published only when missing, so builds stay fast.
         env:
@@ -164,4 +164,4 @@ jobs:
           cat vosk-model.json
           gh release delete voicepack-v1 --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes || true
           gh release create voicepack-v1 vosk-model.zip vosk-model.json --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
-            --title "WinDock phone voice model" --notes "Offline speech model the phone app downloads once for hands-free voice. Checked by SHA-256."
+            --title "Tara phone voice model" --notes "Offline speech model the phone app downloads once for hands-free voice. Checked by SHA-256."

@@ -1,5 +1,5 @@
 /**
- * WinDock service worker.
+ * Tara service worker.
  *
  * Purpose is installability and a fast, resilient shell — never stale control.
  *
@@ -9,7 +9,7 @@
  *    worse, replay a control action from cache. Neither is acceptable.
  */
 
-const VERSION = "windock-v48-upgrades";
+const VERSION = "tara-v48-upgrades";
 const SHELL = [
   "/",
   "/index.html",

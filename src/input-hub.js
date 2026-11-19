@@ -22,7 +22,7 @@ export function createInputHub({ server, servers = [server], isAuthorized, input
     ws.on("error", () => {});
     const reply = (value) => { if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(value)); };
     if (!input) {
-      reply({ type: "error", error: "Touchpad needs an updated WinDock on your PC." });
+      reply({ type: "error", error: "Touchpad needs an updated Tara on your PC." });
       ws.close(1008); return;
     }
     if (owner && Date.now() - owner.active >= takeoverIdleMs) await owner.evict();
@@ -73,7 +73,7 @@ export function createInputHub({ server, servers = [server], isAuthorized, input
         if (started) reply(event);
         else if (event.type === "focus") pendingFocus = event;
       });
-      worker.ready.then(() => { if (!closed) { started = true; lastSeen = Date.now(); reply({ type: "ready" }); if (pendingFocus) reply(pendingFocus); } }).catch(() => fail(input.startupError || "Your PC could not start the touchpad. Update WinDock there and try again."));
+      worker.ready.then(() => { if (!closed) { started = true; lastSeen = Date.now(); reply({ type: "ready" }); if (pendingFocus) reply(pendingFocus); } }).catch(() => fail(input.startupError || "Your PC could not start the touchpad. Update Tara there and try again."));
     } catch { fail("Your PC could not start the touchpad."); }
   });
   return { wss, async close() { for (const ws of wss.clients) ws.terminate(); await new Promise((resolve) => wss.close(resolve)); } };

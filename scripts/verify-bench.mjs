@@ -52,7 +52,7 @@ t.equal(findBlendPath([{ id: "blender", title: "Blender [..\\..\\x.blend]" }]), 
 t.equal(findBlendPath([{ id: "notepad", title: "x [D:\\a.blend]" }]), null, "only Blender windows count");
 
 // ---- Routes: videos, render watch, versioned save ----------------------------
-const dir = await mkdtemp(join(tmpdir(), "windock-bench-"));
+const dir = await mkdtemp(join(tmpdir(), "tara-bench-"));
 await mkdir(join(dir, "clips", "sub"), { recursive: true });
 await writeFile(join(dir, "clips", "a.mp4"), Buffer.alloc(1000, 7));
 await writeFile(join(dir, "clips", "b.mkv"), Buffer.alloc(10));
@@ -61,10 +61,7 @@ await writeFile(join(dir, "outside.mp4"), "no");
 const provider = { id: "test", displayName: "Test", listInstalledApps: async () => [], listRunningApps: async () => [{ id: "blender" }], launchApp: async () => {}, focusApp: async () => {}, closeApp: async () => {}, control: async () => {}, nowPlaying: async () => null, systemStats: async () => ({ cpu: 1 }) };
 const saves = [];
 const aiCalls = [];
-const voiceCalls = [];
-const fakeVoice = { status: () => ({ installed: true, stt: true, tts: true, installing: false, progress: 100, error: "" }), transcribe: async (b) => { voiceCalls.push(b.length); return "volume down"; }, speak: async (x) => Buffer.from("RIFF" + x), install: async () => { voiceCalls.push("install"); }, remove: async () => ({ installed: false }) };
 const app = await createApp({
-  voicePackImpl: fakeVoice,
   fetchAi: async (url, init) => { aiCalls.push(init.headers["x-goog-api-key"]); return { ok: true, status: 200, json: async () => ({ candidates: [{ content: { parts: [{ text: "A normal map stores direction." }] } }] }) }; },
   assistantKeys: { get: () => ({ key: "AIzaSyA-fake_key_for_tests_0123456789abcdef", model: "gemini-flash-latest" }), status: () => ({ configured: true, model: "gemini-flash-latest" }), set: async () => {} },
   provider, configStore: createConfigStore(join(dir, "config.json")), pin: "572864", trustLoopback: false,
@@ -104,7 +101,7 @@ try {
   t.equal((await call("/api/versioned-save", { method: "POST", body: {} })).json.name, "scene_v002.blend", "versioned save runs");
   t.equal(saves.length, 1, "saver got running windows");
   // PC -> phone cast: only the local PC may send, only YouTube links are accepted.
-  const castHeaders = { "x-windock-cast": "local" };
+  const castHeaders = { "x-tara-cast": "local" };
   t.equal((await call("/api/cast")).json.id, 0, "nothing cast yet");
   t.equal((await call("/api/cast/send", { method: "POST", body: { url: "https://youtu.be/dQw4w9WgXcQ" } })).status, 403, "send needs the local header");
   t.equal((await call("/api/cast/send", { method: "POST", headers: castHeaders, body: { url: "https://evil.com/watch?v=dQw4w9WgXcQ" } })).status, 400, "non-YouTube link refused");
@@ -124,27 +121,11 @@ try {
   t.equal((await call("/api/assistant", { method: "POST", body: { text: "x", extra: 1 } })).status, 400, "assistant rejects extra fields");
   t.equal((await call("/api/assistant", { auth: false })).status, 401, "assistant needs pairing");
   t.equal((await call("/api/assistant/key", { method: "POST", body: { key: "x" } })).status, 403, "only the PC itself can set the key");
-  const V = { "x-windock-assistant": "voice" };
-  const pcm = (n) => ({ method: "POST", headers: { ...V, "content-type": "application/octet-stream" }, rawBody: Buffer.alloc(n) });
-  t.equal((await call("/api/assistant")).json.voice.installed, true, "assistant reports the voice pack");
-  t.equal((await call("/api/assistant/speak", { method: "POST", body: { text: "hi" } })).status, 403, "speech needs the dock header");
-  const spoken = await call("/api/assistant/speak", { method: "POST", headers: V, body: { text: "hi" } });
-  t.deepEqual([spoken.status, spoken.headers.get("content-type"), spoken.buf.toString()], [200, "audio/wav", "RIFFhi"], "speech returns a wav");
-  t.equal((await call("/api/assistant/speak", { method: "POST", headers: V, body: { text: "hi", x: 1 } })).status, 400, "speech rejects extra fields");
-  const audio = (n, headers = V, auth = true) => fetch(base + "/api/assistant/audio", { method: "POST", headers: { origin: base, ...(auth ? { cookie } : {}), ...headers, "content-type": "application/octet-stream" }, body: Buffer.alloc(n) });
-  t.equal((await audio(8000, {})).status, 403, "audio needs the dock header");
-  t.equal((await audio(8000, V, false)).status, 401, "audio needs pairing");
-  const heard = await audio(8000); t.deepEqual([heard.status, (await heard.json()).text, voiceCalls[0]], [200, "volume down", 8000], "audio is transcribed");
-  t.equal((await audio(300000)).status, 413, "oversized audio refused");
-  t.equal((await call("/api/assistant/voicepack", { method: "POST", headers: V, body: { action: "explode" } })).status, 400, "unknown pack action refused");
-  t.equal((await call("/api/assistant/voicepack", { method: "POST", headers: V, body: { action: "install" } })).status, 202, "install starts in the background");
-  t.equal((await call("/api/assistant/voicepack", { method: "POST", headers: V, body: { action: "remove" } })).status, 200, "pack can be removed");
-  t.equal((await call("/api/assistant/voicepack", { method: "POST", body: { action: "install" } })).status, 403, "pack changes need the dock header");
   t.equal((await call("/cast")).status, 200, "send-to-phone page opens on the PC");
   t.equal((await call("/api/updates/local/check", { method: "POST", body: {} })).status, 403, "tray update check needs its local header");
   t.equal((await call("/api/updates/local/install", { method: "POST", body: {} })).status, 403, "tray install needs its local header");
-  t.equal((await call("/api/updates/local/check", { method: "POST", headers: { "x-windock-update": "local" }, body: { x: 1 } })).status, 400, "tray update takes no options");
-  t.ok([409, 501].includes((await call("/api/updates/local/install", { method: "POST", headers: { "x-windock-update": "local" }, body: {} })).status), "install before a check (or off Windows) is refused");
+  t.equal((await call("/api/updates/local/check", { method: "POST", headers: { "x-tara-update": "local" }, body: { x: 1 } })).status, 400, "tray update takes no options");
+  t.ok([409, 501].includes((await call("/api/updates/local/install", { method: "POST", headers: { "x-tara-update": "local" }, body: {} })).status), "install before a check (or off Windows) is refused");
 } finally {
   app.hub.close(); app.inputHub.close(); app.server.closeAllConnections();
   await new Promise((r) => app.server.close(r));

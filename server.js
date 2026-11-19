@@ -1,5 +1,5 @@
 /**
- * WinDock host.
+ * Tara host.
  *
  * Serves the PWA, exposes the authenticated API, answers LAN discovery, and
  * broadcasts dock state over WebSocket. Platform work is delegated entirely to
@@ -25,7 +25,6 @@ import { networkSetup } from "./src/network-setup.js";
 import { createUpdateService } from "./src/updates.js";
 import { parseYouTube } from "./public/mini-player.js";
 import { askGemini, createKeyStore, matchApp, parseIntent, statsSentence } from "./src/assistant.js";
-import { createVoicePack, MAX_AUDIO_BYTES } from "./src/voicepack.js";
 import { createRenderWatch } from "./src/render-watch.js";
 import { versionedSave } from "./src/versioned-save.js";
 import { defaultVideoRoots, listVideos, streamVideo, isVideoRootId } from "./src/videos.js";
@@ -81,17 +80,6 @@ function sendJson(res, status, body, headers = {}) {
 }
 
 /** Read a bounded JSON body. Oversized or malformed input is rejected. */
-/** Read a bounded raw body (voice clips). Over the cap is refused after draining. */
-async function readBinaryBody(req, max) {
-  req.setTimeout(15000, () => req.destroy());
-  let size = 0; const chunks = [];
-  await new Promise((resolve, reject) => {
-    req.on("data", (chunk) => { if (size > max) return; size += chunk.length; if (size > max) { chunks.length = 0; reject(Object.assign(new Error("body too large"), { status: 413 })); } else chunks.push(chunk); });
-    req.once("end", resolve); req.once("error", reject);
-  });
-  return Buffer.concat(chunks);
-}
-
 async function readJsonBody(req) {
   req.setTimeout(15000, () => req.destroy());
   let size = 0;
@@ -172,7 +160,6 @@ export async function createApp({
   wakeSender = null,
   assistantKeys = null,
   fetchAi = fetch,
-  voicePackImpl = null,
   videoRoots: suppliedVideoRoots = null,
   renderWatch: suppliedRenderWatch = null,
   versionedSaver = versionedSave,
@@ -229,8 +216,7 @@ export async function createApp({
   }
 
   // One macro at a time: overlapping runs would interleave their launches and levels.
-  const keyStore = assistantKeys ?? createKeyStore({ dir: join(dirname(process.env.APPDATA ? join(process.env.APPDATA, "windock", "x") : join(homedir(), ".config", "windock", "x")), "assistant") });
-  const voicePack = voicePackImpl ?? createVoicePack({ dir: join(dirname(process.env.APPDATA ? join(process.env.APPDATA, "windock", "x") : join(homedir(), ".config", "windock", "x")), "voicepack") });
+  const keyStore = assistantKeys ?? createKeyStore({ dir: join(dirname(process.env.APPDATA ? join(process.env.APPDATA, "tara", "x") : join(homedir(), ".config", "tara", "x")), "assistant") });
   let macroRunning = false, statsCache = null;
   // Last video sent from the PC. The phone picks it up once and never replays an old one.
   let cast = { id: 0, url: "", at: 0 };
@@ -334,7 +320,7 @@ export async function createApp({
     // Refuse unknown Host names before anything else. This is what blocks DNS
     // rebinding, where a page on some other domain points it at this machine.
     if (!permittedHost(req.headers.host)) {
-      return sendJson(res, 421, { error: "unknown host; add your custom DNS name to WINDOCK_ALLOWED_HOSTS on the PC" });
+      return sendJson(res, 421, { error: "unknown host; add your custom DNS name to TARA_ALLOWED_HOSTS on the PC" });
     }
     let url;
     try { url = new URL(req.url, `http://${req.headers.host}`); }
@@ -358,14 +344,14 @@ export async function createApp({
       }
       // The tray app asks the host (not the original project's website) for updates. Local PC only.
       if ((path === "/api/updates/local/check" || path === "/api/updates/local/install") && req.method === "POST") {
-        if (!local || !sameOrigin(req) || req.headers["x-windock-update"] !== "local") return sendJson(res, 403, { error: "Update from the computer itself." });
+        if (!local || !sameOrigin(req) || req.headers["x-tara-update"] !== "local") return sendJson(res, 403, { error: "Update from the computer itself." });
         const body = await readJsonBody(req);
         if (Object.keys(body).length) return sendJson(res, 400, { error: "update takes no options" });
         try { return path.endsWith("/check") ? sendJson(res, 200, await updates.check()) : sendJson(res, 202, await updates.install()); }
         catch (error) { return sendJson(res, error.status || 502, { error: error.exposed || error.status ? error.message : "The update could not be completed." }); }
       }
       if (path === "/api/cast/send" && req.method === "POST") {
-        if (!local || !sameOrigin(req) || req.headers["x-windock-cast"] !== "local") return sendJson(res, 403, { error: "Send from the computer itself." });
+        if (!local || !sameOrigin(req) || req.headers["x-tara-cast"] !== "local") return sendJson(res, 403, { error: "Send from the computer itself." });
         const body = await readJsonBody(req);
         const watch = Object.keys(body).length === 1 && typeof body.url === "string" ? parseYouTube(body.url) : null;
         if (!watch) return sendJson(res, 400, { error: "Drop a YouTube video link." });
@@ -373,7 +359,7 @@ export async function createApp({
         return sendJson(res, 200, { ok: true });
       }
       if (path.startsWith("/api/transfers/local")) {
-        if (!local || !sameOrigin(req) || req.headers["x-windock-files"] !== "local") return sendJson(res,403,{error:"Change receive settings on the computer."});
+        if (!local || !sameOrigin(req) || req.headers["x-tara-files"] !== "local") return sendJson(res,403,{error:"Change receive settings on the computer."});
         const receiver=await transfers();
         if (path === "/api/transfers/local" && req.method === "GET") return sendJson(res,200,receiver.local());
         if (req.method !== "POST") return sendJson(res,405,{error:"Unsupported action."});
@@ -384,7 +370,7 @@ export async function createApp({
         return sendJson(res,400,{error:"Invalid receive action."});
       }
       if (path === "/health") {
-        sendJson(res, 200, { ok: true, app: "windock", platform: provider.id, hostName, hostId,
+        sendJson(res, 200, { ok: true, app: "tara", platform: provider.id, hostName, hostId,
           ...(managed ? { securePairing: 1, ca: managed.publicCa } : {}) });
         return;
       }
@@ -399,7 +385,7 @@ export async function createApp({
         return res.end(body);
       }
       if (path === "/api/pairing/invite" && req.method === "POST") {
-        if (!local || !sameOrigin(req) || req.headers["x-windock-pair"] !== "local") return sendJson(res, 403, { error: "Pairing starts on the computer." });
+        if (!local || !sameOrigin(req) || req.headers["x-tara-pair"] !== "local") return sendJson(res, 403, { error: "Pairing starts on the computer." });
         if (!managed || !state.managedPort) return sendJson(res, 503, { error: "Secure pairing is not available. Check the desktop connection diagnostics." });
         const body = await readJsonBody(req);
         if (Object.keys(body).some(key => key !== "format") || (body.format !== undefined && body.format !== "gif"))
@@ -438,7 +424,7 @@ export async function createApp({
         return sendJson(res, 200, { ok: true, hostId, token }, { "set-cookie": sessionCookie(token, { secure: true }) });
       }
       if (path === "/api/pairing/revoke" && req.method === "POST") {
-        if (!local || !sameOrigin(req) || req.headers["x-windock-pair"] !== "local") return sendJson(res, 403, { error: "Unpair phones on the computer." });
+        if (!local || !sameOrigin(req) || req.headers["x-tara-pair"] !== "local") return sendJson(res, 403, { error: "Unpair phones on the computer." });
         const body = await readJsonBody(req);
         if (body.confirm !== "forget-all") return sendJson(res, 400, { error: "Confirm forgetting paired phones." });
         secureSessions.revokeAll();
@@ -476,7 +462,7 @@ export async function createApp({
         if (!isValidPinShape(body.pin)) {
           const legacy = typeof body.pin === "string" && /^\d{4}$/.test(body.pin);
           return sendJson(res, 400, { error: legacy
-            ? "WinDock on your PC was updated. Close and reopen this app, then enter the new 6-digit PIN."
+            ? "Tara on your PC was updated. Close and reopen this app, then enter the new 6-digit PIN."
             : "invalid pin" });
         }
         if (!safeEqual(body.pin, req.socket.encrypted ? state.securePin : state.pin)) {
@@ -568,7 +554,7 @@ export async function createApp({
       }
 
       if (path === "/api/links" && req.method === "POST") {
-        if (typeof provider.openLink !== "function") return sendJson(res, 404, { error: "Links are unavailable on this companion. Update WinDock on your computer." });
+        if (typeof provider.openLink !== "function") return sendJson(res, 404, { error: "Links are unavailable on this companion. Update Tara on your computer." });
         const body = await readJsonBody(req);
         const app = Object.keys(body).every(key => ["url", "name"].includes(key)) && linkApp(body.url, body.name);
         if (!app) return sendJson(res, 422, { error: "Enter an http:// or https:// website address (up to 2048 characters), without passwords, and a name up to 80 characters." });
@@ -681,7 +667,7 @@ export async function createApp({
       if (Object.hasOwn(captureActions, path) && req.method === "POST") {
         const body = await readJsonBody(req);
         if (Object.keys(body).length) return sendJson(res, 400, { error: "capture actions take no options" });
-        if (!provider.capture) return sendJson(res, 501, { error: "Screen capture needs an updated WinDock on your PC." });
+        if (!provider.capture) return sendJson(res, 501, { error: "Screen capture needs an updated Tara on your PC." });
         return sendJson(res, 200, await provider.capture[captureActions[path]]());
       }
 
@@ -690,28 +676,7 @@ export async function createApp({
       }
 
       // Voice assistant: understands PC commands itself; anything else goes to the AI key held on this PC.
-      if (path === "/api/assistant" && req.method === "GET") return sendJson(res, 200, { ai: keyStore.status().configured, destructive: allowDestructive, voice: voicePack.status() });
-      if (path === "/api/assistant/audio" && req.method === "POST") {
-        if (req.headers["x-windock-assistant"] !== "voice") return sendJson(res, 403, { error: "Voice requests come from the dock." });
-        try { return sendJson(res, 200, { text: await voicePack.transcribe(await readBinaryBody(req, MAX_AUDIO_BYTES + 1)) }); }
-        catch (error) { return sendJson(res, error.status || 500, { error: error.exposed || error.status ? error.message : "Could not understand that audio." }); }
-      }
-      if (path === "/api/assistant/speak" && req.method === "POST") {
-        if (req.headers["x-windock-assistant"] !== "voice") return sendJson(res, 403, { error: "Voice requests come from the dock." });
-        const body = await readJsonBody(req);
-        if (Object.keys(body).some((k) => k !== "text") || typeof body.text !== "string") return sendJson(res, 400, { error: "Send text to speak." });
-        try { const wav = await voicePack.speak(body.text); res.writeHead(200, { "content-type": "audio/wav", "content-length": wav.length, "cache-control": "no-store" }); return res.end(wav); }
-        catch (error) { return sendJson(res, error.status || 500, { error: error.exposed || error.status ? error.message : "Could not speak that." }); }
-      }
-      if (path === "/api/assistant/voicepack" && req.method === "POST") {
-        if (req.headers["x-windock-assistant"] !== "voice") return sendJson(res, 403, { error: "Voice requests come from the dock." });
-        const body = await readJsonBody(req);
-        if (Object.keys(body).some((k) => k !== "action") || !["install", "remove"].includes(body.action)) return sendJson(res, 400, { error: "Choose install or remove." });
-        try {
-          if (body.action === "install") { voicePack.install(); return sendJson(res, 202, voicePack.status()); }
-          return sendJson(res, 200, await voicePack.remove());
-        } catch (error) { return sendJson(res, error.status || 500, { error: error.exposed ? error.message : "Voice pack change failed." }); }
-      }
+      if (path === "/api/assistant" && req.method === "GET") return sendJson(res, 200, { ai: keyStore.status().configured, destructive: allowDestructive });
       if (path === "/api/assistant" && req.method === "POST") {
         const body = await readJsonBody(req);
         if (Object.keys(body).some((k) => k !== "text" && k !== "confirm") || (body.text !== undefined && typeof body.text !== "string")) return sendJson(res, 400, { error: "The assistant takes text only." });
@@ -719,7 +684,7 @@ export async function createApp({
         catch (error) { return sendJson(res, error.status || 500, { error: error.exposed || error.status ? error.message : "The assistant could not do that." }); }
       }
       if (path === "/api/assistant/key" && req.method === "POST") {
-        if (!local || !sameOrigin(req) || req.headers["x-windock-assistant"] !== "local") return sendJson(res, 403, { error: "Set the AI key on the computer itself." });
+        if (!local || !sameOrigin(req) || req.headers["x-tara-assistant"] !== "local") return sendJson(res, 403, { error: "Set the AI key on the computer itself." });
         const body = await readJsonBody(req);
         if (Object.keys(body).some((k) => k !== "key" && k !== "model") || typeof body.key !== "string") return sendJson(res, 400, { error: "Send a key." });
         try { await keyStore.set(body.key.trim(), typeof body.model === "string" ? body.model.trim() : ""); return sendJson(res, 200, keyStore.status()); }
@@ -762,12 +727,12 @@ export async function createApp({
       }
       if (path === "/api/clipboard/history" && req.method === "GET") {
         if (!sameOrigin(req)) return sendJson(res, 403, { error: "bad origin" });
-        if (!provider.clipboard) return sendJson(res, 501, { error: "PC clipboard history needs an updated WinDock host." });
+        if (!provider.clipboard) return sendJson(res, 501, { error: "PC clipboard history needs an updated Tara host." });
         return sendJson(res, 200, await provider.clipboard.history(), { "cache-control": "no-store", "pragma": "no-cache" });
       }
       if (["/api/signature", "/api/signature/insert"].includes(path) && req.method === "POST") {
         const signature = validateSignature(await readJsonBody(req));
-        if (!provider.input) return sendJson(res, 501, { error: "Saving signatures needs an updated WinDock on your PC." });
+        if (!provider.input) return sendJson(res, 501, { error: "Saving signatures needs an updated Tara on your PC." });
         return sendJson(res, 200, await provider.input.saveSignature(signature, path.endsWith("/insert")));
       }
 
@@ -799,7 +764,7 @@ export async function createApp({
   if (managedServer) {
     renewalTimer = setInterval(() => managed.refresh(managedServer).catch(() => {
       // No file contents, PINs, tokens or certificates in diagnostic logs.
-      process.stderr.write("WinDock: secure certificate renewal needs attention. See secure connection diagnostics.\n");
+      process.stderr.write("Tara: secure certificate renewal needs attention. See secure connection diagnostics.\n");
     }), 6 * 60 * 60000);
     renewalTimer.unref();
   }
@@ -807,21 +772,21 @@ export async function createApp({
   return { server, secureServer, managedServer, managed, hub, inputHub, provider, configStore, dockState, state, sessions, secureSessions, lockout };
 }
 
-export async function start({ port, securePort, managedPort, managedHttps = true, host = process.env.WINDOCK_HOST || "", discoveryPort = DISCOVERY_PORT, ...appOptions } = {}) {
+export async function start({ port, securePort, managedPort, managedHttps = true, host = process.env.TARA_HOST || "", discoveryPort = DISCOVERY_PORT, ...appOptions } = {}) {
   const choice = serverPortChoice(port, process.env.PORT);
   const address = primaryAddress(undefined, host);
-  const certFile = process.env.WINDOCK_TLS_CERT, keyFile = process.env.WINDOCK_TLS_KEY;
-  if (Boolean(certFile) !== Boolean(keyFile)) throw new Error("Set both WINDOCK_TLS_CERT and WINDOCK_TLS_KEY; HTTPS configuration is incomplete.");
+  const certFile = process.env.TARA_TLS_CERT, keyFile = process.env.TARA_TLS_KEY;
+  if (Boolean(certFile) !== Boolean(keyFile)) throw new Error("Set both TARA_TLS_CERT and TARA_TLS_KEY; HTTPS configuration is incomplete.");
   const tls = appOptions.tls ?? (certFile ? { cert: await readFile(certFile), key: await readFile(keyFile) } : null);
   const configStore = appOptions.configStore || createConfigStore();
   const identity = await hostIdentity(configStore.path);
   if (managedHttps && configStore.path && (await readFile(`${configStore.path}.host-id`, "utf8").catch(() => "")).trim() !== identity)
-    throw new Error("WinDock's saved computer identifier is unavailable. Restore the existing identity before enabling managed pairing.");
+    throw new Error("Tara's saved computer identifier is unavailable. Restore the existing identity before enabling managed pairing.");
   const managed = managedHttps && configStore.path ? await managedTls(configStore.path, identity) : null;
-  const tlsChoice = serverPortChoice(securePort, process.env.WINDOCK_TLS_PORT);
+  const tlsChoice = serverPortChoice(securePort, process.env.TARA_TLS_PORT);
   if (tlsChoice.automatic) tlsChoice.port = 8621;
   if (tls && !choice.automatic && !tlsChoice.automatic && choice.port !== 0 && choice.port === tlsChoice.port)
-    throw new Error("HTTP and HTTPS require different ports. Change PORT or WINDOCK_TLS_PORT.");
+    throw new Error("HTTP and HTTPS require different ports. Change PORT or TARA_TLS_PORT.");
   const app = await createApp({ ...appOptions, configStore, identity, tls, managed });
   let binding;
   let secureBinding;
@@ -830,7 +795,7 @@ export async function start({ port, securePort, managedPort, managedHttps = true
     binding = await listenWithPortFallback(app.server, choice);
     if (app.secureServer) secureBinding = await listenWithPortFallback(app.secureServer, tlsChoice);
     if (app.managedServer) {
-      const managedChoice = serverPortChoice(managedPort, process.env.WINDOCK_MANAGED_TLS_PORT);
+      const managedChoice = serverPortChoice(managedPort, process.env.TARA_MANAGED_TLS_PORT);
       if (managedChoice.automatic) managedChoice.port = tls ? 8622 : 8621;
       managedBinding = await listenWithPortFallback(app.managedServer, managedChoice);
       app.state.managedPort = managedBinding.port;
@@ -857,7 +822,7 @@ export async function start({ port, securePort, managedPort, managedHttps = true
 
 /** Printed once the host is listening. The Windows tray reads the address and PIN from it. */
 export function readyMessage({ endpoint, secureEndpoint, pairUrl, state, provider, portNotice = "" }) {
-  return `WinDock host ready\n${portNotice ? `  note:     ${portNotice}\n` : ""}  provider: ${provider.displayName}\n  open:     ${endpoint}\n  PIN:      ${state.pin}\n` +
+  return `Tara host ready\n${portNotice ? `  note:     ${portNotice}\n` : ""}  provider: ${provider.displayName}\n  open:     ${endpoint}\n  PIN:      ${state.pin}\n` +
     (secureEndpoint ? `  secure:   ${secureEndpoint}\n  secure-code: ${state.securePin}\n` : "") +
     (pairUrl ? `  pair:     ${pairUrl}\n` : "");
 }
@@ -869,7 +834,7 @@ if (isMain) {
       process.stdout.write(readyMessage(host));
     })
     .catch((err) => {
-      process.stderr.write(`WinDock failed to start: ${err.message}\n`);
+      process.stderr.write(`Tara failed to start: ${err.message}\n`);
       process.exit(1);
     });
 }

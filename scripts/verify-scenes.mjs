@@ -61,7 +61,7 @@ t.ok(/\.scene-choices \{[^}]*grid-auto-columns: minmax\((\d+)px/.test(css) && Nu
 t.ok(/scrollIntoView\(\{ block: "nearest", inline: "nearest" \}\)/.test(read("public/app.js")), "Settings brings the chosen scene into view");
 
 // ---- Everywhere else a scene must be known ----
-const android = read("android/app/src/main/java/com/windock/app/AppearancePreferences.kt");
+const android = read("android/app/src/main/java/com/tara/app/AppearancePreferences.kt");
 const saved = android.match(/"background" -> layout\.getString\(field\) in listOf\(([^)]*)\)/)?.[1];
 t.deepEqual(saved && [...saved.matchAll(/"([a-z]+)"/g)].map((match) => match[1]), SCENES, "the Android app saves every scene");
 const sw = read("public/sw.js");

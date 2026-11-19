@@ -1,4 +1,4 @@
-# WinDock for iPhone — development build
+# Tara for iPhone — development build
 
 A small native iOS companion for the **existing Windows host**. It remembers your
 PC's address, verifies `/health`, and opens the shared landscape dock in `WKWebView`.
@@ -10,7 +10,7 @@ be installed on a phone by downloading it; signing and provisioning are still ne
 
 ## Connect (once installed with signing)
 
-1. Run WinDock on Windows and put the iPhone on the same trusted network.
+1. Run Tara on Windows and put the iPhone on the same trusted network.
 2. In the Windows tray menu, choose **Show connection info**.
 3. Enter that address in the iPhone app, for example `192.168.1.20:8620`.
 4. Allow **Local Network** access when iOS asks, then enter the PC's PIN.
@@ -19,19 +19,19 @@ The app remembers a working address and retains the dock's pairing cookie. The P
 may request a fresh PIN after restarting. The small **…** button at the upper left
 offers **Reconnect** and **Change PC**. The screen stays awake while the dock is open.
 If connection fails, check the PC address, Wi-Fi, Windows firewall and iOS
-**Settings → Privacy & Security → Local Network → WinDock**, then retry.
+**Settings → Privacy & Security → Local Network → Tara**, then retry.
 
 ## Build on GitHub from Windows
 
-Open [Build WinDock iOS](https://github.com/aliihsaad/WinDock/actions/workflows/build-ios.yml)
+Open [Build Tara iOS](https://github.com/aliihsaad/WinDock/actions/workflows/build-ios.yml)
 and select **Run workflow** on `main`. Relevant source changes also run it automatically.
 The workflow uses a GitHub-hosted macOS runner, Xcode 16.4 and XcodeGen. No Apple
 account, certificate or device credentials are needed for this unsigned build.
 
 Each successful run produces one artifact containing:
 
-- `WinDock-simulator.zip`: the app for **iOS Simulator on a Mac**.
-- `WinDock-unsigned-archive.zip`: an **unsigned device archive**, ready for a later
+- `Tara-simulator.zip`: the app for **iOS Simulator on a Mac**.
+- `Tara-unsigned-archive.zip`: an **unsigned device archive**, ready for a later
   signing workflow; it is not an installable IPA.
 - Simulator screenshots, `.xcresult` test results, build logs and fixture events.
 
@@ -53,17 +53,17 @@ npm ci
 cd ios
 swift scripts/generate-icon.swift
 xcodegen generate
-open WinDock.xcodeproj
+open Tara.xcodeproj
 ```
 
 For the integration tests, first run `node ios/scripts/smoke-host.mjs` from the
 repository root in another terminal. Choose an iPhone simulator and run the
-`WinDock` scheme's tests. Use `node ios/scripts/verify-events.mjs` afterwards to
+`Tara` scheme's tests. Use `node ios/scripts/verify-events.mjs` afterwards to
 verify that launch/focus reached the test host.
 
 `project.yml` is the source of truth; the generated Xcode project, icon PNG and build
-output are ignored. The generated icon uses the existing four-square WinDock brand.
-The bundle ID is `dev.ali-saad.windock`; configure an appropriate team and available
+output are ignored. The generated icon uses the existing four-square Tara brand.
+The bundle ID is `dev.ali-saad.tara`; configure an appropriate team and available
 bundle ID when adding signing. Do not commit certificates, profiles or Apple secrets.
 
 ## First-version boundaries

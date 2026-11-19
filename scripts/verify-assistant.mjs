@@ -2,7 +2,7 @@ import { createChecker } from "./lib/assert.mjs";
 import { parseIntent, matchApp, statsSentence, askGemini, createKeyStore, GEMINI_ENDPOINT } from "../src/assistant.js";
 const t = createChecker("assistant");
 const intent = (s) => parseIntent(s);
-t.deepEqual([intent("Hey Dock, volume down").verb, intent("make it quieter please").verb, intent("louder").verb], ["volume-down", "volume-down", "volume-up"], "volume words");
+t.deepEqual([intent("Hey Tara, volume down").verb, intent("make it quieter please").verb, intent("louder").verb], ["volume-down", "volume-down", "volume-up"], "volume words");
 t.deepEqual([intent("set volume to 35").value, intent("set the volume to 300").value], [35, 100], "volume number is capped");
 t.equal(intent("mute").verb, "mute-toggle", "mute");
 t.equal(intent("set brightness to 40").value, 40, "brightness");

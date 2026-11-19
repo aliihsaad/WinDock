@@ -867,7 +867,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "windock-input"
+name = "tara-input"
 version = "0.2.4"
 dependencies = [
  "libc",

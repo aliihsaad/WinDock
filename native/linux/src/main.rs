@@ -1,4 +1,4 @@
-//! windock-input — the Linux input surface WinDock needs, behind an argv interface.
+//! tara-input — the Linux input surface Tara needs, behind an argv interface.
 //!
 //! It speaks the same newline-delimited JSON protocol as the Windows helper
 //! (native/win/Touchpad.cs), so src/platform/input.js drives both.
@@ -47,7 +47,7 @@ fn main() -> ExitCode {
         ["signature", dir] => signature::save(dir, false),
         ["signature-insert", dir] => signature::save(dir, true),
         ["check"] => check(),
-        _ => return usage("usage: windock-input <touchpad | signature DIR | signature-insert DIR | check>"),
+        _ => return usage("usage: tara-input <touchpad | signature DIR | signature-insert DIR | check>"),
     };
     match result {
         Ok(()) => ExitCode::SUCCESS,

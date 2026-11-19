@@ -8,11 +8,11 @@ import { compareVersions, parseUpdateManifest, createUpdateService, allowedAsset
 import { updateStatusText, phoneStatusText, createUpdates } from "../public/updates.js";
 import { createApp } from "../server.js";
 const t = createChecker("updates");
-const traySource=readFileSync(new URL("../native/tray/WinDockTray.csproj",import.meta.url),"utf8");
+const traySource=readFileSync(new URL("../native/tray/TaraTray.csproj",import.meta.url),"utf8");
 t.equal(INSTALLED_VERSION,traySource.match(/<InformationalVersion>([^<]+)<\/InformationalVersion>/)?.[1],"host and native Windows versions agree");
 const INSTALLER = Buffer.from("pretend installer bytes");
 const SHA = createHash("sha256").update(INSTALLER).digest("hex");
-const manifest = (version = "0.2.4-preview.1") => ({ available: true, version, windows: { url: FEED_BASE + "WinDockSetup.exe", sha256: SHA } });
+const manifest = (version = "0.2.4-preview.1") => ({ available: true, version, windows: { url: FEED_BASE + "TaraSetup.exe", sha256: SHA } });
 for (const [a,b,expected] of [["0.2.4-preview.1","0.2.4-preview.1",0], ["0.2.4-preview.10","0.2.4-preview.2",1],
   ["0.2.4","0.2.4-preview.99",1], ["0.2.5-preview.1","0.2.4",1], ["0.2.4-alpha","0.2.4-beta",-1],
   ["0.2.4-preview.1","0.2.4-preview.1.1",-1], ["0.2.4-preview.1","0.2.4-preview.a",-1]])
@@ -29,7 +29,7 @@ t.equal(parseUpdateManifest(manifest(),INSTALLED_VERSION,"windows").status,"curr
 }
 t.throws(() => parseUpdateManifest({...manifest(),available:false},INSTALLED_VERSION,"windows"),"unpublished feed rejected");
 t.throws(() => parseUpdateManifest({...manifest(),windows:{url:"https://evil.example/a.exe",sha256:SHA}},INSTALLED_VERSION,"windows"),"arbitrary executable URL rejected");
-t.throws(() => parseUpdateManifest({...manifest(),windows:{url:FEED_BASE+"WinDockSetup.exe"}},INSTALLED_VERSION,"windows"),"missing checksum rejected");
+t.throws(() => parseUpdateManifest({...manifest(),windows:{url:FEED_BASE+"TaraSetup.exe"}},INSTALLED_VERSION,"windows"),"missing checksum rejected");
 t.throws(() => parseUpdateManifest(manifest(),INSTALLED_VERSION,"linux"),"other platforms are not offered an installer");
 for (const ok of ["https://github.com/x/y","https://objects.githubusercontent.com/a","https://release-assets.githubusercontent.com/a"]) t.equal(allowedAssetUrl(ok),true,"allowed host "+ok);
 for (const bad of ["http://github.com/x","https://github.com.evil.example/x","https://evil.example/github.com","https://user:pw@github.com/x","https://github.com:8443/x","file:///etc/passwd"]) t.equal(allowedAssetUrl(bad),false,"refused "+bad);
@@ -62,7 +62,7 @@ const timed=createUpdateService({timeoutMs:10,fetchImpl:(_,options)=>new Promise
 t.equal((await timed.check()).status,"failed","network timeout terminates the check");
 // One-tap install: download, verify checksum, run silently.
 {
-  const dir = await mkdtemp(join(tmpdir(), "windock-upd-"));
+  const dir = await mkdtemp(join(tmpdir(), "tara-upd-"));
   const nextMajor = Number(INSTALLED_VERSION.split(".")[0]) + 1;
   const feed = manifest(`${nextMajor}.0.0`);
   const launches = [];
@@ -123,7 +123,7 @@ t.equal(get("updates-install").hidden,false,"newer release reveals one-tap updat
 t.equal(get("updates-download").hidden,true,"release page link is only a fallback");
 answer={...answer,canInstall:false};await get("updates-check").handlers.click();await flush();
 t.equal(get("updates-download").hidden,false,"host that cannot install offers the release page");
-t.equal(get("updates-download").href,"https://github.com/yeshwanthkumardomala/WinDock/releases/tag/upgrades-latest","UI opens this fork's release despite response-provided URLs");
+t.equal(get("updates-download").href,"https://github.com/yeshwanthkumardomala/Tara/releases/tag/upgrades-latest","UI opens this fork's release despite response-provided URLs");
 fail=true;await get("updates-check").handlers.click();await flush();
 t.equal(get("updates-download").hidden && get("updates-install").hidden,true,"failed recheck clears stale download state");
 t.ok(get("updates-status").textContent.includes("Couldn’t check"),"failure is visible");
@@ -143,14 +143,14 @@ t.equal(get("updates-status").textContent,updateStatusText(answer),"retry displa
   t.equal(g("updates-android").hidden,false,"phone card appears when the app can self-update");
   await g("updates-check").handlers.click();await flush();
   t.ok(phoneCalls.includes("check"),"one Check button also asks the phone app");
-  window.windockAppUpdate(JSON.stringify({status:"available",version:"0.4.2"}));
+  window.taraAppUpdate(JSON.stringify({status:"available",version:"0.4.2"}));
   t.equal(g("updates-phone-install").hidden,false,"phone update offered");
   t.equal(g("updates-phone-status").textContent,phoneStatusText({status:"available",version:"0.4.2"}),"phone status text");
   await g("updates-phone-install").handlers.click();
   t.ok(phoneCalls.includes("install"),"Update phone now starts the download");
-  window.windockAppUpdate(JSON.stringify({status:"downloading",percent:42}));
+  window.taraAppUpdate(JSON.stringify({status:"downloading",percent:42}));
   t.ok(g("updates-phone-status").textContent.includes("42%"),"download progress shown");
-  window.windockAppUpdate("not json");
+  window.taraAppUpdate("not json");
   t.ok(g("updates-phone-status").textContent.includes("42%"),"malformed native message ignored");
   await g("updates-install").handlers.click();await flush();
   t.ok(calls.includes("/api/updates/install"),"Update PC now calls the host");

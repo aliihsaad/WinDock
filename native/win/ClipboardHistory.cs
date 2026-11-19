@@ -2,11 +2,11 @@ using System.Text.Json;
 using Windows.ApplicationModel.DataTransfer;
 using Clipboard = Windows.ApplicationModel.DataTransfer.Clipboard;
 
-namespace WinDock;
+namespace Tara;
 
 internal static class ClipboardHistory
 {
-    // Runs in a short-lived helper. No history is persisted or logged by WinDock.
+    // Runs in a short-lived helper. No history is persisted or logged by Tara.
     internal static int Read()
     {
         if (!Clipboard.IsHistoryEnabled()) return Emit("disabled", [], 0);

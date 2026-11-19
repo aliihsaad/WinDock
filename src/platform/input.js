@@ -16,7 +16,7 @@ export function createHelperInput({
   unavailableMessage,
   diagnostic = null,
   missingHint = "",
-  startupError = "Your PC could not start the touchpad. Update WinDock there and try again.",
+  startupError = "Your PC could not start the touchpad. Update Tara there and try again.",
 }) {
   const unavailable = () => Object.assign(new Error(unavailableMessage), { status: 503 });
   const workers = new Set();

@@ -1,5 +1,5 @@
 /** Top-bar glance at the PC (battery, CPU, Wi-Fi, GPU) and the render watcher that rides on the same poll. */
-const KEY = "windock-statusbar";
+const KEY = "tara-statusbar";
 export function statusBarEnabled(storage = globalThis.localStorage) { try { return storage?.getItem(KEY) !== "0"; } catch { return true; } }
 export function setStatusBar(on, storage = globalThis.localStorage) { try { storage?.setItem(KEY, on ? "1" : "0"); } catch { /* private mode */ } }
 

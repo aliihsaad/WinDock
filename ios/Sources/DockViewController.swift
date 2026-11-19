@@ -2,7 +2,7 @@ import UIKit
 import WebKit
 
 final class DockViewController: UIViewController, WKNavigationDelegate, UITextFieldDelegate {
-    static let rememberedPCKey = "windock.pcAddress"
+    static let rememberedPCKey = "tara.pcAddress"
     private let defaults: UserDefaults
     private let autoConnect: Bool
     private let probe = HealthProbe()
@@ -67,7 +67,7 @@ final class DockViewController: UIViewController, WKNavigationDelegate, UITextFi
             connection.trailingAnchor.constraint(equalTo: safe.trailingAnchor),
             connection.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor)
         ])
-        let brand = label("WinDock", size: 17, weight: .semibold)
+        let brand = label("Tara", size: 17, weight: .semibold)
         let mark = BrandMark()
         NSLayoutConstraint.activate([mark.widthAnchor.constraint(equalToConstant: 38), mark.heightAnchor.constraint(equalToConstant: 38)])
         let brandRow = UIStackView(arrangedSubviews: [mark, brand])
@@ -82,7 +82,7 @@ final class DockViewController: UIViewController, WKNavigationDelegate, UITextFi
         left.alignment = .leading
 
         let heading = label("Connect to your PC", size: 21, weight: .semibold)
-        let hint = label("On Windows, open the WinDock tray menu → Show connection info. Enter the address shown there.", size: 13)
+        let hint = label("On Windows, open the Tara tray menu → Show connection info. Enter the address shown there.", size: 13)
         hint.textColor = .secondaryLabel
         address.accessibilityIdentifier = "pc-address"
         address.accessibilityLabel = "PC address"
@@ -182,11 +182,11 @@ final class DockViewController: UIViewController, WKNavigationDelegate, UITextFi
         connectButton.isEnabled = false
         address.isEnabled = false
         spinner.startAnimating()
-        status.text = "Looking for WinDock… Allow Local Network access if asked."
+        status.text = "Looking for Tara… Allow Local Network access if asked."
         probe.start(endpoint: endpoint) { [weak self] found in
             guard let self, self.attempt == id else { return }
             guard found else {
-                self.showConnection(message: "Couldn’t reach WinDock. Check the tray address, Wi-Fi, Windows firewall and Settings → Privacy & Security → Local Network, then retry.")
+                self.showConnection(message: "Couldn’t reach Tara. Check the tray address, Wi-Fi, Windows firewall and Settings → Privacy & Security → Local Network, then retry.")
                 return
             }
             self.loadDock(endpoint, attempt: id)
@@ -197,7 +197,7 @@ final class DockViewController: UIViewController, WKNavigationDelegate, UITextFi
         guard let rules = try? EndpointPolicy.contentRules(for: endpoint) else {
             showConnection(message: "Couldn’t prepare the dock. Please try again."); return
         }
-        WKContentRuleListStore.default().compileContentRuleList(forIdentifier: "windock-pc", encodedContentRuleList: rules) { [weak self] rules, error in
+        WKContentRuleListStore.default().compileContentRuleList(forIdentifier: "tara-pc", encodedContentRuleList: rules) { [weak self] rules, error in
             guard let self, self.attempt == id else { return }
             guard let rules, error == nil else {
                 self.showConnection(message: "Couldn’t prepare the dock. Please try again."); return
@@ -223,7 +223,7 @@ final class DockViewController: UIViewController, WKNavigationDelegate, UITextFi
             self.status.text = "Opening your dock…"
             let timeout = DispatchWorkItem { [weak self] in
                 guard let self, self.attempt == id else { return }
-                self.showConnection(message: "The dock took too long to load. Check that WinDock is still running, then retry.")
+                self.showConnection(message: "The dock took too long to load. Check that Tara is still running, then retry.")
             }
             self.loadTimeout = timeout
             DispatchQueue.main.asyncAfter(deadline: .now() + 20, execute: timeout)
@@ -268,7 +268,7 @@ final class DockViewController: UIViewController, WKNavigationDelegate, UITextFi
         if navigationResponse.isForMainFrame,
            let response = navigationResponse.response as? HTTPURLResponse, !(200...299).contains(response.statusCode) {
             decisionHandler(.cancel)
-            showConnection(message: "WinDock couldn’t open the dock. Check the PC and retry.")
+            showConnection(message: "Tara couldn’t open the dock. Check the PC and retry.")
             return
         }
         decisionHandler(.allow)

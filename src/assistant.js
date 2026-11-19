@@ -7,7 +7,7 @@ import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { privateDirectory, writePrivateJson } from "./private-store.js";
 
-const WAKE = /^(?:hey|ok|okay|hi)\s+dock\b[\s,.:!-]*/;
+const WAKE = /^(?:(?:hey|ok|okay|hi)\s+)?(?:tara|tera)\b[\s,.:!-]*/;
 const FILLER = /\b(?:please|could you|can you|would you|for me|the pc|my pc|the computer|my computer)\b/g;
 const norm = (text) => String(text ?? "").toLowerCase().replace(/[^\p{L}\p{N}\s%.']/gu, " ").replace(WAKE, "").replace(FILLER, " ").replace(/\s+/g, " ").trim();
 const number = (text) => { const m = text.match(/\b(\d{1,3})\b/); return m ? Number(m[1]) : null; };
@@ -83,7 +83,7 @@ export const DEFAULT_MODEL = "gemini-flash-latest";
 // Google issues keys like "AIza…" and the newer dotted "AQ.…" style. Anything else is refused before it is stored or sent.
 const KEY_SHAPE = /^[A-Za-z0-9._-]{20,256}$/;
 const MODEL_SHAPE = /^[a-z0-9][a-z0-9.\-]{2,63}$/;
-const SYSTEM = "You are the voice assistant inside WinDock, a phone dock for a Windows PC used for Blender and DaVinci Resolve. " +
+const SYSTEM = "You are the voice assistant inside Tara, a phone dock for a Windows PC used for Blender and DaVinci Resolve. " +
   "Answer in at most three short spoken sentences. No markdown, lists, emoji or links. If you are not sure, say so briefly.";
 
 export async function askGemini(question, { key, model = DEFAULT_MODEL, fetchImpl = fetch, timeoutMs = 15000 } = {}) {

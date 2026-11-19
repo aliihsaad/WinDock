@@ -1,5 +1,6 @@
 // Small, consistent UI symbols. Application artwork comes from Windows.
 const paths = {
+  tara: '<path d="M12 2.5Q12.9 11.1 21.5 12Q12.9 12.9 12 21.5Q11.1 12.9 2.5 12Q11.1 11.1 12 2.5Z"/><path fill="currentColor" stroke="none" d="M12 8.6Q12.4 11.6 15.4 12Q12.4 12.4 12 15.4Q11.6 12.4 8.6 12Q11.6 11.6 12 8.6Z"/>',
   keys: '<rect x="2" y="10" width="6" height="7" rx="2"/><rect x="9" y="10" width="6" height="7" rx="2"/><rect x="16" y="10" width="6" height="7" rx="2"/><rect x="9" y="2" width="6" height="7" rx="2"/>',
   updates: '<path d="M12 3v12m-5-5 5 5 5-5M4 16v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/>',
   files: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M8 13h8m-8 4h5"/>',

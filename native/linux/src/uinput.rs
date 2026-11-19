@@ -80,7 +80,7 @@ fn open_error(error: io::Error) -> io::Error {
     let message = match error.kind() {
         io::ErrorKind::PermissionDenied => format!(
             "{DEVICE} is not writable by this user, so the touchpad cannot move the pointer. \
-             Install native/linux/70-windock-uinput.rules (docs/DEVELOPMENT.md, Linux host)."
+             Install native/linux/70-tara-uinput.rules (docs/DEVELOPMENT.md, Linux host)."
         ),
         io::ErrorKind::NotFound => format!("{DEVICE} does not exist. Load the uinput kernel module: sudo modprobe uinput"),
         _ => format!("Cannot open {DEVICE}: {error}"),
@@ -131,7 +131,7 @@ impl VirtualInput {
             name: [0; 80],
             ff_effects_max: 0,
         };
-        let name = b"WinDock virtual input";
+        let name = b"Tara virtual input";
         setup.name[..name.len()].copy_from_slice(name);
         ioctl(&file, UI_DEV_SETUP, &setup as *const UinputSetup as libc::c_ulong)?;
         ioctl(&file, UI_DEV_CREATE, 0)?;

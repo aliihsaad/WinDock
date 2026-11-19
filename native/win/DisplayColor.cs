@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace WinDock;
+namespace Tara;
 
 // Read-only HDR diagnostics. Never change the user's display mode or make an
 // otherwise successful brightness command fail if a driver cannot report it.

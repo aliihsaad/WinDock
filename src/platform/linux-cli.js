@@ -1,7 +1,7 @@
 /**
- * The `windock` command on Linux.
+ * The `tara` command on Linux.
  *
- * The host runs as the systemd user service windock.service, so closing the
+ * The host runs as the systemd user service tara.service, so closing the
  * window that opened it no longer disconnects the phone. This command starts
  * that service with the desktop session's environment, then shows the address
  * and pairing PIN the host publishes in the user's private runtime directory.
@@ -14,39 +14,39 @@ import { dirname, isAbsolute, join, resolve } from "node:path";
 import { DEFAULT_PORT, readyMessage, start } from "../../server.js";
 import { isValidPinShape } from "../auth.js";
 
-export const UNIT = "windock.service";
+export const UNIT = "tara.service";
 
 /**
  * What the background host takes from the session that opened it: the
  * compositor to talk to, the search path of the apps it launches, and
- * WinDock's own settings. Hyprland and uwsm usually export most of these to
+ * Tara's own settings. Hyprland and uwsm usually export most of these to
  * the user manager already; the file makes sure the host joins this session.
  */
 export const SESSION_VARS = Object.freeze([
   "WAYLAND_DISPLAY", "HYPRLAND_INSTANCE_SIGNATURE", "DISPLAY", "XAUTHORITY",
   "XDG_CURRENT_DESKTOP", "XDG_SESSION_TYPE", "XDG_SESSION_DESKTOP", "XDG_DATA_DIRS",
   "PATH", "DBUS_SESSION_BUS_ADDRESS",
-  "PORT", "WINDOCK_HOST", "WINDOCK_ALLOWED_HOSTS", "WINDOCK_CONFIG",
+  "PORT", "TARA_HOST", "TARA_ALLOWED_HOSTS", "TARA_CONFIG",
 ]);
 
 /** A host started for another compositor instance belongs to an old session. */
 export const SESSION_KEYS = Object.freeze(["HYPRLAND_INSTANCE_SIGNATURE", "WAYLAND_DISPLAY"]);
 
-export const USAGE = `Usage: windock [--foreground | status | network | stop | --version]
+export const USAGE = `Usage: tara [--foreground | status | network | stop | --version]
 
-  windock               Start WinDock in the background and show its PIN
-  windock --foreground  Run WinDock in this window until the window closes
-  windock status        Show the address and PIN of the running WinDock
-  windock stop          Stop WinDock running in the background
-  windock files         Open Files & Media settings and receive progress
-  windock network       Open local connection checks and firewall guidance
+  tara               Start Tara in the background and show its PIN
+  tara --foreground  Run Tara in this window until the window closes
+  tara status        Show the address and PIN of the running Tara
+  tara stop          Stop Tara running in the background
+  tara files         Open Files & Media settings and receive progress
+  tara network       Open local connection checks and firewall guidance
 `;
 
-/** The service unit reads and writes these as %t/windock-session.env and %t/windock/host.json. */
+/** The service unit reads and writes these as %t/tara-session.env and %t/tara/host.json. */
 export function runtimePaths(env) {
   const dir = env.XDG_RUNTIME_DIR;
   if (!dir || !isAbsolute(dir)) return null;
-  return { session: join(dir, "windock-session.env"), status: join(dir, "windock", "host.json") };
+  return { session: join(dir, "tara-session.env"), status: join(dir, "tara", "host.json") };
 }
 
 /**
@@ -102,7 +102,7 @@ export async function readStatus(file, { alive = isAlive } = {}) {
 export function details(status) {
   return `  Address:  ${status.endpoint}\n  PIN:      ${status.pin}\n` +
     (typeof status.pairUrl === "string" && /^http:\/\/127\.0\.0\.1:\d+\/pair$/.test(status.pairUrl)
-      ? `  Pair a phone: open ${status.pairUrl} on this computer, then scan the code in WinDock.\n` : "");
+      ? `  Pair a phone: open ${status.pairUrl} on this computer, then scan the code in Tara.\n` : "");
 }
 
 /** Keys in the connection window: S stops the host; Q, Enter, Esc, Ctrl+C or Ctrl+D close the window. */
@@ -113,11 +113,11 @@ export function viewerKey(key) {
 }
 
 export function screen(note, status, interactive) {
-  return `WinDock — Linux preview\n\n${note}\n${details(status)}\n` +
-    (status.pairUrl ? "On your phone, choose Scan computer code. Open the pairing link above on this PC.\n" : "On your phone, open WinDock, choose this PC and enter the PIN.\n") +
-    "If your phone cannot connect, run `windock network` for connection and firewall checks.\n" +
-    "WinDock keeps running after you close this window.\n" +
-    (interactive ? "Press S to stop WinDock, or Q to close this window.\n" : "Run `windock stop` to stop it.\n");
+  return `Tara — Linux preview\n\n${note}\n${details(status)}\n` +
+    (status.pairUrl ? "On your phone, choose Scan computer code. Open the pairing link above on this PC.\n" : "On your phone, open Tara, choose this PC and enter the PIN.\n") +
+    "If your phone cannot connect, run `tara network` for connection and firewall checks.\n" +
+    "Tara keeps running after you close this window.\n" +
+    (interactive ? "Press S to stop Tara, or Q to close this window.\n" : "Run `tara stop` to stop it.\n");
 }
 
 function runCommand(file, args) {
@@ -128,18 +128,18 @@ function runCommand(file, args) {
   });
 }
 
-/** Whether a WinDock host, perhaps one in another terminal window, already answers on the port. */
-async function windockOnPort(port) {
+/** Whether a Tara host, perhaps one in another terminal window, already answers on the port. */
+async function taraOnPort(port) {
   try {
     const response = await fetch(`http://127.0.0.1:${port}/health`, { signal: AbortSignal.timeout(1500) });
-    return (await response.json())?.app === "windock";
+    return (await response.json())?.app === "tara";
   } catch {
     return false;
   }
 }
 
 async function runForeground(out, note) {
-  out("WinDock — Linux preview\n" + (note ? `${note}\n` : "") +
+  out("Tara — Linux preview\n" + (note ? `${note}\n` : "") +
     "Keep this window open while using your phone. Press Ctrl+C to quit.\n" +
     "Your connection address and pairing PIN appear below.\n\n");
   out(readyMessage(await start()));
@@ -164,14 +164,14 @@ function interact({ status, note, out, stdin, statusFile, unitState, stop, alive
         misses = 0;
         if (current.pid !== shown.pid || current.pin !== shown.pin) {
           shown = current;
-          out(clear + screen("WinDock restarted, so it has a new PIN.", current, true));
+          out(clear + screen("Tara restarted, so it has a new PIN.", current, true));
         }
       } else {
         // A restart briefly removes the details; only a stopped unit ends the window.
         const unit = await unitState();
         const restarting = ["active", "activating", "deactivating", "reloading"].includes(unit?.ActiveState);
         misses = restarting ? 0 : misses + 1;
-        if (misses >= 2) return finish("\nWinDock has stopped.\n");
+        if (misses >= 2) return finish("\nTara has stopped.\n");
       }
       polling = false;
     }, pollMs);
@@ -180,7 +180,7 @@ function interact({ status, note, out, stdin, statusFile, unitState, stop, alive
       if (action === "close") return finish("");
       if (action !== "stop" || stopping) return;
       stopping = true;
-      out(await stop() ? "\nWinDock stopped.\n" : "\nWinDock could not be stopped. Try `windock stop`.\n");
+      out(await stop() ? "\nTara stopped.\n" : "\nTara could not be stopped. Try `tara stop`.\n");
       setTimeout(() => finish(""), 1500);
     };
     function finish(message) {
@@ -205,7 +205,7 @@ export async function main({
   out = (text) => process.stdout.write(text),
   err = (text) => process.stderr.write(text),
   run = runCommand,
-  probe = windockOnPort,
+  probe = taraOnPort,
   foreground = runForeground,
   stdin = process.stdin,
   interactive = Boolean(process.stdin.isTTY && process.stdout.isTTY),
@@ -258,22 +258,22 @@ export async function main({
   }
 
   async function startFailed() {
-    err("WinDock could not start in the background.\n");
+    err("Tara could not start in the background.\n");
     const log = await run("journalctl", ["--user", "--unit", UNIT, "--lines=10", "--no-pager", "--output=cat"]);
     if (log.code === 0 && log.stdout.trim()) err(`${log.stdout.trimEnd()}\n`);
-    err("For details, run: journalctl --user --unit windock\n");
+    err("For details, run: journalctl --user --unit tara\n");
     return failed();
   }
 
   async function open(inWindow) {
     if (!env.HYPRLAND_INSTANCE_SIGNATURE) {
-      err("WinDock's Linux preview needs a Hyprland desktop session.\nOpen it from your Hyprland application menu.\n");
+      err("Tara's Linux preview needs a Hyprland desktop session.\nOpen it from your Hyprland application menu.\n");
       return 1;
     }
     if (inWindow) return foreground(out, "");
     const unit = await unitState();
     if (unit?.LoadState !== "loaded") {
-      return foreground(out, "Background mode needs a systemd user session, so WinDock runs in this window.");
+      return foreground(out, "Background mode needs a systemd user session, so Tara runs in this window.");
     }
     await writePrivate(paths.session, renderSessionEnv(env));
     let status = await readStatus(paths.status, { alive });
@@ -281,22 +281,22 @@ export async function main({
     if (status && unit.ActiveState === "active") {
       const session = sessionOf(env);
       if (SESSION_KEYS.every((name) => status.session?.[name] === session[name])) {
-        note = "WinDock is running in the background.";
+        note = "Tara is running in the background.";
       } else {
         // The host still talks to an earlier compositor; join this one.
         if ((await systemctl("restart", UNIT)).code !== 0) return startFailed();
         status = await published(status);
-        note = "WinDock restarted for this desktop session.";
+        note = "Tara restarted for this desktop session.";
       }
     } else {
       if (unit.ActiveState !== "active" && unit.ActiveState !== "activating" && await probe(port)) {
-        err(`WinDock is already open in another window, which uses port ${port}.\n` +
-          "Close that window (or press Ctrl+C in it), then open WinDock again.\n");
+        err(`Tara is already open in another window, which uses port ${port}.\n` +
+          "Close that window (or press Ctrl+C in it), then open Tara again.\n");
         return failed();
       }
       if (unit.ActiveState !== "activating" && (await systemctl("start", UNIT)).code !== 0) return startFailed();
       status = await published(null);
-      note = "Started WinDock in the background.";
+      note = "Started Tara in the background.";
     }
     if (!status) return startFailed();
     if (!interactive) {
@@ -309,14 +309,14 @@ export async function main({
   async function showStatus() {
     const status = await readStatus(paths?.status, { alive });
     if (status) {
-      out(`WinDock is running in the background.\n${details(status)}`);
+      out(`Tara is running in the background.\n${details(status)}`);
       return 0;
     }
     if (await probe(port)) {
-      out("WinDock is running in a terminal window, which shows its address and PIN.\n");
+      out("Tara is running in a terminal window, which shows its address and PIN.\n");
       return 0;
     }
-    out("WinDock is not running. Open it from your application menu, or run `windock`.\n");
+    out("Tara is not running. Open it from your application menu, or run `tara`.\n");
     return 3;
   }
 
@@ -325,14 +325,14 @@ export async function main({
     if (unit && unit.ActiveState !== "inactive" && unit.ActiveState !== "failed") {
       const result = await systemctl("stop", UNIT);
       if (result.code !== 0) {
-        err(`WinDock could not be stopped: ${result.stderr.trim() || `systemctl exited with code ${result.code}`}\n`);
+        err(`Tara could not be stopped: ${result.stderr.trim() || `systemctl exited with code ${result.code}`}\n`);
         return 1;
       }
-      out("WinDock stopped.\n");
+      out("Tara stopped.\n");
     } else {
-      out("WinDock is not running in the background.\n");
+      out("Tara is not running in the background.\n");
     }
-    if (await probe(port)) out("Another WinDock is still open in a terminal window. Close that window to stop it.\n");
+    if (await probe(port)) out("Another Tara is still open in a terminal window. Close that window to stop it.\n");
     return 0;
   }
 
@@ -354,9 +354,9 @@ export async function main({
           const endpoint=new URL(status.endpoint);
           if(endpoint.protocol!=="http:" || !endpoint.port)throw Error("Invalid endpoint");
           activePort=Number(endpoint.port);
-        } catch { err("WinDock's saved address is invalid. Restart the companion and try again.\n"); return 1; }
+        } catch { err("Tara's saved address is invalid. Restart the companion and try again.\n"); return 1; }
       }
-      if(!status && !await probe(port)) { err("Start WinDock before opening connection tools.\n"); return 3; }
+      if(!status && !await probe(port)) { err("Start Tara before opening connection tools.\n"); return 3; }
       const url=`http://127.0.0.1:${activePort}/${command === "network" ? "pair#network" : "files"}`;
       const result=await run("xdg-open",[url]);
       if(result.code!==0)out(`Open ${url} on this computer.\n`);
@@ -375,7 +375,7 @@ if (isMain) {
       if (code !== null) process.exit(code);
     })
     .catch((error) => {
-      process.stderr.write(`WinDock failed to start: ${error.message}\n`);
+      process.stderr.write(`Tara failed to start: ${error.message}\n`);
       process.exit(1);
     });
 }

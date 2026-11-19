@@ -7,11 +7,11 @@ const t = createChecker("appearance");
 const read = path => readFileSync(new URL("../" + path, import.meta.url), "utf8");
 const source = read("public/appearance.js");
 const performance = read("public/performance.js");
-const modeKey = "windock-performance", layoutKey = "windock-layout";
+const modeKey = "tara-performance", layoutKey = "tara-layout";
 function boot({ saved = {}, native, blocked = false, memoryOnly = false } = {}) {
   const data = new Map(Object.entries(saved)), classes = new Set();
   let accesses = 0;
-  const window = { WinDockAndroid: native, matchMedia: () => ({ matches: false }) };
+  const window = { TaraAndroid: native, matchMedia: () => ({ matches: false }) };
   const context = {
     window, URLSearchParams, location: { origin: "http://10.0.2.2:18622", search: "?perf=1" },
     document: { currentScript: { hasAttribute: () => memoryOnly }, documentElement: {
@@ -25,7 +25,7 @@ function boot({ saved = {}, native, blocked = false, memoryOnly = false } = {}) 
   };
   runInNewContext(source, context);
   runInNewContext(performance, context);
-  return { prefs: window.WinDockPreferences, mode: window.WinDockPerformance, data, classes, get accesses() { return accesses; } };
+  return { prefs: window.TaraPreferences, mode: window.TaraPerformance, data, classes, get accesses() { return accesses; } };
 }
 
 const layout = JSON.stringify({ perPage: 8, showLabels: true, theme: "frost" });

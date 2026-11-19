@@ -1,4 +1,4 @@
-// Render the existing four-square WinDock brand as an opaque iOS app icon.
+// Render the existing four-square Tara brand as an opaque iOS app icon.
 import AppKit
 let bitmap = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 1024, pixelsHigh: 1024,
                              bitsPerSample: 8, samplesPerPixel: 3, hasAlpha: false,

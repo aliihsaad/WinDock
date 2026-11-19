@@ -2,7 +2,7 @@ using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 
-namespace WinDock;
+namespace Tara;
 
 internal static class Touchpad
 {
@@ -101,7 +101,7 @@ internal static class Touchpad
     public static int Run() => RunAsync().GetAwaiter().GetResult();
     private static async Task<int> RunAsync()
     {
-        using var single = new Mutex(true, @"Local\WinDock.Touchpad", out var first);
+        using var single = new Mutex(true, @"Local\Tara.Touchpad", out var first);
         if (!first) throw new InvalidOperationException("Another touchpad is active.");
         var zoom = new ZoomInput(Send, () => (GetAsyncKeyState(0x11) & 0x8000) != 0, Marshal.GetLastWin32Error);
         var session = new Session(Inject, zoom.Apply, zoom.Release);

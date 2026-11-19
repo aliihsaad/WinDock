@@ -16,10 +16,10 @@ window.addEventListener("resize", fitCode);
 document.getElementById("forget").onclick = async () => {
   if (!confirm("Forget all paired HTTPS phones? You will need to pair them again.")) return;
   try {
-    const response = await fetch("/api/pairing/revoke", { method: "POST", headers: { "content-type": "application/json", "x-windock-pair": "local" }, body: '{"confirm":"forget-all"}' });
+    const response = await fetch("/api/pairing/revoke", { method: "POST", headers: { "content-type": "application/json", "x-tara-pair": "local" }, body: '{"confirm":"forget-all"}' });
     if (!response.ok) throw new Error();
     status.textContent = "Paired phones were signed out. Show a new code to pair again.";
-  } catch { status.textContent = "Couldn't forget paired phones. Check WinDock and retry."; }
+  } catch { status.textContent = "Couldn't forget paired phones. Check Tara and retry."; }
 };
 let expiry;
 document.getElementById("check-network").onclick = async () => {
@@ -59,7 +59,7 @@ document.getElementById("diagnose").onclick = async () => {
     const response = await fetch("/api/pairing/diagnostics", { cache: "no-store" });
     if (!response.ok) throw new Error();
     document.getElementById("diagnostics").textContent = JSON.stringify(await response.json(), null, 2);
-  } catch { document.getElementById("diagnostics").textContent = "Diagnostics unavailable. Restart WinDock and retry."; }
+  } catch { document.getElementById("diagnostics").textContent = "Diagnostics unavailable. Restart Tara and retry."; }
 };
 button.onclick = async () => {
   button.disabled = true; document.getElementById("refresh-qr").disabled = true; clearTimeout(expiry);
@@ -67,7 +67,7 @@ button.onclick = async () => {
   document.getElementById("manual").hidden = true;
   document.getElementById("invitation").value = "";
   try {
-    const response = await fetch("/api/pairing/invite", { method: "POST", headers: { "content-type": "application/json", "x-windock-pair": "local" }, body: '{"format":"gif"}', cache: "no-store" });
+    const response = await fetch("/api/pairing/invite", { method: "POST", headers: { "content-type": "application/json", "x-tara-pair": "local" }, body: '{"format":"gif"}', cache: "no-store" });
     if (!response.ok) throw new Error();
     const data = await response.json();
     if (!/^data:image\/gif;base64,[A-Za-z0-9+/=]{20,200000}$/.test(data.image || "")) throw new Error();
@@ -76,7 +76,7 @@ button.onclick = async () => {
     const bitmap = await createImageBitmap(new Blob([bytes], { type: "image/gif" }));
     if (bitmap.width > 185 || bitmap.width !== bitmap.height) { bitmap.close(); throw new Error(); }
     const image = document.createElement("canvas"); image.width = bitmap.width; image.height = bitmap.height;
-    image.setAttribute("role", "img"); image.setAttribute("aria-label", "Scan this pairing code using WinDock");
+    image.setAttribute("role", "img"); image.setAttribute("aria-label", "Scan this pairing code using Tara");
     const drawing = image.getContext("2d"); drawing.imageSmoothingEnabled = false;
     drawing.drawImage(bitmap, 0, 0); bitmap.close();
     qr.append(image);
@@ -88,6 +88,6 @@ button.onclick = async () => {
     qrStatus.textContent = status.textContent;
     expiry = setTimeout(() => { qr.replaceChildren(); document.getElementById("invitation").value = ""; document.getElementById("manual").hidden = true; status.textContent = "Code expired. Show a new code to continue."; qrStatus.textContent = status.textContent; }, Math.max(0, data.expires - Date.now()));
     button.textContent = "Show a new code";
-  } catch { status.textContent = "Couldn't create a pairing code. Check that WinDock is running, then try again."; qrStatus.textContent = status.textContent; }
+  } catch { status.textContent = "Couldn't create a pairing code. Check that Tara is running, then try again."; qrStatus.textContent = status.textContent; }
   finally { button.disabled = false; document.getElementById("refresh-qr").disabled = false; }
 };

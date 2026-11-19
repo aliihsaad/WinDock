@@ -1,11 +1,11 @@
 import { DECKS, MODIFIER_LABELS, chordMessage, detectDeck, scrubSteps } from "./decks.js";
 
 /** Shortcut decks, held modifiers and the timeline scrub strip inside the touchpad dialog. */
-const notifySave = (name, error) => document.dispatchEvent(new CustomEvent("windock-toast", { detail: { message: name ? "Saved " + name : error, error: !name } }));
+const notifySave = (name, error) => document.dispatchEvent(new CustomEvent("tara-toast", { detail: { message: name ? "Saved " + name : error, error: !name } }));
 export function createKeysPane({ api, send, isReady, storage = localStorage, doc = document }) {
   const $ = (id) => doc.getElementById(id);
   let deckId = "general", pageId = null, detected = null, timer = null, userChose = false;
-  try { const saved = storage.getItem("windock-deck"); if (DECKS.some((d) => d.id === saved)) { deckId = saved; userChose = true; } } catch { /* optional */ }
+  try { const saved = storage.getItem("tara-deck"); if (DECKS.some((d) => d.id === saved)) { deckId = saved; userChose = true; } } catch { /* optional */ }
   const deck = () => DECKS.find((d) => d.id === deckId) ?? DECKS[DECKS.length - 1];
   const page = () => deck().pages.find((p) => p.id === pageId) ?? deck().pages[0];
   const held = new Set();
@@ -28,7 +28,7 @@ export function createKeysPane({ api, send, isReady, storage = localStorage, doc
   $("keys-decks").addEventListener("click", (event) => {
     const button = event.target.closest("[data-deck]"); if (!button) return;
     deckId = button.dataset.deck; pageId = null; userChose = true;
-    try { storage.setItem("windock-deck", deckId); } catch { /* optional */ }
+    try { storage.setItem("tara-deck", deckId); } catch { /* optional */ }
     paint();
   });
   $("keys-pages").addEventListener("click", (event) => { const button = event.target.closest("[data-page]"); if (button) { pageId = button.dataset.page; paint(); } });

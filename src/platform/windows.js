@@ -8,7 +8,7 @@
  *    the script text is fixed at module load and cannot be influenced.
  *
  *  - Every action (launch, focus, close, control) is dispatched to
- *    WinDockHelper.exe as an argv ARRAY. Arguments are passed as separate argv
+ *    TaraHelper.exe as an argv ARRAY. Arguments are passed as separate argv
  *    entries, never concatenated, so a path containing `& shutdown /s` is one
  *    opaque argument rather than a second command.
  *
@@ -63,12 +63,12 @@ export const INVENTORY_PS = [
 export const RUNNING_PS = [
   "$ErrorActionPreference='SilentlyContinue';",
   "[Console]::OutputEncoding=New-Object System.Text.UTF8Encoding($false);",
-  "Add-Type -TypeDefinition 'using System; using System.Text; using System.Runtime.InteropServices; public static class WinDockIdentity { [DllImport(\"kernel32.dll\")] static extern IntPtr OpenProcess(uint access, bool inherit, int id); [DllImport(\"kernel32.dll\")] static extern bool CloseHandle(IntPtr handle); [DllImport(\"kernel32.dll\", CharSet=CharSet.Unicode)] static extern int GetApplicationUserModelId(IntPtr handle, ref uint length, StringBuilder value); public static string Read(int id) { var handle=OpenProcess(0x1000,false,id); if(handle==IntPtr.Zero)return null; try { uint length=256; var value=new StringBuilder(256); return GetApplicationUserModelId(handle,ref length,value)==0?value.ToString():null; } finally { CloseHandle(handle); } } }';",
+  "Add-Type -TypeDefinition 'using System; using System.Text; using System.Runtime.InteropServices; public static class TaraIdentity { [DllImport(\"kernel32.dll\")] static extern IntPtr OpenProcess(uint access, bool inherit, int id); [DllImport(\"kernel32.dll\")] static extern bool CloseHandle(IntPtr handle); [DllImport(\"kernel32.dll\", CharSet=CharSet.Unicode)] static extern int GetApplicationUserModelId(IntPtr handle, ref uint length, StringBuilder value); public static string Read(int id) { var handle=OpenProcess(0x1000,false,id); if(handle==IntPtr.Zero)return null; try { uint length=256; var value=new StringBuilder(256); return GetApplicationUserModelId(handle,ref length,value)==0?value.ToString():null; } finally { CloseHandle(handle); } } }';",
   "Get-Process | Where-Object { $_.MainWindowHandle -ne 0 } |",
   "  Select-Object Id,ProcessName,MainWindowTitle,",
   "    @{n='Handle';e={[int64]$_.MainWindowHandle}},",
   "    @{n='Path';e={$_.Path}},",
-  "    @{n='AppUserModelId';e={[WinDockIdentity]::Read($_.Id)}} |",
+  "    @{n='AppUserModelId';e={[TaraIdentity]::Read($_.Id)}} |",
   "  ConvertTo-Json -Compress -Depth 3",
 ].join(" ");
 
@@ -266,9 +266,9 @@ export function unmappedVerbs() {
  * Create the Windows provider.
  * @param {object} opts
  * @param {(file:string,args:string[])=>Promise<{stdout:string}>} opts.exec
- * @param {string} [opts.helperPath] path to WinDockHelper.exe
+ * @param {string} [opts.helperPath] path to TaraHelper.exe
  */
-export function createWindowsProvider({ exec, helperPath = process.env.WINDOCK_HELPER || fileURLToPath(new URL("../../WinDockHelper.exe", import.meta.url)) } = {}) {
+export function createWindowsProvider({ exec, helperPath = process.env.TARA_HELPER || fileURLToPath(new URL("../../TaraHelper.exe", import.meta.url)) } = {}) {
   if (typeof exec !== "function") throw new Error("windows provider requires exec");
 
   const ps = (script) => exec(POWERSHELL, [...PS_FLAGS, script]);

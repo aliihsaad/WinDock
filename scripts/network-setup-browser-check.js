@@ -8,7 +8,7 @@ async (page) => {
   await page.locator('#check-network').click();
   await page.waitForFunction(()=>document.getElementById('network-result').textContent.includes('Current ports:'));
   check((await page.locator('#network-result').innerText()).includes('18626/tcp'),'actual secure fixture port shown');
-  check(!(await page.locator('#network-result').innerText()).includes('windock-pair:'),'diagnostics do not include pairing invitation');
+  check(!(await page.locator('#network-result').innerText()).includes('tara-pair:'),'diagnostics do not include pairing invitation');
   const scopes=page.locator('#network-result details');
   check(await scopes.count()>0,'local network choices rendered');
   await scopes.first().locator('summary').click();

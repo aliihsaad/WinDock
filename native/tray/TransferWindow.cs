@@ -3,7 +3,7 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 
-namespace WinDock.Tray;
+namespace Tara.Tray;
 
 internal sealed class TransferWindow : Form
 {
@@ -18,7 +18,7 @@ internal sealed class TransferWindow : Form
     public TransferWindow(Uri localEndpoint)
     {
         endpoint = localEndpoint;
-        Text = "WinDock — Files & Media"; Size = new Size(740,500); MinimumSize = new Size(560,360); StartPosition = FormStartPosition.CenterScreen;
+        Text = "Tara — Files & Media"; Size = new Size(740,500); MinimumSize = new Size(560,360); StartPosition = FormStartPosition.CenterScreen;
         BackColor = Color.FromArgb(16,29,39); ForeColor = Color.FromArgb(235,246,246); Font = new Font("Segoe UI",10);
         var panel = new TableLayoutPanel { Dock=DockStyle.Fill, Padding=new Padding(18), ColumnCount=1, RowCount=5 };
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize)); panel.RowStyles.Add(new RowStyle(SizeType.AutoSize)); panel.RowStyles.Add(new RowStyle(SizeType.AutoSize)); panel.RowStyles.Add(new RowStyle(SizeType.Percent,100)); panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -34,14 +34,14 @@ internal sealed class TransferWindow : Form
         cancel.Click += async (_,_) => { if(files.SelectedItems.Count==0)return; try { using var response=await Request("/cancel",new { id=(files.SelectedItems[0].Tag as string)?.Split('/')[0] }); response.EnsureSuccessStatusCode(); await RefreshFiles(); } catch { status.Text="Could not cancel. Check the host; completed files are kept."; } };
         footer.Controls.Add(cancel); footer.Controls.Add(status); panel.Controls.Add(footer); Controls.Add(panel);
         enabled.Click += async (_,_) => await Configure(new { enabled=enabled.Checked });
-        choose.Click += async (_,_) => { using var picker=new FolderBrowserDialog { Description="Choose where WinDock receives files",UseDescriptionForTitle=true,SelectedPath=folder.Text }; if(picker.ShowDialog(this)==DialogResult.OK)await Configure(new { destination=picker.SelectedPath }); };
+        choose.Click += async (_,_) => { using var picker=new FolderBrowserDialog { Description="Choose where Tara receives files",UseDescriptionForTitle=true,SelectedPath=folder.Text }; if(picker.ShowDialog(this)==DialogResult.OK)await Configure(new { destination=picker.SelectedPath }); };
         open.Click += async (_,_) => { try { using var response=await Request("/open",new { }); response.EnsureSuccessStatusCode(); } catch { status.Text="Could not open the receive folder. Check the host and folder permissions."; } };
         timer.Tick += async (_,_) => await RefreshFiles(); Shown += async (_,_) => { timer.Start(); await RefreshFiles(); };
     }
     private async Task<HttpResponseMessage> Request(string suffix="",object? body=null)
     {
         var request=new HttpRequestMessage(body is null?HttpMethod.Get:HttpMethod.Post,new Uri(endpoint.AbsoluteUri+suffix));
-        request.Headers.Add("x-windock-files","local");
+        request.Headers.Add("x-tara-files","local");
         if(body is not null)request.Content=new StringContent(JsonSerializer.Serialize(body),Encoding.UTF8,"application/json");
         using(request)return await http.SendAsync(request);
     }
@@ -49,7 +49,7 @@ internal sealed class TransferWindow : Form
     {
         if(updating)return; updating=true;
         try { using var response=await Request("/settings",value); using var doc=JsonDocument.Parse(await response.Content.ReadAsStringAsync()); if(!IsDisposed)status.Text=response.IsSuccessStatusCode?"Receive settings saved.":doc.RootElement.GetProperty("error").GetString(); }
-        catch { if(!IsDisposed)status.Text="Receive settings could not be saved. Check that WinDock is running."; }
+        catch { if(!IsDisposed)status.Text="Receive settings could not be saved. Check that Tara is running."; }
         finally { updating=false; if(!IsDisposed)await RefreshFiles(); }
     }
     private async Task RefreshFiles()
@@ -66,7 +66,7 @@ internal sealed class TransferWindow : Form
                 var bytes=file.GetProperty("bytes").GetInt64(); var total=file.GetProperty("size"); item.SubItems.Add(FormatSize(bytes)+(total.ValueKind==JsonValueKind.Number?$" / {FormatSize(total.GetInt64())}":"")); files.Items.Add(item);
             }
             files.EndUpdate(); if(status.Text=="Connecting…")status.Text="Files are never opened automatically. Cancel from your phone; disabling receiving stops pending transfers.";
-        } catch { if(!IsDisposed)status.Text="Waiting for the WinDock host…"; }
+        } catch { if(!IsDisposed)status.Text="Waiting for the Tara host…"; }
         finally { refreshing=false; }
     }
     private static string FormatSize(long value) => value>=1073741824?$"{value/1073741824d:0.0} GB":value>=1048576?$"{value/1048576d:0.0} MB":value>=1024?$"{value/1024d:0.0} KB":$"{value} B";

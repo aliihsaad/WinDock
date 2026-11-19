@@ -1,7 +1,7 @@
 name: Publish downloads app
 
 # Copies site/ to the gh-pages branch, which GitHub Pages serves as an installable
-# "WinDock Downloads" app that always shows the newest release.
+# "Tara Downloads" app that always shows the newest release.
 on:
   push:
     branches: [upgrades]

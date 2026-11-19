@@ -53,7 +53,7 @@ for (const provider of [windows, linux]) {
   await t.rejects(() => provider.openLink({ ...link, target: "file:///etc/passwd" }), "provider revalidates protocol");
   t.equal(calls.length, before, "invalid link never invokes OS");
 }
-const dir = await mkdtemp(join(tmpdir(), "windock-links-"));
+const dir = await mkdtemp(join(tmpdir(), "tara-links-"));
 const store = createConfigStore({ path: join(dir, "config.json") });
 const provider = { ...windows, listInstalledApps: async () => [], listRunningApps: async () => [] };
 const app = await createApp({ provider, configStore: store, pin: "572864", trustLoopback: false });

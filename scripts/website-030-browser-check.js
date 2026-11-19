@@ -11,7 +11,7 @@ async (page) => {
   const demo = page.frameLocator('#demo-frame');
   await demo.locator('#app:not([hidden])').waitFor();
   await page.locator('#demo-frame').scrollIntoViewIfNeeded();
-  check((await page.locator('#next-release').innerText()).includes('WINDOCK 0.3.0'), '0.3.0 feature section');
+  check((await page.locator('#next-release').innerText()).includes('TARA 0.3.0'), '0.3.0 feature section');
   for (const id of ['download-windows','download-android','download-linux-arch','download-linux-deb']) {
     await page.locator(`#${id}:not([aria-disabled="true"])`).waitFor();
     check((await page.locator(`#${id}`).getAttribute('href')).includes('/v0.3.0/'), `${id}: staged stable release URL`);

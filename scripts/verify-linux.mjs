@@ -22,7 +22,7 @@ import { captureName, createLinuxCapture, recorderArgv } from "../src/platform/l
 import { iconType } from "../src/icons.js";
 
 const t = createChecker("linux");
-const tmp = await mkdtemp(join(tmpdir(), "windock-linux-"));
+const tmp = await mkdtemp(join(tmpdir(), "tara-linux-"));
 
 // ---- inventory records keep what launch and window matching need ----
 const claude = parseDesktop("[Desktop Entry]\nName=Claude\nExec=claude-desktop %U\nIcon=claude-desktop\nStartupWMClass=com.anthropic.Claude\n", "com.anthropic.claude", "com.anthropic.Claude");
@@ -101,7 +101,7 @@ function hyprFake({ evalReply = "ok", clientsReply = JSON.stringify(clients), di
 let hypr = hyprFake();
 await hypr.provider.focusApp({ pid: 2770788, address: "0x5cc35e79cd00" });
 t.deepEqual(hypr.calls, [["hyprctl", "eval", hyprWindowLua("focus", "0x5cc35e79cd00")]], "focus is one guarded Lua call");
-hypr = hyprFake({ evalReply: "error: [string]:1: windock: window not found" });
+hypr = hyprFake({ evalReply: "error: [string]:1: tara: window not found" });
 const gone = await hypr.provider.closeApp({ pid: 2770788, address: "0x5cc35e79cd00" }).catch((error) => error);
 t.equal(gone.status, 404, "a window that closed since the last refresh is reported, not substituted");
 t.equal(hypr.calls.length, 1, "nothing is dispatched after the guard fails");
@@ -229,7 +229,7 @@ t.deepEqual(unscoped.calls.slice(1), [["gtk-launch", "firefox"]], "without a rea
 await t.rejects(() => scoped.launchScoped("-rf", 7), "scoped launches still validate their arguments");
 
 // ---- capture ----
-t.ok(/^WinDock-\d{4}-\d{2}-\d{2}-\d{6}-\d{3}-[0-9a-f]{6}\.png$/.test(captureName("screenshot")), "capture names match the Windows helper");
+t.ok(/^Tara-\d{4}-\d{2}-\d{2}-\d{6}-\d{3}-[0-9a-f]{6}\.png$/.test(captureName("screenshot")), "capture names match the Windows helper");
 const [wfCommand, wfArgs] = recorderArgv("wf-recorder", "DP-2", "/v/x.mp4");
 t.equal(wfCommand, "wf-recorder", "wf-recorder is a supported recorder");
 t.ok(wfArgs.join(" ").includes("-o DP-2 -r 15"), "recordings are the chosen monitor at 15 fps");
@@ -278,13 +278,13 @@ const capture = createLinuxCapture({
 });
 const shot = await capture.screenshot();
 t.equal(shot.lastCapture.kind, "screenshot", "a screenshot is reported");
-t.ok(shot.lastCapture.path.startsWith(join(tmp, "PICTURES", "WinDock")), "screenshots go to Pictures/WinDock");
+t.ok(shot.lastCapture.path.startsWith(join(tmp, "PICTURES", "Tara")), "screenshots go to Pictures/Tara");
 t.deepEqual(execCalls.find((call) => call[0] === "grim").slice(1, 3), ["-o", "DP-2"], "the focused monitor is captured");
 grimWorks = false;
 const shotError = await capture.screenshot().catch((error) => error);
 t.equal(shotError.status, 503, "a failed screenshot is a service error");
 t.ok(!shotError.message.includes("private") && !capture.status().error.includes("secret"), "compositor diagnostics stay private");
-t.equal((await readdir(join(tmp, "PICTURES", "WinDock"))).length, 1, "a failed screenshot leaves no partial file behind");
+t.equal((await readdir(join(tmp, "PICTURES", "Tara"))).length, 1, "a failed screenshot leaves no partial file behind");
 
 const first = capture.start(), duplicate = capture.start();
 t.equal(capture.status().phase, "starting", "starting is visible");
@@ -302,7 +302,7 @@ wf.exit(0);
 const stopped = await stopping;
 t.equal(stopped.phase, "idle", "a finalized recording returns to idle");
 t.equal(stopped.lastCapture.kind, "recording", "the recording is reported");
-t.ok(stopped.lastCapture.path.startsWith(join(tmp, "VIDEOS", "WinDock")), "recordings go to Videos/WinDock");
+t.ok(stopped.lastCapture.path.startsWith(join(tmp, "VIDEOS", "Tara")), "recordings go to Videos/Tara");
 
 capture.missingWf = true;
 const fallback = capture.start();
@@ -316,7 +316,7 @@ gsr.stderr.write("gsr info: starting\ngsr error: gsr_capture_kms_pre_capture: no
 await t.rejects(() => fallback, "a recorder that reports a capture error has not started");
 t.equal(capture.status().phase, "error", "the failed start is visible");
 t.deepEqual(gsr.signals, ["SIGKILL"], "the broken recorder is terminated");
-t.equal((await readdir(join(tmp, "VIDEOS", "WinDock"))).length, 1, "a failed start leaves no empty video behind");
+t.equal((await readdir(join(tmp, "VIDEOS", "Tara"))).length, 1, "a failed start leaves no empty video behind");
 
 capture.missingWf = false;
 const asleep = createLinuxCapture({

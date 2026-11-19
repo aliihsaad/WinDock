@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Http;
 using System.Text.Json.Nodes;
-using WinDock.Tray;
+using Tara.Tray;
 
 internal static class Program
 {
@@ -48,7 +48,7 @@ internal static class Program
         {
             calls++;
             Check(request.RequestUri == new Uri(page, "/api/pairing/invite") && request.Method == HttpMethod.Post, "Native client uses the local invitation endpoint");
-            Check(request.Headers.GetValues("X-WinDock-Pair").Single() == "local", "Explicit local action header sent");
+            Check(request.Headers.GetValues("X-Tara-Pair").Single() == "local", "Explicit local action header sent");
             Check(await request.Content!.ReadAsStringAsync(cancellation) == "{\"format\":\"gif\"}", "Only the additive image option is sent");
             if (calls == 3 && !args.Contains("--preview"))
             {

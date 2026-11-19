@@ -4,7 +4,7 @@ import { createWindowsProvider } from "../src/platform/windows.js";
 import { createLinuxProvider, splitExec, parseDesktop } from "../src/platform/linux.js";
 
 const t = createChecker("launch");
-const HELPER = "C:\\Tools\\WinDockHelper.exe";
+const HELPER = "C:\\Tools\\TaraHelper.exe";
 
 function recorder(stdout = "") {
   const calls = [];

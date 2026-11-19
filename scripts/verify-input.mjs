@@ -98,7 +98,7 @@ const save = native.saveSignature(signature); const image = children.at(-1);
 t.deepEqual(image.args, ["signature"], "signature cannot choose a destination or argv");
 t.deepEqual(JSON.parse(image.child.stdin.read().toString()), signature, "only validated stroke data enters helper");
 await t.rejects(() => native.saveSignature(signature), "concurrent save is refused");
-image.child.message({ type: "saved", path: "C:\\Pictures\\WinDock\\Signatures\\test.png" }); image.child.emit("close", 0);
+image.child.message({ type: "saved", path: "C:\\Pictures\\Tara\\Signatures\\test.png" }); image.child.emit("close", 0);
 t.ok((await save).path.endsWith("test.png"), "save waits for native success");
 const insert = native.saveSignature(signature, true); const pasted = children.at(-1);
 t.deepEqual(pasted.args, ["signature-insert"], "insertion uses a fixed helper verb");
@@ -111,7 +111,7 @@ t.ok(children.at(-1).child.killed, "unresponsive helper is bounded"); native.dis
 
 const received = [], sessions = [], provider = { id: "test", displayName: "Test", listRunningApps: async () => [], input: {
   open(_fail, emit) { emit({ type: "focus", target: "1", editable: true, password: false }); const session = { closed: false, ready: Promise.resolve(), send: (value) => received.push(value), close() { session.closed = true; } }; sessions.push(session); return session; },
-  saveSignature: async () => ({ type: "saved", path: "Pictures/WinDock/Signatures/example.png" }), dispose() {},
+  saveSignature: async () => ({ type: "saved", path: "Pictures/Tara/Signatures/example.png" }), dispose() {},
 } };
 const app = await createApp({ provider, pin: "432187", trustLoopback: false, configStore: { load: async () => ({ tiles: [] }) } });
 await new Promise((resolve) => app.server.listen(0, "127.0.0.1", resolve));
@@ -180,14 +180,14 @@ try {
   t.equal(signatureReply.code, 501, "a host without input refuses signatures as unsupported");
   t.equal(captureReply.code, 501, "a host without capture refuses captures as unsupported");
   for (const [name, error] of [["touchpad", touchpad.error], ["signature", signatureReply.error], ["capture", captureReply.error]]) {
-    t.ok(/WinDock on your PC/.test(error) && !/windows/i.test(error), `missing ${name} support names no operating system`);
+    t.ok(/Tara on your PC/.test(error) && !/windows/i.test(error), `missing ${name} support names no operating system`);
   }
 } finally {
   await bare.inputHub.close(); await bare.hub.close(); bare.server.closeAllConnections(); await new Promise((resolve) => bare.server.close(resolve));
 }
 
 // A helper that exits before `ready` is reported with the platform's own advice.
-t.ok(/Update WinDock/.test(createWindowsInput({ helperPath: "H.exe" }).startupError), "Windows startup failures still suggest updating the host");
+t.ok(/Update Tara/.test(createWindowsInput({ helperPath: "H.exe" }).startupError), "Windows startup failures still suggest updating the host");
 const stalled = await createApp({ provider: { id: "test", displayName: "Test", listRunningApps: async () => [], input: {
   startupError: "platform specific startup advice",
   open() { const ready = Promise.reject(new Error("helper exited")); ready.catch(() => {}); return { ready, send() {}, close: async () => {} }; },

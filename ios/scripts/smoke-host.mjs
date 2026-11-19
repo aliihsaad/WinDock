@@ -1,4 +1,4 @@
-// Real WinDock protocol + shared UI, with no native provider or user configuration.
+// Real Tara protocol + shared UI, with no native provider or user configuration.
 import { createApp } from '../../server.js';
 import { createConfigStore } from '../../src/config.js';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
@@ -37,7 +37,7 @@ const servers = [
   [app.server, 18622],
   [createServer((req, res) => { res.writeHead(302, { location: 'http://127.0.0.1:18622/health' }); res.end(); }), 18623],
   [createServer((req, res) => { res.setHeader('content-type', 'application/json'); res.end('{"ok":true,"app":"other"}'); }), 18624],
-  [createServer((req, res) => { res.writeHead(200, { 'content-type': 'application/json' }); res.write(' '.repeat(6000)); res.end('{"ok":true,"app":"windock"}'); }), 18625],
+  [createServer((req, res) => { res.writeHead(200, { 'content-type': 'application/json' }); res.write(' '.repeat(6000)); res.end('{"ok":true,"app":"tara"}'); }), 18625],
   [createServer((req, res) => {
     res.setHeader('access-control-allow-origin', '*');
     if (req.url === '/hits') { res.setHeader('content-type', 'application/json'); res.end(JSON.stringify(foreignHits)); return; }

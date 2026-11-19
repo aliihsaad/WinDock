@@ -6,9 +6,9 @@ export function createRemoteKeyboard({ send, isReady, onSignature, notify }) {
   const allowedKeys = new Set(["Escape", "Tab", "Delete", "Home", "End", "ArrowLeft", "ArrowUp", "ArrowDown", "ArrowRight"]);
   let touching = false, keysShown = false;
   let focus = null, supported = false, opened = false, requested = false, composing = false, suspended = false;
-  const native = () => typeof window.WinDockAndroid?.showKeyboard === "function";
+  const native = () => typeof window.TaraAndroid?.showKeyboard === "function";
   const keysReady = () => keysShown && supported && !suspended && !touching && !composing && isReady() && Boolean(focus) &&
-    !(opened && native() && typeof window.WinDockAndroid.pressKeyboardKey !== "function");
+    !(opened && native() && typeof window.TaraAndroid.pressKeyboardKey !== "function");
   function paintKeys() {
     pcKeys.hidden = !supported || !keysShown;
     keysToggle.hidden = !supported;
@@ -29,7 +29,7 @@ export function createRemoteKeyboard({ send, isReady, onSignature, notify }) {
     panel.hidden = true; field.value = ""; field.blur();
     $("input-pad").dataset.keyboard = "false";
     button.setAttribute("aria-pressed", "false");
-    try { window.WinDockAndroid?.hideKeyboard(); } catch { /* browser fallback */ }
+    try { window.TaraAndroid?.hideKeyboard(); } catch { /* browser fallback */ }
     paintKeys();
   }
   function transmit(message) {
@@ -48,7 +48,7 @@ export function createRemoteKeyboard({ send, isReady, onSignature, notify }) {
     button.setAttribute("aria-pressed", "true");
     paintKeys();
     if (native()) {
-      try { window.WinDockAndroid.showKeyboard(focus.target, focus.password); return; }
+      try { window.TaraAndroid.showKeyboard(focus.target, focus.password); return; }
       catch { /* continue with browser keyboard */ }
     }
     panel.hidden = false;
@@ -66,7 +66,7 @@ export function createRemoteKeyboard({ send, isReady, onSignature, notify }) {
       const name = key.dataset.pcKey;
       if (!keysReady() || !allowedKeys.has(name) || composing) return;
       if (opened && native()) {
-        window.WinDockAndroid.pressKeyboardKey(focus.target, name);
+        window.TaraAndroid.pressKeyboardKey(focus.target, name);
       } else {
         if (opened) commit();
         send({ type: "key", key: name, target: focus.target });
@@ -86,7 +86,7 @@ export function createRemoteKeyboard({ send, isReady, onSignature, notify }) {
       event.preventDefault(); commit(); transmit({ type: "key", key: event.key });
     }
   });
-  window.addEventListener("windock-keyboard-input", event => {
+  window.addEventListener("tara-keyboard-input", event => {
     const data = event.detail;
     if (!native() || !data || data.target !== focus?.target) return;
     if (data.type === "text" && typeof data.text === "string" && data.text.length <= 1024)
@@ -94,7 +94,7 @@ export function createRemoteKeyboard({ send, isReady, onSignature, notify }) {
     else if (data.type === "key" && ["Backspace", "Delete", "Enter", "Tab", "Escape", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(data.key))
       transmit({ type: "key", key: data.key });
   });
-  window.addEventListener("windock-keyboard-action", event => {
+  window.addEventListener("tara-keyboard-action", event => {
     if (!native() || !isReady()) return;
     close();
     if (event.detail?.action === "signature") onSignature();

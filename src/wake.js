@@ -1,7 +1,7 @@
 /**
  * Wake-on-LAN. A magic packet is six 0xFF bytes followed by the target's MAC
  * address sixteen times, sent as a UDP broadcast. The sender is an already
- * awake WinDock PC, so the phone never needs to reach a sleeping computer.
+ * awake Tara PC, so the phone never needs to reach a sleeping computer.
  */
 import dgram from "node:dgram";
 import os from "node:os";

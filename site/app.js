@@ -1,6 +1,6 @@
-// Shows the newest WinDock build and its download links, straight from GitHub's public release list.
-const API = "https://api.github.com/repos/yeshwanthkumardomala/WinDock/releases?per_page=12";
-const CACHE_KEY = "windock-releases-v1";
+// Shows the newest Tara build and its download links, straight from GitHub's public release list.
+const API = "https://api.github.com/repos/yeshwanthkumardomala/Tara/releases?per_page=12";
+const CACHE_KEY = "tara-releases-v1";
 const $ = (id) => document.getElementById(id);
 
 /** Keep only builds that carry an app file, newest first. */
@@ -9,7 +9,7 @@ export function usable(releases) {
     .filter((r) => !r.draft && Array.isArray(r.assets) && r.assets.some((a) => /\.(apk|exe)$/i.test(a.name)))
     .sort((a, b) => new Date(b.published_at || b.created_at) - new Date(a.published_at || a.created_at));
 }
-export const pick = (release, ext) => release?.assets?.find((a) => a.name.toLowerCase().endsWith(ext) && a.browser_download_url?.startsWith("https://github.com/yeshwanthkumardomala/WinDock/"));
+export const pick = (release, ext) => release?.assets?.find((a) => a.name.toLowerCase().endsWith(ext) && a.browser_download_url?.startsWith("https://github.com/yeshwanthkumardomala/Tara/"));
 const size = (a) => a ? " · " + (a.size / 1048576).toFixed(0) + " MB" : "";
 const when = (r) => new Date(r.published_at || r.created_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 

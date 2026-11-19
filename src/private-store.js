@@ -15,9 +15,9 @@ export async function privateDirectory(path) {
     throw new Error("Private state directory must not be a link.");
   if (process.platform === "win32") {
     // PowerShell 5.1 is built into Windows. No interpolation of paths into code.
-    const script = `$ErrorActionPreference='Stop'; $p=$env:WINDOCK_PRIVATE_DIRECTORY; $a=New-Object System.Security.AccessControl.DirectorySecurity; $a.SetAccessRuleProtection($true,$false); $u=[System.Security.Principal.WindowsIdentity]::GetCurrent().User; foreach($i in @($u,(New-Object System.Security.Principal.SecurityIdentifier('S-1-5-18')))) { $a.AddAccessRule((New-Object System.Security.AccessControl.FileSystemAccessRule($i,'FullControl','ContainerInherit,ObjectInherit','None','Allow'))) }; [System.IO.Directory]::SetAccessControl($p,$a)`;
+    const script = `$ErrorActionPreference='Stop'; $p=$env:TARA_PRIVATE_DIRECTORY; $a=New-Object System.Security.AccessControl.DirectorySecurity; $a.SetAccessRuleProtection($true,$false); $u=[System.Security.Principal.WindowsIdentity]::GetCurrent().User; foreach($i in @($u,(New-Object System.Security.Principal.SecurityIdentifier('S-1-5-18')))) { $a.AddAccessRule((New-Object System.Security.AccessControl.FileSystemAccessRule($i,'FullControl','ContainerInherit,ObjectInherit','None','Allow'))) }; [System.IO.Directory]::SetAccessControl($p,$a)`;
     await exec("powershell.exe", ["-NoProfile", "-NonInteractive", "-EncodedCommand", Buffer.from(script, "utf16le").toString("base64")],
-      { windowsHide: true, timeout: 15000, env: { ...process.env, WINDOCK_PRIVATE_DIRECTORY: path } });
+      { windowsHide: true, timeout: 15000, env: { ...process.env, TARA_PRIVATE_DIRECTORY: path } });
   } else await chmod(path, 0o700);
   return path;
 }

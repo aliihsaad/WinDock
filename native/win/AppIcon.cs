@@ -2,7 +2,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 
-namespace WinDock;
+namespace Tara;
 
 internal static class AppIcon
 {

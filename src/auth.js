@@ -26,8 +26,8 @@ export const GLOBAL_MAX_FAILS = 30;
 export const GLOBAL_WINDOW_MS = 10 * 60_000;
 export const GLOBAL_LOCK_MS = 10 * 60_000;
 export const SESSION_TTL_MS = 180 * 24 * 60 * 60 * 1000; // 180 days
-export const COOKIE_NAME = "windock_session";
-export const SECURE_COOKIE_NAME = "__Host-windock_session";
+export const COOKIE_NAME = "tara_session";
+export const SECURE_COOKIE_NAME = "__Host-tara_session";
 
 /** Cryptographically uniform PIN; avoids the modulo bias of randomBytes % 10. */
 export function newPin(length = PIN_LENGTH) {
@@ -78,9 +78,9 @@ export function isLoopbackHost(header) {
  * Build the Host header check. IP literals are always fine, because a rebinding
  * page can't make the browser send a bare IP as Host. Names are limited to
  * localhost, this machine's own name (plain and .local), and anything listed in
- * WINDOCK_ALLOWED_HOSTS (comma separated) for people who use a custom DNS name.
+ * TARA_ALLOWED_HOSTS (comma separated) for people who use a custom DNS name.
  */
-export function createHostCheck({ machine = osHostname(), extra = process.env.WINDOCK_ALLOWED_HOSTS } = {}) {
+export function createHostCheck({ machine = osHostname(), extra = process.env.TARA_ALLOWED_HOSTS } = {}) {
   const names = new Set(["localhost"]);
   const base = hostName(String(machine || "").trim());
   if (base) {
@@ -109,7 +109,7 @@ export function isLoopback(address) {
 export function isLocalPairingRecovery(req, remote) {
   return isLoopback(remote) && isLoopbackHost(req.headers.host) &&
     !req.headers.origin && !req.headers["sec-fetch-site"] &&
-    req.headers["x-windock-local-action"] === "allow-pairing";
+    req.headers["x-tara-local-action"] === "allow-pairing";
 }
 
 /** Per-client failure tracking with a time-boxed lockout. */

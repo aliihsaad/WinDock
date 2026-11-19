@@ -4,7 +4,7 @@ async function send(text) {
   const clean = String(text || "").trim().split(/\r?\n/).find((l) => l && !l.startsWith("#")) || "";
   if (!clean) return status("That wasn’t a link.", true);
   try {
-    const res = await fetch("/api/cast/send", { method: "POST", headers: { "content-type": "application/json", "x-windock-cast": "local" }, body: JSON.stringify({ url: clean }), cache: "no-store" });
+    const res = await fetch("/api/cast/send", { method: "POST", headers: { "content-type": "application/json", "x-tara-cast": "local" }, body: JSON.stringify({ url: clean }), cache: "no-store" });
     const body = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(body.error || "Could not send.");
     status("Sent. It should open on your phone in a few seconds.");
@@ -24,7 +24,7 @@ const aiStatus = (text, error = false) => { $("ai-status").textContent = text; $
 $("ai-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   try {
-    const res = await fetch("/api/assistant/key", { method: "POST", headers: { "content-type": "application/json", "x-windock-assistant": "local" }, body: JSON.stringify({ key: $("ai-key").value.trim() }), cache: "no-store" });
+    const res = await fetch("/api/assistant/key", { method: "POST", headers: { "content-type": "application/json", "x-tara-assistant": "local" }, body: JSON.stringify({ key: $("ai-key").value.trim() }), cache: "no-store" });
     const body = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(body.error || "Could not save the key.");
     $("ai-key").value = "";

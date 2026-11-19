@@ -7,6 +7,6 @@ $env:NUGET_PACKAGES = Join-Path $projectRoot '.tools\nuget'
 $env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
 Push-Location $projectRoot
 try {
-    & $dotnetPath run --project native\display-tests\WinDockDisplayTests.csproj -c Release --nologo
+    & $dotnetPath run --project native\display-tests\TaraDisplayTests.csproj -c Release --nologo
     if ($LASTEXITCODE -ne 0) { throw 'Native display verification failed' }
 } finally { Pop-Location }

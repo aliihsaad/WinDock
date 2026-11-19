@@ -1,5 +1,5 @@
 import XCTest
-@testable import WinDock
+@testable import Tara
 
 final class EndpointPolicyTests: XCTestCase {
     func testLocalAddressesAndDefaultPorts() {
@@ -41,11 +41,11 @@ final class EndpointPolicyTests: XCTestCase {
         XCTAssertFalse(EndpointPolicy.allows(nil, endpoint: endpoint))
     }
 
-    func testHealthRequiresBoundedWinDockMarker() {
-        XCTAssertTrue(HealthProbe.isWinDock(Data(#"{"ok":true,"app":"windock"}"#.utf8)))
-        for input in [#"{"ok":true,"app":"other"}"#, #"{"app":"windock"}"#, #"{"ok":false,"app":"windock"}"#,
-                      #"[{"ok":true,"app":"windock"}]"#, "not json", String(repeating: " ", count: 4097)] {
-            XCTAssertFalse(HealthProbe.isWinDock(Data(input.utf8)))
+    func testHealthRequiresBoundedTaraMarker() {
+        XCTAssertTrue(HealthProbe.isTara(Data(#"{"ok":true,"app":"tara"}"#.utf8)))
+        for input in [#"{"ok":true,"app":"other"}"#, #"{"app":"tara"}"#, #"{"ok":false,"app":"tara"}"#,
+                      #"[{"ok":true,"app":"tara"}]"#, "not json", String(repeating: " ", count: 4097)] {
+            XCTAssertFalse(HealthProbe.isTara(Data(input.utf8)))
         }
     }
 }
