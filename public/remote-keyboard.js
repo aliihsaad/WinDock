@@ -101,6 +101,7 @@ export function createRemoteKeyboard({ send, isReady, onSignature, notify }) {
   });
   return {
     target() { return focus?.target ?? null; },
+    request() { requested = true; send({ type: "focus" }); if (focus) open(); },
     suspend(value) { suspended = Boolean(value); if (suspended) close(); paintKeys(); },
     configure(value) { supported = Boolean(value); button.hidden = !supported; paintKeys(); },
     paint() { button.disabled = !isReady(); paintKeys(); },
@@ -112,7 +113,8 @@ export function createRemoteKeyboard({ send, isReady, onSignature, notify }) {
       if (changed) { close(); focus = event; }
       else focus = event;
       button.classList.toggle("has-text-focus", event.editable);
-      if (manual || (changed && event.editable && native())) open();
+      // Only a tap on the keyboard button or five taps on the dock opens it; a PC text box getting focus never does.
+      if (manual) open();
       paintKeys();
     },
     reset() { close(); focus = null; suspended = touching = false; button.classList.remove("has-text-focus"); paintKeys(); },

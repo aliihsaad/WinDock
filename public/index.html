@@ -52,6 +52,8 @@
 
 <button id="drawer-open" class="drawer-trigger" type="button" aria-label="Open drawer" hidden><span></span></button>
 <button id="quick-controls-open" class="quick-controls-trigger" type="button" aria-label="Open quick controls" aria-haspopup="dialog" aria-controls="controls" aria-expanded="false" title="Swipe down for quick controls" hidden><span class="controls-island" aria-hidden="true"><span class="island-idle"><span data-icon="sliders"></span><span class="island-grip"></span></span><span id="island-media" class="island-media" hidden><span class="island-art"><span id="island-art-fallback" data-icon="music"></span><img id="island-artwork" alt="" decoding="async" hidden></span><span class="island-track"><strong id="island-title"></strong><span id="island-artist"></span></span><span id="island-playback"></span></span></span></button>
+<button id="status-strip" class="status-strip" type="button" aria-label="PC status and render watcher" hidden></button>
+<button id="input-edge" class="input-edge" type="button" aria-label="Open touchpad and signature" title="Touchpad &amp; signature" hidden><span data-icon="touchpad"></span></button>
 <button id="edit-done" class="edit-done icon-button" type="button" aria-label="Done editing" hidden><span data-icon="check"></span></button>
 
 <dialog id="drawer" class="glass-drawer" aria-label="WinDock drawer">
@@ -59,6 +61,11 @@
   <div class="drawer-actions">
     <button id="drawer-apps" type="button"><span data-icon="plus"></span><span>Apps</span></button>
     <button id="drawer-settings" type="button"><span data-icon="sun"></span><span>Appearance</span></button>
+    <button id="drawer-input" type="button"><span data-icon="touchpad"></span><span>Touch &amp; sign</span></button>
+    <button id="drawer-bench" type="button"><span data-icon="monitor"></span><span>Render &amp; save</span></button>
+    <button id="drawer-voice" type="button"><span data-icon="mic"></span><span>Assistant</span></button>
+    <button id="drawer-mini" type="button"><span data-icon="play"></span><span>Mini player</span></button>
+    <button id="drawer-windows" type="button"><span data-icon="monitor"></span><span>Windows</span></button>
     <button id="drawer-edit" type="button"><span data-icon="edit"></span><span>Edit dock</span></button>
     <button id="drawer-updates" type="button"><span data-icon="updates"></span><span>Updates</span></button>
   </div>
@@ -82,6 +89,7 @@
   <header class="input-pad__header">
     <div class="input-pad__tabs" role="group" aria-label="Input mode">
       <button id="input-touchpad-tab" type="button" aria-pressed="true" aria-controls="touchpad-pane"><span data-icon="touchpad"></span>Touchpad</button>
+      <button id="input-keys-tab" type="button" aria-pressed="false" aria-controls="keys-pane"><span data-icon="keys"></span>Keys</button>
       <button id="input-signature-tab" type="button" aria-pressed="false" aria-controls="signature-pane"><span data-icon="edit"></span>Signature</button>
     </div>
     <button class="icon-button" type="button" data-close="input-pad" aria-label="Close touchpad and signature"><span data-icon="close"></span></button>
@@ -103,7 +111,7 @@
     </div>
     <div class="touchpad-toolbar" aria-label="Touchpad controls">
       <div class="touchpad-navigation"><button type="button" data-close="input-pad" aria-label="Back to dock" title="Back to dock"><span data-icon="left"></span></button></div>
-      <div class="touchpad-tools"><button id="touchpad-signature" type="button" aria-label="Open signature pad" title="Signature"><span data-icon="edit"></span></button><button id="touchpad-keyboard" type="button" aria-label="Open phone keyboard" aria-pressed="false" title="Keyboard" hidden><span data-icon="keyboard"></span></button></div>
+      <div class="touchpad-tools"><button id="touchpad-keys" type="button" aria-label="Open shortcut keys" title="Shortcut keys"><span data-icon="keys"></span></button><button id="touchpad-orbit" class="text-tool" type="button" aria-label="3D orbit mode" aria-pressed="false" title="3D mode: two fingers orbit, pinch zooms">3D</button><button id="touchpad-signature" type="button" aria-label="Open signature pad" title="Signature"><span data-icon="edit"></span></button><button id="touchpad-keyboard" type="button" aria-label="Open phone keyboard" aria-pressed="false" title="Keyboard" hidden><span data-icon="keyboard"></span></button></div>
       <div class="mouse-buttons"><button id="mouse-left" type="button" disabled><span data-icon="mouse-left"></span><span>Left click</span></button><button id="mouse-right" type="button" disabled><span data-icon="mouse-right"></span><span>Right click</span></button><button id="mouse-drag" type="button" aria-pressed="false" disabled><span data-icon="move"></span><span id="mouse-drag-label">Drag</span></button></div>
       <div class="touchpad-options"><button id="pointer-options-toggle" type="button" aria-label="Pointer speed" title="Pointer speed" aria-expanded="false" aria-controls="pointer-options"><span data-icon="sliders"></span></button>
         <div id="pointer-options" class="pointer-options" hidden><label class="pointer-speed" for="pointer-speed">Pointer speed <output id="pointer-speed-value" for="pointer-speed">1.5×</output></label><input id="pointer-speed" type="range" min="0.5" max="3" step="0.25" value="1.5" aria-label="Pointer speed"><div class="pointer-speed-scale" aria-hidden="true"><span>Precise</span><span>Fast</span></div></div>
@@ -133,6 +141,17 @@
       <button id="remote-keyboard-signature" type="button" aria-label="Draw and insert signature"><span data-icon="edit"></span></button>
     </div>
   </section>
+  <section id="keys-pane" class="input-pad__pane" aria-label="Shortcut keys" hidden>
+    <div id="keys-decks" class="keys-decks" role="group" aria-label="Apps"></div>
+    <div id="keys-pages" class="keys-pages" role="group" aria-label="Pages"></div>
+    <div id="keys-grid" class="keys-grid"></div>
+    <div id="scrub-strip" class="scrub-strip" data-active="false" role="slider" aria-label="Frame scrub strip: swipe to step frames" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" tabindex="-1"><span>◀ Swipe to step frames ▶</span></div>
+  </section>
+  <div id="mod-bar" class="mod-bar" role="group" aria-label="Hold a modifier key on the PC" hidden>
+    <button type="button" data-mod="ctrl" aria-pressed="false" disabled>Ctrl</button>
+    <button type="button" data-mod="shift" aria-pressed="false" disabled>Shift</button>
+    <button type="button" data-mod="alt" aria-pressed="false" disabled>Alt</button>
+  </div>
   <section id="signature-pane" class="input-pad__pane" aria-label="Signature" hidden>
     <div class="signature-space"><div class="signature-paper">
       <canvas id="signature-canvas" width="1600" height="600" aria-label="Draw your signature with a finger or stylus"></canvas>
@@ -154,6 +173,9 @@
     <button id="tab-folders" class="picker__tab" type="button" role="tab" aria-selected="false" aria-controls="folder-panel" tabindex="-1" hidden>Folders</button>
     <button id="tab-controls" class="picker__tab" type="button" role="tab" aria-selected="false" aria-controls="control-list" tabindex="-1">Controls</button>
     <button id="tab-links" class="picker__tab" type="button" role="tab" aria-selected="false" aria-controls="link-panel" tabindex="-1" hidden>Links</button>
+    <button id="tab-macros" class="picker__tab" type="button" role="tab" aria-selected="false" aria-controls="macro-panel" tabindex="-1">Macros</button>
+    <button id="tab-groups" class="picker__tab" type="button" role="tab" aria-selected="false" aria-controls="group-panel" tabindex="-1">Folders</button>
+    <button id="tab-wake" class="picker__tab" type="button" role="tab" aria-selected="false" aria-controls="wake-panel" tabindex="-1">Wake</button>
   </div><label id="picker-search" class="search-box"><span data-icon="search"></span><input id="filter" placeholder="Find an app…" aria-label="Search apps" autocomplete="off"></label></div>
   <p id="picker-status" class="picker__status" role="status">Loading your apps…</p>
   <ul id="picker-list" class="picker__list" role="tabpanel" aria-labelledby="tab-apps"></ul>
@@ -175,6 +197,44 @@
       <button id="link-add" class="button button--primary" type="submit">Add link</button>
     </form>
     <p id="link-status" role="status">Use an http:// or https:// address.</p>
+  </section>
+  <section id="macro-panel" class="folder-picker" role="tabpanel" aria-labelledby="tab-macros" hidden>
+    <h3>One tap, several actions.</h3>
+    <p>Chain apps, volume and media into a single tile. Steps run in order. Power actions are not allowed in macros.</p>
+    <form id="macro-form" class="link-form">
+      <label for="macro-name">Name</label>
+      <input id="macro-name" maxlength="40" placeholder="Study mode" autocomplete="off">
+      <label for="macro-kind">Add a step</label>
+      <select id="macro-kind" data-native aria-label="Step type"><option value="app">Open an app</option><option value="control">Volume or media</option><option value="wait">Wait</option></select>
+      <select id="macro-choice" data-native aria-label="Step choice"></select>
+      <button id="macro-add-step" class="button" type="button">Add step</button>
+      <ol id="macro-steps" class="macro-steps" aria-label="Macro steps"></ol>
+      <button id="macro-save" class="button button--primary" type="submit">Save macro</button>
+    </form>
+    <p id="macro-status" role="status">Add at least one step.</p>
+  </section>
+  <section id="group-panel" class="folder-picker" role="tabpanel" aria-labelledby="tab-groups" hidden>
+    <h3>Tidy your dock.</h3>
+    <p>Put several tiles into one folder tile. Tap the folder to open it.</p>
+    <form id="group-form" class="link-form">
+      <label for="group-name">Folder name</label>
+      <input id="group-name" maxlength="40" placeholder="Work" autocomplete="off">
+      <ul id="group-choices" class="group-choices"></ul>
+      <button id="group-save" class="button button--primary" type="submit">Make folder</button>
+    </form>
+    <p id="group-status" role="status">Choose the tiles to put inside.</p>
+  </section>
+  <section id="wake-panel" class="folder-picker" role="tabpanel" aria-labelledby="tab-wake" hidden>
+    <h3>Wake another PC.</h3>
+    <p>Turn on a sleeping or shut-down computer on the same network. It needs Wake-on-LAN switched on in its BIOS and network adapter, and a wired connection works best. This PC sends the signal, so it must be on.</p>
+    <form id="wake-form" class="link-form">
+      <label for="wake-name">Name <span>(optional)</span></label>
+      <input id="wake-name" maxlength="40" placeholder="Desk PC" autocomplete="off">
+      <label for="wake-mac">MAC address of that PC</label>
+      <input id="wake-mac" maxlength="17" placeholder="AA:BB:CC:DD:EE:FF" required autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="wake-status">
+      <button id="wake-add" class="button button--primary" type="submit">Add wake tile</button>
+    </form>
+    <p id="wake-status" role="status">On that PC, open Command Prompt, run ipconfig /all and copy the Physical Address of its network adapter.</p>
   </section>
 </dialog>
 
@@ -202,6 +262,10 @@
       </div>
       <label class="setting-row">Immersive mode<input id="immersive" class="switch" type="checkbox" role="switch" checked></label>
       <label class="setting-row">App names<input id="show-labels" class="switch" type="checkbox" role="switch"></label>
+      <label class="setting-row">Touch &amp; sign shortcut<input id="quick-input-toggle" class="switch" type="checkbox" role="switch" checked></label>
+      <p class="settings__tip">A side handle, or tapping empty dock space, opens the pad: three taps for Touch &amp; sign, five taps for the touchpad with the PC keyboard.</p>
+      <label class="setting-row" for="rotation">Screen rotation<select id="rotation"><option value="auto">Auto</option><option value="landscape">Landscape</option><option value="portrait">Portrait</option></select></label>
+      <label class="setting-row">Vibrate on tap<input id="haptics" class="switch" type="checkbox" role="switch" checked></label>
       <p class="settings__tip">Hold to arrange. Swipe up for the drawer; down for quick controls.</p>
     </section>
     <section class="settings__card"><h3>Appearance</h3>
@@ -216,15 +280,73 @@
   </div>
 </dialog>
 
+<dialog id="bench" class="sheet" aria-labelledby="bench-title">
+  <div class="sheet-handle"></div>
+  <div class="sheet__heading"><div><p class="eyebrow">FOR LONG JOBS</p><h2 id="bench-title">Render &amp; save</h2></div><button class="icon-button" type="button" data-close="bench" aria-label="Close"><span data-icon="close"></span></button></div>
+  <div class="updates-content">
+    <section class="settings__card"><h3>Render watcher</h3><p id="bench-watch-status" role="status" aria-live="polite"></p>
+      <div class="settings__utilities">
+        <button class="button" type="button" data-watch="notify" aria-pressed="false">Tell my phone</button>
+        <button class="button" type="button" data-watch="sleep" aria-pressed="false">Then sleep</button>
+        <button class="button" type="button" data-watch="shutdown" aria-pressed="false">Then shut down</button>
+        <button class="button" type="button" data-watch="off" aria-pressed="false">Off</button>
+      </div>
+      <p class="settings__tip">Start your render first or after; it waits for the PC to get busy, then quiet.</p></section>
+    <section class="settings__card"><h3>Blender versions</h3>
+      <div class="settings__utilities"><button id="bench-version" class="button button--primary" type="button">Save a new version (_v002)</button></div>
+      <p id="bench-version-status" class="settings__tip" role="status">Press Save in Blender, then copy the file as the next numbered version. Resolve keeps projects in its own database, so this is Blender only.</p></section>
+    <section class="settings__card"><h3>Top bar</h3><label class="setting-row">Show battery, CPU, GPU and Wi-Fi<input id="status-toggle" class="switch" type="checkbox" role="switch" checked></label></section>
+  </div>
+</dialog>
+
+<dialog id="voice" class="sheet" aria-labelledby="voice-title">
+  <div class="sheet-handle"></div>
+  <div class="sheet__heading"><div><p class="eyebrow">VOICE</p><h2 id="voice-title">Assistant</h2></div><button class="icon-button" type="button" data-close="voice" aria-label="Close"><span data-icon="close"></span></button></div>
+  <div class="updates-content">
+    <section class="settings__card voice-card">
+      <p id="voice-heard" class="voice-heard" aria-live="polite"></p>
+      <p id="voice-said" class="voice-said" role="status" aria-live="polite"></p>
+      <div id="voice-confirm" class="settings__utilities" hidden><button id="voice-yes" class="button button--primary" type="button">Yes</button><button id="voice-no" class="button" type="button">No</button></div>
+      <button id="voice-mic" class="button button--primary voice-mic" type="button" aria-pressed="false">🎤 Tap and speak</button>
+      <p class="settings__tip">Try “open Blender”, “volume down”, “tell me when my render finishes”, or ask a question.</p>
+    </section>
+    <section class="settings__card"><label class="setting-row">Hands-free “Hey Dock”<input id="voice-handsfree" class="switch" type="checkbox" role="switch"></label>
+      <p class="settings__tip">Listens only while the dock is open on screen. Uses more battery.</p></section>
+    <section class="settings__card" hidden><p class="settings__tip"><strong>Offline voice (this phone)</strong></p>
+      <p id="voice-model-note" class="settings__tip"></p>
+      <button id="voice-model-button" class="button" type="button">Download voice model</button>
+      <label class="setting-row">Wake names<input id="voice-names" class="text-input" type="text" maxlength="60" placeholder="dock, sid" autocomplete="off" autocapitalize="none" spellcheck="false"></label></section>
+    <section class="settings__card"><p class="settings__tip"><strong>Questions (Google AI key)</strong></p>
+      <p id="voice-key-note" class="settings__tip"></p>
+      <button id="voice-key-link" class="button" type="button" hidden>Get a free key</button></section>
+  </div>
+</dialog>
+
+<dialog id="mini" class="sheet" aria-labelledby="mini-title" data-tab="pc">
+  <div class="sheet-handle"></div>
+  <div class="sheet__heading"><div><p class="eyebrow">WATCH WHILE YOU WORK</p><h2 id="mini-title">Mini player</h2></div><button class="icon-button" type="button" data-close="mini" aria-label="Close"><span data-icon="close"></span></button></div>
+  <div class="updates-content">
+    <div class="settings__utilities"><button class="button" type="button" data-mini-tab="pc" aria-pressed="true">PC videos</button><button class="button" type="button" data-mini-tab="youtube" aria-pressed="false">YouTube</button></div>
+    <section class="settings__card" data-mini-pane="pc"><p id="mini-path" class="settings__tip"></p><ul id="mini-list" class="window-list"></ul><p class="settings__tip">Plays MP4 and WebM from your PC folders. MKV and MOV are listed but most phones can’t play them.</p></section>
+    <section class="settings__card" data-mini-pane="youtube"><input id="mini-youtube-input" type="url" inputmode="url" placeholder="Paste a YouTube link" aria-label="YouTube link" autocomplete="off"><div class="settings__utilities"><button id="mini-youtube-go" class="button button--primary" type="button">Play</button></div><p class="settings__tip">Only the video opens, in a small window you can drag and resize. On your PC, open <b>localhost:&lt;port&gt;/cast</b> (the same address as your dock, ending in /cast) and drag a YouTube link onto it to send it here.</p></section>
+  </div>
+</dialog>
+<div id="mini-float" class="mini-float" data-size="small" hidden>
+  <div id="mini-drag" class="mini-float__bar" aria-label="Move player"><span></span><button id="mini-size" type="button" aria-label="Resize player">⤢</button><button id="mini-close" type="button" aria-label="Close player">✕</button></div>
+  <video id="mini-video" controls playsinline preload="metadata"></video>
+</div>
+
 <dialog id="updates" class="sheet" aria-labelledby="updates-title">
   <div class="sheet-handle"></div>
   <div class="sheet__heading"><div><p class="eyebrow">KEEP THINGS CURRENT</p><h2 id="updates-title">Updates</h2></div><button class="icon-button" type="button" data-close="updates" aria-label="Close updates"><span data-icon="close"></span></button></div>
   <div class="updates-content">
     <section class="settings__card"><h3>Your PC</h3><p id="updates-version">Reading installed version…</p><p id="updates-status" role="status" aria-live="polite"></p>
-      <div class="settings__utilities"><button id="updates-check" class="button" type="button">Check for updates</button><a id="updates-download" class="button button--primary" href="https://windock.vercel.app/#download" target="_blank" rel="noopener noreferrer" hidden>Open download page</a></div>
-      <p class="settings__tip">Download and install on your PC. Your dock settings are kept.</p>
+      <div class="settings__utilities"><button id="updates-check" class="button" type="button">Check for updates</button><button id="updates-install" class="button button--primary" type="button" hidden>Update PC now</button><a id="updates-download" class="button button--primary" href="https://github.com/yeshwanthkumardomala/WinDock/releases/tag/upgrades-latest" target="_blank" rel="noopener noreferrer" hidden>Open release page</a></div>
+      <p class="settings__tip">One tap downloads, checks and installs the PC update. Your dock settings are kept.</p>
     </section>
-    <section id="updates-android" class="settings__card" hidden><h3>This Android phone</h3><p id="updates-android-version"></p><button id="updates-android-check" class="button" type="button">Check Android updates</button><p class="settings__tip">Android updates are installed separately from the PC app.</p></section>
+    <section id="updates-android" class="settings__card" hidden><h3>This Android phone</h3><p id="updates-android-version"></p><p id="updates-phone-status" role="status" aria-live="polite"></p>
+      <div class="settings__utilities"><button id="updates-phone-install" class="button button--primary" type="button" hidden>Update phone now</button><button id="updates-android-check" class="button" type="button" hidden>Check Android updates</button></div>
+      <p class="settings__tip">Android asks you to confirm the install once. Update the PC first, then the phone.</p></section>
   </div>
 </dialog>
 
@@ -261,9 +383,23 @@
   <div id="power-controls-grid" class="controls-grid"></div>
 </dialog>
 
+<dialog id="windows" class="options group-view" aria-labelledby="windows-title"><div class="dialog-scroll">
+  <h2 id="windows-title">Open windows</h2>
+  <p>Tap a window to bring it forward. The cross asks the app to close.</p>
+  <ul id="windows-list" class="windows-list"></ul>
+  <button class="button options__done" type="button" data-close="windows">Done</button>
+</div></dialog>
+
+<dialog id="group-view" class="options group-view" aria-labelledby="group-title"><div class="dialog-scroll">
+  <h2 id="group-title">Folder</h2>
+  <p id="group-hint"></p>
+  <div id="group-grid" class="group-grid"></div>
+  <button class="button options__done" type="button" data-close="group-view">Done</button>
+</div></dialog>
+
 <dialog id="tile-options" class="options" aria-labelledby="tile-options-title"><div class="dialog-scroll">
   <span id="tile-options-icon" class="options__icon"></span><h2 id="tile-options-title">App options</h2><p>Make a little room. Keep it in reach.</p>
-  <div class="options__actions"><button id="tile-earlier" type="button"><span data-icon="left"></span>Move earlier</button><button id="tile-later" type="button"><span data-icon="right"></span>Move later</button><button id="tile-remove" class="danger-text" type="button"><span data-icon="trash"></span>Remove from dock</button></div>
+  <div class="options__actions"><button id="tile-earlier" type="button"><span data-icon="left"></span>Move earlier</button><button id="tile-later" type="button"><span data-icon="right"></span>Move later</button><button id="tile-ungroup" type="button" hidden><span data-icon="group"></span>Ungroup folder</button><button id="tile-remove" class="danger-text" type="button"><span data-icon="trash"></span>Remove from dock</button></div>
   <button class="button options__done" type="button" data-close="tile-options">Done</button>
 </div></dialog>
 

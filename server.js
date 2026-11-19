@@ -8,12 +8,13 @@
 
 import { createServer } from "node:http";
 import { createServer as createHttpsServer } from "node:https";
-import { hostname } from "node:os";
+import { hostname, homedir } from "node:os";
 import { readFile } from "node:fs/promises";
-import { extname, join, normalize, resolve, sep } from "node:path";
+import { dirname, extname, join, normalize, resolve, sep } from "node:path";
 import { createProvider } from "./src/platform/index.js";
 import { validateControl, isDestructiveVerb, CONTROL_VERBS } from "./src/platform/contract.js";
-import { createConfigStore } from "./src/config.js";
+import { createConfigStore, flattenTiles } from "./src/config.js";
+import { sendWake } from "./src/wake.js";
 import { folderApp, folderFromTile, FOLDER_ICON } from "./src/folders.js";
 import { linkApp, linkFromTile, LINK_ICON } from "./src/links.js";
 import { hostIdentity } from "./src/host-identity.js";
@@ -22,6 +23,12 @@ import { secureSessionStore } from "./src/secure-sessions.js";
 import { pairingInvites } from "./src/pairing-invites.js";
 import { networkSetup } from "./src/network-setup.js";
 import { createUpdateService } from "./src/updates.js";
+import { parseYouTube } from "./public/mini-player.js";
+import { askGemini, createKeyStore, matchApp, parseIntent, statsSentence } from "./src/assistant.js";
+import { createVoicePack, MAX_AUDIO_BYTES } from "./src/voicepack.js";
+import { createRenderWatch } from "./src/render-watch.js";
+import { versionedSave } from "./src/versioned-save.js";
+import { defaultVideoRoots, listVideos, streamVideo, isVideoRootId } from "./src/videos.js";
 import { createSyncHub } from "./src/sync.js";
 import { createInputHub } from "./src/input-hub.js";
 import { createTransfers, transferError } from "./src/transfers.js";
@@ -74,6 +81,17 @@ function sendJson(res, status, body, headers = {}) {
 }
 
 /** Read a bounded JSON body. Oversized or malformed input is rejected. */
+/** Read a bounded raw body (voice clips). Over the cap is refused after draining. */
+async function readBinaryBody(req, max) {
+  req.setTimeout(15000, () => req.destroy());
+  let size = 0; const chunks = [];
+  await new Promise((resolve, reject) => {
+    req.on("data", (chunk) => { if (size > max) return; size += chunk.length; if (size > max) { chunks.length = 0; reject(Object.assign(new Error("body too large"), { status: 413 })); } else chunks.push(chunk); });
+    req.once("end", resolve); req.once("error", reject);
+  });
+  return Buffer.concat(chunks);
+}
+
 async function readJsonBody(req) {
   req.setTimeout(15000, () => req.destroy());
   let size = 0;
@@ -151,6 +169,13 @@ export async function createApp({
   managed = null,
   identity = null,
   transfers: suppliedTransfers = null,
+  wakeSender = null,
+  assistantKeys = null,
+  fetchAi = fetch,
+  voicePackImpl = null,
+  videoRoots: suppliedVideoRoots = null,
+  renderWatch: suppliedRenderWatch = null,
+  versionedSaver = versionedSave,
 } = {}) {
   if (!isValidPinShape(pin)) throw new Error("Pairing PIN must contain exactly six ASCII digits.");
   if (!isValidPinShape(securePin)) throw new Error("Secure pairing PIN must contain exactly six ASCII digits.");
@@ -183,11 +208,106 @@ export async function createApp({
       });
     }
     const apps = await inventoryPromise;
+    // Tiles inside dock folders (groups) still need to be launchable.
     const folders = typeof provider.openFolder === "function"
-      ? (await configStore.load()).tiles.map(folderFromTile).filter(Boolean) : [];
+      ? flattenTiles((await configStore.load()).tiles).map(folderFromTile).filter(Boolean) : [];
     const links = typeof provider.openLink === "function"
-      ? (await configStore.load()).tiles.map(linkFromTile).filter(Boolean) : [];
+      ? flattenTiles((await configStore.load()).tiles).map(linkFromTile).filter(Boolean) : [];
     return [...apps, ...folders, ...links];
+  }
+
+  const markRunning = (tile, runningIds) => {
+    if (tile.kind === "app") return { ...tile, running: runningIds.has(tile.id) };
+    if (tile.kind === "group") return { ...tile, items: tile.items.map((item) => markRunning(item, runningIds)) };
+    return tile;
+  };
+
+  async function launchInstalled(app) {
+    if (app.source === "link") await provider.openLink(app);
+    else if (app.source === "folder") await provider.openFolder(app);
+    else await provider.launchApp(app);
+  }
+
+  // One macro at a time: overlapping runs would interleave their launches and levels.
+  const keyStore = assistantKeys ?? createKeyStore({ dir: join(dirname(process.env.APPDATA ? join(process.env.APPDATA, "windock", "x") : join(homedir(), ".config", "windock", "x")), "assistant") });
+  const voicePack = voicePackImpl ?? createVoicePack({ dir: join(dirname(process.env.APPDATA ? join(process.env.APPDATA, "windock", "x") : join(homedir(), ".config", "windock", "x")), "voicepack") });
+  let macroRunning = false, statsCache = null;
+  // Last video sent from the PC. The phone picks it up once and never replays an old one.
+  let cast = { id: 0, url: "", at: 0 };
+  // PowerShell is costly; phones poll, so every caller shares one reading for a few seconds.
+  const readStats = () => {
+    if (!statsCache || Date.now() - statsCache.at > 4000) statsCache = { at: Date.now(), value: provider.systemStats().catch(() => ({})) };
+    return statsCache.value;
+  };
+  async function runAssistant({ text = "", confirm = null }) {
+    if (confirm) {
+      const checked = validateControl(confirm, null);
+      if (!checked.ok || !isDestructiveVerb(checked.verb)) throw Object.assign(new Error("Nothing to confirm."), { status: 400, exposed: true });
+      if (!allowDestructive) throw Object.assign(new Error("Power actions are turned off on this PC."), { status: 403, exposed: true });
+      await provider.control(checked.verb, null);
+      return { say: { sleep: "Going to sleep.", shutdown: "Shutting down.", restart: "Restarting.", lock: "Locked." }[checked.verb] };
+    }
+    const intent = parseIntent(text);
+    switch (intent.type) {
+      case "control": { const checked = validateControl(intent.verb, intent.value ?? null); if (!checked.ok) throw Object.assign(new Error("I can't do that."), { status: 400, exposed: true }); await provider.control(checked.verb, checked.value); return { say: intent.say }; }
+      case "power": if (!allowDestructive) return { say: "Power actions are turned off on this PC." }; return { say: intent.say, needsConfirm: intent.verb };
+      case "render": {
+        if (intent.action === "off") renderWatch.disarm();
+        else { if (intent.action !== "notify" && !allowDestructive) return { say: "Power actions are turned off on this PC." }; renderWatch.arm(intent.action); }
+        return { say: intent.say };
+      }
+      case "stats": return { say: statsSentence(intent.what, await readStats()) };
+      case "launch": { const app = matchApp(intent.name, await installedApps()); if (!app) return { say: "I couldn't find " + intent.name + " on this PC." }; await launchInstalled(app); await hub.broadcast(); return { say: "Opening " + app.name + "." }; }
+      case "focus": case "close": {
+        const target = matchApp(intent.name, (await provider.listRunningApps()).map((r) => ({ ...r, name: r.name || r.title || "" })));
+        if (!target) return { say: "I don't see " + intent.name + " running." };
+        if (intent.type === "focus") await provider.focusApp(target); else await provider.closeApp(target);
+        await hub.broadcast(); return { say: (intent.type === "focus" ? "Switching to " : "Closing ") + (target.name || intent.name) + "." };
+      }
+      default: {
+        if (!keyStore.status().configured) return { say: "I can do PC commands. For questions, paste a Google AI key on the PC first.", ai: false };
+        const { key, model } = keyStore.get();
+        return { say: await askGemini(text, { key, model, fetchImpl: fetchAi }), ai: true };
+      }
+    }
+  }
+  const renderWatch = suppliedRenderWatch ?? createRenderWatch({
+    readStats,
+    act: async (action) => {
+      if (!allowDestructive) throw new Error("power actions disabled");
+      await provider.control(action === "shutdown" ? "shutdown" : "sleep", null);
+    },
+  });
+  // Folders a phone may browse for videos: the usual Windows folders plus folders pinned on the dock.
+  const videoRoots = suppliedVideoRoots ?? (async () => {
+    if (provider.id !== "windows") return [];
+    const pinned = flattenTiles((await configStore.load()).tiles).map(folderFromTile).filter(Boolean)
+      .map((f) => ({ id: "tile:" + f.id.slice(7, 23), name: f.name, path: f.target }));
+    return [...defaultVideoRoots(), ...pinned];
+  });
+  async function runMacro(tile) {
+    if (macroRunning) throw Object.assign(new Error("Another macro is still running."), { status: 409 });
+    macroRunning = true;
+    try {
+      const apps = await installedApps();
+      let ran = 0;
+      for (const step of tile.steps) {
+        if (step.type === "wait") await new Promise((done) => setTimeout(done, step.ms));
+        else if (step.type === "app") {
+          const app = apps.find((a) => a.id === step.id);
+          if (!app) throw Object.assign(new Error(`${step.label} is not installed on this PC.`), { status: 404 });
+          await launchInstalled(app);
+        } else {
+          const checked = validateControl(step.verb, step.value ?? null);
+          if (!checked.ok || isDestructiveVerb(checked.verb)) throw Object.assign(new Error("Macro contains an unsupported action."), { status: 400 });
+          await provider.control(checked.verb, checked.value);
+        }
+        ran += 1;
+      }
+      return ran;
+    } finally {
+      macroRunning = false;
+    }
   }
 
   async function dockState() {
@@ -200,9 +320,7 @@ export async function createApp({
       platform: provider.id,
       platformName: provider.displayName,
       hostName,
-      tiles: config.tiles.map((tile) =>
-        tile.kind === "app" ? { ...tile, running: runningIds.has(tile.id) } : tile,
-      ),
+      tiles: config.tiles.map((tile) => markRunning(tile, runningIds)),
       running,
       verbs: CONTROL_VERBS,
       allowDestructive,
@@ -231,6 +349,28 @@ export async function createApp({
         res.writeHead(200,{"content-type":MIME[".html"],"cache-control":"no-store","x-frame-options":"DENY",
           "content-security-policy":"default-src 'self'; script-src 'self'; style-src 'self'; frame-ancestors 'none'; base-uri 'none'"});
         return res.end(body);
+      }
+      if (path === "/cast" || path === "/cast.html") {
+        if (!local) return sendJson(res, 403, { error: "Open Send to phone on the computer itself." });
+        res.writeHead(200, { "content-type": MIME[".html"], "cache-control": "no-store", "x-frame-options": "DENY", "referrer-policy": "no-referrer",
+          "content-security-policy": "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'" });
+        return res.end(await readFile(join(PUBLIC_DIR, "cast.html")));
+      }
+      // The tray app asks the host (not the original project's website) for updates. Local PC only.
+      if ((path === "/api/updates/local/check" || path === "/api/updates/local/install") && req.method === "POST") {
+        if (!local || !sameOrigin(req) || req.headers["x-windock-update"] !== "local") return sendJson(res, 403, { error: "Update from the computer itself." });
+        const body = await readJsonBody(req);
+        if (Object.keys(body).length) return sendJson(res, 400, { error: "update takes no options" });
+        try { return path.endsWith("/check") ? sendJson(res, 200, await updates.check()) : sendJson(res, 202, await updates.install()); }
+        catch (error) { return sendJson(res, error.status || 502, { error: error.exposed || error.status ? error.message : "The update could not be completed." }); }
+      }
+      if (path === "/api/cast/send" && req.method === "POST") {
+        if (!local || !sameOrigin(req) || req.headers["x-windock-cast"] !== "local") return sendJson(res, 403, { error: "Send from the computer itself." });
+        const body = await readJsonBody(req);
+        const watch = Object.keys(body).length === 1 && typeof body.url === "string" ? parseYouTube(body.url) : null;
+        if (!watch) return sendJson(res, 400, { error: "Drop a YouTube video link." });
+        cast = { id: cast.id + 1, url: watch, at: Date.now() };
+        return sendJson(res, 200, { ok: true });
       }
       if (path.startsWith("/api/transfers/local")) {
         if (!local || !sameOrigin(req) || req.headers["x-windock-files"] !== "local") return sendJson(res,403,{error:"Change receive settings on the computer."});
@@ -401,6 +541,12 @@ export async function createApp({
         if (Object.keys(body).length) return sendJson(res, 400, { error: "update check takes no options" });
         return sendJson(res, 200, await updates.check());
       }
+      if (path === "/api/updates/install" && req.method === "POST") {
+        const body = await readJsonBody(req);
+        if (Object.keys(body).length) return sendJson(res, 400, { error: "update install takes no options" });
+        try { return sendJson(res, 202, await updates.install()); }
+        catch (error) { return sendJson(res, error.status || 502, { error: error.message }); }
+      }
 
       if (path === "/api/state" && req.method === "GET") {
         return sendJson(res, 200, await dockState());
@@ -462,9 +608,7 @@ export async function createApp({
         const apps = await installedApps();
         const app = apps.find((a) => a.id === body.id);
         if (!app) return sendJson(res, 404, { error: "unknown app" });
-        if (app.source === "link") await provider.openLink(app);
-        else if (app.source === "folder") await provider.openFolder(app);
-        else await provider.launchApp(app);
+        await launchInstalled(app);
         await hub.broadcast();
         return sendJson(res, 200, { ok: true, id: app.id });
       }
@@ -498,6 +642,28 @@ export async function createApp({
         return sendJson(res, 200, { ok: true, verb: checked.verb, ...warning });
       }
 
+      if (path === "/api/macros/run" && req.method === "POST") {
+        const body = await readJsonBody(req);
+        const tile = flattenTiles((await configStore.load()).tiles).find((t) => t.kind === "macro" && t.id === body.id);
+        if (!tile) return sendJson(res, 404, { error: "unknown macro" });
+        const ran = await runMacro(tile);
+        await hub.broadcast();
+        return sendJson(res, 200, { ok: true, id: tile.id, steps: ran });
+      }
+
+      // Only MAC addresses saved on a Wake tile can be woken; the phone never supplies one.
+      if (path === "/api/wake" && req.method === "POST") {
+        const body = await readJsonBody(req);
+        const tile = flattenTiles((await configStore.load()).tiles).find((t) => t.kind === "wake" && t.id === body.id);
+        if (!tile) return sendJson(res, 404, { error: "unknown wake tile" });
+        try {
+          const result = await (wakeSender || sendWake)(tile.mac);
+          return sendJson(res, 200, { ok: true, id: tile.id, ...result });
+        } catch {
+          return sendJson(res, 502, { error: "Could not send the wake signal from this PC's network." });
+        }
+      }
+
       if (path === "/api/levels" && req.method === "GET") {
         // Optional: without it the sliders start empty and still set a level.
         const levels = typeof provider.levels === "function" ? await provider.levels().catch(() => null) : null;
@@ -520,7 +686,75 @@ export async function createApp({
       }
 
       if (path === "/api/stats" && req.method === "GET") {
-        return sendJson(res, 200, await provider.systemStats().catch(() => ({})));
+        return sendJson(res, 200, await readStats());
+      }
+
+      // Voice assistant: understands PC commands itself; anything else goes to the AI key held on this PC.
+      if (path === "/api/assistant" && req.method === "GET") return sendJson(res, 200, { ai: keyStore.status().configured, destructive: allowDestructive, voice: voicePack.status() });
+      if (path === "/api/assistant/audio" && req.method === "POST") {
+        if (req.headers["x-windock-assistant"] !== "voice") return sendJson(res, 403, { error: "Voice requests come from the dock." });
+        try { return sendJson(res, 200, { text: await voicePack.transcribe(await readBinaryBody(req, MAX_AUDIO_BYTES + 1)) }); }
+        catch (error) { return sendJson(res, error.status || 500, { error: error.exposed || error.status ? error.message : "Could not understand that audio." }); }
+      }
+      if (path === "/api/assistant/speak" && req.method === "POST") {
+        if (req.headers["x-windock-assistant"] !== "voice") return sendJson(res, 403, { error: "Voice requests come from the dock." });
+        const body = await readJsonBody(req);
+        if (Object.keys(body).some((k) => k !== "text") || typeof body.text !== "string") return sendJson(res, 400, { error: "Send text to speak." });
+        try { const wav = await voicePack.speak(body.text); res.writeHead(200, { "content-type": "audio/wav", "content-length": wav.length, "cache-control": "no-store" }); return res.end(wav); }
+        catch (error) { return sendJson(res, error.status || 500, { error: error.exposed || error.status ? error.message : "Could not speak that." }); }
+      }
+      if (path === "/api/assistant/voicepack" && req.method === "POST") {
+        if (req.headers["x-windock-assistant"] !== "voice") return sendJson(res, 403, { error: "Voice requests come from the dock." });
+        const body = await readJsonBody(req);
+        if (Object.keys(body).some((k) => k !== "action") || !["install", "remove"].includes(body.action)) return sendJson(res, 400, { error: "Choose install or remove." });
+        try {
+          if (body.action === "install") { voicePack.install(); return sendJson(res, 202, voicePack.status()); }
+          return sendJson(res, 200, await voicePack.remove());
+        } catch (error) { return sendJson(res, error.status || 500, { error: error.exposed ? error.message : "Voice pack change failed." }); }
+      }
+      if (path === "/api/assistant" && req.method === "POST") {
+        const body = await readJsonBody(req);
+        if (Object.keys(body).some((k) => k !== "text" && k !== "confirm") || (body.text !== undefined && typeof body.text !== "string")) return sendJson(res, 400, { error: "The assistant takes text only." });
+        try { return sendJson(res, 200, await runAssistant(body)); }
+        catch (error) { return sendJson(res, error.status || 500, { error: error.exposed || error.status ? error.message : "The assistant could not do that." }); }
+      }
+      if (path === "/api/assistant/key" && req.method === "POST") {
+        if (!local || !sameOrigin(req) || req.headers["x-windock-assistant"] !== "local") return sendJson(res, 403, { error: "Set the AI key on the computer itself." });
+        const body = await readJsonBody(req);
+        if (Object.keys(body).some((k) => k !== "key" && k !== "model") || typeof body.key !== "string") return sendJson(res, 400, { error: "Send a key." });
+        try { await keyStore.set(body.key.trim(), typeof body.model === "string" ? body.model.trim() : ""); return sendJson(res, 200, keyStore.status()); }
+        catch (error) { return sendJson(res, error.status || 500, { error: error.exposed ? error.message : "Could not save the key." }); }
+      }
+      if (path === "/api/cast" && req.method === "GET") return sendJson(res, 200, { id: cast.id, url: cast.url, ageMs: cast.id ? Date.now() - cast.at : null });
+      if (path === "/api/render-watch" && req.method === "GET") return sendJson(res, 200, renderWatch.state());
+      if (path === "/api/render-watch" && req.method === "POST") {
+        const body = await readJsonBody(req);
+        if (Object.keys(body).some((k) => k !== "action")) return sendJson(res, 400, { error: "render watch takes only an action" });
+        if (body.action === "off") return sendJson(res, 200, renderWatch.disarm());
+        if ((body.action === "sleep" || body.action === "shutdown") && !allowDestructive) return sendJson(res, 403, { error: "power actions disabled" });
+        try { return sendJson(res, 200, renderWatch.arm(body.action)); }
+        catch (error) { return sendJson(res, error.status || 400, { error: error.message }); }
+      }
+
+      // Copies the Blender file you just saved to scene_v002.blend next to it. Blender's title names the file.
+      if (path === "/api/versioned-save" && req.method === "POST") {
+        const body = await readJsonBody(req);
+        if (Object.keys(body).length) return sendJson(res, 400, { error: "versioned save takes no options" });
+        try { return sendJson(res, 200, await versionedSaver(await provider.listRunningApps())); }
+        catch (error) { return sendJson(res, error.status || 500, { error: error.status ? error.message : "Could not copy the file." }); }
+      }
+
+      if (path === "/api/videos/roots" && req.method === "GET") {
+        return sendJson(res, 200, { roots: (await videoRoots()).map(({ id, name }) => ({ id, name })) });
+      }
+      if ((path === "/api/videos/list" || path === "/api/videos/stream") && (req.method === "GET" || req.method === "HEAD")) {
+        const id = url.searchParams.get("root");
+        const root = isVideoRootId(id) ? (await videoRoots()).find((r) => r.id === id) : null;
+        if (!root) return sendJson(res, 404, { error: "Unknown folder." });
+        try {
+          if (path === "/api/videos/list") return sendJson(res, 200, await listVideos(root, url.searchParams.get("path") ?? ""));
+          return await streamVideo(root, url.searchParams.get("path") ?? "", req, res);
+        } catch (error) { return sendJson(res, error.status || 500, { error: error.status ? error.message : "Could not read that folder." }); }
       }
 
       if (path === "/api/input" && req.method === "GET") {
@@ -569,7 +803,7 @@ export async function createApp({
     }), 6 * 60 * 60000);
     renewalTimer.unref();
   }
-  server.on("close", () => { transferPromise?.then(t=>t.close()).catch(()=>{}); clearInterval(renewalTimer); managedServer?.close(); provider.capture?.dispose().catch(() => {}); provider.input?.dispose(); });
+  server.on("close", () => { transferPromise?.then(t=>t.close()).catch(()=>{}); clearInterval(renewalTimer); managedServer?.close(); provider.capture?.dispose().catch(() => {}); provider.input?.dispose(); renderWatch.dispose?.(); });
   return { server, secureServer, managedServer, managed, hub, inputHub, provider, configStore, dockState, state, sessions, secureSessions, lockout };
 }
 

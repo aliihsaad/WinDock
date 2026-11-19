@@ -1,0 +1,36 @@
+name: Publish downloads app
+
+# Copies site/ to the gh-pages branch, which GitHub Pages serves as an installable
+# "WinDock Downloads" app that always shows the newest release.
+on:
+  push:
+    branches: [upgrades]
+    paths: ['site/**', '.github/workflows/pages.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Push site to gh-pages
+        run: |
+          set -e
+          rm -rf /tmp/pages && mkdir /tmp/pages && cp -r site/. /tmp/pages/ && touch /tmp/pages/.nojekyll
+          cd /tmp/pages
+          git init -q -b gh-pages
+          git config user.name "github-actions[bot]"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A && git commit -qm "Publish downloads app from ${GITHUB_SHA}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
+      - name: Turn on Pages for gh-pages (best effort)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api -X POST "repos/${GITHUB_REPOSITORY}/pages" -f "source[branch]=gh-pages" -f "source[path]=/" || echo "Pages is already on, or needs to be turned on in Settings > Pages (branch gh-pages)."

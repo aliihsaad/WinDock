@@ -120,6 +120,6 @@ function enhance(select) {
 /** Returns a function that repaints the pickers after code assigns select.value. */
 export function enhanceSelects() {
   if (!("popover" in HTMLElement.prototype)) return () => {};
-  const syncs = [...document.querySelectorAll("select")].map(enhance);
+  const syncs = [...document.querySelectorAll("select:not([data-native])")].map(enhance);
   return () => syncs.forEach((sync) => sync());
 }

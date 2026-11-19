@@ -21,9 +21,12 @@ android {
         applicationId 'com.windock.app'
         minSdk 24
         targetSdk 36
-        versionCode 12
-        versionName '0.3.2'
+        // CI passes -PwindockVersionCode/-PwindockVersionName so every build is newer than the last.
+        versionCode((project.findProperty('windockVersionCode') ?: '12') as Integer)
+        versionName((project.findProperty('windockVersionName') ?: '0.3.2') as String)
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+        // Offline speech ships native code for real phones only; this keeps the APK from growing for emulators.
+        ndk { abiFilters 'arm64-v8a', 'armeabi-v7a' }
     }
 
     signingConfigs {
@@ -85,6 +88,8 @@ dependencies {
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
     implementation 'com.journeyapps:zxing-android-embedded:4.3.0'
     implementation 'androidx.core:core-ktx:1.13.1'
+    implementation 'net.java.dev.jna:jna:5.13.0@aar'
+    implementation 'com.alphacephei:vosk-android:0.3.47'
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test:runner:1.6.2'
     androidTestImplementation 'androidx.test:core:1.6.1'

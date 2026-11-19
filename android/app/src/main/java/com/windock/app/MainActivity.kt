@@ -10,6 +10,7 @@ import android.os.Build
 import android.window.OnBackInvokedCallback
 import android.window.OnBackInvokedDispatcher
 import android.view.View
+import android.view.WindowManager
 import android.view.MotionEvent
 import android.view.KeyEvent
 import android.view.Gravity
@@ -35,6 +36,8 @@ import org.json.JSONObject
 import java.io.ByteArrayInputStream
 import java.util.concurrent.Executors
 import android.content.Intent
+import android.net.Uri
+import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkRequest
@@ -42,6 +45,8 @@ import android.net.LinkProperties
 import com.google.zxing.integration.android.IntentIntegrator
 
 /** Native discovery/connection shell; the shared web UI owns pairing and the dock. */
+private val ORIENTATIONS = setOf("auto", "landscape", "portrait")
+
 class MainActivity : Activity() {
     private lateinit var web: WebView
     private lateinit var connection: View
@@ -64,6 +69,9 @@ class MainActivity : Activity() {
     private var phoneDialog: AlertDialog? = null
     private var pcPicker: PcPicker? = null
     private lateinit var appUpdates: AppUpdates
+    private lateinit var phoneUpdater: PhoneUpdater
+    private val miniPlayer by lazy { MiniPlayer(this) }
+    private val voice by lazy { VoiceAssistant(this) { script -> web.evaluateJavascript(script, null) } }
     private lateinit var appearance: AppearancePreferences
     private var wakingGesture = false
     private val wakingKeys = mutableSetOf<Int>()
@@ -97,6 +105,7 @@ class MainActivity : Activity() {
         connectButton = findViewById(R.id.connect)
         retryButton = findViewById(R.id.retry)
         securePairing = SecurePairing(this)
+        applyOrientation(storedOrientation())
         editingConnection = savedInstanceState?.getBoolean("editingConnection") == true
         files = NativeFiles(this, connection = { fileConnection() }, connectionState = { fileConnectionState() },
             connect = { showPcPicker() }, visibilityChanged = { syncIdleDisplay() })
@@ -108,12 +117,22 @@ class MainActivity : Activity() {
             hideRemoteKeyboard()
         })
         appUpdates = AppUpdates(this)
+        phoneUpdater = PhoneUpdater(this) { json ->
+            web.evaluateJavascript("window.windockAppUpdate&&window.windockAppUpdate(" + JSONObject.quote(json) + ")", null)
+        }
         appearance = AppearancePreferences(getSharedPreferences("appearance", MODE_PRIVATE))
         findViewById<Button>(R.id.app_updates).setOnClickListener { showUpdates() }
         setupRemoteKeyboard()
         WindowCompat.setDecorFitsSystemWindows(window, false)
+        // Let the dock draw behind the camera notch instead of letterboxing it.
+        if (Build.VERSION.SDK_INT >= 28) {
+            window.attributes = window.attributes.apply {
+                layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+            }
+        }
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.root)) { root, insets ->
-            val safe = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+            // No cutout padding: the web dock handles the notch via env(safe-area-inset-*).
+            val safe = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
             root.setPadding(safe.left, safe.top, safe.right, maxOf(safe.bottom, ime.bottom))
             insets
@@ -181,6 +200,8 @@ class MainActivity : Activity() {
         web.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
+            // The PC's spoken replies are played by the page after a network fetch, not directly by a tap.
+            mediaPlaybackRequiresUserGesture = false
             allowFileAccess = false
             allowContentAccess = false
             mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
@@ -310,8 +331,20 @@ class MainActivity : Activity() {
             web.visibility == View.VISIBLE && phoneDialog == null && (!::files.isInitialized || !files.isShowing()))
     }
 
+    private fun storedOrientation(): String =
+        getSharedPreferences("display", MODE_PRIVATE).getString("orientation", "auto").let { if (it in ORIENTATIONS) it!! else "auto" }
+
+    private fun applyOrientation(mode: String) {
+        requestedOrientation = when (mode) {
+            "landscape" -> android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            "portrait" -> android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+            else -> android.content.pm.ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
+        }
+    }
+
     private fun showUpdates() {
-        if (phoneDialog == null) showPhoneDialog(appUpdates.dialog())
+        // Debug/preview builds update themselves from this fork; Play builds keep the Play dialog.
+        if (phoneDialog == null) showPhoneDialog(if (BuildConfig.PLAY_DISTRIBUTION) appUpdates.dialog() else phoneUpdater.dialog())
     }
 
     private fun showPhoneOptions() {
@@ -464,7 +497,36 @@ class MainActivity : Activity() {
         @JavascriptInterface fun showPcPicker() { runOnUiThread { if (trustedKeyboardPage()) this@MainActivity.showPcPicker() } }
         @JavascriptInterface fun showConnectionSettings() { runOnUiThread { if (trustedKeyboardPage()) this@MainActivity.showConnectionSettings() } }
         @JavascriptInterface fun getAppVersion(): String = BuildConfig.VERSION_NAME
+        @JavascriptInterface fun getOrientation(): String = storedOrientation()
+        @JavascriptInterface fun setOrientation(mode: String) {
+            if (mode !in ORIENTATIONS) return
+            runOnUiThread {
+                if (!trustedKeyboardPage()) return@runOnUiThread
+                getSharedPreferences("display", MODE_PRIVATE).edit().putString("orientation", mode).apply()
+                applyOrientation(mode)
+            }
+        }
+        @JavascriptInterface fun startListening() { runOnUiThread { if (trustedKeyboardPage()) voice.startListening() } }
+        @JavascriptInterface fun stopListening() { runOnUiThread { voice.stopListening() } }
+        @JavascriptInterface fun setHandsFree(on: Boolean) { runOnUiThread { if (trustedKeyboardPage()) voice.setHandsFree(on) } }
+        @JavascriptInterface fun speak(text: String) { runOnUiThread { if (trustedKeyboardPage()) voice.speak(text) } }
+        @JavascriptInterface fun stopSpeaking() { runOnUiThread { voice.stopSpeaking() } }
+        @JavascriptInterface fun voiceModelState(): String = voice.modelState()
+        @JavascriptInterface fun downloadVoiceModel() { runOnUiThread { if (trustedKeyboardPage()) voice.downloadModel() } }
+        @JavascriptInterface fun wakeNames(): String = voice.wakeNames()
+        @JavascriptInterface fun setWakeNames(names: String) { runOnUiThread { if (trustedKeyboardPage()) voice.setWakeNames(names.take(120)) } }
+        @JavascriptInterface fun setSendAudio(on: Boolean) { runOnUiThread { if (trustedKeyboardPage()) voice.setSendAudio(on) } }
+        @JavascriptInterface fun pauseListening(on: Boolean) { runOnUiThread { voice.pauseListening(on) } }
+        @JavascriptInterface fun openYoutube(url: String) {
+            if (!MiniPlayerPolicy.isPlayable(url)) return
+            runOnUiThread { if (trustedKeyboardPage()) miniPlayer.open(url) }
+        }
+        @JavascriptInterface fun closeYoutube() { runOnUiThread { miniPlayer.close() } }
         @JavascriptInterface fun showUpdates() { runOnUiThread { if (trustedKeyboardPage()) this@MainActivity.showUpdates() } }
+        @JavascriptInterface fun checkAppUpdate() { runOnUiThread { if (trustedKeyboardPage()) phoneUpdater.check() } }
+        @JavascriptInterface fun installAppUpdate() { runOnUiThread { if (trustedKeyboardPage()) phoneUpdater.install() } }
+        // Fixed address only: the page cannot ask the phone to open anything else.
+        @JavascriptInterface fun openAiKeyPage() { runOnUiThread { if (trustedKeyboardPage()) try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://aistudio.google.com/apikey"))) } catch (_: Exception) {} } }
         @JavascriptInterface fun openPcRelease(version: String) { runOnUiThread { if (trustedKeyboardPage()) appUpdates.openPcRelease(version) } }
         @JavascriptInterface fun showPhoneSettings() { runOnUiThread { if (trustedKeyboardPage()) showPhoneOptions() } }
     }
@@ -760,8 +822,10 @@ class MainActivity : Activity() {
         }
         if (::files.isInitialized) files.connectionChanged()
         syncIdleDisplay()
+        voice.onResume()
     }
     override fun onPause() {
+        voice.onPause()
         files.pause()
         resumed = false; wakingGesture = false; wakingKeys.clear(); syncIdleDisplay(); hideRemoteKeyboard()
         if (::web.isInitialized) { web.removeCallbacks(secureRetry); web.onPause() }
@@ -773,7 +837,14 @@ class MainActivity : Activity() {
         files.connectionChanged()
         super.onPause()
     }
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == VoiceAssistant.REQUEST) voice.onPermission(grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED)
+    }
+
     override fun onDestroy() {
+        voice.destroy()
+        miniPlayer.close()
         files.destroy()
         if (Build.VERSION.SDK_INT >= 33) backCallback?.let { onBackInvokedDispatcher.unregisterOnBackInvokedCallback(it) }
         appearance.select(null)
@@ -781,6 +852,7 @@ class MainActivity : Activity() {
         phoneDialog?.setOnDismissListener(null)
         phoneDialog?.dismiss()
         appUpdates.close()
+        phoneUpdater.close()
         idleDisplay.close()
         io.shutdownNow()
         generation++; secureJob?.cancel(true); secureBridge?.close(); secureTransport?.close()
