@@ -155,7 +155,7 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
         if (["focus", "input-error", "paste-result"].includes(message.type)) { keyboard.message(message); clipboard.message(message); return; }
         if (message.type === "ready") {
           clearTimeout(startup); ready = true; connecting = false; autoRetries = 0;
-          heartbeat = setInterval(() => raw({ type: "ping" }), 500);
+          heartbeat = setInterval(() => raw({ type: "ping" }), 1000); // the PC allows 5s of silence
           raw({ type: "ping" }); paint(); if (wantsKeyboard && mode === "touchpad") { wantsKeyboard = false; keyboard.request(); } if (mode === "keys") keys.open(); setStatus(demo ? "Demo only · No cursor control or files saved." : mode === "keys" ? "Tap a key to press it on your PC. Tap Ctrl, Shift or Alt to hold it." : "Tap to click · Two fingers: slide to scroll, tap for right-click · Pinch to zoom");
         }
       };

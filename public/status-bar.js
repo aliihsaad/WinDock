@@ -29,7 +29,7 @@ export function watchText(watch = {}) {
   }
 }
 
-export function createStatusBar({ api, get = (id) => document.getElementById(id), isReady, notify, buzz = () => {}, storage, intervalMs = 8000, setTimer = setInterval, clearTimer = clearInterval }) {
+export function createStatusBar({ gate = () => true, api, get = (id) => document.getElementById(id), isReady, notify, buzz = () => {}, storage, intervalMs = 8000, setTimer = setInterval, clearTimer = clearInterval }) {
   let timer = null, last = { phase: "off" }, busy = false;
   const strip = get("status-strip");
   const enabled = () => statusBarEnabled(storage);
@@ -46,6 +46,7 @@ export function createStatusBar({ api, get = (id) => document.getElementById(id)
     for (const b of document.querySelectorAll("[data-watch]")) b.setAttribute("aria-pressed", String((last.phase !== "off" && last.phase !== "expired" ? last.action : "off") === b.dataset.watch));
   }
   async function poll() {
+    if (!gate()) return;
     if (busy || !isReady() || !enabled()) { if (!enabled()) strip.hidden = true; return; }
     busy = true;
     try {

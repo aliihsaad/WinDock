@@ -8,7 +8,14 @@ import { createConfigStore } from "../src/config.js";
 import { createApp } from "../server.js";
 
 import { createTapCounter } from "../public/quick-access.js";
+import { idleGate } from "../public/idle.js";
 const t = createChecker("bench");
+{
+  let idle = false; const gate = idleGate({ idle: () => idle });
+  t.deepEqual([gate(), gate(), gate()], [true, true, true], "active phone: every tick runs");
+  idle = true; t.deepEqual([gate(), gate(), gate(), gate(), gate(), gate(), gate(), gate()], [false, false, false, true, false, false, false, true], "idle phone: one tick in four runs");
+  idle = false; t.equal(gate(), true, "touching the phone resumes full speed at once");
+}
 {
   let clock = 0; const c = createTapCounter({ now: () => clock });
   const counts = []; for (let i = 0; i < 5; i++) { clock += 150; counts.push(c.tap(100, 100)); }

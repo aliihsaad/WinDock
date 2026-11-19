@@ -14,6 +14,7 @@ import { startGlass } from "./glass.js";
 import { enhanceSelects } from "./glass-select.js";
 import { createQuickControls } from "./quick-controls.js";
 import { showScene } from "./scenes.js";
+import { idleGate } from "./idle.js";
 import { createStatusBar } from "./status-bar.js";
 import { createMiniPlayer } from "./mini-player.js";
 
@@ -798,7 +799,7 @@ $("quick-input").addEventListener("click", () => { $("controls").close(); inputP
 function openInputPad(options = {}) { if (!paired || editing) return; $("controls").close(); $("drawer").close(); buzz(options.keyboard ? [12, 40, 12] : 12); inputPad.open("touchpad", { keyboard: options.keyboard === true }); }
 $("input-edge").addEventListener("click", () => openInputPad());
 document.addEventListener("windock-toast", (e) => notify(e.detail.message, e.detail.error));
-const statusBar = createStatusBar({ api, isReady: () => paired && online && !document.hidden, notify, buzz, storage: localStorage });
+const statusBar = createStatusBar({ gate: idleGate(), api, isReady: () => paired && online && !document.hidden, notify, buzz, storage: localStorage });
 statusBar.start();
 let castSeen = null;
 async function pollCast() {
@@ -815,7 +816,8 @@ async function pollCast() {
     }
   } catch { /* the next poll retries */ }
 }
-setInterval(pollCast, 5000);
+const castGate = idleGate();
+setInterval(() => { if (castGate()) pollCast(); }, 5000);
 const miniPlayer = createMiniPlayer({ api, notify, secure: nativeTransport && location.protocol === "https:" });
 const openBench = () => { $("drawer").close(); statusBar.refresh(); $("status-toggle").checked = statusBar.enabled(); if (!$("bench").open) $("bench").showModal(); };
 $("drawer-bench").addEventListener("click", openBench);
@@ -853,7 +855,9 @@ $("quick-power").addEventListener("click", () => $("power-controls").showModal()
 $("capture-screenshot").addEventListener("click", () => captureAction("screenshot"));
 $("capture-record").addEventListener("click", () => captureAction(captureActive() ? "stop" : "start"));
 $("recording-stop").addEventListener("click", () => captureAction("stop"));
-setInterval(() => { if (paired && !document.hidden) refreshCapture().catch(() => {}); }, 2000);
+const captureGate = idleGate();
+// Idle phones check the PC every ~8s instead of every 2s; an active recording is always followed.
+setInterval(() => { if (paired && !document.hidden && (captureActive() || captureGate())) refreshCapture().catch(() => {}); }, 2000);
 setInterval(() => { if (paired && captureActive() && !document.hidden) paintCapture(); }, 500);
 // The invisible lower edge is also a keyboard-accessible button. Track swipes
 // at document level so lifting above the original hit area still opens it.
