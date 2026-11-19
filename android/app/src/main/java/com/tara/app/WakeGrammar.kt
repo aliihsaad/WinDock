@@ -23,15 +23,16 @@ object WakeGrammar {
     private fun spoken(names: List<String>) = names.flatMap { listOf(it) + (ALIASES[it] ?: emptyList()) }.distinct()
 
     /** JSON array for the recogniser: the bare name, every greeting with every name, plus an "unknown" bucket for everything else. */
-    fun grammar(names: List<String>): String {
-        val phrases = spoken(names) + GREETINGS.flatMap { g -> spoken(names).map { "$g $it" } } + "[unk]"
+    fun grammar(names: List<String>, strict: Boolean = false): String {
+        val phrases = (if (strict) emptyList() else spoken(names)) + GREETINGS.flatMap { g -> spoken(names).map { "$g $it" } } + "[unk]"
         return phrases.joinToString(",", "[", "]") { "\"" + it + "\"" }
     }
 
-    /** Null when the text is not a wake phrase ("Tara" or "Hey Tara"); the words after it otherwise (often empty). */
-    fun command(heard: String, names: List<String>): String? {
+    /** Null when the text is not a wake phrase ("Tara" or "Hey Tara"; only "Hey Tara" when strict); the words after it otherwise (often empty). */
+    fun command(heard: String, names: List<String>, strict: Boolean = false): String? {
         val alt = spoken(names).joinToString("|") { Regex.escape(it) }
-        val m = Regex("^\\s*(?:(?:hey|ok|okay|hi)[ ,]+)?(?:$alt)\\b[\\s,.:!-]*", RegexOption.IGNORE_CASE).find(heard) ?: return null
+        val greeting = if (strict) "(?:hey|ok|okay|hi)[ ,]+" else "(?:(?:hey|ok|okay|hi)[ ,]+)?"
+        val m = Regex("^\\s*$greeting(?:$alt)\\b[\\s,.:!-]*", RegexOption.IGNORE_CASE).find(heard) ?: return null
         return heard.substring(m.range.last + 1).trim()
     }
 }

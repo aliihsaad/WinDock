@@ -44,6 +44,9 @@ class VoiceAssistant(private val activity: Activity, private val run: (String) -
     private fun names() = WakeGrammar.cleanNames(prefs.getString("names", ""))
 
     fun modelState(): String = JSONObject().put("ready", modelReady()).put("busy", downloading).toString()
+    private fun strictWake() = prefs.getBoolean("strict", false)
+    fun wakeStrict(): Boolean = strictWake()
+    fun setWakeStrict(on: Boolean) { prefs.edit().putBoolean("strict", on).apply(); engine?.refreshNames() }
     fun wakeNames(): String = names().joinToString(", ")
     fun setWakeNames(raw: String) { prefs.edit().putString("names", WakeGrammar.cleanNames(raw).joinToString(",")).apply(); engine?.refreshNames() }
     fun pauseListening(on: Boolean) { engine?.pause(on) }
@@ -93,6 +96,7 @@ class VoiceAssistant(private val activity: Activity, private val run: (String) -
     private fun makeEngine() = VoskEngine(
         modelDir = modelDir,
         names = ::names,
+        strict = ::strictWake,
         onWake = { main.post { beep(); js("onWake()") } },
         onUtterance = { text -> main.post { pressToTalk = false; js("onUtterance(${JSONObject.quote(text)})") } },
         onFailure = { message -> main.post {

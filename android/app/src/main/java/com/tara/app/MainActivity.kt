@@ -514,6 +514,8 @@ class MainActivity : Activity() {
         @JavascriptInterface fun voiceModelState(): String = voice.modelState()
         @JavascriptInterface fun downloadVoiceModel() { runOnUiThread { if (trustedKeyboardPage()) voice.downloadModel() } }
         @JavascriptInterface fun wakeNames(): String = voice.wakeNames()
+        @JavascriptInterface fun wakeStrict(): Boolean = voice.wakeStrict()
+        @JavascriptInterface fun setWakeStrict(on: Boolean) { runOnUiThread { if (trustedKeyboardPage()) voice.setWakeStrict(on) } }
         @JavascriptInterface fun setWakeNames(names: String) { runOnUiThread { if (trustedKeyboardPage()) voice.setWakeNames(names.take(120)) } }
         @JavascriptInterface fun pauseListening(on: Boolean) { runOnUiThread { voice.pauseListening(on) } }
         @JavascriptInterface fun openYoutube(url: String) {

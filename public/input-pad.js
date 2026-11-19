@@ -3,6 +3,7 @@ import { createTouchpadField } from "./touchpad-field.js";
 import { createRemoteKeyboard } from "./remote-keyboard.js";
 import { createPcClipboard } from "./pc-clipboard.js";
 import { createKeysPane } from "./keys-pane.js";
+import { buzz, hapticsEnabled, setHaptics } from "./haptics.js";
 
 export function createInputPad({ api, notify, WebSocketClass = WebSocket, storage = localStorage }) {
   const $ = (id) => document.getElementById(id), dialog = $("input-pad"), canvas = $("signature-canvas");
@@ -26,6 +27,8 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
   const keys = createKeysPane({ api, send: raw, isReady: () => ready && mode === "keys", storage });
   try { orbit = storage.getItem("tara-orbit") === "on"; } catch { /* optional */ }
   try { const saved = Number(storage.getItem("tara-pointer-speed")); if (saved >= .5 && saved <= 3) speed = saved; } catch { /* optional preference */ }
+  let tapToClick = true, reverseScroll = false, tapHeld = false;
+  try { tapToClick = storage.getItem("tara-tap-click") !== "off"; reverseScroll = storage.getItem("tara-reverse-scroll") === "on"; } catch { /* optional */ }
   $("pointer-speed").value = speed;
   $("pointer-speed-value").value = speed + "×";
   const setStatus = (text) => { $("input-status").textContent = text; };
@@ -105,12 +108,21 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
     if (frame === null) frame = requestAnimationFrame(flush);
   }
   function click(button) { flush(); if (raw({ type: "button", button, down: true })) raw({ type: "button", button, down: false }); }
+  // Three-finger swipes reuse Windows' own shortcuts through the existing chord message.
+  const SWIPES = { up: { mods: ["win"], key: "Tab" }, down: { mods: ["win"], key: "d" }, left: { mods: ["ctrl", "win"], key: "ArrowLeft" }, right: { mods: ["ctrl", "win"], key: "ArrowRight" } };
   const gestures = new TouchpadGestures({ move: (x, y) => motion("move", x * speed, y * speed), scroll: (x, y) => {
     if (orbit) { if (!orbiting) { flush(); orbiting = raw({ type: "button", button: "middle", down: true }); } motion("move", x * speed, y * speed); return; }
-    field.scroll(x, y); motion("scroll", x * 4, y * 4);
-  }, zoom: (steps) => { field.zoom(steps); if (orbit) raw({ type: "scroll", dx: 0, dy: steps * 120 }); else raw({ type: "zoom", steps }); }, click: (button) => { field.tap(); click(button); }, dragging: () => dragging });
+    const sign = reverseScroll ? -1 : 1;
+    field.scroll(x, y); motion("scroll", x * 4 * sign, y * 4 * sign);
+  }, zoom: (steps) => { field.zoom(steps); if (orbit) raw({ type: "scroll", dx: 0, dy: steps * 120 }); else raw({ type: "zoom", steps }); },
+  click: (button) => { if (button === "left" && !tapToClick) return; field.tap(); click(button); buzz(8); },
+  swipe: (direction) => { if (orbit) return; if (raw({ type: "chord", ...SWIPES[direction] })) buzz(14); },
+  multiTap: (fingers) => { if (fingers === 3) click("middle"); else raw({ type: "chord", mods: ["win"], key: "a" }); buzz(12); },
+  dragStart: () => { flush(); if (raw({ type: "button", button: "left", down: true })) { tapHeld = true; buzz(18); } },
+  dragEnd: () => { if (!tapHeld) return; tapHeld = false; flush(); raw({ type: "button", button: "left", down: false }); },
+  dragging: () => dragging });
   function endOrbit() { if (!orbiting) return; flush(); raw({ type: "button", button: "middle", down: false }); orbiting = false; }
-  function release() { clearContacts(); gestures.reset(); flush(); orbiting = false; raw({ type: "release" }); dragging = false; keys.cleared(); paint(); }
+  function release() { clearContacts(); gestures.reset(); tapHeld = false; flush(); orbiting = false; raw({ type: "release" }); dragging = false; keys.cleared(); paint(); }
   function disconnect() {
     clearInterval(heartbeat); clearTimeout(startup); heartbeat = startup = null;
     if (frame !== null) cancelAnimationFrame(frame); frame = null;
@@ -125,7 +137,7 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
     // Touchpad and keys share one PC connection, so switching between them keeps it (and any held modifier).
     if (socket && ready && usesPc(next) && usesPc(mode)) {
       mode = next; if (next === "keys") keys.open(); else keys.pause(); paint();
-      setStatus(next === "keys" ? "Tap a key to press it on your PC. Tap Ctrl, Shift or Alt to hold it." : "Tap to click · Two fingers: slide to scroll, tap for right-click · Pinch to zoom");
+      setStatus(next === "keys" ? "Tap a key to press it on your PC. Tap Ctrl, Shift or Alt to hold it." : "Tap to click · Two fingers: scroll, tap for right-click · Three fingers: swipe");
       return;
     }
     const ticket = ++generation;
@@ -156,7 +168,7 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
         if (message.type === "ready") {
           clearTimeout(startup); ready = true; connecting = false; autoRetries = 0;
           heartbeat = setInterval(() => raw({ type: "ping" }), 1000); // the PC allows 5s of silence
-          raw({ type: "ping" }); paint(); if (wantsKeyboard && mode === "touchpad") { wantsKeyboard = false; keyboard.request(); } if (mode === "keys") keys.open(); setStatus(demo ? "Demo only · No cursor control or files saved." : mode === "keys" ? "Tap a key to press it on your PC. Tap Ctrl, Shift or Alt to hold it." : "Tap to click · Two fingers: slide to scroll, tap for right-click · Pinch to zoom");
+          raw({ type: "ping" }); paint(); if (wantsKeyboard && mode === "touchpad") { wantsKeyboard = false; keyboard.request(); } if (mode === "keys") keys.open(); setStatus(demo ? "Demo only · No cursor control or files saved." : mode === "keys" ? "Tap a key to press it on your PC. Tap Ctrl, Shift or Alt to hold it." : "Tap to click · Two fingers: scroll, tap for right-click · Three fingers: swipe");
         }
       };
       ws.onclose = ws.onerror = () => {
@@ -202,6 +214,28 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
     speed = value; $("pointer-speed-value").value = speed + "×";
     try { storage.setItem("tara-pointer-speed", String(speed)); } catch { /* optional preference */ }
   });
+  function paintOptions() {
+    $("opt-tap").setAttribute("aria-pressed", String(tapToClick));
+    $("opt-reverse").setAttribute("aria-pressed", String(reverseScroll));
+    $("opt-haptics").setAttribute("aria-pressed", String(hapticsEnabled(storage)));
+  }
+  const remember = (key, value) => { try { storage.setItem(key, value); } catch { /* optional */ } };
+  $("opt-tap").addEventListener("click", () => { tapToClick = !tapToClick; remember("tara-tap-click", tapToClick ? "on" : "off"); paintOptions(); });
+  $("opt-reverse").addEventListener("click", () => { reverseScroll = !reverseScroll; remember("tara-reverse-scroll", reverseScroll ? "on" : "off"); paintOptions(); });
+  $("opt-haptics").addEventListener("click", () => { setHaptics(!hapticsEnabled(storage), storage); paintOptions(); buzz(10); });
+  paintOptions();
+  // Drop text on the pad to paste it where the PC cursor is.
+  const dropText = (event) => (event.dataTransfer?.getData("text/plain") ?? "").trim();
+  pad.addEventListener("dragover", (event) => { if (ready && Array.from(event.dataTransfer?.types ?? []).includes("text/plain")) { event.preventDefault(); pad.dataset.drop = "true"; } });
+  pad.addEventListener("dragleave", () => { delete pad.dataset.drop; });
+  pad.addEventListener("drop", (event) => {
+    event.preventDefault(); delete pad.dataset.drop;
+    const text = dropText(event), target = keyboard.target();
+    if (!text) { setStatus("Only text can be dropped here. Use Files & Media to send files."); return; }
+    if (text.length > 32768) { setStatus("That text is too long to drop (32,000 characters max)."); return; }
+    if (!target) { setStatus("Tap a text box on your PC first, then drop the text again."); return; }
+    if (raw({ type: "paste", target, text })) { setStatus("Dropped " + text.length + " characters at the PC cursor."); buzz(14); }
+  });
   $("pointer-options-toggle").addEventListener("click", () => {
     if (dragging) release();
     if ($("pc-clipboard-toggle").getAttribute("aria-expanded") === "true") $("pc-clipboard-toggle").click();
@@ -214,7 +248,7 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
   $("touchpad-orbit").addEventListener("click", () => {
     endOrbit(); orbit = !orbit;
     try { storage.setItem("tara-orbit", orbit ? "on" : "off"); } catch { /* optional */ }
-    paint(); setStatus(orbit ? "3D mode · Two fingers orbit (hold Shift to pan, Ctrl to zoom) · Pinch zooms" : "Tap to click · Two fingers: slide to scroll, tap for right-click · Pinch to zoom");
+    paint(); setStatus(orbit ? "3D mode · Two fingers orbit (hold Shift to pan, Ctrl to zoom) · Pinch zooms" : "Tap to click · Two fingers: scroll, tap for right-click · Three fingers: swipe");
   });
   $("input-reconnect").addEventListener("click", () => select("touchpad"));
 

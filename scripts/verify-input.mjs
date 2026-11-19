@@ -58,6 +58,38 @@ gesture.update(1, -15, 50); gesture.update(2, 115, 50); gesture.flush(); gesture
 t.deepEqual(events.splice(0), [["zoom", 2]], "recognized pinch stays zoom when fingers subsequently translate");
 gesture.down(1, 10, 10); gesture.up(1, true);
 t.deepEqual(events.splice(0), [], "cancel never clicks");
+// Three- and four-finger gestures, and tap-then-drag.
+{
+  const out = []; let now = 0;
+  const g = new TouchpadGestures({ now: () => now, move: (...xy) => out.push(["move", ...xy]), scroll: () => out.push(["scroll"]), zoom: () => out.push(["zoom"]), click: (b) => out.push(["click", b]), swipe: (d, n) => out.push(["swipe", d, n]), multiTap: (n) => out.push(["tap", n]), dragStart: () => out.push(["dragStart"]), dragEnd: () => out.push(["dragEnd"]) });
+  const fingers = (n, x0 = 100) => { for (let i = 1; i <= n; i++) g.down(i, x0 + i * 30, 100); };
+  const lift = (n) => { for (let i = 1; i <= n; i++) g.up(i); };
+  fingers(3); for (let i = 1; i <= 3; i++) g.update(i, 100 + i * 30 + 60, 102); lift(3);
+  t.deepEqual(out.splice(0), [["swipe", "right", 3]], "three fingers swipe right once");
+  fingers(3); for (let i = 1; i <= 3; i++) g.update(i, 100 + i * 30, 30); lift(3);
+  t.deepEqual(out.splice(0), [["swipe", "up", 3]], "three fingers swipe up");
+  fingers(3); for (let i = 1; i <= 3; i++) { g.update(i, 100 + i * 30 - 80, 100); g.update(i, 100 + i * 30 - 160, 100); } lift(3);
+  t.deepEqual(out.splice(0), [["swipe", "left", 3]], "a long three-finger swipe fires only once");
+  fingers(3); lift(3);
+  t.deepEqual(out.splice(0), [["tap", 3]], "three-finger tap");
+  fingers(4); lift(4);
+  t.deepEqual(out.splice(0), [["tap", 4]], "four-finger tap");
+  fingers(3); now += 600; lift(3);
+  t.deepEqual(out.splice(0), [], "a long three-finger press does nothing");
+  g.down(1, 50, 50); now += 80; g.up(1); out.splice(0);
+  now += 100; g.down(1, 52, 51); g.update(1, 90, 51); g.up(1);
+  t.deepEqual(out.splice(0), [["dragStart"], ["move", 38, 0], ["dragEnd"]], "tap then touch and move drags");
+  now += 1000; g.down(1, 50, 50); now += 80; g.up(1); out.splice(0);
+  now += 100; g.down(1, 51, 50); now += 50; g.up(1);
+  t.deepEqual(out.splice(0), [["click", "left"]], "tap then quick tap is a plain second click");
+  now += 1000; g.down(1, 50, 50); now += 80; g.up(1); out.splice(0);
+  now += 900; g.down(1, 50, 50); g.update(1, 70, 50); g.up(1);
+  t.deepEqual(out.splice(0), [["move", 20, 0]], "a slow second touch is an ordinary move");
+  now += 1000; g.down(1, 50, 50); now += 80; g.up(1); out.splice(0);
+  now += 100; g.down(1, 51, 50); g.update(1, 70, 50); g.down(2, 200, 50); g.reset();
+  t.equal(out.filter((e) => e[0] === "dragEnd").length, 1, "a drag ends exactly once when a second finger joins or the pad resets");
+}
+
 gesture.down(1, 10, 10); gesture.down(2, 20, 10); gesture.up(1, true); gesture.up(2);
 t.deepEqual(events.splice(0), [], "cancel of either finger prevents right click");
 dragging = true; gesture.down(1, 10, 10); gesture.up(1);

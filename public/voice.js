@@ -51,6 +51,8 @@ export function createVoice({ api, get = (id) => document.getElementById(id), no
     if (!offlineCapable) return;
     const ready = state?.ready ?? modelReady();
     modelNote.textContent = state?.error || (ready ? "Offline voice is ready on this phone." : state && state.progress != null ? "Downloading… " + state.progress + "%" : "Needed for hands-free. About 40 MB, downloaded once.");
+    modelButton.textContent = state?.error ? "Try again" : "Download voice model";
+    const strict = get("voice-strict"); if (strict) strict.checked = (() => { try { return android.wakeStrict() === true; } catch { return false; } })();
     modelButton.hidden = ready; modelButton.disabled = Boolean(state && state.progress != null && !state.error && !ready);
     if (namesInput) namesInput.value = (() => { try { return android.wakeNames(); } catch { return ""; } })();
   }
@@ -86,6 +88,7 @@ export function createVoice({ api, get = (id) => document.getElementById(id), no
   modelButton?.addEventListener("click", () => { try { android.downloadVoiceModel(); paintModel({ ready: false, progress: 0 }); } catch { /* older shell */ } });
   keyLink?.addEventListener("click", () => { try { android.openAiKeyPage(); } catch { /* older shell */ } });
   namesInput?.addEventListener("change", () => { try { android.setWakeNames(namesInput.value); namesInput.value = android.wakeNames(); } catch { /* older shell */ } });
+  get("voice-strict")?.addEventListener("change", (event) => { try { android.setWakeStrict(event.target.checked); } catch { /* older shell */ } });
   get("voice-yes").addEventListener("click", () => { if (confirmVerb) send("", confirmVerb); });
   get("voice-no").addEventListener("click", () => { confirmBar.hidden = true; confirmVerb = null; show(undefined, "Okay, cancelled."); });
   dialog.addEventListener("close", () => { stop(); speech?.cancel?.(); android?.stopSpeaking?.(); });

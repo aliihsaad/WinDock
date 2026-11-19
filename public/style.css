@@ -824,3 +824,11 @@ html.perf .status-strip { background: #17252d; backdrop-filter: none; -webkit-ba
 .voice-mic { width: 100%; min-height: 54px; font-size: 16px; }
 #mini-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
 #mini-list .window-row { width: 100%; text-align: left; }
+
+.pointer-toggles { display: grid; gap: 6px; margin-top: 12px; }
+.pointer-toggles button { padding: 9px 12px; border: 1px solid #ffffff22; border-radius: 12px; background: transparent; color: inherit; font: inherit; font-size: 12px; text-align: left; }
+.pointer-toggles button[aria-pressed="true"] { background: color-mix(in srgb, var(--accent) 28%, transparent); border-color: var(--accent); }
+.gesture-guide { margin-top: 12px; font-size: 11px; color: #aab4c4; }
+.gesture-guide summary { cursor: pointer; font-size: 12px; color: inherit; }
+.gesture-guide ul { margin: 8px 0 0; padding-left: 16px; display: grid; gap: 4px; }
+.touchpad-surface[data-drop="true"] { outline: 2px dashed var(--accent); outline-offset: -6px; }

@@ -37,4 +37,12 @@ class WakeGrammarTest {
         assertNull(WakeGrammar.command("they tara", names))
         assertNull(WakeGrammar.command("[unk]", names))
     }
+    @Test fun strictModeNeedsAGreeting() {
+        val names = listOf("tara")
+        assertNull(WakeGrammar.command("tara", names, strict = true))
+        assertNull(WakeGrammar.command("tara open blender", names, strict = true))
+        assertEquals("open blender", WakeGrammar.command("hey tara open blender", names, strict = true))
+        val g = WakeGrammar.grammar(names, strict = true)
+        assertTrue(!g.contains("\"tara\",") && g.contains("\"hey tara\""))
+    }
 }

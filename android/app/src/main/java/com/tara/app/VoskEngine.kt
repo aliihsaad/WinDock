@@ -12,14 +12,17 @@ import org.vosk.Recognizer
 
 /**
  * Offline listening on one background thread. Two modes, never both at once:
- *  - wake: a tiny grammar that only knows "hey <name>", so it is cheap enough to leave on;
- *  - command: free speech for a few seconds, handed back as text.
+ *  - wake: a tiny grammar that only knows "hey <name>", so it is cheap enough to leave on. It reacts to the
+ *    partial result, so the beep comes as soon as the name is said, and the last moments of audio are kept;
+ *  - command: free speech, handed back as text. After a wake word it is first fed those kept moments, so
+ *    "Tara open Blender" said in one breath works as well as "Tara ... open Blender".
  * The microphone is opened only while one of those is wanted, and closed the moment neither is.
  * Any failure (missing native library, bad model) is reported once and the engine stops itself.
  */
 internal class VoskEngine(
     private val modelDir: java.io.File,
     private val names: () -> List<String>,
+    private val strict: () -> Boolean,
     private val onWake: () -> Unit,
     private val onUtterance: (String) -> Unit,
     private val onFailure: (String) -> Unit,
@@ -64,7 +67,11 @@ internal class VoskEngine(
         var cmd: Recognizer? = null
         var inCommand = false
         var commandStart = 0L
-        val buf = ByteArray(3200) // 100 ms of 16 kHz mono PCM16
+        var viaWake = false
+        var retried = false
+        var seed: ByteArray? = null
+        val recent = java.io.ByteArrayOutputStream()
+        val buf = ByteArray(1600) // 50 ms of 16 kHz mono PCM16
         try {
             LibVosk.setLogLevel(LogLevel.WARNINGS)
             while (running) {
@@ -77,13 +84,14 @@ internal class VoskEngine(
                 }
                 if (model == null) model = Model(modelDir.absolutePath)
                 if (rec == null) { rec = openRecorder(); if (rec == null) { onFailure("Could not open the microphone."); return } }
-                if (rebuildWake) { wake?.close(); wake = null; rebuildWake = false }
+                if (rebuildWake) { wake?.close(); wake = null; rebuildWake = false; recent.reset() }
                 if (wantCommand && !inCommand) {
                     cmd?.close(); cmd = Recognizer(model, RATE.toFloat()); commandStart = System.currentTimeMillis(); inCommand = true
-                    wake?.reset()
+                    wake?.reset(); retried = false
+                    val pre = seed; if (pre != null) { cmd!!.acceptWaveForm(pre, pre.size); seed = null }
                 }
-                if (!wantCommand && inCommand) { cmd?.close(); cmd = null; inCommand = false }
-                if (!inCommand && wake == null) wake = Recognizer(model, RATE.toFloat(), WakeGrammar.grammar(names()))
+                if (!wantCommand && inCommand) { cmd?.close(); cmd = null; inCommand = false; viaWake = false }
+                if (!inCommand && wake == null) wake = Recognizer(model, RATE.toFloat(), WakeGrammar.grammar(names(), strict()))
                 val n = rec.read(buf, 0, buf.size)
                 if (n <= 0) { Thread.sleep(20); continue }
                 if (inCommand) {
@@ -92,13 +100,25 @@ internal class VoskEngine(
                     val elapsed = System.currentTimeMillis() - commandStart
                     val silent = !done && elapsed > NO_SPEECH_MS && JSONObject(r.partialResult).optString("partial").isBlank()
                     if (done || silent || elapsed > MAX_COMMAND_MS) {
-                        val text = JSONObject(if (done) r.result else r.finalResult).optString("text").trim()
-                        r.close(); cmd = null; inCommand = false; wantCommand = false
-                        onUtterance(text)
+                        val heard = JSONObject(if (done) r.result else r.finalResult).optString("text").trim()
+                        val text = if (viaWake) (WakeGrammar.command(heard, names()) ?: heard).trim() else heard
+                        if (viaWake && text.isEmpty() && !retried && elapsed < MAX_COMMAND_MS) {
+                            // Only the name was said: give a fresh recogniser the rest of the time for the command itself.
+                            retried = true; r.close(); cmd = Recognizer(model, RATE.toFloat()); commandStart = System.currentTimeMillis()
+                        } else {
+                            r.close(); cmd = null; inCommand = false; wantCommand = false; viaWake = false
+                            onUtterance(text)
+                        }
                     }
-                } else if (wake!!.acceptWaveForm(buf, n)) {
-                    val heard = JSONObject(wake.result).optString("text")
-                    if (WakeGrammar.command(heard, names()) != null) { wake.reset(); wantCommand = true; onWake() }
+                } else {
+                    recent.write(buf, 0, n)
+                    if (recent.size() > RECENT_BYTES) { val keep = recent.toByteArray().copyOfRange(recent.size() - RECENT_BYTES, recent.size()); recent.reset(); recent.write(keep) }
+                    val w = wake!!
+                    val ended = w.acceptWaveForm(buf, n)
+                    val heard = JSONObject(if (ended) w.result else w.partialResult).optString(if (ended) "text" else "partial")
+                    if (WakeGrammar.command(heard, names(), strict()) != null) {
+                        w.reset(); seed = recent.toByteArray(); recent.reset(); viaWake = true; wantCommand = true; onWake()
+                    } else if (ended) recent.reset()
                 }
             }
         } catch (_: InterruptedException) {
@@ -116,7 +136,8 @@ internal class VoskEngine(
 
     companion object {
         const val RATE = 16000
-        const val MAX_COMMAND_MS = 8000L
-        const val NO_SPEECH_MS = 5000L
+        const val MAX_COMMAND_MS = 10000L
+        const val NO_SPEECH_MS = 4500L
+        const val RECENT_BYTES = RATE * 2 * 3 // the last three seconds of 16-bit audio
     }
 }
