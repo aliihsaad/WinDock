@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { createChecker } from "./lib/assert.mjs";
 import { usable, pick } from "../site/app.js";
 const t = createChecker("site");
-const A = (name) => ({ name, size: 5e6, browser_download_url: "https://github.com/yeshwanthkumardomala/Tara/releases/download/x/" + name });
+const A = (name) => ({ name, size: 5e6, browser_download_url: "https://github.com/yeshwanthkumardomala/tara/releases/download/x/" + name });
 const releases = [
   { tag_name: "voicepack-v1", published_at: "2026-11-20T00:00:00Z", assets: [A("pack.zip")] },
   { tag_name: "old", published_at: "2026-11-01T00:00:00Z", assets: [A("Tara-android-debug.apk")] },

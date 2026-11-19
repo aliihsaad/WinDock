@@ -23,7 +23,7 @@ If connection fails, check the PC address, Wi-Fi, Windows firewall and iOS
 
 ## Build on GitHub from Windows
 
-Open [Build Tara iOS](https://github.com/yeshwanthkumardomala/Tara/actions/workflows/build-ios.yml)
+Open [Build Tara iOS](https://github.com/yeshwanthkumardomala/tara/actions/workflows/build-ios.yml)
 and select **Run workflow** on `main`. Relevant source changes also run it automatically.
 The workflow uses a GitHub-hosted macOS runner, Xcode 16.4 and XcodeGen. No Apple
 account, certificate or device credentials are needed for this unsigned build.

@@ -9,7 +9,7 @@ import org.json.JSONObject
 
 /** The offline speech model: where it comes from, how it is checked, and how it is unpacked safely. */
 internal object VoskModel {
-    private const val BASE = "https://github.com/yeshwanthkumardomala/Tara/releases/download/voicepack-v1/"
+    private const val BASE = "https://github.com/yeshwanthkumardomala/tara/releases/download/voicepack-v1/"
     const val MANIFEST = BASE + "vosk-model.json"
     const val MAX_ZIP_BYTES = 120L * 1024 * 1024
     const val MAX_UNPACKED_BYTES = 400L * 1024 * 1024

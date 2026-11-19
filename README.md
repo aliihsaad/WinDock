@@ -7,8 +7,8 @@
 <p align="center"><b>Your PC, within reach. Just say "Hey Tara".</b></p>
 
 <p align="center">
-  <a href="https://github.com/yeshwanthkumardomala/Tara/releases">Releases</a> ·
-  <a href="https://yeshwanthkumardomala.github.io/Tara/">Downloads app</a> ·
+  <a href="https://github.com/yeshwanthkumardomala/tara/releases">Releases</a> ·
+  <a href="https://yeshwanthkumardomala.github.io/tara/">Downloads app</a> ·
   <a href="CHANGELOG.md">Changelog</a>
 </p>
 
@@ -21,7 +21,7 @@ Tara turns your Android phone into a dock for your Windows PC: app shortcuts, a 
 | **Phone** (Android 7+) | `Tara-android-debug.apk` |
 | **PC** (Windows 10/11) | `TaraSetup.exe` |
 
-Both are on the [latest release](https://github.com/yeshwanthkumardomala/Tara/releases/tag/upgrades-latest). You can also install the **Tara Downloads** app from the [downloads page](https://yeshwanthkumardomala.github.io/Tara/) to your phone's home screen. It always shows the newest build.
+Both are on the [latest release](https://github.com/yeshwanthkumardomala/tara/releases/tag/upgrades-latest). You can also install the **Tara Downloads** app from the [downloads page](https://yeshwanthkumardomala.github.io/tara/) to your phone's home screen. It always shows the newest build.
 
 1. Install the PC app and open it from the system tray.
 2. Install the phone app and pair it with the code or PIN the PC shows.

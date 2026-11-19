@@ -48,7 +48,7 @@ Section: net
 Priority: optional
 Architecture: amd64
 Maintainer: Ali Saad <aliihsaad@users.noreply.github.com>
-Homepage: https://github.com/yeshwanthkumardomala/Tara
+Homepage: https://github.com/yeshwanthkumardomala/tara
 Installed-Size: $du_kib
 Depends: libc6 (>= 2.36), libstdc++6, libgcc-s1, libgtk-3-bin, grim, wl-clipboard, wtype, pulseaudio-utils, systemd, udev, kmod, x-terminal-emulator
 Recommends: brightnessctl, ddcutil, wf-recorder, libnotify-bin
@@ -69,7 +69,7 @@ pkgname = tara
 pkgbase = tara
 pkgver = $version-$release
 pkgdesc = Phone companion for a Hyprland desktop (preview, bundled runtime)
-url = https://github.com/yeshwanthkumardomala/Tara
+url = https://github.com/yeshwanthkumardomala/tara
 builddate = $(date +%s)
 packager = Ali Saad <aliihsaad@users.noreply.github.com>
 size = $(du -sb "$root" | cut -f1)

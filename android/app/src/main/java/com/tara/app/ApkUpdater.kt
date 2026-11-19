@@ -23,7 +23,7 @@ internal data class ApkRelease(val version: String, val code: Int, val url: Stri
 
 /** Pure rules for the self-updater: where releases may come from and what a valid one looks like. */
 internal object ApkUpdater {
-    private const val BASE = "https://github.com/yeshwanthkumardomala/Tara/releases/download/upgrades-latest/"
+    private const val BASE = "https://github.com/yeshwanthkumardomala/tara/releases/download/upgrades-latest/"
     const val FEED = BASE + "latest.json"
     const val APK_URL = BASE + "Tara-android-debug.apk"
     const val MAX_APK_BYTES = 150L * 1024 * 1024

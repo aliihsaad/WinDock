@@ -9,7 +9,7 @@ import org.junit.Assert.fail
 import org.junit.Test
 
 class VoskModelTest {
-    private val base = "https://github.com/yeshwanthkumardomala/Tara/releases/download/voicepack-v1/"
+    private val base = "https://github.com/yeshwanthkumardomala/tara/releases/download/voicepack-v1/"
     private val sha = "a".repeat(64)
 
     @Test fun acceptsOnlyThePublishedModel() {

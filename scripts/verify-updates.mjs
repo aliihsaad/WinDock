@@ -123,7 +123,7 @@ t.equal(get("updates-install").hidden,false,"newer release reveals one-tap updat
 t.equal(get("updates-download").hidden,true,"release page link is only a fallback");
 answer={...answer,canInstall:false};await get("updates-check").handlers.click();await flush();
 t.equal(get("updates-download").hidden,false,"host that cannot install offers the release page");
-t.equal(get("updates-download").href,"https://github.com/yeshwanthkumardomala/Tara/releases/tag/upgrades-latest","UI opens this fork's release despite response-provided URLs");
+t.equal(get("updates-download").href,"https://github.com/yeshwanthkumardomala/tara/releases/tag/upgrades-latest","UI opens this fork's release despite response-provided URLs");
 fail=true;await get("updates-check").handlers.click();await flush();
 t.equal(get("updates-download").hidden && get("updates-install").hidden,true,"failed recheck clears stale download state");
 t.ok(get("updates-status").textContent.includes("Couldn’t check"),"failure is visible");

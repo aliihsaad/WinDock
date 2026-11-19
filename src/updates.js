@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 // Updates come from this fork's rolling `upgrades-latest` release, which CI refreshes on every build.
-export const RELEASES_URL = "https://github.com/yeshwanthkumardomala/Tara/releases";
+export const RELEASES_URL = "https://github.com/yeshwanthkumardomala/tara/releases";
 export const FEED_BASE = RELEASES_URL + "/download/upgrades-latest/";
 export const DOWNLOADS_PAGE_URL = RELEASES_URL + "/tag/upgrades-latest";
 export const MANIFEST_URL = FEED_BASE + "latest.json";

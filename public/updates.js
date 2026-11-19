@@ -1,4 +1,4 @@
-const RELEASE_PAGE = "https://github.com/yeshwanthkumardomala/Tara/releases/tag/upgrades-latest";
+const RELEASE_PAGE = "https://github.com/yeshwanthkumardomala/tara/releases/tag/upgrades-latest";
 
 export function updateStatusText(result) {
   if (result.status === "current") return "You’re up to date.";
