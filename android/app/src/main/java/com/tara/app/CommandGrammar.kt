@@ -1,7 +1,5 @@
 package com.tara.app
 
-import org.json.JSONArray
-
 /**
  * Precise listening for commands. The recogniser is first limited to words Tara knows (command words,
  * numbers, the wake names and the names of apps on the dock), which it gets right far more often than open
@@ -25,7 +23,8 @@ object CommandGrammar {
         for (phrase in names.flatMap { WakeGrammar.spoken(it) } + vocabulary)
             for (piece in phrase.lowercase().split(Regex("[^a-z0-9]+"))) if (WORD.matches(piece)) words += piece
         words += "[unk]"
-        return JSONArray(words.toList()).toString()
+        // Every word is [a-z0-9] or "[unk]", so no escaping is needed.
+        return words.joinToString(",", "[", "]") { "\"$it\"" }
     }
 
     fun clean(text: String): String = text.replace("[unk]", " ").replace(Regex("\\s+"), " ").trim()
