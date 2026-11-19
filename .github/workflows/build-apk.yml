@@ -152,8 +152,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -e
-          if gh api "repos/${GITHUB_REPOSITORY}/releases/tags/voicepack-v1" -q '.assets[].name' 2>/dev/null | grep -qx 'vosk-model.json'; then
-            echo "Voice model already published."; exit 0
+          # Skip only when the published manifest already points at this repo (a renamed repo needs a fresh one).
+          if curl -fsL "https://github.com/${GITHUB_REPOSITORY}/releases/download/voicepack-v1/vosk-model.json" 2>/dev/null | grep -q "/${GITHUB_REPOSITORY}/releases/download/voicepack-v1/"; then
+            echo "Voice model already published for this repo."; exit 0
           fi
           curl -fL --retry 4 --retry-delay 5 -o vosk-model.zip https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip
           test -s vosk-model.zip
