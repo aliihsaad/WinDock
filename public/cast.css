@@ -10,5 +10,8 @@ h1 { margin: 0 0 20px; font-size: 26px; font-weight: 650; letter-spacing: -.5px;
 form { display: flex; gap: 10px; margin-top: 16px; }
 input { flex: 1; min-height: 44px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--line); background: #ffffff0d; color: inherit; font: inherit; }
 button { min-height: 44px; padding: 0 22px; border: 0; border-radius: 12px; background: var(--accent); color: #152c20; font-weight: 650; cursor: pointer; }
+.card { margin-top: 28px; padding: 20px; border: 1px solid var(--line); border-radius: 18px; background: #ffffff08; }
+.card h2 { margin: 0 0 6px; font-size: 16px; } .hint { margin: 0 0 12px; color: var(--muted); font-size: 13px; }
+#ai-status { margin: 10px 2px 0; color: var(--muted); font-size: 13px; }
 #status { margin: 14px 2px 0; color: var(--muted); font-size: 13px; }
 #status[data-error="true"] { color: #ed9695; }

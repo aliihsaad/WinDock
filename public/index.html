@@ -63,6 +63,7 @@
     <button id="drawer-settings" type="button"><span data-icon="sun"></span><span>Appearance</span></button>
     <button id="drawer-input" type="button"><span data-icon="touchpad"></span><span>Touch &amp; sign</span></button>
     <button id="drawer-bench" type="button"><span data-icon="monitor"></span><span>Render &amp; save</span></button>
+    <button id="drawer-voice" type="button"><span data-icon="mic"></span><span>Assistant</span></button>
     <button id="drawer-mini" type="button"><span data-icon="play"></span><span>Mini player</span></button>
     <button id="drawer-windows" type="button"><span data-icon="monitor"></span><span>Windows</span></button>
     <button id="drawer-edit" type="button"><span data-icon="edit"></span><span>Edit dock</span></button>
@@ -295,6 +296,22 @@
       <div class="settings__utilities"><button id="bench-version" class="button button--primary" type="button">Save a new version (_v002)</button></div>
       <p id="bench-version-status" class="settings__tip" role="status">Press Save in Blender, then copy the file as the next numbered version. Resolve keeps projects in its own database, so this is Blender only.</p></section>
     <section class="settings__card"><h3>Top bar</h3><label class="setting-row">Show battery, CPU, GPU and Wi-Fi<input id="status-toggle" class="switch" type="checkbox" role="switch" checked></label></section>
+  </div>
+</dialog>
+
+<dialog id="voice" class="sheet" aria-labelledby="voice-title">
+  <div class="sheet-handle"></div>
+  <div class="sheet__heading"><div><p class="eyebrow">VOICE</p><h2 id="voice-title">Assistant</h2></div><button class="icon-button" type="button" data-close="voice" aria-label="Close"><span data-icon="close"></span></button></div>
+  <div class="updates-content">
+    <section class="settings__card voice-card">
+      <p id="voice-heard" class="voice-heard" aria-live="polite"></p>
+      <p id="voice-said" class="voice-said" role="status" aria-live="polite"></p>
+      <div id="voice-confirm" class="settings__utilities" hidden><button id="voice-yes" class="button button--primary" type="button">Yes</button><button id="voice-no" class="button" type="button">No</button></div>
+      <button id="voice-mic" class="button button--primary voice-mic" type="button" aria-pressed="false">🎤 Tap and speak</button>
+      <p class="settings__tip">Try “open Blender”, “volume down”, “tell me when my render finishes”, or ask a question.</p>
+    </section>
+    <section class="settings__card"><label class="setting-row">Hands-free “Hey Dock”<input id="voice-handsfree" class="switch" type="checkbox" role="switch"></label>
+      <p class="settings__tip">Listens only while the dock is open on screen. Uses more battery.</p></section>
   </div>
 </dialog>
 

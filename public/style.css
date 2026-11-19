@@ -819,5 +819,8 @@ html.perf .status-strip { background: #17252d; backdrop-filter: none; -webkit-ba
 #mini-youtube-input { width: 100%; min-height: 44px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--glass-border); background: var(--glass-card); color: inherit; }
 #mini .updates-content > .settings__utilities { margin-bottom: 4px; }
 #bench [aria-pressed="true"], #mini [aria-pressed="true"] { background: var(--accent); color: #152c20; }
+.voice-heard { min-height: 1.4em; margin: 0 0 6px; color: var(--muted); font-size: 14px; }
+.voice-said { min-height: 2.8em; margin: 0 0 14px; font-size: 17px; line-height: 1.4; }
+.voice-mic { width: 100%; min-height: 54px; font-size: 16px; }
 #mini-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
 #mini-list .window-row { width: 100%; text-align: left; }

@@ -36,6 +36,7 @@ import org.json.JSONObject
 import java.io.ByteArrayInputStream
 import java.util.concurrent.Executors
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkRequest
@@ -69,6 +70,7 @@ class MainActivity : Activity() {
     private lateinit var appUpdates: AppUpdates
     private lateinit var phoneUpdater: PhoneUpdater
     private val miniPlayer by lazy { MiniPlayer(this) }
+    private val voice by lazy { VoiceAssistant(this) { script -> web.evaluateJavascript(script, null) } }
     private lateinit var appearance: AppearancePreferences
     private var wakingGesture = false
     private val wakingKeys = mutableSetOf<Int>()
@@ -501,6 +503,11 @@ class MainActivity : Activity() {
                 applyOrientation(mode)
             }
         }
+        @JavascriptInterface fun startListening() { runOnUiThread { if (trustedKeyboardPage()) voice.startListening() } }
+        @JavascriptInterface fun stopListening() { runOnUiThread { voice.stopListening() } }
+        @JavascriptInterface fun setHandsFree(on: Boolean) { runOnUiThread { if (trustedKeyboardPage()) voice.setHandsFree(on) } }
+        @JavascriptInterface fun speak(text: String) { runOnUiThread { if (trustedKeyboardPage()) voice.speak(text) } }
+        @JavascriptInterface fun stopSpeaking() { runOnUiThread { voice.stopSpeaking() } }
         @JavascriptInterface fun openYoutube(url: String) {
             if (!MiniPlayerPolicy.isPlayable(url)) return
             runOnUiThread { if (trustedKeyboardPage()) miniPlayer.open(url) }
@@ -804,8 +811,10 @@ class MainActivity : Activity() {
         }
         if (::files.isInitialized) files.connectionChanged()
         syncIdleDisplay()
+        voice.onResume()
     }
     override fun onPause() {
+        voice.onPause()
         files.pause()
         resumed = false; wakingGesture = false; wakingKeys.clear(); syncIdleDisplay(); hideRemoteKeyboard()
         if (::web.isInitialized) { web.removeCallbacks(secureRetry); web.onPause() }
@@ -817,7 +826,13 @@ class MainActivity : Activity() {
         files.connectionChanged()
         super.onPause()
     }
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == VoiceAssistant.REQUEST) voice.onPermission(grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED)
+    }
+
     override fun onDestroy() {
+        voice.destroy()
         miniPlayer.close()
         files.destroy()
         if (Build.VERSION.SDK_INT >= 33) backCallback?.let { onBackInvokedDispatcher.unregisterOnBackInvokedCallback(it) }

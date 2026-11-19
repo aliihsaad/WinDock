@@ -60,7 +60,10 @@ await writeFile(join(dir, "clips", "notes.txt"), "secret");
 await writeFile(join(dir, "outside.mp4"), "no");
 const provider = { id: "test", displayName: "Test", listInstalledApps: async () => [], listRunningApps: async () => [{ id: "blender" }], launchApp: async () => {}, focusApp: async () => {}, closeApp: async () => {}, control: async () => {}, nowPlaying: async () => null, systemStats: async () => ({ cpu: 1 }) };
 const saves = [];
+const aiCalls = [];
 const app = await createApp({
+  fetchAi: async (url, init) => { aiCalls.push(init.headers["x-goog-api-key"]); return { ok: true, status: 200, json: async () => ({ candidates: [{ content: { parts: [{ text: "A normal map stores direction." }] } }] }) }; },
+  assistantKeys: { get: () => ({ key: "AIzaSyA-fake_key_for_tests_0123456789abcdef", model: "gemini-flash-latest" }), status: () => ({ configured: true, model: "gemini-flash-latest" }), set: async () => {} },
   provider, configStore: createConfigStore(join(dir, "config.json")), pin: "572864", trustLoopback: false,
   videoRoots: async () => [{ id: "clips", name: "Clips", path: join(dir, "clips") }],
   versionedSaver: async (w) => { saves.push(w); return { name: "scene_v002.blend" }; },
@@ -107,6 +110,17 @@ try {
   const got = (await call("/api/cast")).json;
   t.deepEqual([got.id, got.url, got.ageMs < 5000], [1, "https://m.youtube.com/watch?v=dQw4w9WgXcQ", true], "phone sees the normalised link once");
   t.equal((await call("/api/cast", { auth: false })).status, 401, "unpaired client cannot read the cast");
+  const say = async (body) => (await call("/api/assistant", { method: "POST", body })).json;
+  t.equal((await say({ text: "volume down" })).say, "Quieter.", "assistant runs a PC command");
+  const power = await say({ text: "shut down the pc" });
+  t.deepEqual([power.needsConfirm, power.say], ["shutdown", "Shut the PC down?"], "power asks first");
+  t.equal((await say({ confirm: "shutdown" })).say, "Shutting down.", "power runs only after a confirm");
+  t.equal((await call("/api/assistant", { method: "POST", body: { confirm: "volume-up" } })).status, 400, "only power verbs can be confirmed");
+  t.equal((await say({ text: "what is a normal map" })).say, "A normal map stores direction.", "questions go to the AI");
+  t.equal(aiCalls.length, 1, "the AI is asked once, only for the question");
+  t.equal((await call("/api/assistant", { method: "POST", body: { text: "x", extra: 1 } })).status, 400, "assistant rejects extra fields");
+  t.equal((await call("/api/assistant", { auth: false })).status, 401, "assistant needs pairing");
+  t.equal((await call("/api/assistant/key", { method: "POST", body: { key: "x" } })).status, 403, "only the PC itself can set the key");
   t.equal((await call("/cast")).status, 200, "send-to-phone page opens on the PC");
   t.equal((await call("/api/updates/local/check", { method: "POST", body: {} })).status, 403, "tray update check needs its local header");
   t.equal((await call("/api/updates/local/install", { method: "POST", body: {} })).status, 403, "tray install needs its local header");

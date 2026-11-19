@@ -58,6 +58,7 @@ const EXPECTED = {
   "verify-linux-downloads.mjs": "linux-downloads verification passed",
   "verify-upgrades.mjs": "upgrades verification passed",
   "verify-bench.mjs": "bench verification passed",
+  "verify-assistant.mjs": "assistant verification passed",
 };
 
 // Guard against an oracle being added to scripts/ but never wired in here.

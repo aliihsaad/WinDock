@@ -8,9 +8,9 @@
 
 import { createServer } from "node:http";
 import { createServer as createHttpsServer } from "node:https";
-import { hostname } from "node:os";
+import { hostname, homedir } from "node:os";
 import { readFile } from "node:fs/promises";
-import { extname, join, normalize, resolve, sep } from "node:path";
+import { dirname, extname, join, normalize, resolve, sep } from "node:path";
 import { createProvider } from "./src/platform/index.js";
 import { validateControl, isDestructiveVerb, CONTROL_VERBS } from "./src/platform/contract.js";
 import { createConfigStore, flattenTiles } from "./src/config.js";
@@ -24,6 +24,7 @@ import { pairingInvites } from "./src/pairing-invites.js";
 import { networkSetup } from "./src/network-setup.js";
 import { createUpdateService } from "./src/updates.js";
 import { parseYouTube } from "./public/mini-player.js";
+import { askGemini, createKeyStore, matchApp, parseIntent, statsSentence } from "./src/assistant.js";
 import { createRenderWatch } from "./src/render-watch.js";
 import { versionedSave } from "./src/versioned-save.js";
 import { defaultVideoRoots, listVideos, streamVideo, isVideoRootId } from "./src/videos.js";
@@ -157,6 +158,8 @@ export async function createApp({
   identity = null,
   transfers: suppliedTransfers = null,
   wakeSender = null,
+  assistantKeys = null,
+  fetchAi = fetch,
   videoRoots: suppliedVideoRoots = null,
   renderWatch: suppliedRenderWatch = null,
   versionedSaver = versionedSave,
@@ -213,6 +216,7 @@ export async function createApp({
   }
 
   // One macro at a time: overlapping runs would interleave their launches and levels.
+  const keyStore = assistantKeys ?? createKeyStore({ dir: join(dirname(process.env.APPDATA ? join(process.env.APPDATA, "windock", "x") : join(homedir(), ".config", "windock", "x")), "assistant") });
   let macroRunning = false, statsCache = null;
   // Last video sent from the PC. The phone picks it up once and never replays an old one.
   let cast = { id: 0, url: "", at: 0 };
@@ -221,6 +225,38 @@ export async function createApp({
     if (!statsCache || Date.now() - statsCache.at > 4000) statsCache = { at: Date.now(), value: provider.systemStats().catch(() => ({})) };
     return statsCache.value;
   };
+  async function runAssistant({ text = "", confirm = null }) {
+    if (confirm) {
+      const checked = validateControl(confirm, null);
+      if (!checked.ok || !isDestructiveVerb(checked.verb)) throw Object.assign(new Error("Nothing to confirm."), { status: 400, exposed: true });
+      if (!allowDestructive) throw Object.assign(new Error("Power actions are turned off on this PC."), { status: 403, exposed: true });
+      await provider.control(checked.verb, null);
+      return { say: { sleep: "Going to sleep.", shutdown: "Shutting down.", restart: "Restarting.", lock: "Locked." }[checked.verb] };
+    }
+    const intent = parseIntent(text);
+    switch (intent.type) {
+      case "control": { const checked = validateControl(intent.verb, intent.value ?? null); if (!checked.ok) throw Object.assign(new Error("I can't do that."), { status: 400, exposed: true }); await provider.control(checked.verb, checked.value); return { say: intent.say }; }
+      case "power": if (!allowDestructive) return { say: "Power actions are turned off on this PC." }; return { say: intent.say, needsConfirm: intent.verb };
+      case "render": {
+        if (intent.action === "off") renderWatch.disarm();
+        else { if (intent.action !== "notify" && !allowDestructive) return { say: "Power actions are turned off on this PC." }; renderWatch.arm(intent.action); }
+        return { say: intent.say };
+      }
+      case "stats": return { say: statsSentence(intent.what, await readStats()) };
+      case "launch": { const app = matchApp(intent.name, await installedApps()); if (!app) return { say: "I couldn't find " + intent.name + " on this PC." }; await launchInstalled(app); await hub.broadcast(); return { say: "Opening " + app.name + "." }; }
+      case "focus": case "close": {
+        const target = matchApp(intent.name, (await provider.listRunningApps()).map((r) => ({ ...r, name: r.name || r.title || "" })));
+        if (!target) return { say: "I don't see " + intent.name + " running." };
+        if (intent.type === "focus") await provider.focusApp(target); else await provider.closeApp(target);
+        await hub.broadcast(); return { say: (intent.type === "focus" ? "Switching to " : "Closing ") + (target.name || intent.name) + "." };
+      }
+      default: {
+        if (!keyStore.status().configured) return { say: "I can do PC commands. For questions, paste a Google AI key on the PC first.", ai: false };
+        const { key, model } = keyStore.get();
+        return { say: await askGemini(text, { key, model, fetchImpl: fetchAi }), ai: true };
+      }
+    }
+  }
   const renderWatch = suppliedRenderWatch ?? createRenderWatch({
     readStats,
     act: async (action) => {
@@ -639,6 +675,21 @@ export async function createApp({
         return sendJson(res, 200, await readStats());
       }
 
+      // Voice assistant: understands PC commands itself; anything else goes to the AI key held on this PC.
+      if (path === "/api/assistant" && req.method === "GET") return sendJson(res, 200, { ai: keyStore.status().configured, destructive: allowDestructive });
+      if (path === "/api/assistant" && req.method === "POST") {
+        const body = await readJsonBody(req);
+        if (Object.keys(body).some((k) => k !== "text" && k !== "confirm") || (body.text !== undefined && typeof body.text !== "string")) return sendJson(res, 400, { error: "The assistant takes text only." });
+        try { return sendJson(res, 200, await runAssistant(body)); }
+        catch (error) { return sendJson(res, error.status || 500, { error: error.exposed || error.status ? error.message : "The assistant could not do that." }); }
+      }
+      if (path === "/api/assistant/key" && req.method === "POST") {
+        if (!local || !sameOrigin(req) || req.headers["x-windock-assistant"] !== "local") return sendJson(res, 403, { error: "Set the AI key on the computer itself." });
+        const body = await readJsonBody(req);
+        if (Object.keys(body).some((k) => k !== "key" && k !== "model") || typeof body.key !== "string") return sendJson(res, 400, { error: "Send a key." });
+        try { await keyStore.set(body.key.trim(), typeof body.model === "string" ? body.model.trim() : ""); return sendJson(res, 200, keyStore.status()); }
+        catch (error) { return sendJson(res, error.status || 500, { error: error.exposed ? error.message : "Could not save the key." }); }
+      }
       if (path === "/api/cast" && req.method === "GET") return sendJson(res, 200, { id: cast.id, url: cast.url, ageMs: cast.id ? Date.now() - cast.at : null });
       if (path === "/api/render-watch" && req.method === "GET") return sendJson(res, 200, renderWatch.state());
       if (path === "/api/render-watch" && req.method === "POST") {

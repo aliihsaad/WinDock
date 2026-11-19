@@ -17,6 +17,7 @@ import { showScene } from "./scenes.js";
 import { idleGate } from "./idle.js";
 import { createStatusBar } from "./status-bar.js";
 import { createMiniPlayer } from "./mini-player.js";
+import { createVoice } from "./voice.js";
 
 const $ = (id) => document.getElementById(id);
 const syncSelects = enhanceSelects();
@@ -801,6 +802,26 @@ $("input-edge").addEventListener("click", () => openInputPad());
 document.addEventListener("windock-toast", (e) => notify(e.detail.message, e.detail.error));
 const statusBar = createStatusBar({ gate: idleGate(), api, isReady: () => paired && online && !document.hidden, notify, buzz, storage: localStorage });
 statusBar.start();
+const voice = createVoice({ api, notify, buzz });
+const handsFreeOn = () => { try { return localStorage.getItem("windock-handsfree") === "1"; } catch { return false; } };
+const applyHandsFree = () => { try { window.WinDockAndroid?.setHandsFree?.(handsFreeOn()); } catch { /* older Android shell */ } };
+applyHandsFree();
+$("voice-handsfree").checked = handsFreeOn();
+$("voice-handsfree").addEventListener("change", (event) => { try { localStorage.setItem("windock-handsfree", event.target.checked ? "1" : "0"); } catch { /* private mode */ } applyHandsFree(); });
+$("drawer-voice").addEventListener("click", () => { $("drawer").close(); voice.open(true); });
+// Holding a finger on empty dock space for a moment starts listening too.
+{
+  let hold = null, from = null;
+  const cancel = () => { clearTimeout(hold); hold = null; };
+  $("app").addEventListener("pointerdown", (event) => {
+    cancel();
+    if (editing || !event.isPrimary || !isBackgroundTarget(event.target)) return;
+    from = { x: event.clientX, y: event.clientY };
+    hold = setTimeout(() => { hold = null; buzz(20); voice.open(true); }, 750);
+  });
+  $("app").addEventListener("pointermove", (event) => { if (hold && from && Math.hypot(event.clientX - from.x, event.clientY - from.y) > 12) cancel(); });
+  for (const type of ["pointerup", "pointercancel"]) $("app").addEventListener(type, cancel);
+}
 let castSeen = null;
 async function pollCast() {
   if (!paired || !online || document.hidden) return;

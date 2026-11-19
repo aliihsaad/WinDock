@@ -9,4 +9,10 @@
   </div>
   <form id="form"><input id="link" type="text" inputmode="url" placeholder="…or paste a YouTube link" autocomplete="off" aria-label="YouTube link"><button type="submit">Send</button></form>
   <p id="status" role="status" aria-live="polite">Your phone must be connected to WinDock.</p>
+  <section class="card" aria-labelledby="ai-title">
+    <h2 id="ai-title">Voice assistant · AI answers</h2>
+    <p class="hint">PC commands like “open Blender” need nothing. For general questions, paste a free Google AI Studio key (aistudio.google.com/apikey). It is stored only on this PC and never sent to your phone.</p>
+    <form id="ai-form"><input id="ai-key" type="password" autocomplete="off" placeholder="Paste Google AI key" aria-label="Google AI key"><button type="submit">Save</button></form>
+    <p id="ai-status" role="status" aria-live="polite"></p>
+  </section>
 </main><script src="cast.js"></script></body></html>

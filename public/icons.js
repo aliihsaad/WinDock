@@ -31,6 +31,7 @@ const paths = {
   quieter: '<path d="m11 4-6 5H2v6h3l6 5zM16 12h6"/>',
   mute: '<path d="m11 4-6 5H2v6h3l6 5zM17 9l5 6m0-6-5 6"/>',
   play: '<path d="m7 4 14 8-14 8z"/>',
+  mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
   pause: '<path d="M8 5v14M16 5v14"/>',
   next: '<path d="m4 5 11 7-11 7zM19 5v14"/>',
   previous: '<path d="m20 5-11 7 11 7zM5 5v14"/>',
