@@ -1,9 +1,12 @@
+import { LIVE_SCENES, isLive, createLiveBackground } from "./live-bg.js";
+
 // The bundled backgrounds, in picker order. Layouts save these ids, so a shipped id
 // must stay valid. Each one also needs its art in /wallpapers and a rule in style.css.
-export const SCENES = ["aurora", "midnight", "dusk", "ember", "lagoon", "silk", "obsidian", "prism"];
+export const SCENES = ["aurora", "midnight", "dusk", "ember", "lagoon", "silk", "obsidian", "prism", ...LIVE_SCENES];
 
 const FADE_MS = 520;
-let latest = 0;
+let latest = 0, live = null;
+const liveLayer = () => (live ??= createLiveBackground({ host: document.getElementById("wallpaper") }));
 
 /** Applies a scene, fading from the old one once the new art is ready to paint. */
 export async function showScene(scene) {
@@ -11,6 +14,8 @@ export async function showScene(scene) {
   const root = document.documentElement;
   const previous = root.dataset.background;
   if (previous === scene) return;
+  // Live scenes draw their own picture on a canvas; photo scenes switch the canvas off.
+  if (isLive(scene) || live) { root.dataset.background = scene; liveLayer().show(scene); return; }
   const still = root.classList.contains("perf") || matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (!previous || still) {
     root.dataset.background = scene;

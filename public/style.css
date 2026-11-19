@@ -867,3 +867,21 @@ html.perf .status-strip { background: #17252d; backdrop-filter: none; -webkit-ba
 .pointer-options .pointer-toggles button { width: 100%; height: auto; min-height: 38px; white-space: normal; display: block; }
 @media (max-height: 450px) { .pointer-options { padding: 12px 14px; } .pointer-toggles { grid-template-columns: 1fr 1fr; } .pointer-options .pointer-toggles button { min-height: 34px; font-size: 11px; padding: 6px 8px; } .gesture-guide { margin-top: 8px; } }
 @media (max-width: 480px) { #pc-keys-toggle span:not([data-icon]) { display: none; } }
+
+/* Live backgrounds: colours only; the canvas in live-bg.js draws the picture. */
+.wallpaper__live { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.wallpaper__live[hidden] { display: none; }
+:root[data-background="star-web"] { --scene-image: none; --scene-base: #070d1f; --scene-a: #4a5bd0; --scene-b: #1c2a6a; --accent: #cfd9ff; --live: #aab9ff; }
+:root[data-background="ripples"] { --scene-image: none; --scene-base: #041225; --scene-a: #2b8fd0; --scene-b: #0b3f66; --accent: #cfeaff; --live: #9dd2ff; }
+:root[data-background="fireflies"] { --scene-image: none; --scene-base: #07120f; --scene-a: #6fae3a; --scene-b: #1f4a22; --accent: #e6ffbf; --live: #c6ec8f; }
+:root[data-background="aurora-flow"] { --scene-image: none; --scene-base: #04121a; --scene-a: #2bbf8f; --scene-b: #2b5d9a; --accent: #c9fff0; --live: #8fe9cc; }
+:root[data-background="tara-pulse"] { --scene-image: none; --scene-base: #050a1c; --scene-a: #6f7dff; --scene-b: #3a2aa8; --accent: #dfe4ff; --live: #b9c2ff; }
+:root[data-background="tilt"] { --scene-image: none; --scene-base: #0a0716; --scene-a: #8a6af0; --scene-b: #3a2a78; --accent: #e7ddff; --live: #c9b8ff; }
+.scene-choices button.scene-live { position: relative; }
+.scene-choices button.scene-live i { display: block; width: 100%; aspect-ratio: 480 / 224; border-radius: inherit; background: var(--thumb); }
+.scene-choices button.scene-live b { position: absolute; top: 6px; right: 6px; padding: 2px 6px; border-radius: 8px; background: #000a; font-size: 9px; font-weight: 600; letter-spacing: .5px; }
+
+/* Weak phones: softer, cheaper glass. */
+:root.lite, :root.lite[data-theme] { --glass-blur: 10px; --glass-lens-blur: 5; --glass-sheet-blur: 10px; }
+.input-latency { margin-left: 8px; color: #8fe5d8; font-variant-numeric: tabular-nums; }
+.input-latency[data-slow="true"] { color: #f2b4b6; }

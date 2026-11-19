@@ -164,7 +164,7 @@
       <div class="signature-actions"><button id="signature-save" class="button" type="button" disabled>Save to PC</button><button id="signature-insert" class="button button--primary" type="button" disabled>Insert into PC</button></div>
     </div>
   </section>
-  <div class="input-pad__connection"><p id="input-status" class="input-pad__status" role="status">Connecting to your PC…</p><button id="input-reconnect" type="button" hidden>Reconnect</button></div>
+  <div class="input-pad__connection"><p id="input-status" class="input-pad__status" role="status">Connecting to your PC…</p><span id="input-latency" class="input-latency" hidden></span><button id="input-reconnect" type="button" hidden>Reconnect</button></div>
 </dialog>
 
 <dialog id="picker" class="sheet picker" aria-labelledby="picker-title">
@@ -254,6 +254,12 @@
         <button type="button" data-background="silk" aria-pressed="false"><img src="wallpapers/silk-thumb.webp" alt="" width="480" height="224" loading="lazy" decoding="async"><span>Silk</span></button>
         <button type="button" data-background="obsidian" aria-pressed="false"><img src="wallpapers/obsidian-thumb.webp" alt="" width="480" height="224" loading="lazy" decoding="async"><span>Obsidian</span></button>
         <button type="button" data-background="prism" aria-pressed="false"><img src="wallpapers/prism-thumb.webp" alt="" width="480" height="224" loading="lazy" decoding="async"><span>Prism</span></button>
+        <button type="button" class="scene-live" data-background="star-web" aria-pressed="false"><i style="--thumb:radial-gradient(circle at 30% 40%, #4a5bd0 0 2px, transparent 3px), radial-gradient(circle at 70% 60%, #aab9ff 0 2px, transparent 3px), #070d1f"></i><b>LIVE</b><span>Star web</span></button>
+        <button type="button" class="scene-live" data-background="ripples" aria-pressed="false"><i style="--thumb:radial-gradient(circle at 50% 50%, transparent 0 14px, #78c8ff66 15px 17px, transparent 18px 30px, #78c8ff33 31px 33px, transparent 34px), #041225"></i><b>LIVE</b><span>Ripples</span></button>
+        <button type="button" class="scene-live" data-background="fireflies" aria-pressed="false"><i style="--thumb:radial-gradient(circle at 30% 55%, #d2ff96 0 3px, transparent 12px), radial-gradient(circle at 68% 35%, #d2ff96 0 2px, transparent 10px), #07120f"></i><b>LIVE</b><span>Fireflies</span></button>
+        <button type="button" class="scene-live" data-background="aurora-flow" aria-pressed="false"><i style="--thumb:linear-gradient(160deg, #04121a 20%, #2bbf8f88 50%, #6a6ee0aa 75%, #04121a)"></i><b>LIVE</b><span>Aurora flow</span></button>
+        <button type="button" class="scene-live" data-background="tara-pulse" aria-pressed="false"><i style="--thumb:radial-gradient(circle at 50% 50%, #6f7dffcc, #3a2aa855 45%, #050a1c 75%)"></i><b>LIVE</b><span>Tara pulse</span></button>
+        <button type="button" class="scene-live" data-background="tilt" aria-pressed="false"><i style="--thumb:radial-gradient(circle at 25% 30%, #c8c0ff 0 2px, transparent 3px), radial-gradient(circle at 60% 70%, #b8a0ff 0 3px, transparent 4px), radial-gradient(circle at 80% 25%, #e0d8ff 0 1.5px, transparent 3px), #0a0716"></i><b>LIVE</b><span>Tilt</span></button>
       </div>
     </section>
     <section class="settings__card"><h3>Layout</h3><p id="layout-summary">4 icons · 2 × 2</p>

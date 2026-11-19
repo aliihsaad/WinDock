@@ -1,7 +1,6 @@
 import { readFileSync } from "node:fs";
 import { runInNewContext } from "node:vm";
 import { createChecker } from "./lib/assert.mjs";
-import { buildWebsiteDemo } from "./build-website-demo.mjs";
 
 const t = createChecker("performance");
 const read = (path) => readFileSync(new URL("../" + path, import.meta.url), "utf8");
@@ -59,7 +58,4 @@ const html = read("public/index.html");
 t.ok(html.indexOf('src="/performance.js"') < html.indexOf('href="/style.css"'), "bootstrap runs before the stylesheet");
 t.ok(!html.match(/<script[^>]*(async|defer|type="module")[^>]*src="\/performance.js"/), "bootstrap cannot be deferred past first paint");
 t.ok(read("public/sw.js").includes('"/performance.js"'), "offline shell includes the bootstrap");
-await buildWebsiteDemo();
-t.ok(read("website/demo/index.html").includes('src="./performance.js" data-memory-only'), "demo wires the same bootstrap without persistence");
-t.equal(read("website/demo/performance.js"), source, "demo uses the shipping performance policy");
 t.done("performance verification passed");

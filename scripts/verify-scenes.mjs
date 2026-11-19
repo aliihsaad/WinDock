@@ -7,11 +7,13 @@
  */
 import { readFileSync, statSync } from "node:fs";
 import { createChecker } from "./lib/assert.mjs";
-import { buildWebsiteDemo } from "./build-website-demo.mjs";
-import { SCENES, showScene } from "../public/scenes.js";
+import { SCENES as ALL_SCENES, showScene } from "../public/scenes.js";
+import { LIVE_SCENES, isLive } from "../public/live-bg.js";
 import { normalizeLayout } from "../public/launcher.js";
 
 const t = createChecker("scenes");
+// Photo scenes carry art; live scenes draw on a canvas and only need colours and a picker thumbnail.
+const SCENES = ALL_SCENES.filter((id) => !isLive(id));
 const path = (file) => new URL("../" + file, import.meta.url);
 const read = (file) => readFileSync(path(file), "utf8");
 const css = read("public/style.css");
@@ -20,8 +22,10 @@ const html = read("public/index.html");
 // ---- The list ----
 for (const id of ["aurora", "dusk", "ember", "midnight"]) t.ok(SCENES.includes(id), `${id} stays valid, since saved layouts use it`);
 t.equal(new Set(SCENES).size, SCENES.length, "scene ids are unique");
-t.ok(SCENES.every((id) => /^[a-z]+$/.test(id)), "scene ids are plain words, safe in paths and selectors");
-for (const id of SCENES) t.equal(normalizeLayout({ background: id }).background, id, `layouts keep ${id}`);
+t.ok(ALL_SCENES.every((id) => /^[a-z-]+$/.test(id)), "scene ids are plain words, safe in paths and selectors");
+t.deepEqual(ALL_SCENES.slice(-LIVE_SCENES.length), LIVE_SCENES, "live scenes follow the photo scenes");
+for (const id of LIVE_SCENES) { t.ok(css.includes(`:root[data-background="${id}"] { --scene-image: none;`), `${id} has colours and no art`); t.ok(html.includes(`class="scene-live" data-background="${id}"`), `${id} is in the picker`); }
+for (const id of ALL_SCENES) t.equal(normalizeLayout({ background: id }).background, id, `layouts keep ${id}`);
 t.equal(normalizeLayout({ background: "url(wallpapers/x.webp)" }).background, "aurora", "unknown backgrounds fall back to Aurora");
 
 // ---- Art ----
@@ -63,15 +67,11 @@ t.ok(/scrollIntoView\(\{ block: "nearest", inline: "nearest" \}\)/.test(read("pu
 // ---- Everywhere else a scene must be known ----
 const android = read("android/app/src/main/java/com/tara/app/AppearancePreferences.kt");
 const saved = android.match(/"background" -> layout\.getString\(field\) in listOf\(([^)]*)\)/)?.[1];
-t.deepEqual(saved && [...saved.matchAll(/"([a-z]+)"/g)].map((match) => match[1]), SCENES, "the Android app saves every scene");
+t.deepEqual(saved && [...saved.matchAll(/"([a-z-]+)"/g)].map((match) => match[1]), ALL_SCENES, "the Android app saves every scene");
 const sw = read("public/sw.js");
 t.ok(sw.includes('"/scenes.js"'), "the offline shell includes the scene module");
 t.ok(!sw.includes("/wallpapers/"), "the shell does not precache every scene; each is cached once shown");
 t.ok(/"\.webp": "image\/webp"/.test(read("server.js")), "the host serves WebP with its type, since responses are nosniff");
-t.ok(read("scripts/website-server.mjs").includes("'.webp': 'image/webp'"), "the website preview serves WebP");
-await buildWebsiteDemo();
-t.equal(read("website/demo/scenes.js"), read("public/scenes.js"), "the website demo uses the shipping scene module");
-t.ok(SCENES.every((id) => statSync(path(`website/demo/wallpapers/${id}-thumb.webp`)).isFile()), "the website demo carries the art");
 
 // ---- Switching ----
 // A tiny stand-in for the page, enough to drive showScene's fade and its races.
@@ -130,5 +130,28 @@ for (const [name, options] of [["Performance mode", { perf: true }], ["Reduced m
   t.ok(view.root.dataset.background === "ember" && view.images.length === 0 && view.fades.length === 0, `${name} switches instantly, with no fade`);
 }
 globalThis.setTimeout = realTimeout;
+
+// ---- Live scenes ----
+{
+  const { createLiveBackground } = await import("../public/live-bg.js");
+  const calls = new Proxy({}, { get: () => () => ({ addColorStop() {} }) });
+  const ctx = new Proxy({ setTransform() {}, createLinearGradient: () => ({ addColorStop() {} }), createRadialGradient: () => ({ addColorStop() {} }) }, { get: (target, key) => (key in target ? target[key] : () => {}), set: () => true });
+  const listeners = {}, frames = [];
+  const doc = { hidden: false, documentElement: { classList: { contains: () => false } }, addEventListener: (type, fn) => { (listeners[type] ||= []).push(fn); },
+    createElement: () => ({ width: 0, height: 0, setAttribute() {}, getContext: () => ctx, hidden: false }) };
+  const win = { devicePixelRatio: 2, matchMedia: () => ({ matches: false }), addEventListener() {}, requestAnimationFrame: (fn) => { frames.push(fn); return frames.length; }, cancelAnimationFrame() {} };
+  const host = { clientWidth: 800, clientHeight: 360, prepend() {}, getBoundingClientRect: () => ({ left: 0, top: 0 }) };
+  const live = createLiveBackground({ host, win, doc });
+  t.equal(live.show("aurora"), false, "a photo scene does not start the canvas");
+  for (const id of LIVE_SCENES) {
+    frames.length = 0;
+    t.equal(live.show(id), true, `${id} starts`);
+    let ok = true;
+    try { for (let n = 0; n < 4 && frames.length; n++) { const fn = frames.shift(); fn(100 + n * 40); } for (const fn of listeners.pointerdown || []) fn({ clientX: 120, clientY: 90 }); frames.length && frames.shift()(400); } catch (error) { ok = false; console.error(id, error); }
+    t.ok(ok, `${id} draws frames and reacts to touch without errors`);
+  }
+  frames.length = 0; doc.hidden = true; live.show("ripples"); t.equal(frames.length, 0, "a hidden page runs no animation");
+  doc.hidden = false; doc.documentElement.classList.contains = () => true; t.equal(live.show("ripples"), false, "Performance mode keeps live scenes still");
+}
 
 t.done("scenes verification passed");

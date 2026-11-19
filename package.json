@@ -8,8 +8,6 @@
   "description": "Remote app dock and control surface for a Windows PC, driven from a phone on the same LAN.",
   "scripts": {
     "start": "node server.js",
-    "website": "node scripts/website-server.mjs",
-    "build:website-demo": "node scripts/build-website-demo.mjs",
     "package:downloads": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/package-downloads.ps1",
     "build:windows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/build-windows.ps1",
     "build:linux": "cargo build --release --locked --manifest-path native/linux/Cargo.toml && install -m 755 native/linux/target/release/tara-input tara-input",
@@ -19,8 +17,7 @@
     "build:android": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/build-android.ps1",
     "test:windows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/test-windows.ps1",
     "test:linux": "cargo test --locked --manifest-path native/linux/Cargo.toml",
-    "test": "node test/run.mjs",
-    "gates": "node scripts/gates.mjs --status"
+    "test": "node test/run.mjs"
   },
   "engines": {
     "node": ">=20"

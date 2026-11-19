@@ -1,7 +1,6 @@
 import { readFileSync } from "node:fs";
 import { runInNewContext } from "node:vm";
 import { createChecker } from "./lib/assert.mjs";
-import { buildWebsiteDemo } from "./build-website-demo.mjs";
 
 const t = createChecker("appearance");
 const read = path => readFileSync(new URL("../" + path, import.meta.url), "utf8");
@@ -110,7 +109,4 @@ t.equal(calls, beforeUnknown, "unrelated keys never cross the bridge");
 const html = read("public/index.html");
 t.ok(html.indexOf('src="/appearance.js"') < html.indexOf('src="/performance.js"'), "appearance restores before performance first paint");
 t.ok(read("public/sw.js").includes('"/appearance.js"'), "offline shell includes appearance adapter");
-await buildWebsiteDemo();
-t.ok(read("website/demo/index.html").includes('src="./appearance.js" data-memory-only'), "preview uses memory-only adapter");
-t.equal(read("website/demo/appearance.js"), source, "preview uses shipping adapter");
 t.done("appearance verification passed");

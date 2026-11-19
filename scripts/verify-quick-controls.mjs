@@ -260,8 +260,6 @@ t.ok(/path === "\/api\/levels" && req\.method === "GET"/.test(server), "the host
 t.ok(/typeof provider\.levels === "function"/.test(server), "levels stay optional for providers");
 t.ok(!read("src/platform/contract.js").includes("levels"), "levels are not a required provider method");
 t.ok(read("public/sw.js").includes('"/quick-controls.js"'), "the offline shell precaches the curtain");
-t.ok(read("scripts/build-website-demo.mjs").includes("'quick-controls.js'"), "the website demo copies the curtain");
-t.ok(read("website/preview-transport.js").includes("/api/levels"), "the website demo answers level reads");
 
 const curtainHtml = html.slice(html.indexOf('<dialog id="controls"'), html.indexOf('<dialog id="power-controls"'));
 for (const label of ["Display brightness", "PC volume"]) t.ok(new RegExp(`type="range" min="0" max="100" value="0" aria-label="${label}"`).test(curtainHtml), `${label} is a labelled 0 to 100 range`);

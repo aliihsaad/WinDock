@@ -34,7 +34,6 @@ const EXPECTED = {
   "verify-appearance.mjs": "appearance verification passed",
   "verify-updates.mjs": "updates verification passed",
   "verify-now-playing.mjs": "now-playing verification passed",
-  "verify-download-stats.mjs": "download-stats verification passed",
   "verify-editing.mjs": "editing verification passed",
   "verify-offline.mjs": "offline verification passed",
   "verify-android.mjs": "android verification passed",

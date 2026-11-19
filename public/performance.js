@@ -8,7 +8,9 @@
   let preference = "auto";
   try { if (!memoryOnly) preference = normalize((window.TaraPreferences || localStorage).getItem(key)); } catch { /* Storage may be unavailable. */ }
   const enabled = () => preference === "on" || (preference === "auto" && autoEnabled);
-  const apply = () => document.documentElement.classList.toggle("perf", enabled());
+  // Phones with few cores or little memory get lighter glass blur on their own, which is the costliest effect.
+  const nav = typeof navigator === "object" ? navigator : {}, weak = (nav.hardwareConcurrency || 8) <= 4 || (nav.deviceMemory || 8) <= 3;
+  const apply = () => { document.documentElement.classList.toggle("perf", enabled()); document.documentElement.classList.toggle("lite", weak && !enabled()); };
   window.TaraPerformance = {
     get preference() { return preference; },
     get enabled() { return enabled(); },

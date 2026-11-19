@@ -15,7 +15,7 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
     if (width > 0) { paper.style.width = width + "px"; paper.style.height = width * 3 / 8 + "px"; }
   }).observe(space);
   let mode = "touchpad", socket = null, ready = false, connecting = false, heartbeat = null, startup = null, generation = 0;
-  let dragging = false, available = false, demo = false, saving = false, strokes = [], activeStroke = null, signaturePointer = null;
+  let latencyTimer = null, dragging = false, available = false, demo = false, saving = false, strokes = [], activeStroke = null, signaturePointer = null;
   let color = "black", frame = null, pending = { move: [0, 0], scroll: [0, 0] }, speed = 1.5;
   let canInsertSignature = false, orbit = false, orbiting = false;
   const usesPc = (value = mode) => value === "touchpad" || value === "keys";
@@ -86,6 +86,14 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
     $("signature-color").disabled = saving;
     $("signature-placeholder").hidden = strokes.length > 0;
   }
+  // A tiny authenticated request every few seconds shows how fast the connection really is.
+  async function measureLatency() {
+    if (!ready || document.hidden) return;
+    const start = performance.now();
+    try { await api("/api/input"); } catch { return; }
+    const ms = Math.round(performance.now() - start), node = $("input-latency");
+    node.hidden = false; node.textContent = ms + " ms"; node.dataset.slow = String(ms > 150);
+  }
   function raw(message) {
     if (!ready || !socket || socket.readyState !== WebSocketClass.OPEN) return false;
     if (socket.bufferedAmount > 262144) { disconnect(); setStatus("Connection is slow. Reopen the touchpad to reconnect."); return false; }
@@ -124,6 +132,7 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
   function endOrbit() { if (!orbiting) return; flush(); raw({ type: "button", button: "middle", down: false }); orbiting = false; }
   function release() { clearContacts(); gestures.reset(); tapHeld = false; flush(); orbiting = false; raw({ type: "release" }); dragging = false; keys.cleared(); paint(); }
   function disconnect() {
+    clearInterval(latencyTimer); latencyTimer = null; $("input-latency").hidden = true;
     clearInterval(heartbeat); clearTimeout(startup); heartbeat = startup = null;
     if (frame !== null) cancelAnimationFrame(frame); frame = null;
     pending = { move: [0, 0], scroll: [0, 0] };
@@ -168,7 +177,7 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
         if (message.type === "ready") {
           clearTimeout(startup); ready = true; connecting = false; autoRetries = 0;
           heartbeat = setInterval(() => raw({ type: "ping" }), 1000); // the PC allows 5s of silence
-          raw({ type: "ping" }); paint(); if (wantsKeyboard && mode === "touchpad") { wantsKeyboard = false; keyboard.request(); } if (mode === "keys") keys.open(); setStatus(demo ? "Demo only · No cursor control or files saved." : mode === "keys" ? "Tap a key to press it on your PC. Tap Ctrl, Shift or Alt to hold it." : "Tap to click · Two fingers: scroll, tap for right-click · Three fingers: swipe");
+          raw({ type: "ping" }); measureLatency(); latencyTimer = setInterval(measureLatency, 4000); paint(); if (wantsKeyboard && mode === "touchpad") { wantsKeyboard = false; keyboard.request(); } if (mode === "keys") keys.open(); setStatus(demo ? "Demo only · No cursor control or files saved." : mode === "keys" ? "Tap a key to press it on your PC. Tap Ctrl, Shift or Alt to hold it." : "Tap to click · Two fingers: scroll, tap for right-click · Three fingers: swipe");
         }
       };
       ws.onclose = ws.onerror = () => {

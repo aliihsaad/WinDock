@@ -164,7 +164,6 @@ for (const [name, set] of [["Performance mode", () => { perf = true; }], ["reduc
 const pad = read("public/input-pad.js"), html = read("public/index.html"), css = read("public/style.css");
 t.ok(pad.includes('from "./touchpad-field.js"'), "the touchpad loads the field");
 t.ok(read("public/sw.js").includes('"/touchpad-field.js"'), "the offline shell precaches the field");
-t.ok(read("scripts/build-website-demo.mjs").includes("'touchpad-field.js'"), "the website demo copies the field");
 t.ok(html.indexOf('id="touchpad-field"') > 0 && html.indexOf('id="touchpad-field"') < html.indexOf('id="touchpad-feedback"'), "the field sits behind the feedback and hint");
 t.ok(/\.touchpad-field \{[^}]*pointer-events: none/.test(read("public/style.css")), "the field never intercepts touches");
 

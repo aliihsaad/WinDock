@@ -9,7 +9,7 @@
  *    worse, replay a control action from cache. Neither is acceptable.
  */
 
-const VERSION = "tara-v51-upgrades";
+const VERSION = "tara-v52-upgrades";
 const SHELL = [
   "/",
   "/index.html",
@@ -24,6 +24,7 @@ const SHELL = [
   "/dock.js",
   "/tiles.js",
   "/haptics.js",
+  "/live-bg.js",
   "/quick-access.js",
   "/orientation.js",
   "/idle.js",
