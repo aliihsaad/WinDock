@@ -26,6 +26,7 @@ internal class VoskEngine(
     private val onWake: () -> Unit,
     private val onUtterance: (String) -> Unit,
     private val onFailure: (String) -> Unit,
+    private val onLevel: (Float) -> Unit = {},
 ) {
     @Volatile private var thread: Thread? = null
     @Volatile private var running = false
@@ -58,6 +59,14 @@ internal class VoskEngine(
         }
     } catch (_: Exception) { null }
 
+    /** Loudness of one buffer, 0..1, for the on-screen orb. */
+    private fun level(b: ByteArray, n: Int): Float {
+        var sum = 0.0; var i = 0; val count = n / 2
+        if (count == 0) return 0f
+        while (i + 1 < n) { val v = ((b[i + 1].toInt() shl 8) or (b[i].toInt() and 0xff)).toShort().toInt(); sum += v.toDouble() * v; i += 2 }
+        return (Math.sqrt(sum / count) / 6000.0).toFloat().coerceIn(0f, 1f)
+    }
+
     private fun closeRecorder(r: AudioRecord?) { try { r?.stop() } catch (_: Exception) {}; try { r?.release() } catch (_: Exception) {} }
 
     private fun loop() {
@@ -68,6 +77,7 @@ internal class VoskEngine(
         var inCommand = false
         var commandStart = 0L
         var viaWake = false
+        var levelTick = 0
         var retried = false
         var seed: ByteArray? = null
         val recent = java.io.ByteArrayOutputStream()
@@ -95,6 +105,7 @@ internal class VoskEngine(
                 val n = rec.read(buf, 0, buf.size)
                 if (n <= 0) { Thread.sleep(20); continue }
                 if (inCommand) {
+                    if (++levelTick % 2 == 0) onLevel(level(buf, n))
                     val r = cmd!!
                     val done = r.acceptWaveForm(buf, n)
                     val elapsed = System.currentTimeMillis() - commandStart

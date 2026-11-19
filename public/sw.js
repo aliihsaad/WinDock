@@ -9,7 +9,7 @@
  *    worse, replay a control action from cache. Neither is acceptable.
  */
 
-const VERSION = "tara-v50-upgrades";
+const VERSION = "tara-v51-upgrades";
 const SHELL = [
   "/",
   "/index.html",

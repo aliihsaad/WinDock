@@ -99,6 +99,7 @@ class VoiceAssistant(private val activity: Activity, private val run: (String) -
         strict = ::strictWake,
         onWake = { main.post { beep(); js("onWake()") } },
         onUtterance = { text -> main.post { pressToTalk = false; js("onUtterance(${JSONObject.quote(text)})") } },
+        onLevel = { l -> main.post { js("onLevel($l)") } },
         onFailure = { message -> main.post {
             voskFailed = true; engine?.shutdown(); engine = null; handsFree = false
             js("onError(${JSONObject.quote(message)})")
@@ -106,7 +107,7 @@ class VoiceAssistant(private val activity: Activity, private val run: (String) -
         } },
     )
 
-    private fun beep() { try { ToneGenerator(AudioManager.STREAM_MUSIC, 60).startTone(ToneGenerator.TONE_PROP_BEEP, 120) } catch (_: Exception) {} }
+    private fun beep() { try { ToneGenerator(AudioManager.STREAM_MUSIC, 45).startTone(ToneGenerator.TONE_PROP_PROMPT, 90) } catch (_: Exception) {} }
 
     // ---- fallback: Android's own recogniser, press-to-talk only ----
     private fun beginFallback() {

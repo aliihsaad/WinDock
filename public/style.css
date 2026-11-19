@@ -832,3 +832,38 @@ html.perf .status-strip { background: #17252d; backdrop-filter: none; -webkit-ba
 .gesture-guide summary { cursor: pointer; font-size: 12px; color: inherit; }
 .gesture-guide ul { margin: 8px 0 0; padding-left: 16px; display: grid; gap: 4px; }
 .touchpad-surface[data-drop="true"] { outline: 2px dashed var(--accent); outline-offset: -6px; }
+
+/* Tara orb: the wake-word bubble. */
+.tara-orb { position: fixed; inset: auto 0 max(18px, env(safe-area-inset-bottom)) 0; margin: 0 auto; width: min(92vw, 420px); padding: 0; border: 0; background: transparent; overflow: visible; color: #eaf2ff; display: none; flex-direction: column; align-items: center; gap: 10px; pointer-events: none; text-align: center; }
+.tara-orb:not([hidden]) { display: flex; }
+.tara-orb__words, .tara-orb__reply { margin: 0; max-width: 100%; padding: 8px 14px; border-radius: 16px; background: #0b1226cc; backdrop-filter: blur(14px); font-size: 15px; line-height: 1.35; overflow-wrap: anywhere; }
+.tara-orb__words:empty, .tara-orb__reply:empty { display: none; }
+.tara-orb__core { position: relative; width: 84px; height: 84px; padding: 0; border: 0; border-radius: 50%; pointer-events: auto; display: grid; place-items: center; background: radial-gradient(circle at 35% 30%, #7fb4ff, #5b3df0 60%, #1a1650); box-shadow: 0 0 calc(28px + 40px * var(--level, 0)) #6f7dff99, 0 8px 30px #0008; transform: scale(calc(1 + .22 * var(--level, 0))); transition: transform .1s linear, box-shadow .1s linear; animation: orb-in .28s ease-out; }
+.tara-orb__core svg { width: 46%; fill: #fff; filter: drop-shadow(0 0 8px #fff9); }
+.tara-orb__ring { position: absolute; inset: -6px; border-radius: 50%; border: 2px solid #9fb8ff88; animation: orb-ring 1.6s ease-out infinite; }
+.tara-orb[data-state="thinking"] .tara-orb__core { animation: orb-spin 1.1s linear infinite; background: conic-gradient(from 0deg, #7fb4ff, #b46bff, #5b3df0, #7fb4ff); }
+.tara-orb[data-state="thinking"] .tara-orb__ring, .tara-orb[data-state="answer"] .tara-orb__ring { animation: none; opacity: 0; }
+.tara-orb[data-state="answer"] .tara-orb__core { transform: scale(.72); }
+.tara-orb[data-state="error"] .tara-orb__core { background: radial-gradient(circle at 35% 30%, #ffb4b4, #e0475b 60%, #52101c); animation: orb-shake .4s ease; }
+.tara-orb[data-state="error"] .tara-orb__ring { animation: none; opacity: 0; }
+@keyframes orb-in { from { opacity: 0; transform: translateY(40px) scale(.6); } }
+@keyframes orb-ring { from { transform: scale(.9); opacity: .9; } to { transform: scale(1.7); opacity: 0; } }
+@keyframes orb-spin { to { transform: rotate(360deg); } }
+@keyframes orb-shake { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+.perf .tara-orb__core, .perf .tara-orb__ring, .perf .tara-orb__core * { animation: none !important; transition: none !important; backdrop-filter: none; }
+@media (prefers-reduced-motion: reduce) { .tara-orb__core, .tara-orb__ring { animation: none !important; transition: none !important; } }
+@media (max-height: 480px) { .tara-orb { inset-block-end: max(8px, env(safe-area-inset-bottom)); width: min(70vw, 420px); gap: 6px; } .tara-orb__core { width: 56px; height: 56px; } .tara-orb__words, .tara-orb__reply { font-size: 13px; padding: 5px 10px; } }
+
+/* Portrait: stack the pairing screen instead of squeezing two columns side by side. */
+@media (orientation: portrait) {
+  .pair { flex-direction: column; justify-content: center; gap: 28px; padding: 28px max(22px, env(safe-area-inset-left)); text-align: center; }
+  .pair__intro { display: flex; flex-direction: column; align-items: center; }
+  .pair__intro h1 { font-size: clamp(34px, 11vw, 49px); letter-spacing: -1.5px; margin: 18px 0 12px; }
+  .pair__card { width: min(100%, 340px); }
+}
+
+/* Pad options: stay inside short landscape screens and give the toggles full width. */
+.pointer-options { max-height: calc(100dvh - 84px); overflow-y: auto; overscroll-behavior: contain; }
+.pointer-options .pointer-toggles button { width: 100%; height: auto; min-height: 38px; white-space: normal; display: block; }
+@media (max-height: 450px) { .pointer-options { padding: 12px 14px; } .pointer-toggles { grid-template-columns: 1fr 1fr; } .pointer-options .pointer-toggles button { min-height: 34px; font-size: 11px; padding: 6px 8px; } .gesture-guide { margin-top: 8px; } }
+@media (max-width: 480px) { #pc-keys-toggle span:not([data-icon]) { display: none; } }

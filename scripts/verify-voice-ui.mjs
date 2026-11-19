@@ -29,6 +29,33 @@ function rig({ ai = false, android = {} } = {}) {
   const r = rig(); globalThis.TaraVoice.onWake();
   t.deepEqual([r.els.voice.open, r.els["voice-said"].textContent], [true, "Listening…"], "wake opens the assistant");
 }
+{ // the orb: wake shows it without opening the dialog, words stream in, errors reset it
+  const els = {}; const orbEls = {};
+  const r = rig();
+  const orb = el({ hidden: true, dataset: {}, style: { setProperty(k, v) { this[k] = v; }, removeProperty(k) { delete this[k]; } }, showPopover() {}, hidePopover() {} });
+  const rig2 = (() => {
+    const e = {};
+    for (const id of ["voice-key-note", "voice-key-link", "voice-heard", "voice-said", "voice-mic", "voice-confirm", "voice-model-button", "voice-names", "voice-handsfree", "voice-yes", "voice-no", "tara-orb-words", "tara-orb-reply", "tara-orb-core"]) e[id] = el();
+    e["voice-model-note"] = el({ parentElement: { hidden: true } }); e["tara-orb"] = orb;
+    e.voice = el({ open: false, showModal() { this.open = true; }, close() { this.open = false; } });
+    const v = createVoice({ api: async () => ({ say: "Done." }), get: (id) => e[id], notify() {}, speech: null, SpeechRecognition: null, android: { startListening() {}, speak() {}, voiceModelState: () => JSON.stringify({ ready: true }), wakeNames: () => "tara" } });
+    return { v, e };
+  })();
+  globalThis.TaraVoice.onWake();
+  t.deepEqual([orb.hidden, orb.dataset.state, rig2.e.voice.open], [false, "listening", false], "wake shows the orb and leaves the dialog closed");
+  globalThis.TaraVoice.onResult("open blender", false);
+  t.equal(rig2.e["tara-orb-words"].textContent, "“open blender”", "live words appear on the orb");
+  globalThis.TaraVoice.onLevel(.5); t.equal(orb.style["--level"], "0.5", "mic level drives the orb");
+  globalThis.TaraVoice.onResult("open blender", true);
+  t.equal(orb.dataset.state, "thinking", "final words start thinking");
+  await new Promise((go) => setTimeout(go, 10));
+  t.deepEqual([orb.dataset.state, rig2.e["tara-orb-reply"].textContent], ["answer", "Done."], "reply is shown on the orb");
+  t.equal(rig2.e.voice.open, false, "the full dialog stayed closed");
+  globalThis.TaraVoice.onWake(); globalThis.TaraVoice.onError();
+  t.equal(orb.dataset.state, "error", "silence shows the error state");
+  rig2.e["tara-orb-core"].dispatchEvent({ type: "click" });
+  t.equal(orb.hidden, true, "tapping the orb dismisses it");
+}
 { // hands-free needs the model
   const r = rig(); r.els["voice-handsfree"].checked = true; globalThis.TaraVoice.onNeedModel();
   t.deepEqual([r.els["voice-handsfree"].checked, r.els.voice.open], [false, true], "hands-free switch turns off and the dialog explains");
