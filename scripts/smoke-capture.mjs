@@ -5,7 +5,7 @@ import { resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { createWindowsCapture } from "../src/platform/capture.js";
 
-const helperPath = resolve(process.argv[2] || "artifacts/capture-fix/WinDockHelper.exe");
+const helperPath = resolve(process.argv[2] || "artifacts/capture-fix/TaraHelper.exe");
 const capture = createWindowsCapture({ helperPath });
 try {
   const screenshot = (await capture.screenshot()).lastCapture;

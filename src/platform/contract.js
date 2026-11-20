@@ -1,7 +1,7 @@
 /**
  * The platform provider contract.
  *
- * Every OS-specific capability WinDock needs is declared here once, so the
+ * Every OS-specific capability Tara needs is declared here once, so the
  * server never reaches for an OS primitive directly. A provider is a plain
  * object implementing every method below; `verify-contract.mjs` proves that
  * each shipped provider does, with the declared arity.

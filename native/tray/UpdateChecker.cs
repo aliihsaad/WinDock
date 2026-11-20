@@ -4,7 +4,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-namespace WinDock.Tray;
+namespace Tara.Tray;
 
 internal sealed record ReleaseVersion(int Major, int Minor, int Patch, string[] Preview, string Text) : IComparable<ReleaseVersion>
 {
@@ -62,7 +62,7 @@ internal sealed class UpdateChecker(HttpClient http, string installedVersion)
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, ManifestUrl);
-            request.Headers.UserAgent.ParseAdd("WinDock/" + installedVersion);
+            request.Headers.UserAgent.ParseAdd("Tara/" + installedVersion);
             request.Headers.CacheControl = new() { NoCache = true };
             using var response = await http.SendAsync(request, cancellationToken);
             response.EnsureSuccessStatusCode();
@@ -88,7 +88,7 @@ internal sealed class UpdateChecker(HttpClient http, string installedVersion)
         var latest = ReleaseVersion.Parse(version.GetString()!);
         // The feed can only announce this repository's tagged Windows installer.
         var releasePage = DownloadsPageUrl;
-        if (url.GetString() != ReleasesUrl + "/download/v" + latest.Text + "/WinDockSetup.exe")
+        if (url.GetString() != ReleasesUrl + "/download/v" + latest.Text + "/TaraSetup.exe")
             throw new InvalidDataException("Unexpected download location.");
         return latest.CompareTo(ReleaseVersion.Parse(installedVersion)) > 0
             ? new(UpdateStatus.Available, latest.Text, new Uri(releasePage))

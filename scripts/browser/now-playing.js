@@ -18,7 +18,7 @@ async (page) => {
   await page.setViewportSize({ width: 915, height: 412 });
   // Start with the current shell, including when re-running after a code change.
   await page.evaluate(async () => {
-    localStorage.setItem("windock-layout", JSON.stringify({ immersive: false }));
+    localStorage.setItem("tara-layout", JSON.stringify({ immersive: false }));
     for (const registration of await navigator.serviceWorker.getRegistrations()) await registration.unregister();
     for (const key of await caches.keys()) await caches.delete(key);
   });

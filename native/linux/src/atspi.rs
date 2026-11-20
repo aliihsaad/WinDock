@@ -46,7 +46,7 @@ pub fn bus_address() -> crate::Result<String> {
 
 /// Track focus on a background thread; `wake` is poked after every change.
 pub fn watch(shared: Shared, wake: Sender<()>) {
-    let spawned = std::thread::Builder::new().name("windock-atspi".into()).spawn(move || {
+    let spawned = std::thread::Builder::new().name("tara-atspi".into()).spawn(move || {
         if let Err(error) = run(&shared, &wake) {
             eprintln!("AT-SPI focus tracking is unavailable ({error}); the keyboard button still works.");
         }

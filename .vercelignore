@@ -4,7 +4,7 @@ node_modules
 android
 native
 test
-WinDockHelper.exe
+TaraHelper.exe
 config.json
 *.log
 .claude

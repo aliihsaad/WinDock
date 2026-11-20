@@ -18,8 +18,8 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const LINUX_PACKAGES = Object.freeze({
-  arch: "WinDock-linux-x64.pkg.tar.zst",
-  debian: "WinDock-linux-amd64.deb",
+  arch: "Tara-linux-x64.pkg.tar.zst",
+  debian: "Tara-linux-amd64.deb",
 });
 export const LINUX_SUMS = "SHA256SUMS-linux.txt";
 

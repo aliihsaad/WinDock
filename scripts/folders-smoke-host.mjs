@@ -10,8 +10,8 @@ import { folderApp } from "../src/folders.js";
 
 const fixture = resolve("artifacts/folder-shortcuts-fixture/Project & notes مرحبا");
 await mkdir(fixture, { recursive: true });
-const temporary = await mkdtemp(join(tmpdir(), "windock-folder-ui-"));
-const native = createWindowsProvider({ exec: createExec(), helperPath: resolve("artifacts/WinDock-win-x64/WinDockHelper.exe") });
+const temporary = await mkdtemp(join(tmpdir(), "tara-folder-ui-"));
+const native = createWindowsProvider({ exec: createExec(), helperPath: resolve("artifacts/Tara-win-x64/TaraHelper.exe") });
 let picks = 0;
 const useNative = process.argv.includes("--native");
 const provider = {

@@ -40,7 +40,7 @@ const provider = createWindowsProvider({
   },
 });
 
-const dir = await mkdtemp(join(tmpdir(), "windock-api-"));
+const dir = await mkdtemp(join(tmpdir(), "tara-api-"));
 const configStore = createConfigStore({ path: join(dir, "config.json") });
 // Loopback trust would short-circuit every auth check, since these requests
 // originate from 127.0.0.1. Disabling it makes the entire suite below exercise
@@ -78,7 +78,7 @@ async function call(path, { method = "GET", body, origin = base, withCookie = tr
 const health = await call("/health");
 t.equal(health.status, 200, "GET /health is public and returns 200");
 t.equal(health.json.ok, true, "health reports ok");
-t.equal(health.json.app, "windock", "health identifies WinDock to discovery clients");
+t.equal(health.json.app, "tara", "health identifies Tara to discovery clients");
 t.equal(health.json.hostName, "Test Desk PC", "public health exposes a friendly PC name before pairing");
 t.equal(health.json.platform, "windows", "health names the active provider");
 t.ok(/^[0-9a-f-]{36}$/.test(health.json.hostId), "health publishes a non-secret host identity");
@@ -96,7 +96,7 @@ t.ok(/^[0-9a-f-]{36}$/.test(await hostIdentity(join(otherPath + '.host-id', 'not
 // ---- static ----
 const index = await call("/");
 t.equal(index.status, 200, "GET / serves the PWA shell");
-t.ok(index.text.includes("<title>WinDock</title>"), "the shell carries the app title");
+t.ok(index.text.includes("<title>Tara</title>"), "the shell carries the app title");
 t.equal(index.headers.get("x-content-type-options"), "nosniff", "static responses set nosniff");
 const manifest = await call("/manifest.webmanifest");
 t.equal(manifest.status, 200, "the manifest is served");
@@ -132,7 +132,7 @@ t.equal(
 );
 const paired = await call("/api/auth", { method: "POST", body: { pin: PIN } });
 t.equal(paired.status, 200, "the correct pin pairs successfully");
-t.ok(cookie.startsWith("windock_session="), "pairing issues a session cookie");
+t.ok(cookie.startsWith("tara_session="), "pairing issues a session cookie");
 
 // ---- authenticated routes ----
 const state = await call("/api/state");
@@ -276,12 +276,12 @@ await badJson.arrayBuffer();
 // ---- unauthenticated access ----
 const saved = cookie;
 cookie = "";
-const anon = await fetch(`${base}/api/state`, { headers: { origin: base, cookie: "windock_session=bogus" } });
+const anon = await fetch(`${base}/api/state`, { headers: { origin: base, cookie: "tara_session=bogus" } });
 t.equal(anon.status, 401, "an invalid session cannot read state");
 await anon.arrayBuffer();
 const anonAction = await fetch(`${base}/api/control`, {
   method: "POST",
-  headers: { "content-type": "application/json", origin: base, cookie: "windock_session=bogus" },
+  headers: { "content-type": "application/json", origin: base, cookie: "tara_session=bogus" },
   body: JSON.stringify({ verb: "shutdown" }),
 });
 t.equal(anonAction.status, 401, "an invalid session cannot trigger a power action");

@@ -7,7 +7,7 @@ import { createChecker } from "./lib/assert.mjs";
 import { addLinuxDownloads, LINUX_PACKAGES, LINUX_SUMS, linuxDownloads, parseSums } from "./linux-downloads.mjs";
 
 const t = createChecker("linux-downloads");
-const tmp = await mkdtemp(join(tmpdir(), "windock-linux-downloads-"));
+const tmp = await mkdtemp(join(tmpdir(), "tara-linux-downloads-"));
 const linuxDir = join(tmp, "linux"), siteDir = join(tmp, "website-downloads");
 await mkdir(linuxDir);
 await mkdir(siteDir);

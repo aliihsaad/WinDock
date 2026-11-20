@@ -11,10 +11,10 @@ release=${2:-1}
 stage=$(mktemp -d)
 trap 'rm -rf -- "$stage"' EXIT
 root="$stage/root"
-app="$root/usr/lib/windock"
+app="$root/usr/lib/tara"
 mkdir -p "$app" "$root/usr/bin" "$root/usr/share/applications" \
     "$root/usr/share/icons/hicolor/512x512/apps" "$root/usr/lib/udev/rules.d" \
-    "$root/usr/lib/modules-load.d" "$root/usr/lib/systemd/user" "$root/usr/share/licenses/windock" artifacts/linux
+    "$root/usr/lib/modules-load.d" "$root/usr/lib/systemd/user" "$root/usr/share/licenses/tara" artifacts/linux
 cp server.js package.json package-lock.json "$app/"
 cp -R src public "$app/"
 # A checkout on a Windows drive marks every file executable; ship data as 0644.
@@ -22,17 +22,17 @@ find "$app" -type d -exec chmod 755 {} +
 find "$app" -type f -exec chmod 644 {} +
 npm ci --prefix "$app" --omit=dev --ignore-scripts --no-audit --no-fund
 install -m 755 "$(command -v node)" "$app/node"
-install -m 755 native/linux/target/release/windock-input "$app/windock-input"
+install -m 755 native/linux/target/release/tara-input "$app/tara-input"
 install -m 755 native/linux/packaging/user-service "$app/user-service"
-install -m 755 native/linux/packaging/windock "$root/usr/bin/windock"
-install -m 644 native/linux/packaging/windock.desktop "$root/usr/share/applications/"
-install -m 644 native/linux/packaging/windock.service "$root/usr/lib/systemd/user/"
-install -m 644 public/icon-512.png "$root/usr/share/icons/hicolor/512x512/apps/windock.png"
-install -m 644 native/linux/70-windock-uinput.rules "$root/usr/lib/udev/rules.d/"
-printf 'uinput\n' > "$root/usr/lib/modules-load.d/windock.conf"
-install -m 644 LICENSE "$root/usr/share/licenses/windock/LICENSE"
-install -m 644 "${NODE_LICENSE:?Set NODE_LICENSE to the bundled Node distribution license}" "$root/usr/share/licenses/windock/Node-LICENSE"
-node scripts/linux-license-notices.mjs "$root/usr/share/licenses/windock/rust"
+install -m 755 native/linux/packaging/tara "$root/usr/bin/tara"
+install -m 644 native/linux/packaging/tara.desktop "$root/usr/share/applications/"
+install -m 644 native/linux/packaging/tara.service "$root/usr/lib/systemd/user/"
+install -m 644 public/icon-512.png "$root/usr/share/icons/hicolor/512x512/apps/tara.png"
+install -m 644 native/linux/70-tara-uinput.rules "$root/usr/lib/udev/rules.d/"
+printf 'uinput\n' > "$root/usr/lib/modules-load.d/tara.conf"
+install -m 644 LICENSE "$root/usr/share/licenses/tara/LICENSE"
+install -m 644 "${NODE_LICENSE:?Set NODE_LICENSE to the bundled Node distribution license}" "$root/usr/share/licenses/tara/Node-LICENSE"
+node scripts/linux-license-notices.mjs "$root/usr/share/licenses/tara/rust"
 # npm package licenses are retained alongside their installed modules.
 # A CRLF checkout would ship Windows line endings in scripts, rules and sources.
 if grep -rlI --exclude-dir=node_modules --exclude-dir=licenses $'\r' "$root"; then
@@ -42,34 +42,34 @@ fi
 du_kib=$(du -sk "$root" | cut -f1)
 mkdir "$root/DEBIAN"
 cat > "$root/DEBIAN/control" <<EOF
-Package: windock
+Package: tara
 Version: $version-$release
 Section: net
 Priority: optional
 Architecture: amd64
 Maintainer: Ali Saad <aliihsaad@users.noreply.github.com>
-Homepage: https://windock.vercel.app
+Homepage: https://github.com/yeshwanthkumardomala/tara
 Installed-Size: $du_kib
 Depends: libc6 (>= 2.36), libstdc++6, libgcc-s1, libgtk-3-bin, grim, wl-clipboard, wtype, pulseaudio-utils, systemd, udev, kmod, x-terminal-emulator
 Recommends: brightnessctl, ddcutil, wf-recorder, libnotify-bin
 Description: Phone companion for a Hyprland desktop (preview)
  Includes the Node.js runtime and native input helper; no compilation needed.
- A running Hyprland session is required. Open WinDock from the application
+ A running Hyprland session is required. Open Tara from the application
  menu; it keeps running in the background as a systemd user service after
  its window closes. GNOME and KDE are not supported.
 EOF
 install -m 755 native/linux/packaging/postinst "$root/DEBIAN/postinst"
 install -m 755 native/linux/packaging/prerm "$root/DEBIAN/prerm"
 install -m 755 native/linux/packaging/postrm "$root/DEBIAN/postrm"
-dpkg-deb --root-owner-group --build "$root" artifacts/linux/WinDock-linux-amd64.deb
+dpkg-deb --root-owner-group --build "$root" artifacts/linux/Tara-linux-amd64.deb
 # Arch uses the same payload, with native dependency names and install hooks.
 rm -r -- "$root/DEBIAN"
 cat > "$root/.PKGINFO" <<EOF
-pkgname = windock
-pkgbase = windock
+pkgname = tara
+pkgbase = tara
 pkgver = $version-$release
 pkgdesc = Phone companion for a Hyprland desktop (preview, bundled runtime)
-url = https://windock.vercel.app
+url = https://github.com/yeshwanthkumardomala/tara
 builddate = $(date +%s)
 packager = Ali Saad <aliihsaad@users.noreply.github.com>
 size = $(du -sb "$root" | cut -f1)
@@ -87,7 +87,7 @@ depend = kmod
 optdepend = brightnessctl: laptop panel brightness
 optdepend = ddcutil: external monitor brightness
 optdepend = wf-recorder: screen recording
-optdepend = libnotify: notification when WinDock starts in the background
+optdepend = libnotify: notification when Tara starts in the background
 optdepend = hyprland: supported desktop session
 optdepend = xterm: fallback terminal for the connection window
 EOF
@@ -106,7 +106,7 @@ install -m 644 native/linux/packaging/arch.install "$root/.INSTALL"
         | gzip -c -f -n > "$stage/mtree.gz"
 )
 mv "$stage/mtree.gz" "$root/.MTREE"
-tar --sort=name --owner=0 --group=0 --numeric-owner --zstd -cf artifacts/linux/WinDock-linux-x64.pkg.tar.zst -C "$root" .PKGINFO .MTREE .INSTALL usr
+tar --sort=name --owner=0 --group=0 --numeric-owner --zstd -cf artifacts/linux/Tara-linux-x64.pkg.tar.zst -C "$root" .PKGINFO .MTREE .INSTALL usr
 node -p "JSON.stringify({version: '$version-$release', node: process.version, arch: process.arch, platform: process.platform}, null, 2)" > artifacts/linux/build-info.json
-(cd artifacts/linux && sha256sum WinDock-linux-amd64.deb WinDock-linux-x64.pkg.tar.zst > SHA256SUMS-linux.txt)
+(cd artifacts/linux && sha256sum Tara-linux-amd64.deb Tara-linux-x64.pkg.tar.zst > SHA256SUMS-linux.txt)
 echo "Linux packages ready in artifacts/linux"

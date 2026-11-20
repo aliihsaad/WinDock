@@ -92,9 +92,9 @@ async (page) => {
     await tab.locator('#edit-done').click();
     check(await tab.locator('#dock').textContent() === tilesBefore, 'Navigation gestures preserve existing tiles');
     await tab.locator('#quick-controls-open').click();
-    await tab.evaluate(() => window.WinDockPerformance.setPreference('on'));
+    await tab.evaluate(() => window.TaraPerformance.setPreference('on'));
     check(await tab.locator('#controls').evaluate(el => getComputedStyle(el).transitionDuration.split(',').every(time => parseFloat(time) === 0)), 'Performance mode disables curtain animation');
-    await tab.evaluate(() => window.WinDockPerformance.setPreference('off'));
+    await tab.evaluate(() => window.TaraPerformance.setPreference('off'));
     await tab.emulateMedia({ reducedMotion: 'reduce' });
     check(await tab.locator('#controls').evaluate(el => getComputedStyle(el).transitionDuration.split(',').every(time => parseFloat(time) === 0)), 'Reduced-motion preference disables curtain animation');
     await close();

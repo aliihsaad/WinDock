@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using System.Windows.Forms;
 
-namespace WinDock;
+namespace Tara;
 
 internal static class FolderShortcut
 {
@@ -22,14 +22,14 @@ internal static class FolderShortcut
         Application.EnableVisualStyles();
         using var owner = new Form
         {
-            Text = "WinDock — choose a folder", StartPosition = FormStartPosition.CenterScreen,
+            Text = "Tara — choose a folder", StartPosition = FormStartPosition.CenterScreen,
             ClientSize = new System.Drawing.Size(400, 100), MaximizeBox = false, MinimizeBox = false,
         };
-        owner.Controls.Add(new Label { Text = "Choose a folder to add to your WinDock dock.",
+        owner.Controls.Add(new Label { Text = "Choose a folder to add to your Tara dock.",
             Dock = DockStyle.Fill, TextAlign = System.Drawing.ContentAlignment.MiddleCenter });
         using var dialog = new FolderBrowserDialog
         {
-            Description = "Choose a folder for your WinDock dock",
+            Description = "Choose a folder for your Tara dock",
             UseDescriptionForTitle = true,
             AutoUpgradeEnabled = true,
             InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),

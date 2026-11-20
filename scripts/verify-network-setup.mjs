@@ -26,10 +26,10 @@ assert.equal(unknown.backend, 'unknown'); assert.match(unknown.status, /does not
 const noZone = await networkSetup({ ports, platform: 'linux', interfaces, read: async () => '',
   run: async (file, args) => ({ ok: true, text: args[0] === '--state' ? 'running' : 'no zone' }) });
 assert.ok(noZone.networks.every(n => n.rules.every(r => !r.commands.length)));
-const windows = await networkSetup({ ports, platform: 'win32', interfaces, executable: "C:\\A user's PC\\WinDock\\node.exe", run: async () => { throw Error('Must not run commands'); } });
+const windows = await networkSetup({ ports, platform: 'win32', interfaces, executable: "C:\\A user's PC\\Tara\\node.exe", run: async () => { throw Error('Must not run commands'); } });
 const ps = windows.networks[0].rules[0].commands[0];
 assert.match(ps, /-Profile Private/); assert.match(ps, /-RemoteAddress 192\.168\.178\.0\/24/);
-assert.match(ps, /-Program 'C:\\A user''s PC\\WinDock\\node.exe'/); assert.match(ps, /-LocalPort 19876/);
+assert.match(ps, /-Program 'C:\\A user''s PC\\Tara\\node.exe'/); assert.match(ps, /-LocalPort 19876/);
 assert.ok(!ps.includes('-Profile Any'));
 assert.equal(firewallCommands({ platform: 'linux', backend: 'ufw', scope: { ...scopes[0], name: 'bad\ncommand' }, ports }).length, 0);
 assert.equal(firewallCommands({ platform: 'linux', backend: 'ufw', scope: { ...scopes[0], subnet: '0.0.0.0/0' }, ports }).length, 0);

@@ -11,7 +11,7 @@ function spawn(file, args, options) {
   child.kill = () => { child.killed = true; child.emit("close", null); };
   child.message = (message) => child.stdout.write(JSON.stringify(message) + "\n");
   child.finish = (code = 0) => { child.stdout.end(); child.stderr.end(); child.emit("close", code); };
-  child.saved = (kind = "recording") => child.message({ type: "saved", name: "capture.mp4", path: "C:\\Videos\\WinDock\\capture.mp4", kind });
+  child.saved = (kind = "recording") => child.message({ type: "saved", name: "capture.mp4", path: "C:\\Videos\\Tara\\capture.mp4", kind });
   children.push({ child, file, args, options });
   return child;
 }

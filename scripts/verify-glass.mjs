@@ -88,10 +88,9 @@ t.ok(/function syncPerformance\(\) \{[\s\S]*?syncSelects\(\);[\s\S]*?\n\}/.test(
 t.ok(read("public/glass-select.js").includes("select.hidden = true;"), "the native select is removed from view, so no state can reveal it");
 for (const file of ["glass.js", "glass-select.js"]) {
   t.ok(read("public/sw.js").includes(`"/${file}"`), `the offline shell precaches ${file}`);
-  t.ok(read("scripts/build-website-demo.mjs").includes(`'${file}'`), `the website demo copies ${file}`);
 }
 const dataImages = /img-src 'self' data:/;
-t.ok(dataImages.test(read("server.js")) && dataImages.test(read("scripts/build-website-demo.mjs")), "the content policy allows the lens's generated images");
+t.ok(dataImages.test(read("server.js")), "the content policy allows the lens's generated images");
 
 // Costs that must stay switched off where they were deliberately removed.
 const lensRule = css.match(/:root\[data-bend\]:not\(\.perf\) :is\(([^)]*)\) \{ backdrop-filter: var\(--lens/);

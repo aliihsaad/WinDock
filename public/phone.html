@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Phone control · Tara</title><link rel="stylesheet" href="cast.css"><link rel="stylesheet" href="phone.css"><link rel="icon" type="image/png" href="/icon-192.png"></head>
+<body><main>
+  <p class="eyebrow">TARA</p><h1>Control your phone from this PC</h1>
+  <p class="hint">On the phone: open the “PC control on phone Tara” tile, turn on “Let this PC control the phone”, and enable Tara in Accessibility settings. Nothing is mirrored; you tap on the pad below.</p>
+  <div class="phone-layout">
+    <div id="pad" class="phone-pad" role="application" aria-label="Phone touch pad. Click to tap, drag to swipe."><span>Click to tap · drag to swipe</span></div>
+    <div class="phone-keys">
+      <button type="button" data-type="back">◀ Back</button>
+      <button type="button" data-type="home">● Home</button>
+      <button type="button" data-type="recents">▣ Recents</button>
+      <button type="button" data-type="notifications">Notifications</button>
+      <button type="button" data-swipe="up">Scroll down</button>
+      <button type="button" data-swipe="down">Scroll up</button>
+    </div>
+  </div>
+  <p id="status" role="status" aria-live="polite">Your phone must be connected to Tara.</p>
+</main><script src="phone.js"></script></body></html>

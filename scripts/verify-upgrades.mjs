@@ -1,0 +1,232 @@
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { createChecker } from "./lib/assert.mjs";
+import { normalizeMac, magicPacket, broadcastAddresses, sendWake } from "../src/wake.js";
+import { normalizeTiles, normalizeTile, createConfigStore, flattenTiles, MAX_MACRO_STEPS } from "../src/config.js";
+import { addAppTile, addMacroTile, addWakeTile, groupTiles, ungroupTile, removeFromGroup, toWireTiles, tileKey } from "../public/tiles.js";
+import { buzz, hapticsEnabled } from "../public/haptics.js";
+import { createServer } from "node:http";
+import { once } from "node:events";
+import { WebSocket } from "ws";
+import { createInputHub } from "../src/input-hub.js";
+import { createApp } from "../server.js";
+
+const t = createChecker("upgrades");
+
+// ---- Wake-on-LAN packet ------------------------------------------------------
+t.equal(normalizeMac("aa-bb-cc-dd-ee-ff"), "AA:BB:CC:DD:EE:FF", "dash MAC normalised");
+t.equal(normalizeMac("aabbccddeeff"), "AA:BB:CC:DD:EE:FF", "bare MAC normalised");
+for (const bad of [null, "", "aa:bb", "gg:bb:cc:dd:ee:ff", "00:00:00:00:00:00", "ff:ff:ff:ff:ff:ff", "aa:bb:cc:dd:ee:ff:00"])
+  t.equal(normalizeMac(bad), null, "reject MAC " + JSON.stringify(bad));
+const packet = magicPacket("AA:BB:CC:DD:EE:FF");
+t.equal(packet.length, 102, "magic packet is 102 bytes");
+t.ok(packet.subarray(0, 6).every((b) => b === 0xff), "starts with six 0xFF");
+t.ok(Array.from({ length: 16 }, (_, i) => packet.subarray(6 + i * 6, 12 + i * 6).toString("hex")).every((h) => h === "aabbccddeeff"), "MAC repeated sixteen times");
+t.throws(() => magicPacket("nope"), "invalid MAC cannot build a packet");
+t.deepEqual(broadcastAddresses({
+  eth0: [{ family: "IPv4", internal: false, address: "192.168.1.20", netmask: "255.255.255.0" }, { family: "IPv6", internal: false, address: "fe80::1", netmask: "ffff::" }],
+  lo: [{ family: "IPv4", internal: true, address: "127.0.0.1", netmask: "255.0.0.0" }],
+}), ["255.255.255.255", "192.168.1.255"], "directed broadcast computed, loopback and IPv6 skipped");
+const sent = [];
+const fakeSocket = () => ({
+  once() {}, bind(_port, cb) { cb(); }, setBroadcast() {}, close() { sent.push("closed"); },
+  send(buf, port, address, cb) { sent.push([buf.length, port, address]); cb(null); },
+});
+const result = await sendWake("aa:bb:cc:dd:ee:ff", { createSocket: fakeSocket, addresses: ["255.255.255.255", "10.0.0.255"] });
+t.equal(result.sent, 4, "sent to each address on ports 9 and 7");
+t.deepEqual(sent.slice(0, 2), [[102, 9, "255.255.255.255"], [102, 7, "255.255.255.255"]], "packet sent to broadcast");
+t.equal(sent.at(-1), "closed", "socket closed");
+
+// ---- Tile schema -------------------------------------------------------------
+const step = { type: "control", verb: "volume-set", value: 30 };
+const macro = normalizeTile({ kind: "macro", id: "macro:abc123", label: "Study", steps: [{ type: "app", id: "notes", label: "Notes" }, { type: "wait", ms: 500 }, step] });
+t.equal(macro.steps.length, 3, "macro keeps valid steps");
+t.equal(normalizeTile({ kind: "macro", id: "macro:abc123", steps: [{ type: "control", verb: "shutdown" }] }), null, "macro cannot contain power verbs");
+t.equal(normalizeTile({ kind: "macro", id: "macro:abc123", steps: [{ type: "control", verb: "lock" }, { type: "exec", cmd: "calc" }] }), null, "unknown and destructive steps dropped, empty macro rejected");
+t.equal(normalizeTile({ kind: "macro", id: "macro:abc123", steps: [{ type: "control", verb: "volume-set", value: 500 }] }), null, "out-of-range value rejected");
+t.equal(normalizeTile({ kind: "macro", id: "bad id!", steps: [step] }), null, "macro id pattern enforced");
+t.equal(normalizeTile({ kind: "macro", id: "macro:abc123", steps: Array.from({ length: 4 }, () => ({ type: "wait", ms: 5000 })) }), null, "total wait time bounded");
+t.equal(normalizeTile({ kind: "macro", id: "macro:abc123", steps: Array.from({ length: 30 }, () => ({ type: "control", verb: "mute-toggle" })) }).steps.length, MAX_MACRO_STEPS, "step count bounded");
+t.equal(normalizeTile({ kind: "wake", mac: "aa-bb-cc-dd-ee-ff", label: "Desk" }).id, "wake:aabbccddeeff", "wake id derived from MAC, never trusted");
+t.equal(normalizeTile({ kind: "wake", id: "wake:other", mac: "zz" }), null, "wake needs a valid MAC");
+
+const app1 = { kind: "app", id: "notes", target: "notes.exe", label: "Notes", args: "", icon: "" };
+const app2 = { kind: "app", id: "calc", target: "calc.exe", label: "Calc", args: "", icon: "" };
+const group = normalizeTile({ kind: "group", id: "group:work01", label: "Work", items: [app1, app2, app1, { kind: "group", id: "group:inner1", items: [app1] }, { kind: "bogus" }] });
+t.deepEqual(group.items.map((i) => i.id), ["notes", "calc"], "group de-duplicates and refuses nested groups and junk");
+t.equal(normalizeTile({ kind: "group", id: "group:empty1", items: [] }), null, "empty group dropped");
+t.equal(normalizeTiles([group, group]).length, 1, "duplicate group ids collapse");
+t.deepEqual(flattenTiles([group, macro]).map((x) => x.id), ["group:work01", "notes", "calc", "macro:abc123"], "flatten exposes group items");
+
+// ---- Browser-side tile helpers ----------------------------------------------
+let tiles = addAppTile(addAppTile([], { id: "notes", target: "notes.exe", name: "Notes" }), { id: "calc", target: "calc.exe", name: "Calc" });
+tiles = addMacroTile(tiles, "Study", macro.steps, "macro:abc123");
+tiles = addWakeTile(tiles, "Laptop", "AA-BB-CC-DD-EE-FF");
+t.equal(addWakeTile(tiles, "x", "nonsense").length, tiles.length, "bad MAC ignored by the UI helper");
+t.equal(addMacroTile(tiles, "Empty", []).length, tiles.length, "empty macro ignored");
+t.deepEqual(normalizeTiles(toWireTiles(tiles)).map(tileKey), tiles.map(tileKey), "new kinds survive a wire round trip");
+const grouped = groupTiles(tiles, ["app:notes", "app:calc"], "Work", "group:work01");
+t.deepEqual(grouped.map(tileKey), ["group:work01", "macro:abc123", "wake:aabbccddeeff"], "group replaces its tiles at the first position");
+t.equal(grouped[0].items.length, 2, "group holds both apps");
+t.deepEqual(ungroupTile(grouped, "group:work01").map(tileKey), tiles.map(tileKey), "ungroup restores the original order");
+const partly = removeFromGroup(grouped, "group:work01", "app:calc");
+t.deepEqual(partly.map(tileKey).slice(0, 2), ["group:work01", "app:calc"], "tile leaves the folder and lands after it");
+const emptied = removeFromGroup(removeFromGroup(grouped, "group:work01", "app:calc"), "group:work01", "app:notes");
+t.ok(!emptied.some((x) => x.kind === "group"), "emptied folder disappears");
+t.equal(groupTiles(tiles, ["nothing"], "X").length, tiles.length, "grouping nothing changes nothing");
+
+// ---- Haptics -----------------------------------------------------------------
+const pulses = [];
+const on = { getItem: () => null }, off = { getItem: () => "off" };
+t.equal(hapticsEnabled(on), true, "haptics default to on");
+t.equal(hapticsEnabled(off), false, "haptics can be turned off");
+t.equal(buzz(12, { storage: on, vibrate: (p) => pulses.push(p) }), true, "buzz vibrates when enabled");
+t.equal(buzz(12, { storage: off, vibrate: (p) => pulses.push(p) }), false, "buzz stays silent when disabled");
+t.deepEqual(pulses, [12], "only the enabled buzz reached the device");
+t.equal(buzz(5, { storage: on, vibrate: () => { throw new Error("no motor"); } }), false, "a failing vibrator never throws");
+
+// ---- Touch & sign shortcuts and rotation ------------------------------------
+{
+  const { createTripleTap, isBackgroundTarget, quickInputEnabled, setQuickInput } = await import("../public/quick-access.js");
+  const { applyRotation, getRotation, normalizeRotation, portraitAllowed } = await import("../public/orientation.js");
+  let clock = 0;
+  const triple = createTripleTap({ now: () => clock });
+  t.equal(triple.tap(100, 100), false, "first tap does not trigger");
+  clock = 200; t.equal(triple.tap(104, 98), false, "second tap does not trigger");
+  clock = 400; t.equal(triple.tap(96, 103), true, "third quick tap in the same place triggers");
+  clock = 500; t.equal(triple.tap(100, 100), false, "counter restarts after a trigger");
+  clock = 1500; t.equal(triple.tap(100, 100), false, "slow taps do not add up");
+  clock = 1600; triple.tap(100, 100); clock = 1700; t.equal(triple.tap(400, 300), false, "taps far apart do not add up");
+  t.equal(isBackgroundTarget({ closest: () => null }), true, "bare dock space counts");
+  t.equal(isBackgroundTarget({ closest: () => ({}) }), false, "tiles and buttons do not count");
+  const mem = new Map(); const storage = { getItem: (k) => mem.get(k) ?? null, setItem: (k, v) => mem.set(k, v) };
+  t.equal(quickInputEnabled(storage), true, "shortcut is on by default");
+  setQuickInput(false, storage); t.equal(quickInputEnabled(storage), false, "shortcut can be turned off");
+  t.equal(normalizeRotation("sideways"), "auto", "unknown rotation falls back to auto");
+  t.equal(portraitAllowed("landscape"), false, "landscape lock blocks portrait");
+  t.equal(portraitAllowed("portrait") && portraitAllowed("auto"), true, "auto and portrait allow portrait");
+  const attrs = {}; const root = { dataset: {}, setAttribute: (k) => { attrs[k] = true; }, removeAttribute: (k) => { delete attrs[k]; } };
+  const calls = []; const android = { setOrientation: (m) => calls.push(m) };
+  t.equal(applyRotation("portrait", { root, android, storage }), "portrait", "applyRotation returns the mode");
+  t.ok(attrs["data-rotate-ok"] && getRotation(storage) === "portrait" && calls[0] === "portrait", "portrait is saved, allowed and sent to Android");
+  applyRotation("landscape", { root, android, storage });
+  t.ok(!attrs["data-rotate-ok"] && calls[1] === "landscape", "landscape removes the portrait allowance");
+}
+
+// ---- Shortcut chords, held modifiers and decks -----------------------------------
+{
+  const { validateInput } = await import("../src/input.js");
+  const { validateChord, KEYS } = await import("../src/chords.js");
+  const { DECKS, chordMessage, detectDeck, scrubSteps } = await import("../public/decks.js");
+  t.deepEqual(validateInput({ type: "chord", mods: ["shift", "ctrl"], key: "s" }), { type: "chord", mods: ["ctrl", "shift"], key: "s" }, "chord modifiers are normalized");
+  t.deepEqual(validateInput({ type: "chord", mods: [], key: "ArrowRight", repeat: 5 }), { type: "chord", mods: [], key: "ArrowRight", repeat: 5 }, "repeat is kept");
+  for (const bad of [{ type: "chord", mods: ["super"], key: "a" }, { type: "chord", mods: ["ctrl", "ctrl"], key: "a" }, { type: "chord", mods: [], key: "PrintScreen" },
+    { type: "chord", mods: [], key: "a", repeat: 21 }, { type: "chord", mods: [], key: "a", repeat: 0 }, { type: "chord", mods: "ctrl", key: "a" }, { type: "chord", mods: [], key: "a", extra: 1 }, { type: "chord", key: "a" }])
+    t.equal(validateInput(bad), null, "invalid chord rejected: " + JSON.stringify(bad));
+  t.deepEqual(validateInput({ type: "modifier", key: "shift", down: true }), { type: "modifier", key: "shift", down: true }, "modifier hold accepted");
+  t.equal(validateInput({ type: "modifier", key: "fn", down: true }), null, "unknown modifier rejected");
+  t.equal(validateInput({ type: "button", button: "middle", down: true })?.button, "middle", "middle mouse button accepted for 3D orbit");
+  // Every key a deck presses must be one the host accepts, or the button would silently do nothing.
+  let count = 0;
+  for (const deck of DECKS) for (const page of deck.pages) for (const entry of page.keys) {
+    count++;
+    t.ok(validateChord(chordMessage(entry)) !== null && KEYS.has(entry.key), `${deck.name}/${page.name}/${entry.label} is a valid chord`);
+  }
+  t.ok(count >= 60, "decks have plenty of keys");
+  t.equal(detectDeck([{ name: "blender", title: "Blender [scene.blend]" }]), "blender", "Blender window selects the Blender deck");
+  t.equal(detectDeck([{ id: "resolve", name: "Resolve", title: "DaVinci Resolve" }]), "resolve", "Resolve window selects the Resolve deck");
+  t.equal(detectDeck([{ name: "notepad" }]), null, "other apps select nothing");
+  t.deepEqual(scrubSteps(30, 0, 14), { steps: 2, carried: 2 }, "scrub turns distance into frames");
+  t.deepEqual(scrubSteps(-30, 0, 14), { steps: -2, carried: -2 }, "scrub works backwards");
+  t.deepEqual(scrubSteps(5, 10, 14), { steps: 1, carried: 1 }, "leftover distance carries over");
+  t.equal(chordMessage({ mods: [], key: "ArrowRight" }, 40).repeat, 20, "frame repeat is capped");
+}
+
+// ---- Two phones sharing one touchpad ----------------------------------------
+{
+  const sessions = [], received = [];
+  const input = { open(_fail, emit) { const s = { closed: false, ready: Promise.resolve(), send: (m) => received.push(m), close() { s.closed = true; } }; sessions.push(s); return s; } };
+  const http = createServer();
+  const hub = createInputHub({ server: http, isAuthorized: () => true, input, takeoverIdleMs: 200 });
+  await new Promise((resolve) => http.listen(0, "127.0.0.1", resolve));
+  const base = "http://127.0.0.1:" + http.address().port;
+  const open = () => new Promise((resolve, reject) => {
+    const ws = new WebSocket(base.replace("http:", "ws:") + "/input", { headers: { origin: base } });
+    const log = [];
+    ws.on("message", (d) => { const m = JSON.parse(d.toString()); log.push(m.type === "error" ? m.error : m.type); if (log.length === 1) resolve({ ws, log }); });
+    ws.on("error", reject);
+  });
+  const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const a = await open();
+  t.deepEqual(a.log, ["ready"], "first phone gets the touchpad");
+  a.ws.send(JSON.stringify({ type: "move", dx: 1, dy: 1 }));
+  const early = await open();
+  t.equal(early.log[0], "Another device is using the touchpad.", "second phone is refused while the first is active");
+  await pause(300);
+  const takeover = await open();
+  t.deepEqual(takeover.log, ["ready"], "second phone takes over once the first has been idle");
+  await pause(50);
+  t.ok(sessions[0].closed, "old owner's native session was released first");
+  t.ok(a.log.includes("Another device took over the touchpad."), "old phone is told why it was disconnected");
+  takeover.ws.send(JSON.stringify({ type: "move", dx: 2, dy: 2 }));
+  const refused = await open();
+  t.equal(refused.log[0], "Another device is using the touchpad.", "an active owner cannot be taken over");
+  takeover.ws.close(); await pause(50);
+  for (const client of [a, early, refused]) client.ws.terminate();
+  await hub.close(); http.closeAllConnections(); await new Promise((resolve) => http.close(resolve));
+}
+
+// ---- Host API ----------------------------------------------------------------
+const dir = await mkdtemp(join(tmpdir(), "tara-upgrades-"));
+const store = createConfigStore({ path: join(dir, "config.json") });
+const calls = [];
+const provider = {
+  id: "test", displayName: "Test",
+  listInstalledApps: async () => [{ id: "notes", name: "Notes", target: "notes.exe", source: "start" }],
+  listRunningApps: async () => [{ id: "notes", pid: 7 }],
+  launchApp: async (app) => { calls.push(["launch", app.id]); },
+  focusApp: async () => {}, closeApp: async () => {},
+  control: async (verb, value) => { calls.push(["control", verb, value]); },
+  nowPlaying: async () => null, systemStats: async () => ({}),
+};
+const wakes = [];
+const app = await createApp({ provider, configStore: store, pin: "572864", trustLoopback: false, wakeSender: async (mac) => { wakes.push(mac); return { sent: 2 }; } });
+await new Promise((resolve) => app.server.listen(0, "127.0.0.1", resolve));
+const base = "http://127.0.0.1:" + app.server.address().port;
+let cookie = "";
+async function call(path, { method = "GET", body, auth = true } = {}) {
+  const response = await fetch(base + path, { method, headers: { origin: base, ...(auth ? { cookie } : {}), "content-type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body) });
+  if (response.headers.get("set-cookie")) cookie = response.headers.get("set-cookie").split(";")[0];
+  const text = await response.text();
+  let json; try { json = JSON.parse(text); } catch { /* not JSON */ }
+  return { status: response.status, json, text };
+}
+try {
+  const quick = normalizeTile({ kind: "macro", id: "macro:quick1", label: "Quick", steps: [{ type: "app", id: "notes", label: "Notes" }, { type: "wait", ms: 100 }, { type: "control", verb: "volume-set", value: 20 }] });
+  const missing = normalizeTile({ kind: "macro", id: "macro:gone01", label: "Gone", steps: [{ type: "app", id: "removed", label: "Removed" }] });
+  const wake = normalizeTile({ kind: "wake", mac: "aa:bb:cc:dd:ee:ff", label: "Laptop" });
+  const inGroup = normalizeTile({ kind: "group", id: "group:box001", label: "Box", items: [normalizeTile({ kind: "wake", mac: "11:22:33:44:55:66", label: "Other" })] });
+  await call("/api/auth", { method: "POST", body: { pin: "572864" }, auth: false });
+  t.equal((await call("/api/macros/run", { method: "POST", body: { id: quick.id }, auth: false })).status, 401, "unpaired client cannot run macros");
+  t.equal((await call("/api/wake", { method: "POST", body: { id: wake.id }, auth: false })).status, 401, "unpaired client cannot wake");
+  t.equal((await call("/api/tiles", { method: "PUT", body: { tiles: [quick, missing, wake, inGroup] } })).status, 200, "tiles with new kinds saved");
+  store.invalidate();
+  t.deepEqual((await store.load()).tiles.map(tileKey), ["macro:quick1", "macro:gone01", "wake:aabbccddeeff", "group:box001"], "disk reload keeps the new tile kinds");
+  const run = await call("/api/macros/run", { method: "POST", body: { id: quick.id } });
+  t.equal(run.status, 200, "macro runs");
+  t.deepEqual(calls, [["launch", "notes"], ["control", "volume-set", 20]], "steps ran in order through the provider");
+  t.equal((await call("/api/macros/run", { method: "POST", body: { id: missing.id } })).status, 404, "missing app stops the macro with a clear error");
+  t.equal((await call("/api/macros/run", { method: "POST", body: { id: "macro:nope00" } })).status, 404, "unknown macro rejected");
+  t.equal((await call("/api/wake", { method: "POST", body: { id: wake.id } })).status, 200, "wake tile sends a packet");
+  t.deepEqual(wakes, ["AA:BB:CC:DD:EE:FF"], "stored MAC was used");
+  t.equal((await call("/api/wake", { method: "POST", body: { id: "wake:665544332211" } })).status, 404, "phone cannot wake an arbitrary MAC");
+  t.equal((await call("/api/wake", { method: "POST", body: { id: "wake:112233445566" } })).status, 200, "wake tile inside a folder still works");
+  const state = (await call("/api/state")).json;
+  t.deepEqual(state.tiles.map((x) => x.kind), ["macro", "macro", "wake", "group"], "state exposes new kinds");
+} finally {
+  app.hub.close(); app.inputHub.close(); app.server.closeAllConnections();
+  await new Promise((resolve) => app.server.close(resolve));
+  await rm(dir, { recursive: true, force: true });
+}
+t.done("upgrades verification passed");

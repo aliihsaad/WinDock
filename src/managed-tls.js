@@ -10,7 +10,7 @@ const DAY = 86400000;
 const ALG = { name: "ECDSA", namedCurve: "P-256" };
 const SIGN = { name: "ECDSA", hash: "SHA-256" };
 const serial = () => randomBytes(16).toString("hex");
-export const tlsName = (id) => `host-${id}.windock.invalid`;
+export const tlsName = (id) => `host-${id}.tara.invalid`;
 export const certificatePin = (pem) => createHash("sha256").update(new X509Certificate(pem).publicKey.export({ type: "spki", format: "der" })).digest("hex");
 const keyMatches = (cert, key) => new X509Certificate(cert).publicKey.equals(createPublicKey(createPrivateKey(key)));
 const pemKey = async (key) => createPrivateKey({ key: Buffer.from(await webcrypto.subtle.exportKey("pkcs8", key)), format: "der", type: "pkcs8" }).export({ format: "pem", type: "pkcs8" });
@@ -22,7 +22,7 @@ async function newAuthority(hostId, now, existing = null) {
     publicKey: await webcrypto.subtle.importKey("spki", new X509Certificate(existing.ca).publicKey.export({ type: "spki", format: "der" }), ALG, true, ["verify"]),
   } : await webcrypto.subtle.generateKey(ALG, true, ["sign", "verify"]);
   const ca = await x509.X509CertificateGenerator.createSelfSigned({ keys,
-    name: `CN=WinDock ${hostId}`, serialNumber: serial(), signingAlgorithm: SIGN,
+    name: `CN=Tara ${hostId}`, serialNumber: serial(), signingAlgorithm: SIGN,
     notBefore: new Date(now - 5 * 60000), notAfter: new Date(now + 10 * 365 * DAY),
     extensions: [new x509.BasicConstraintsExtension(true, 0, true),
       new x509.KeyUsagesExtension(x509.KeyUsageFlags.keyCertSign | x509.KeyUsageFlags.cRLSign, true),
@@ -33,7 +33,7 @@ async function newAuthority(hostId, now, existing = null) {
 
 async function renewLeaf(record, now) {
   const authority = new X509Certificate(record.ca);
-  if (Date.parse(authority.validTo) <= now + DAY) throw new Error("WinDock's computer identity has expired. Restore its identity backup or explicitly pair devices with a new identity.");
+  if (Date.parse(authority.validTo) <= now + DAY) throw new Error("Tara's computer identity has expired. Restore its identity backup or explicitly pair devices with a new identity.");
   const keys = await webcrypto.subtle.generateKey(ALG, true, ["sign", "verify"]);
   const cert = await x509.X509CertificateGenerator.create({
     subject: `CN=${tlsName(record.hostId)}`, issuer: authority.subject,
@@ -56,25 +56,25 @@ export async function managedTls(configPath, hostId, { now = Date.now } = {}) {
   const file = join(directory, "identity.json"), markerFile = `${configPath}.secure-identity`;
   const lock = join(directory, "identity.lock");
   try { await mkdir(lock); }
-  catch (error) { if (error.code === "EEXIST") throw new Error("WinDock identity is in use or setup was interrupted. Close other hosts and check the identity directory before retrying."); throw error; }
+  catch (error) { if (error.code === "EEXIST") throw new Error("Tara identity is in use or setup was interrupted. Close other hosts and check the identity directory before retrying."); throw error; }
   let record;
   try {
     let marker;
-    try { marker = JSON.parse(await readFile(markerFile, "utf8")); } catch (error) { if (error.code !== "ENOENT") throw new Error("WinDock identity record is unreadable. Restore it; do not replace it automatically."); }
+    try { marker = JSON.parse(await readFile(markerFile, "utf8")); } catch (error) { if (error.code !== "ENOENT") throw new Error("Tara identity record is unreadable. Restore it; do not replace it automatically."); }
     try { record = JSON.parse(await readFile(file, "utf8")); }
     catch (error) {
-      if (error.code !== "ENOENT" || marker) throw new Error("WinDock identity is missing or unreadable. Restore the existing identity before reconnecting.");
+      if (error.code !== "ENOENT" || marker) throw new Error("Tara identity is missing or unreadable. Restore the existing identity before reconnecting.");
       record = await newAuthority(hostId, now());
       record = await renewLeaf(record, now());
       writePrivateJson(file, record);
     }
     if (record.version !== 1 || record.hostId !== hostId || !keyMatches(record.ca, record.caKey) || !keyMatches(record.cert, record.key))
-      throw new Error("WinDock identity does not match its saved keys. Restore the matching identity.");
+      throw new Error("Tara identity does not match its saved keys. Restore the matching identity.");
     const ca = new X509Certificate(record.ca), leaf = new X509Certificate(record.cert);
     if (!ca.ca || !ca.verify(ca.publicKey) || !leaf.verify(ca.publicKey) || !leaf.checkHost(tlsName(hostId)))
-      throw new Error("WinDock certificate identity is invalid. Restore its identity backup.");
+      throw new Error("Tara certificate identity is invalid. Restore its identity backup.");
     const pin = certificatePin(record.ca);
-    if (marker && (marker.pin !== pin || marker.hostId !== hostId)) throw new Error("WinDock's established identity changed. Explicit recovery is required.");
+    if (marker && (marker.pin !== pin || marker.hostId !== hostId)) throw new Error("Tara's established identity changed. Explicit recovery is required.");
     if (!marker) writePrivateJson(markerFile, { version: 1, hostId, pin });
   } finally { await rmdir(lock); }
   let refreshing = null;

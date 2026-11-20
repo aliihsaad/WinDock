@@ -3,7 +3,7 @@ using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
-using WinDock.Tray;
+using Tara.Tray;
 
 internal static class Program
 {
@@ -22,7 +22,7 @@ internal static class Program
             while(server.IsListening) {
                 HttpListenerContext context;try { context=await server.GetContextAsync(); } catch { break; }
                 try {
-                    var request=context.Request;badRequest|=request.Headers["x-windock-files"]!="local";
+                    var request=context.Request;badRequest|=request.Headers["x-tara-files"]!="local";
                     var path=request.Url!.AbsolutePath;
                     if(request.HttpMethod=="POST") {
                         using var body=JsonDocument.Parse(await new StreamReader(request.InputStream).ReadToEndAsync());
@@ -31,7 +31,7 @@ internal static class Program
                         else if(path.EndsWith("/open"))opened=true;
                         else badRequest=true;
                     } else badRequest|=path!="/api/transfers/local";
-                    var payload=JsonSerializer.SerializeToUtf8Bytes(new { enabled,destination="Synthetic Downloads/WinDock",batches=new[]{new { id=new string('a',32),files=new[]{new { id=new string('b',32),name="مرحبا photo.bin",size=65536,bytes=32768,status=cancelled?"cancelled":"sending" }}}} });
+                    var payload=JsonSerializer.SerializeToUtf8Bytes(new { enabled,destination="Synthetic Downloads/Tara",batches=new[]{new { id=new string('a',32),files=new[]{new { id=new string('b',32),name="مرحبا photo.bin",size=65536,bytes=32768,status=cancelled?"cancelled":"sending" }}}} });
                     context.Response.ContentType="application/json";context.Response.ContentLength64=payload.Length;
                     await context.Response.OutputStream.WriteAsync(payload);context.Response.Close();
                 } catch { context.Response.Abort(); }

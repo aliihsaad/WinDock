@@ -4,12 +4,12 @@ The Linux phone-pairing failure was caused by a firewall allowing HTTP/discovery
 
 ## User flow
 
-- Linux: open WinDock, then run `windock network`. The launcher and package-install messages point to it. The connection window now leads with QR pairing when supported, while retaining the PIN for older clients.
+- Linux: open Tara, then run `tara network`. The launcher and package-install messages point to it. The connection window now leads with QR pairing when supported, while retaining the PIN for older clients.
 - Windows: **Pair a phone securely → Connection help and paired phones** opens the local tools page. The installer finish message explains Private-network permission and this recovery path.
 - On the local pairing page, expand **Phone finds this PC but cannot connect? → Check connection**. It reports the current server listener ports, discovery port and available private networks. Choose the network shared with the phone; review and copy only the needed commands.
 - UFW commands restrict inbound access to the selected interface/subnet. firewalld instructions use the interface's existing zone and selected source subnet, with separate runtime/permanent commands; they do not reload or replace the configuration. Zone rules also apply to other interfaces sharing that zone.
 - Windows commands restrict access to the running Node executable, selected local address/source subnet, actual port and Private profile. No rule for Public networks is generated. USB tethering may require marking the owner's trusted tether network Private and reviewing its separate subnet.
-- Rule execution is an explicit administrator action in the OS terminal. WinDock does not request a password, elevate, apply commands, disable a firewall or forward router ports. Browser/older-client access is labeled optional.
+- Rule execution is an explicit administrator action in the OS terminal. Tara does not request a password, elevate, apply commands, disable a firewall or forward router ports. Browser/older-client access is labeled optional.
 
 The UFW command form follows its [official manual](https://manpages.ubuntu.com/manpages/jammy/man8/ufw.8.html). firewalld uses [source-scoped rich rules](https://firewalld.org/documentation/man-pages/firewalld.richlanguage.html). Windows scoping follows [New-NetFirewallRule](https://learn.microsoft.com/en-us/powershell/module/netsecurity/new-netfirewallrule?view=windowsdefender).
 
@@ -36,28 +36,28 @@ Website `setup.html` and Linux packaging notes explain the updated preview's con
 
 ## Local-test artifact and remaining acceptance
 
-`artifacts/WinDock-connection-help-local-test.apk` uses the HTTPS-only, non-debuggable release configuration and existing debug test certificate. Package `com.windock.app`, version code 10, minimum API 24 and target API 36 are unchanged. SHA-256: `71E9590B801952AA5E3DCAB0343A5DE42E6EE165B46A0E2D38219D155C401649`. The existing key file was verified unchanged. This is not a production-signed Play artifact.
+`artifacts/Tara-connection-help-local-test.apk` uses the HTTPS-only, non-debuggable release configuration and existing debug test certificate. Package `com.tara.app`, version code 10, minimum API 24 and target API 36 are unchanged. SHA-256: `71E9590B801952AA5E3DCAB0343A5DE42E6EE165B46A0E2D38219D155C401649`. The existing key file was verified unchanged. This is not a production-signed Play artifact.
 
 Before release, test fresh installation and the actual administrator workflow on clean UFW, firewalld and Windows systems, including administrator denial, explicit block rules, custom/fallback ports, DHCP changes and USB tethering. Verify the new Android message on physical Huawei/Samsung devices. The current PC/Linux installation was intentionally not replaced during implementation. Public release, deployment, Play signing/upload and store testing gates remain pending approval. No commits, merges or pushes were made.
 
 ## Owner's Linux test update, staged but not activated
 
-The owner asked how to test the changes. A six-file local update is staged at `/home/alidevlab/windock-local-tests/connection-help-20261102`. Preflight passed: 6 expected files, 9 existing tiles, no changes applied. The current service still runs the previous files. The updater requires explicit `--apply`, checks original/staged hashes, backs up application files, restarts only the user service, checks tiles and identity afterward, and restores previous application files on failure. It never edits saved data or firewall rules. Local copy: `artifacts/network-help-linux-test/`.
+The owner asked how to test the changes. A six-file local update is staged at `/home/alidevlab/tara-local-tests/connection-help-20261102`. Preflight passed: 6 expected files, 9 existing tiles, no changes applied. The current service still runs the previous files. The updater requires explicit `--apply`, checks original/staged hashes, backs up application files, restarts only the user service, checks tiles and identity afterward, and restores previous application files on failure. It never edits saved data or firewall rules. Local copy: `artifacts/network-help-linux-test/`.
 
 On Linux, activate it with:
 
 ```sh
-cd ~/windock-local-tests/connection-help-20261102
+cd ~/tara-local-tests/connection-help-20261102
 ../links-20261101/node install.mjs --apply
 ```
 
-Then install `WinDock-connection-help-local-test.apk` over the existing phone app. Open the `pairUrl` printed by the updater on Linux (normally `http://127.0.0.1:8620/pair#network`) and click Check connection. Expect secure port 8621/TCP, discovery 41234/UDP, and the Ethernet network `192.168.178.0/24`. UFW may say administrator access is needed to inspect effective rules; that is an honest permissions limitation, not a failed connectivity test. Review the suggested commands only: this PC's working firewall rule is already present. Confirm the phone reconnects without another QR, retains the 9 Linux tiles and can switch to Windows and back.
+Then install `Tara-connection-help-local-test.apk` over the existing phone app. Open the `pairUrl` printed by the updater on Linux (normally `http://127.0.0.1:8620/pair#network`) and click Check connection. Expect secure port 8621/TCP, discovery 41234/UDP, and the Ethernet network `192.168.178.0/24`. UFW may say administrator access is needed to inspect effective rules; that is an honest permissions limitation, not a failed connectivity test. Review the suggested commands only: this PC's working firewall rule is already present. Confirm the phone reconnects without another QR, retains the 9 Linux tiles and can switch to Windows and back.
 
-The machine's `/usr/bin/windock` still belongs to its older system package. For this staged local-test installation, use the printed browser link, or explicitly run `../links-20261101/node ../links-20261101/src/platform/linux-cli.js network` from the staging folder. A future packaged install will expose the new `windock network` command normally. Do not remove the working firewall rule to test a failure; blocked-port testing belongs in an isolated acceptance environment.
+The machine's `/usr/bin/tara` still belongs to its older system package. For this staged local-test installation, use the printed browser link, or explicitly run `../links-20261101/node ../links-20261101/src/platform/linux-cli.js network` from the staging folder. A future packaged install will expose the new `tara network` command normally. Do not remove the working firewall rule to test a failure; blocked-port testing belongs in an isolated acceptance environment.
 
 ### Owner activated the Linux update
 
-The owner supplied a screenshot of the live UFW connection-help page. Read-only verification confirmed the updater receipt: `updated: true`, all **9 tiles unchanged**, identity unchanged and firewall unchanged. The service is active (PID 3149019), with HTTP 8620 and managed HTTPS 8621. Backup: `/home/alidevlab/windock-local-tests/links-20261101/backup/connection-help-2026-11-02T12-45-55-655Z`. The screenshot confirms correct LAN/subnet and port guidance. Phone APK installation, reconnection and switching after this particular update still await the owner's confirmation.
+The owner supplied a screenshot of the live UFW connection-help page. Read-only verification confirmed the updater receipt: `updated: true`, all **9 tiles unchanged**, identity unchanged and firewall unchanged. The service is active (PID 3149019), with HTTP 8620 and managed HTTPS 8621. Backup: `/home/alidevlab/tara-local-tests/links-20261101/backup/connection-help-2026-11-02T12-45-55-655Z`. The screenshot confirms correct LAN/subnet and port guidance. Phone APK installation, reconnection and switching after this particular update still await the owner's confirmation.
 
 The owner then replied **“working”** to the updated-APK/reconnect/9-tiles/Windows-to-Linux switching checklist. Record that device acceptance as user-confirmed, rather than independently observed. The local testing walkthrough is complete. Fresh-machine administrator/firewall workflows, including USB-specific firewall behavior, remain separate release checks.
 
@@ -65,15 +65,15 @@ The owner then replied **“working”** to the updated-APK/reconnect/9-tiles/Wi
 
 The owner tested with phone Wi-Fi off and Connect by USB, receiving “Your computer isn't responding.” Read-only SSH checks confirmed the user service active, TCP 8620/8621 listening on all interfaces and UDP 41234 bound. Linux initially had USB interface `enp0s20f0u5`, address `10.147.219.82/24`, and phone gateway `10.147.219.29`. NetworkManager recorded successful USB DHCP activation.
 
-UFW's service is active and its configuration has default inbound DROP. Saved WinDock rules allow HTTP/discovery from `192.168.178.0/24` and secure TCP 8621 on `eno1` from that same home subnet. No saved USB allow rules exist for TCP 8621 or UDP 41234. The live connection-help endpoint correctly listed the USB interface and generated scoped commands for `10.147.219.0/24`. This is evidence of a missing USB firewall configuration, not evidence that the companion stopped. Effective kernel rules could not be inspected because noninteractive sudo requires the owner's password; no password was requested or collected and no firewall changes were made.
+UFW's service is active and its configuration has default inbound DROP. Saved Tara rules allow HTTP/discovery from `192.168.178.0/24` and secure TCP 8621 on `eno1` from that same home subnet. No saved USB allow rules exist for TCP 8621 or UDP 41234. The live connection-help endpoint correctly listed the USB interface and generated scoped commands for `10.147.219.0/24`. This is evidence of a missing USB firewall configuration, not evidence that the companion stopped. Effective kernel rules could not be inspected because noninteractive sudo requires the owner's password; no password was requested or collected and no firewall changes were made.
 
 During diagnosis the USB adapter disappeared. NetworkManager recorded the link being removed and its DHCP lease cancelled at 10:33:20; a fresh interface listing confirmed only loopback, Ethernet and Tailscale remained. The cause of that removal (tether toggle, cable or device behavior) is not established. Asked the owner to reconnect and keep tethering enabled. Before issuing firewall commands, recheck the live USB interface/subnet, because a new tether session can change them. Then have the owner allow only secure TCP and discovery UDP for that USB scope, and retry with the existing Linux pairing. No APK/code change, re-pairing, or firewall reset is justified by these findings yet. USB acceptance remains open.
 
 The owner then confirmed tethering enabled. A fresh read found **`enp0s20f0u4`**, `10.147.219.247/24`, gateway `10.147.219.29`; the interface changed from the initial snapshot. The live help endpoint immediately reflected this new interface. Supplied the owner the following narrowly scoped commands to run locally (sudo requires their password), then retry selecting the saved Linux PC with Wi-Fi off. These commands have not been executed by the assistant; await the owner's result. Recheck rather than reuse these values if the port or tether subnet changes again.
 
 ```sh
-sudo ufw allow in on enp0s20f0u4 from 10.147.219.0/24 to any port 8621 proto tcp comment 'WinDock USB secure'
-sudo ufw allow in on enp0s20f0u4 from 10.147.219.0/24 to any port 41234 proto udp comment 'WinDock USB discovery'
+sudo ufw allow in on enp0s20f0u4 from 10.147.219.0/24 to any port 8621 proto tcp comment 'Tara USB secure'
+sudo ufw allow in on enp0s20f0u4 from 10.147.219.0/24 to any port 41234 proto udp comment 'Tara USB discovery'
 ```
 
 ### Linux USB connection confirmed by owner

@@ -32,7 +32,7 @@ function portError(error, port) {
   const reason = error.code === "EACCES"
     ? "The operating system denied access; on Windows this can mean the port is reserved."
     : "Another application is already using this port.";
-  return Object.assign(new Error(`Cannot open ${target}. ${reason} Choose another port in WinDock's Server port settings or change/remove PORT. (${error.code})`, { cause: error }), { code: error.code });
+  return Object.assign(new Error(`Cannot open ${target}. ${reason} Choose another port in Tara's Server port settings or change/remove PORT. (${error.code})`, { cause: error }), { code: error.code });
 }
 
 export async function listenWithPortFallback(server, choice) {

@@ -21,7 +21,7 @@ assert.equal(budget.status("fresh").locked, false, "aged failures must leave the
 budget.recordFailure("new-c");
 assert.equal(budget.status("fresh").global, true);
 const sessions = createSessionStore();
-const req = { headers: { host: "192.168.1.1", cookie: "windock_session=" + sessions.issue() } };
+const req = { headers: { host: "192.168.1.1", cookie: "tara_session=" + sessions.issue() } };
 assert.equal(authorize({ req, sessions, lockout: budget, remote: "paired" }).ok, true);
 budget.recordFailure("new-a");
 assert.equal(budget.status("new-a").global, false, "client penalty takes precedence over global pause");
@@ -34,14 +34,14 @@ assert.equal(budget.status("fresh").locked, false, "recovery also clears recent 
 now += 101;
 assert.equal(budget.status("new-a").locked, false);
 
-const localHeaders = { host: "127.0.0.1:8620", "x-windock-local-action": "allow-pairing" };
+const localHeaders = { host: "127.0.0.1:8620", "x-tara-local-action": "allow-pairing" };
 assert.equal(isLocalPairingRecovery({ headers: localHeaders }, "192.168.1.9"), false, "LAN cannot spoof a local Host");
 assert.equal(isLocalPairingRecovery({ headers: localHeaders }, "::ffff:127.0.0.1"), true);
 for (const headers of [
   { ...localHeaders, host: "app.localhost" },
   { ...localHeaders, origin: "http://127.0.0.1:8620" },
   { ...localHeaders, "sec-fetch-site": "same-origin" },
-  { ...localHeaders, "x-windock-local-action": undefined },
+  { ...localHeaders, "x-tara-local-action": undefined },
 ]) assert.equal(isLocalPairingRecovery({ headers }, "127.0.0.1"), false);
 
 assert.match(pairingError({ error: "locked", global: true, retryInMs: 600000 }), /all devices.*10 minute.*Allow pairing now/);
@@ -81,7 +81,7 @@ try {
   const foreign = { host: "evil.example:" + port, origin: "http://evil.example:" + port };
   const denied = await call("/api/state", { headers: foreign });
   assert.equal(denied.status, 421, "rebinding is blocked with loopback trust enabled");
-  assert.match(denied.json.error, /WINDOCK_ALLOWED_HOSTS/);
+  assert.match(denied.json.error, /TARA_ALLOWED_HOSTS/);
   assert.equal((await call("/api/state", { headers: { host: "app.localhost:" + port } })).status, 421);
   for (let i = 0; i < 35; i++) {
     const legacy = await pair("1234");

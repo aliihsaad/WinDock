@@ -8,7 +8,7 @@ The public release and the preparation branch both restricted endpoints to RFC19
 
 ## Implemented scope
 
-- `android/app/src/main/java/com/windock/app/EndpointPolicy.kt`: retain strict numeric HTTP(S) URL parsing and all previously supported private/loopback/shared addresses. Other unicast IPv4 addresses require a matching active local broadcast subnet. Syntax-only canonicalization is separate from connection admission.
+- `android/app/src/main/java/com/tara/app/EndpointPolicy.kt`: retain strict numeric HTTP(S) URL parsing and all previously supported private/loopback/shared addresses. Other unicast IPv4 addresses require a matching active local broadcast subnet. Syntax-only canonicalization is separate from connection admission.
 - `LocalNetwork.kt`: read IPv4 address, prefix and broadcast from OS interface metadata without recursively applying endpoint admission. The new exception requires consistent broadcast metadata, prefixes `/8` through `/30`, and a non-network/non-broadcast peer. Down, loopback, point-to-point and named cellular/VPN interfaces do not supply this exception. No hard-coded allowance for the reporter's subnet, arbitrary Internet hosts, DNS names, or IPv6 was added.
 - `Discovery.kt`, `ManagedDiscovery.kt`, `PcScanner.kt`: apply the same admission to manual/remembered/discovered endpoints. Use the responding datagram's admitted source address rather than following an advertised address on another interface. Retain Wi-Fi/USB selection and HTTPS downgrade rejection.
 - `KnownHosts.kt`, `ServerUrl.kt`, `SecurePairing.kt`: parse saved history and encrypted trust independently of the currently attached network. Leaving a network no longer makes a syntactically valid saved identity disappear. Loading a record does not authorize a connection.
@@ -37,20 +37,20 @@ Evidence (all under `artifacts/`): `local-address-android-build.log`, `local-add
 
 ## Local test APKs
 
-Both APKs use `com.windock.app`, version code `10`, version name `0.3.0-preview.1`, min SDK 24 and target SDK 36. They were signed with the **already-existing local debug key**, whose bytes were verified unchanged. No production signing key was generated, read or modified. They are local test artifacts, not approved releases or Play upload candidates.
+Both APKs use `com.tara.app`, version code `10`, version name `0.3.0-preview.1`, min SDK 24 and target SDK 36. They were signed with the **already-existing local debug key**, whose bytes were verified unchanged. No production signing key was generated, read or modified. They are local test artifacts, not approved releases or Play upload candidates.
 
 | Artifact | Intended companion | SHA-256 |
 | --- | --- | --- |
-| `artifacts/WinDock-local-address-legacy-test.apk` | Public 0.2.6 HTTP/PIN companion, or development companion; debuggable local build | `0B101202DDFB962E3A86CB711EB7D7F6A1109CC37EC5C61E89CDD81163B740FE` |
-| `artifacts/WinDock-local-address-secure-test.apk` | Current HTTPS companion; non-debuggable release configuration with a local test signature | `FF8F08018FD8487A4340557E3CD7F873BA685393B7E973421685CD8DA1FAE465` |
+| `artifacts/Tara-local-address-legacy-test.apk` | Public 0.2.6 HTTP/PIN companion, or development companion; debuggable local build | `0B101202DDFB962E3A86CB711EB7D7F6A1109CC37EC5C61E89CDD81163B740FE` |
+| `artifacts/Tara-local-address-secure-test.apk` | Current HTTPS companion; non-debuggable release configuration with a local test signature | `FF8F08018FD8487A4340557E3CD7F873BA685393B7E973421685CD8DA1FAE465` |
 
 They share the same package identifier: installing one replaces the other. Use the legacy APK for this reporter's HTTP-only 0.2.6 desktop; use the secure APK for the owner's managed-HTTPS testing. Do not weaken the Play build to accommodate an older HTTP-only companion.
 
 ## Physical-device validation still required
 
 1. On the reporter's phone, install the legacy test APK as an update after the owner approves sharing it. Keep the existing desktop 0.2.6 installation. Do not uninstall the app to work around a signature mismatch; report that error instead.
-2. Keep phone and PC on the same Wi-Fi. Enter the exact address from the companion's connection-info window. Confirm the invalid-address message is gone and the PIN page opens **inside WinDock**. Enter the PIN privately; never share a PIN, pairing QR or session token.
-3. Authenticate, launch one tile, type a short message and reopen WinDock. Confirm reconnection works. Check Saved & nearby PCs as a separate discovery check; UDP discovery may still depend on the network/firewall.
+2. Keep phone and PC on the same Wi-Fi. Enter the exact address from the companion's connection-info window. Confirm the invalid-address message is gone and the PIN page opens **inside Tara**. Enter the PIN privately; never share a PIN, pairing QR or session token.
+3. Authenticate, launch one tile, type a short message and reopen Tara. Confirm reconnection works. Check Saved & nearby PCs as a separate discovery check; UDP discovery may still depend on the network/firewall.
 4. Turn Wi-Fi off and confirm a non-private saved Wi-Fi address is not reused over an unrelated network. Restore Wi-Fi and confirm the saved connection is retained. Synthetic subnet tests cover this logic; the reporter's physical route must still be verified.
 5. Test USB tethering separately with Wi-Fi off and the USB address. This address-validation fix does not establish the cause or resolution of the earlier USB complaint.
 6. With the secure test APK and current companion, repeat Wi-Fi/USB reconnect, restart/unlock, keyboard, clipboard and Files & Media checks on Huawei/Samsung. The earlier hardware passes predate this APK.

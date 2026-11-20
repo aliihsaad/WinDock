@@ -10,8 +10,8 @@ async (page) => {
     contexts.push(context);
     if (bridge) await context.addInitScript(kind => {
       window.pickerCalls = 0;
-      window.WinDockAndroid = { showPhoneSettings() {} };
-      if (kind === 'new') window.WinDockAndroid.showPcPicker = () => { window.pickerCalls++; };
+      window.TaraAndroid = { showPhoneSettings() {} };
+      if (kind === 'new') window.TaraAndroid.showPcPicker = () => { window.pickerCalls++; };
     }, bridge);
     return context.newPage();
   }

@@ -1,9 +1,9 @@
 /** Same UI and wire protocols; native Android handles per-computer TLS and session storage. */
-const bridge = window.WinDockSecure;
+const bridge = window.TaraSecure;
 export const nativeTransport = Boolean(bridge);
 let nextId = 1;
 const pending = new Map(), sockets = new Map();
-if (bridge) window.addEventListener("windock-transport", ({ detail: event }) => {
+if (bridge) window.addEventListener("tara-transport", ({ detail: event }) => {
   if (event.kind === "response") {
     const waiting = pending.get(event.id); if (!waiting) return;
     pending.delete(event.id); clearTimeout(waiting.timer);

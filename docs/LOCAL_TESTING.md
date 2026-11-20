@@ -1,4 +1,4 @@
-# WinDock local Wi-Fi and USB testing
+# Tara local Wi-Fi and USB testing
 
 Prepared 31 October 2026. These are free local test builds, not production or
 Google Play uploads. No installed Windows application was replaced by preparation.
@@ -9,31 +9,31 @@ The kit is in `artifacts/local-testing-20261031/`:
 
 | File | Use |
 | --- | --- |
-| `WinDock-Android-HTTPS-test.apk` | **Primary test APK.** Release behavior: HTTPS required, not debuggable, Play-only Android update UI. Signed with the existing Android Debug test key solely for installation. |
-| `WinDock-Android-legacy-preview.apk` | Optional compatibility test: debug build retaining HTTP and preview updates. |
-| `WinDock-Windows-local-test.zip` | Portable Windows x64 companion; includes its runtime, TLS helper, test launcher and guides. Extract before running. |
+| `Tara-Android-HTTPS-test.apk` | **Primary test APK.** Release behavior: HTTPS required, not debuggable, Play-only Android update UI. Signed with the existing Android Debug test key solely for installation. |
+| `Tara-Android-legacy-preview.apk` | Optional compatibility test: debug build retaining HTTP and preview updates. |
+| `Tara-Windows-local-test.zip` | Portable Windows x64 companion; includes its runtime, TLS helper, test launcher and guides. Extract before running. |
 | `SHA256SUMS.txt` / `TEST-RESULTS.md` | Exact artifact hashes and completed automated checks. |
 
-Both APKs are `com.windock.app`, version `0.3.0-preview.1`, code **10**, minimum
+Both APKs are `com.tara.app`, version `0.3.0-preview.1`, code **10**, minimum
 Android 7/API 24, target API 36. They replace one another; they cannot be installed
 side-by-side. Their signer matches the tested public v0.2.6 preview. An existing
 installation with a different signer cannot be upgraded in place: stop and record
 the error instead of uninstalling automatically. Uninstalling erases phone settings
 and pairing. This is not a production-signing migration test.
 
-1. Record phone model, Android version, Windows version and whether WinDock is
+1. Record phone model, Android version, Windows version and whether Tara is
    already installed. Keep the previous APK/installer available for later rollback.
 2. Copy the **HTTPS test APK** to the phone using USB File Transfer, then open it
    in the phone's Files app. If prompted, allow that app to install this APK; revoke
    that permission after installation. Leave Play Protect enabled. Android's USB
    file-transfer instructions are [here](https://support.google.com/android/answer/9064445).
 3. Extract the Windows ZIP into a new local folder. Do not copy it over the normal
-   installed WinDock folder. The Windows executable is a local unsigned build;
+   installed Tara folder. The Windows executable is a local unsigned build;
    verify its source/checksums if Windows displays a publisher warning.
-4. Quit the normal WinDock from its tray menu before starting the test copy. Do not
+4. Quit the normal Tara from its tray menu before starting the test copy. Do not
    uninstall it. The test launcher refuses to start if another tray is running.
 5. Use PowerShell **7.2 or later** (`pwsh`) for the commands below, with the current
-   directory set to the extracted folder containing `WinDockTray.exe`.
+   directory set to the extracted folder containing `TaraTray.exe`.
 
 ## One-time HTTPS setup on the test PC
 
@@ -50,7 +50,7 @@ They are not included in the distributed test ZIP.
 2. In PowerShell 7, run these commands explicitly when ready:
 
    ```powershell
-   $testState = Join-Path $env:LOCALAPPDATA 'WinDock-LocalTest-20261031'
+   $testState = Join-Path $env:LOCALAPPDATA 'Tara-LocalTest-20261031'
    ./scripts/create-local-tls.ps1 -OutputDirectory (Join-Path $testState 'tls')
    ```
 
@@ -59,8 +59,8 @@ They are not included in the distributed test ZIP.
    fingerprint**. It does not install trust or alter firewall settings. If rerun
    against this test directory, it retains the CA and renews the host key/certificate
    for currently connected interfaces. Do not point it at production credentials.
-3. Transfer **only** `windock-ca.crt` from that `tls` directory to the phone through
-   a trusted channel. Never copy `host.key` or `windock-ca.key` to the phone, ZIP,
+3. Transfer **only** `tara-ca.crt` from that `tls` directory to the phone through
+   a trusted channel. Never copy `host.key` or `tara-ca.key` to the phone, ZIP,
    support message or repository. File Transfer and tethering may require switching
    USB modes temporarily; re-enable tethering afterward.
 4. In Android Settings, find **Install a certificate → CA certificate** (often under
@@ -78,9 +78,9 @@ They are not included in the distributed test ZIP.
 
    It uses separate dock configuration/host identity in `$testState`, keeps TLS
    environment values scoped to the launched process, and generates no keys.
-   Existing tray port/update settings are still shared with normal WinDock; leave
+   Existing tray port/update settings are still shared with normal Tara; leave
    those settings unchanged. Captures/signatures still use the normal Pictures/
-   Videos WinDock folders, so use clearly labelled disposable test content.
+   Videos Tara folders, so use clearly labelled disposable test content.
 6. Open **Show connection info** in the test tray. Record the HTTPS address/port
    and identify its **secure six-digit PIN**. The legacy HTTP endpoint uses a
    different PIN. Do not include either PIN in test reports or screenshots.
@@ -137,7 +137,7 @@ They are not included in the distributed test ZIP.
    rerun the TLS helper against the **same test directory**, then relaunch. The same
    CA remains trusted; the new host certificate is loaded on restart.
 3. Turn off the phone's Wi-Fi for this run. Choose **Connect by USB → Find USB PC**
-   in WinDock and select the PC. If needed, enter
+   in Tara and select the PC. If needed, enter
    `https://<PC-USB-IPv4>:<secure-port>` manually. USB mode should not silently use
    Wi-Fi. Apply a narrowly scoped firewall allowance for the trusted USB interface
    if discovery/control is blocked.
@@ -145,7 +145,7 @@ They are not included in the distributed test ZIP.
    connection running for 10 minutes; include phone background/resume and idle rest.
 5. Disable mobile data if your phone permits USB tethering without it, and confirm
    local control still works. Record an OEM/carrier restriction instead of assuming
-   failure in WinDock. Tethering can share cellular data with Windows; the app's
+   failure in Tara. Tethering can share cellular data with Windows; the app's
    local control does not need internet, but desktop update checks do.
 6. Unplug the cable during a harmless interaction; expect a disconnected state,
    never replayed input. Plug it back in, re-enable tethering if Android turned it
@@ -173,7 +173,7 @@ They are not included in the distributed test ZIP.
 | Disconnect/reconnect | No stale input or silent HTTP fallback | [ ] | [ ] |
 
 Windows clipboard history must be enabled separately to test stored items. Clearing
-the WinDock panel does not clear Windows' clipboard/history. Use no passwords,
+the Tara panel does not clear Windows' clipboard/history. Use no passwords,
 private keys, personal signatures or sensitive windows in these tests.
 
 Native focus can be denied by Windows foreground policy even on v0.2.6. Record the
@@ -193,7 +193,7 @@ test kit while testing update checks.
 2. After successful HTTPS tests, remove only the identified **test CA**, fully stop
    the Android app in Settings, reopen it and reconnect. HTTPS must fail. Restore
    that verified CA only if continuing tests. Do not use Clear all credentials.
-3. Optional: install `WinDock-Android-legacy-preview.apk` over the HTTPS test APK
+3. Optional: install `Tara-Android-legacy-preview.apk` over the HTTPS test APK
    (same package/code/signer). Use the host's **HTTP address and legacy PIN** to
    confirm legacy behavior, then reinstall the HTTPS test APK. Record any installer
    restrictions; do not erase app data automatically.

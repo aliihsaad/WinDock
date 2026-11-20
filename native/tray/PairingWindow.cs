@@ -1,7 +1,7 @@
 using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
 
-namespace WinDock.Tray;
+namespace Tara.Tray;
 
 internal sealed class PairingWindow : Form
 {
@@ -20,7 +20,7 @@ internal sealed class PairingWindow : Form
     public PairingWindow(PairingClient client, Action? openConnectionTools = null)
     {
         _client = client;
-        Text = "Pair your phone · WinDock";
+        Text = "Pair your phone · Tara";
         AutoScaleMode = AutoScaleMode.Dpi;
         ClientSize = new Size(520, 650);
         MinimumSize = new Size(440, 580);
@@ -31,7 +31,7 @@ internal sealed class PairingWindow : Form
         panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         for (var row = 0; row < 6; row++) panel.RowStyles.Add(new RowStyle(row == 2 ? SizeType.Percent : SizeType.AutoSize, row == 2 ? 100 : 0));
         panel.Controls.Add(new Label { Text = "Pair your phone", AutoSize = true, Font = _headingFont, Margin = new Padding(0, 0, 0, 10) }, 0, 0);
-        panel.Controls.Add(new Label { Text = "Open WinDock on your phone and choose Scan computer code.\nUse the same Wi-Fi network, or connect with USB tethering.", AutoSize = true, Dock = DockStyle.Fill, Margin = Padding.Empty }, 0, 1);
+        panel.Controls.Add(new Label { Text = "Open Tara on your phone and choose Scan computer code.\nUse the same Wi-Fi network, or connect with USB tethering.", AutoSize = true, Dock = DockStyle.Fill, Margin = Padding.Empty }, 0, 1);
         panel.Controls.Add(_qr, 0, 2);
         panel.Controls.Add(_status, 0, 3);
         var actions = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, Margin = Padding.Empty, WrapContents = true };
@@ -79,7 +79,7 @@ internal sealed class PairingWindow : Form
             InvalidOperationException or KeyNotFoundException or ExternalException)
         {
             if (!_closing)
-                _status.Text = "Couldn't create a pairing code. Check that WinDock is running, then try again.";
+                _status.Text = "Couldn't create a pairing code. Check that Tara is running, then try again.";
         }
         finally
         {
@@ -93,7 +93,7 @@ internal sealed class PairingWindow : Form
         if (_code is null) return;
         var remaining = (int)Math.Ceiling((_code.Expires - DateTimeOffset.UtcNow).TotalSeconds);
         if (remaining <= 0) { ClearCode(); _status.Text = "Code expired. Show a new code to continue."; return; }
-        _status.Text = $"Expires in {remaining / 60}:{remaining % 60:00} · Can pair one phone.\nPair once; WinDock remembers your computer.";
+        _status.Text = $"Expires in {remaining / 60}:{remaining % 60:00} · Can pair one phone.\nPair once; Tara remembers your computer.";
     }
 
     private void CopyPairingText()

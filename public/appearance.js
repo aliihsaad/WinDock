@@ -1,7 +1,7 @@
 // Android persists appearance per PC identity; browsers retain origin-local storage.
 // Run before performance.js so a restored manual choice applies before first paint.
 (() => {
-  const keys = ["windock-performance", "windock-layout"];
+  const keys = ["tara-performance", "tara-layout"];
   const values = new Map();
   const memoryOnly = document.currentScript?.hasAttribute("data-memory-only");
   const origin = location.origin;
@@ -11,7 +11,7 @@
       try { values.set(key, localStorage.getItem(key)); } catch {}
     }
     try {
-      native = window.WinDockAndroid;
+      native = window.TaraAndroid;
       snapshot = JSON.parse(native?.getAppearance(origin, JSON.stringify(Object.fromEntries(values))) || "null");
       if (!snapshot || typeof snapshot.scope !== "string" || typeof snapshot.values !== "object" || !snapshot.values) snapshot = null;
     } catch { snapshot = null; }
@@ -31,7 +31,7 @@
       values.set(key, value);
     }
   }
-  window.WinDockPreferences = {
+  window.TaraPreferences = {
     getItem(key) { return values.get(key) ?? null; },
     setItem(key, value) {
       if (!keys.includes(key)) return;
@@ -43,7 +43,7 @@
           const saved = native.saveAppearance(origin, snapshot.scope, key, value);
           // Older Android apps refuse a whole layout over a background they don't know.
           // Save the rest, so only that one choice is lost on the next launch.
-          if (saved === false && key === "windock-layout") {
+          if (saved === false && key === "tara-layout") {
             const { background, ...layout } = JSON.parse(value);
             if (background) native.saveAppearance(origin, snapshot.scope, key, JSON.stringify(layout));
           }

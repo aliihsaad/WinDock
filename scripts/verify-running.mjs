@@ -33,7 +33,7 @@ t.equal(
   appIdFromTarget("C:\\Program Files\\Mozilla Firefox\\firefox.exe"),
   "running id matches the installed id for the same executable",
 );
-t.equal(ff.title, "WinDock - Mozilla Firefox", "window title is preserved");
+t.equal(ff.title, "Tara - Mozilla Firefox", "window title is preserved");
 t.ok(Number.isInteger(ff.handle) && ff.handle !== 0, "window handle is a non-zero integer");
 
 for (const bad of ["", "not json", "null", "[]", "{}"]) {

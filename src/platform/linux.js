@@ -153,7 +153,7 @@ const SCOPE_ARGV = ["--user", "--scope", "--quiet", "--collect", "--"];
  * With `wait`, the launcher's own exit code is reported: gtk-launch exits as
  * soon as the app has been spawned.
  *
- * Inside WinDock's systemd user service, every child belongs to the service
+ * Inside Tara's systemd user service, every child belongs to the service
  * and is stopped with it. With `scope`, each app starts in its own scope, as
  * desktop launchers do, so it survives a stop, restart or package upgrade of
  * the host. If systemd-run cannot reach the user manager, apps start directly.
@@ -312,7 +312,7 @@ export function hyprWindowLua(action, address) {
     close: `hl.dsp.window.close({ window = "${selector}" })`,
   }[action];
   if (!dispatcher) throw new Error("unknown window action");
-  return `local w = hl.get_window("${selector}") if not w or w.address ~= "${address}" then error("windock: window not found") end hl.dispatch(${dispatcher})`;
+  return `local w = hl.get_window("${selector}") if not w or w.address ~= "${address}" then error("tara: window not found") end hl.dispatch(${dispatcher})`;
 }
 
 /** Dispatchers for a hyprlang (pre-Lua) config, which has no atomic check. */
@@ -402,7 +402,7 @@ const failure = (message, status) => Object.assign(new Error(message), { status 
 export function createLinuxProvider({
   exec,
   spawn = spawnProcess,
-  launch = createLauncher({ spawn, scope: process.env.WINDOCK_APP_SCOPES === "1" }),
+  launch = createLauncher({ spawn, scope: process.env.TARA_APP_SCOPES === "1" }),
   appDirs = APP_DIRS,
   backlightDir = "/sys/class/backlight",
   icons,
@@ -453,7 +453,7 @@ export function createLinuxProvider({
         luaConfig = true;
         return;
       }
-      if (out.includes("windock: window not found")) throw gone();
+      if (out.includes("tara: window not found")) throw gone();
       if (luaConfig === true || !/only supported with the lua|unknown request/i.test(out)) {
         throw failure("Hyprland could not switch windows.", 502);
       }

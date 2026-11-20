@@ -29,7 +29,7 @@ small Rust helper for the touchpad, phone keyboard and signatures (see
 | `public/wallpapers/` | Background art, rendered by `scripts/wallpapers/render.py` |
 | `android/` | Discovery, validated endpoints, landscape WebView |
 | `native/win/` | Windows helper |
-| `native/linux/` | Linux input helper (`windock-input`, Rust) and its udev rule |
+| `native/linux/` | Linux input helper (`tara-input`, Rust) and its udev rule |
 | `native/tray/` | System tray host |
 | `website/` | Static product website and isolated demo |
 | `scripts/verify-*.mjs` | Platform-independent verification scripts |
@@ -91,12 +91,12 @@ on other desktops the running-app list is empty and focus/close are refused.
 | Brightness | `brightnessctl` with a backlight device, otherwise `ddcutil` (DDC/CI) |
 | Power | `loginctl lock-session`, `systemctl suspend/poweroff/reboot` |
 | App icons | Icon theme from `gsettings`, its `Inherits` chain, `hicolor`, then `pixmaps` |
-| Screenshots | `grim` on the focused monitor → `Pictures/WinDock` |
-| Recordings | `wf-recorder`, else `gpu-screen-recorder` → `Videos/WinDock` |
-| Touchpad | `windock-input`: a uinput virtual pointer (any compositor) |
-| Phone keyboard | Text with `wtype`; named keys on the `windock-input` uinput keyboard |
+| Screenshots | `grim` on the focused monitor → `Pictures/Tara` |
+| Recordings | `wf-recorder`, else `gpu-screen-recorder` → `Videos/Tara` |
+| Touchpad | `tara-input`: a uinput virtual pointer (any compositor) |
+| Phone keyboard | Text with `wtype`; named keys on the `tara-input` uinput keyboard |
 | Keyboard auto-open | AT-SPI2 focus events plus Hyprland's active window |
-| Signatures | PNG rendered by `windock-input` → `Pictures/WinDock/Signatures`; insert uses `wl-copy` |
+| Signatures | PNG rendered by `tara-input` → `Pictures/Tara/Signatures`; insert uses `wl-copy` |
 
 - Apps launch detached with no inherited pipes, so they outlive the request
   and the host.
@@ -115,29 +115,29 @@ on other desktops the running-app list is empty and focus/close are refused.
 
 ### Background service
 
-The packaged `windock` command (`src/platform/linux-cli.js`) runs the host as the
-systemd user service `windock.service` (`native/linux/packaging/windock.service`),
+The packaged `tara` command (`src/platform/linux-cli.js`) runs the host as the
+systemd user service `tara.service` (`native/linux/packaging/tara.service`),
 so it outlives the terminal window that opened it.
 
-- Before starting the service, `windock` writes the session's display, Hyprland,
-  search-path and WinDock variables to `$XDG_RUNTIME_DIR/windock-session.env`.
+- Before starting the service, `tara` writes the session's display, Hyprland,
+  search-path and Tara variables to `$XDG_RUNTIME_DIR/tara-session.env`.
   A host started for another Hyprland instance is restarted for the current one.
 - The service entry (`src/platform/linux-service.js`) publishes the address and
-  PIN in `$XDG_RUNTIME_DIR/windock/host.json` (mode 0600). systemd removes it when
-  the service stops. `windock`, `windock status` and the connection window read it;
+  PIN in `$XDG_RUNTIME_DIR/tara/host.json` (mode 0600). systemd removes it when
+  the service stops. `tara`, `tara status` and the connection window read it;
   the journal gets the address but not the PIN.
 - Inside the service, apps start through `systemd-run --user --scope`, each in
   its own scope, so stopping or restarting the host leaves them running.
-- `windock stop` stops the service; **S** in the connection window does the same.
+- `tara stop` stops the service; **S** in the connection window does the same.
   A host already answering on the port in a terminal window blocks a second one.
-- Without a user manager or the installed unit, and with `windock --foreground`,
+- Without a user manager or the installed unit, and with `tara --foreground`,
   the host runs in the terminal as before.
 - Package upgrades restart each user's running service, and removal stops it
-  (`/usr/lib/windock/user-service`, called from the Debian and Arch scripts).
+  (`/usr/lib/tara/user-service`, called from the Debian and Arch scripts).
 
 ### Touchpad, keyboard and signatures
 
-`windock-input` (`native/linux`) speaks the Windows helper's JSON protocol over
+`tara-input` (`native/linux`) speaks the Windows helper's JSON protocol over
 stdin/stdout, so the input hub and the phone UI are shared. Build it with Rust
 installed (`pacman -S rust`), then check what it can reach:
 
@@ -146,12 +146,12 @@ npm run build:linux
 ```
 
 ```bash
-./windock-input check
+./tara-input check
 ```
 
 `check` creates nothing and types nothing. `npm run test:linux` runs the
 helper's unit tests; `npm test` also exercises the built binary's PNG export
-when `./windock-input` exists. `WINDOCK_INPUT_HELPER` points the host at
+when `./tara-input` exists. `TARA_INPUT_HELPER` points the host at
 another build.
 
 Requirements:
@@ -160,11 +160,11 @@ Requirements:
   tags it `uaccess`, so the user logged in at the seat gets an ACL that lets
   them create input devices but not read any keyboard. Adding the user to the
   `input` group would also let every program they run read every keyboard, so
-  WinDock does not ask for that. Without the rule the touchpad fails to start
+  Tara does not ask for that. Without the rule the touchpad fails to start
   and the host logs which rule to install:
 
   ```bash
-  sudo install -m 644 native/linux/70-windock-uinput.rules /etc/udev/rules.d/
+  sudo install -m 644 native/linux/70-tara-uinput.rules /etc/udev/rules.d/
   ```
 
   ```bash
@@ -266,20 +266,20 @@ cryptographic document signing.
 
 `scripts/verify-input.mjs` tests protocol validation, authentication, origin,
 ownership, timeout/revocation cleanup, native-process handling and gestures.
-`dotnet run --project native/input-tests/WinDockInputTests.csproj -c Release`
+`dotnet run --project native/input-tests/TaraInputTests.csproj -c Release`
 checks the native INPUT layout, button/modifier cleanup and PNG transparency/rendering
 without moving the desktop cursor. It is also part of Windows CI.
 
-The host prefers physical LAN adapters over VPN/VM adapters. Set `WINDOCK_HOST`
+The host prefers physical LAN adapters over VPN/VM adapters. Set `TARA_HOST`
 to choose another assigned local IPv4 address, `PORT` to change the port, or
-`WINDOCK_HELPER` to select another helper executable. `WINDOCK_CONFIG` overrides
+`TARA_HELPER` to select another helper executable. `TARA_CONFIG` overrides
 the configuration path; the normal tray uses the user's application-data folder.
 
 Brightness uses WMI for built-in panels and DDC/CI for supported HDMI/DisplayPort
 monitors, with a VCP luminance fallback. Percentages map to each display's range.
 DDC/CI may need enabling in the monitor's own menu.
 
-`WinDockHelper.exe brightness` reads support and current levels.
+`TaraHelper.exe brightness` reads support and current levels.
 `node scripts/smoke-brightness.mjs` makes a five-point change and restores the
 original level in a `finally` block. Add `--base-url http://127.0.0.1:8620`
 to exercise the running host API. This hardware check is separate from `npm test`.
@@ -337,7 +337,7 @@ Only this repository's tagged installer URL is accepted. The check has a
 An available update shows a notification and a download menu item that opens
 the GitHub release page. The app never downloads or executes an installer itself.
 
-Run `dotnet run --project native/update-tests/WinDockUpdateTests.csproj -c Release`
+Run `dotnet run --project native/update-tests/TaraUpdateTests.csproj -c Release`
 for version, HTTP, invalid-feed and notification-policy checks. Add `-- --live`
 after publishing 0.2.1-preview.1 to check the actual public feed for current and
 older installations. Update `package.json`, `package-lock.json`, and the tray
@@ -358,14 +358,14 @@ lockouts and existing sessions; the PIN does not change.
 For a host without a tray, run this on the PC (use its configured port):
 
     curl --request POST http://127.0.0.1:8620/api/pairing/reset \
-      --header 'X-WinDock-Local-Action: allow-pairing' \
+      --header 'X-Tara-Local-Action: allow-pairing' \
       --header 'Content-Type: application/json' --data '{}'
 
 This endpoint requires a loopback connection, a loopback Host, the explicit
 native-action header, no Origin or Sec-Fetch-Site header, and an empty JSON
 object. Paired phones and browser requests cannot use it.
 
-Custom WINDOCK_ALLOWED_HOSTS entries are comma-separated names, optionally with
+Custom TARA_ALLOWED_HOSTS entries are comma-separated names, optionally with
 a port or trailing DNS dot. Unknown names receive HTTP 421 with configuration
 guidance. Only exact localhost has implicit name-based loopback trust;
 subdomains require explicit allowlisting and still require pairing.

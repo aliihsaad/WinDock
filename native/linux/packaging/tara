@@ -1,0 +1,11 @@
+#!/bin/sh
+set -eu
+if [ "$(id -u)" -eq 0 ]; then
+    echo "Open Tara from your desktop as a normal user, without sudo." >&2
+    exit 1
+fi
+if [ "${1:-}" = "--version" ]; then
+    exec /usr/lib/tara/node -p "'Tara ' + require('/usr/lib/tara/package.json').version"
+fi
+# Starts the background host (tara.service) and shows its address and PIN.
+exec /usr/lib/tara/node /usr/lib/tara/src/platform/linux-cli.js "$@"

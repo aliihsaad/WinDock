@@ -1,13 +1,13 @@
 {
-  "name": "WinDock",
-  "short_name": "WinDock",
+  "name": "Tara",
+  "short_name": "Tara",
   "description": "Remote app dock and control surface for your PC.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "landscape",
-  "background_color": "#101719",
-  "theme_color": "#101719",
+  "background_color": "#051a40",
+  "theme_color": "#051a40",
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }

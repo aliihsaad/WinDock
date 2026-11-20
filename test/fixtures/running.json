@@ -1,5 +1,5 @@
 [
-  {"Id":4812,"ProcessName":"firefox","MainWindowTitle":"WinDock - Mozilla Firefox","Handle":1442938,"Path":"C:\\Program Files\\Mozilla Firefox\\firefox.exe"},
+  {"Id":4812,"ProcessName":"firefox","MainWindowTitle":"Tara - Mozilla Firefox","Handle":1442938,"Path":"C:\\Program Files\\Mozilla Firefox\\firefox.exe"},
   {"Id":1200,"ProcessName":"explorer","MainWindowTitle":"","Handle":65790,"Path":"C:\\Windows\\explorer.exe"},
   {"Id":9001,"ProcessName":"svchost","MainWindowTitle":"","Handle":0,"Path":"C:\\Windows\\System32\\svchost.exe"},
   {"Id":0,"ProcessName":"idle","MainWindowTitle":"","Handle":5,"Path":""},

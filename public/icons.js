@@ -1,5 +1,6 @@
 // Small, consistent UI symbols. Application artwork comes from Windows.
 const paths = {
+  tara: '<path d="M12 2.5Q12.9 11.1 21.5 12Q12.9 12.9 12 21.5Q11.1 12.9 2.5 12Q11.1 11.1 12 2.5Z"/><path fill="currentColor" stroke="none" d="M12 8.6Q12.4 11.6 15.4 12Q12.4 12.4 12 15.4Q11.6 12.4 8.6 12Q11.6 11.6 12 8.6Z"/>',
   keys: '<rect x="2" y="10" width="6" height="7" rx="2"/><rect x="9" y="10" width="6" height="7" rx="2"/><rect x="16" y="10" width="6" height="7" rx="2"/><rect x="9" y="2" width="6" height="7" rx="2"/>',
   updates: '<path d="M12 3v12m-5-5 5 5 5-5M4 16v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/>',
   files: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M8 13h8m-8 4h5"/>',
@@ -14,6 +15,10 @@ const paths = {
   grid: '<rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/>',
   monitor: '<rect x="3" y="4" width="18" height="13" rx="3"/><path d="M8 21h8m-4-4v4"/>',
   sliders: '<path d="M5 3v7m0 4v7M12 3v12m0 4v2M19 3v2m0 4v12M2 10h6m1 5h6m1-10h6"/>',
+  bolt: '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
+  group: '<rect x="3" y="3" width="18" height="18" rx="5"/><rect x="7" y="7" width="4" height="4" rx="1"/><rect x="13" y="7" width="4" height="4" rx="1"/><rect x="7" y="13" width="4" height="4" rx="1"/><rect x="13" y="13" width="4" height="4" rx="1"/>',
+  wake: '<path d="M12 3v8"/><path d="M6.3 7a8 8 0 1 0 11.4 0"/><path d="M9 21h6"/>',
+  phone: '<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
   close: '<path d="m6 6 12 12M18 6 6 18"/>',
   search: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>',
@@ -28,6 +33,7 @@ const paths = {
   quieter: '<path d="m11 4-6 5H2v6h3l6 5zM16 12h6"/>',
   mute: '<path d="m11 4-6 5H2v6h3l6 5zM17 9l5 6m0-6-5 6"/>',
   play: '<path d="m7 4 14 8-14 8z"/>',
+  mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
   pause: '<path d="M8 5v14M16 5v14"/>',
   next: '<path d="m4 5 11 7-11 7zM19 5v14"/>',
   previous: '<path d="m20 5-11 7 11 7zM5 5v14"/>',

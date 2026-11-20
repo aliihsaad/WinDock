@@ -1,4 +1,4 @@
-// WinDockHelper — the Win32 surface WinDock needs, behind an argv interface.
+// TaraHelper — the Win32 surface Tara needs, behind an argv interface.
 //
 // Every argument arrives as a separate argv entry from Node's execFile, so no
 // string is ever parsed by a shell. The helper validates each verb against a
@@ -17,7 +17,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 
-namespace WinDock;
+namespace Tara;
 
 internal static class Program
 {
@@ -26,7 +26,7 @@ internal static class Program
     {
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("usage: WinDockHelper <launch|focus|close|control|nowplaying> [...]");
+            Console.Error.WriteLine("usage: TaraHelper <launch|focus|close|control|nowplaying> [...]");
             return 1;
         }
 

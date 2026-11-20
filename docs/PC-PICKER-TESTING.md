@@ -80,12 +80,12 @@ $adb = "$env:ANDROID_HOME\platform-tools\adb.exe"
 # Replace emulator-5554 only with the serial of your disposable emulator.
 & $adb -s emulator-5554 install -r android/app/build/outputs/apk/debug/app-debug.apk
 & $adb -s emulator-5554 install -r android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
-& $adb -s emulator-5554 shell am instrument -w -e class com.windock.app.PcPickerTest com.windock.app.test/androidx.test.runner.AndroidJUnitRunner
+& $adb -s emulator-5554 shell am instrument -w -e class com.tara.app.PcPickerTest com.tara.app.test/androidx.test.runner.AndroidJUnitRunner
 ```
 
 For shared-dock regression tests, start `node scripts/android-smoke-host.mjs` in
 another terminal, then run the same instrumentation command with class
-`com.windock.app.DockSmokeTest,com.windock.app.PhoneOptionsTest`. These use port
+`com.tara.app.DockSmokeTest,com.tara.app.PhoneOptionsTest`. These use port
 18622 and fake providers, including the real PIN flow and drawer-to-native bridge.
 
 For browser checks, start `node scripts/pc-picker-smoke-hosts.mjs` in another

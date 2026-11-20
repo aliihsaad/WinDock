@@ -5,7 +5,7 @@ async (page) => {
   const control=async path=>(await page.request.get("http://127.0.0.1:18628"+path)).json();
   async function client(native=false){
     const context=await browser.newContext({viewport:{width:800,height:360},serviceWorkers:"block"});contexts.push(context);
-    if(native)await context.addInitScript(()=>{window.nativeKeyboardOpens=0;window.WinDockAndroid={showKeyboard(){window.nativeKeyboardOpens++;},hideKeyboard(){},showPhoneSettings(){}};});
+    if(native)await context.addInitScript(()=>{window.nativeKeyboardOpens=0;window.TaraAndroid={showKeyboard(){window.nativeKeyboardOpens++;},hideKeyboard(){},showPhoneSettings(){}};});
     const tab=await context.newPage();await tab.goto("http://127.0.0.1:18627");
     await tab.getByRole("textbox",{name:"PIN",exact:true}).fill("864213");await tab.locator("#pair-form button").click();
     await tab.locator("#app:not([hidden])").waitFor();await tab.locator("#quick-controls-open").click();await tab.locator("#quick-input").click();

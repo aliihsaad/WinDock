@@ -12,7 +12,7 @@ if (-not (Test-Path -LiteralPath (Join-Path $AndroidSdk 'platforms\android-36\an
 $env:JAVA_HOME = $JavaHome
 $env:ANDROID_HOME = $AndroidSdk
 $task = if ($Unsigned) { 'bundleRelease' } else { 'signedReleaseBundle' }
-$signingMode = if ($Unsigned) { '-PwindockUnsigned=true' } else { '-PwindockUploadSigning=true' }
+$signingMode = if ($Unsigned) { '-PtaraUnsigned=true' } else { '-PtaraUploadSigning=true' }
 Push-Location (Join-Path $root 'android')
 try {
     & .\gradlew.bat testReleaseUnitTest lintRelease $task $signingMode --no-daemon --console=plain
@@ -20,7 +20,7 @@ try {
 } finally { Pop-Location }
 $output = Join-Path $root 'artifacts\play'
 New-Item -ItemType Directory -Force -Path $output | Out-Null
-$name = if ($Unsigned) { 'WinDock-inspection-only.aab' } else { 'WinDock-upload-candidate.aab' }
+$name = if ($Unsigned) { 'Tara-inspection-only.aab' } else { 'Tara-upload-candidate.aab' }
 $bundle = Join-Path $output $name
 $sourceBundle = Join-Path $root 'android\app\build\outputs\bundle\release\app-release.aab'
 if ($Unsigned) {

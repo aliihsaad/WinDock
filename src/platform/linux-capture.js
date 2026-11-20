@@ -29,7 +29,7 @@ export function captureName(kind, date = new Date(), suffix = randomBytes(3).toS
   const pad = (n, width = 2) => String(n).padStart(width, "0");
   const stamp = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}-` +
     `${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}-${pad(date.getMilliseconds(), 3)}`;
-  return `WinDock-${stamp}-${suffix}.${kind === "recording" ? "mp4" : "png"}`;
+  return `Tara-${stamp}-${suffix}.${kind === "recording" ? "mp4" : "png"}`;
 }
 
 export function screenshotArgv(monitor, path) {
@@ -67,7 +67,7 @@ export function createLinuxCapture({
   const status = () => ({ available: true, phase, startedAt, elapsedMs: startedAt ? Math.max(0, Date.now() - startedAt) : 0, lastCapture, error });
 
   async function target(kind) {
-    const dir = join(await folder(kind === "recording" ? "VIDEOS" : "PICTURES"), "WinDock");
+    const dir = join(await folder(kind === "recording" ? "VIDEOS" : "PICTURES"), "Tara");
     await mkdir(dir, { recursive: true });
     const name = captureName(kind);
     return { name, path: join(dir, name) };
@@ -212,14 +212,14 @@ export function createLinuxCapture({
   const api = {
     status,
     async screenshot() {
-      if (closed) throw failure("WinDock is shutting down.");
+      if (closed) throw failure("Tara is shutting down.");
       if (!pendingScreenshot) {
         pendingScreenshot = takeScreenshot().finally(() => { pendingScreenshot = null; });
       }
       return pendingScreenshot;
     },
     async start() {
-      if (closed) throw failure("WinDock is shutting down.");
+      if (closed) throw failure("Tara is shutting down.");
       if (starting) return starting;
       if (worker) {
         if (phase === "stopping") throw failure("The previous recording is still saving.", 409);

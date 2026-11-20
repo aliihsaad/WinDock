@@ -9,7 +9,7 @@ use std::os::fd::AsRawFd;
 use std::os::unix::fs::OpenOptionsExt;
 use std::time::Duration;
 
-/// One touchpad per user session, like the Windows `Local\WinDock.Touchpad` mutex.
+/// One touchpad per user session, like the Windows `Local\Tara.Touchpad` mutex.
 fn single_instance() -> crate::Result<Option<std::fs::File>> {
     let Some(runtime) = std::env::var_os("XDG_RUNTIME_DIR") else { return Ok(None) };
     let file = OpenOptions::new()
@@ -18,7 +18,7 @@ fn single_instance() -> crate::Result<Option<std::fs::File>> {
         .truncate(false)
         .mode(0o600)
         .custom_flags(libc::O_CLOEXEC)
-        .open(std::path::Path::new(&runtime).join("windock-touchpad.lock"))?;
+        .open(std::path::Path::new(&runtime).join("tara-touchpad.lock"))?;
     // SAFETY: flock on a descriptor we own.
     if unsafe { libc::flock(file.as_raw_fd(), libc::LOCK_EX | libc::LOCK_NB) } != 0 {
         return Err("Another touchpad is active.".into());

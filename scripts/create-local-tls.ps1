@@ -1,12 +1,12 @@
 #requires -Version 7.2
 # Run explicitly on the Windows host. No trust store is modified by this script.
-param([string]$OutputDirectory = (Join-Path $env:LOCALAPPDATA 'WinDock\tls'))
+param([string]$OutputDirectory = (Join-Path $env:LOCALAPPDATA 'Tara\tls'))
 $ErrorActionPreference = 'Stop'
 $directory = [IO.Path]::GetFullPath($OutputDirectory)
 if ($directory.TrimEnd('\') -eq [IO.Path]::GetPathRoot($directory).TrimEnd('\')) { throw 'Use a dedicated TLS directory, not a drive root.' }
 if (Test-Path -LiteralPath $directory) {
     if ((Get-Item -LiteralPath $directory).Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'TLS directory must not be a link or junction.' }
-    $unknown = @(Get-ChildItem -LiteralPath $directory -Force | Where-Object { $_.Name -notin @('windock-ca.crt','windock-ca.key','host.crt','host.key') })
+    $unknown = @(Get-ChildItem -LiteralPath $directory -Force | Where-Object { $_.Name -notin @('tara-ca.crt','tara-ca.key','host.crt','host.key') })
     if ($unknown.Count) { throw 'TLS directory contains unrelated files. Choose a dedicated directory before changing permissions.' }
 }
 New-Item -ItemType Directory -Path $directory -Force | Out-Null
@@ -19,8 +19,8 @@ foreach ($identity in @($user, [Security.Principal.SecurityIdentifier]::new('S-1
     $acl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new($identity, 'FullControl', $inherit, 'None', 'Allow'))
 }
 [IO.FileSystemAclExtensions]::SetAccessControl([IO.DirectoryInfo]::new($directory), $acl)
-$caPath = Join-Path $directory 'windock-ca.crt'
-$caKeyPath = Join-Path $directory 'windock-ca.key'
+$caPath = Join-Path $directory 'tara-ca.crt'
+$caKeyPath = Join-Path $directory 'tara-ca.key'
 $hash = [Security.Cryptography.HashAlgorithmName]::SHA256
 $padding = [Security.Cryptography.RSASignaturePadding]::Pkcs1
 $now = [DateTimeOffset]::UtcNow
@@ -30,7 +30,7 @@ if (Test-Path $caPath) {
 } else {
     $caKey = [Security.Cryptography.RSA]::Create(3072)
     try {
-        $req = [Security.Cryptography.X509Certificates.CertificateRequest]::new('CN=WinDock local host CA', $caKey, $hash, $padding)
+        $req = [Security.Cryptography.X509Certificates.CertificateRequest]::new('CN=Tara local host CA', $caKey, $hash, $padding)
         $req.CertificateExtensions.Add([Security.Cryptography.X509Certificates.X509BasicConstraintsExtension]::new($true, $true, 0, $true))
         $req.CertificateExtensions.Add([Security.Cryptography.X509Certificates.X509KeyUsageExtension]::new('KeyCertSign,CrlSign', $true))
         $ca = $req.CreateSelfSigned($now.AddMinutes(-5), $now.AddYears(5))
@@ -41,7 +41,7 @@ if (Test-Path $caPath) {
 $serverKey = [Security.Cryptography.RSA]::Create(3072)
 try {
     if ($ca.NotAfter.ToUniversalTime() -lt $now.AddDays(366).UtcDateTime) { throw 'CA expires too soon; plan a new CA and explicit device trust migration.' }
-    $req = [Security.Cryptography.X509Certificates.CertificateRequest]::new('CN=WinDock local host', $serverKey, $hash, $padding)
+    $req = [Security.Cryptography.X509Certificates.CertificateRequest]::new('CN=Tara local host', $serverKey, $hash, $padding)
     $req.CertificateExtensions.Add([Security.Cryptography.X509Certificates.X509BasicConstraintsExtension]::new($false, $false, 0, $true))
     $req.CertificateExtensions.Add([Security.Cryptography.X509Certificates.X509KeyUsageExtension]::new('DigitalSignature,KeyEncipherment', $true))
     $oids = [Security.Cryptography.OidCollection]::new()
@@ -63,9 +63,9 @@ try {
         [IO.File]::WriteAllText((Join-Path $directory 'host.crt'), $certificate.ExportCertificatePem())
     } finally { $certificate.Dispose() }
     Write-Host "Host certificate covers: $($addresses -join ', ')"
-    Write-Host "Transfer ONLY windock-ca.crt to the phone over a trusted channel; never transfer .key files."
+    Write-Host "Transfer ONLY tara-ca.crt to the phone over a trusted channel; never transfer .key files."
     Write-Host "CA certificate SHA-256: $($ca.GetCertHashString([Security.Cryptography.HashAlgorithmName]::SHA256))"
-    Write-Host "Set WINDOCK_TLS_CERT to $(Join-Path $directory 'host.crt')"
-    Write-Host "Set WINDOCK_TLS_KEY to $(Join-Path $directory 'host.key')"
-    Write-Host 'Restart WinDock with those environment variables. Install the verified CA in Android certificate settings.'
+    Write-Host "Set TARA_TLS_CERT to $(Join-Path $directory 'host.crt')"
+    Write-Host "Set TARA_TLS_KEY to $(Join-Path $directory 'host.key')"
+    Write-Host 'Restart Tara with those environment variables. Install the verified CA in Android certificate settings.'
 } finally { $serverKey.Dispose(); $ca.Dispose() }

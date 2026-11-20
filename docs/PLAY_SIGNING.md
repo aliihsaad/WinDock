@@ -1,8 +1,8 @@
-# WinDock production signing plan — no key operations authorized
+# Tara production signing plan — no key operations authorized
 
 Prepared 30 October 2026 for AliDevLab. Support: alidevlab10@gmail.com.
 The personal Play account exists; the owner reports dashboard access and an
-enabled Create App button. No WinDock listing exists. This does not establish
+enabled Create App button. No Tara listing exists. This does not establish
 production access or completion of every account verification requirement.
 
 **Hold:** do not generate, replace, read out, export or commit private signing
@@ -21,7 +21,7 @@ If identical signing across other stores is required, decide the app-signing-key
 strategy before enrollment; a Google-generated private key cannot be downloaded.
 See [Android's signing guide](https://developer.android.com/studio/publish/app-signing).
 
-Keep `com.windock.app`. Public 0.2.6 already uses version code 9. The eventual
+Keep `com.tara.app`. Public 0.2.6 already uses version code 9. The eventual
 candidate must exceed all previously distributed codes (at least 10 based on the
 release reviewed), even though this is the first Play listing. The integrated candidate uses code 10; see PLAY_INTEGRATION.md. Do not treat the historical code-9 inspection bundle as a publication candidate.
 
@@ -62,11 +62,11 @@ without a certificate-compatible, tested route.
 
 | Variable | Value held locally |
 | --- | --- |
-| `WINDOCK_UPLOAD_STORE_FILE` | Absolute path to the approved keystore |
-| `WINDOCK_UPLOAD_STORE_PASSWORD` | Keystore password |
-| `WINDOCK_UPLOAD_KEY_ALIAS` | Approved upload alias |
-| `WINDOCK_UPLOAD_KEY_PASSWORD` | Key password |
-| `WINDOCK_UPLOAD_CERT_SHA256` | Owner-approved public upload certificate fingerprint |
+| `TARA_UPLOAD_STORE_FILE` | Absolute path to the approved keystore |
+| `TARA_UPLOAD_STORE_PASSWORD` | Keystore password |
+| `TARA_UPLOAD_KEY_ALIAS` | Approved upload alias |
+| `TARA_UPLOAD_KEY_PASSWORD` | Key password |
+| `TARA_UPLOAD_CERT_SHA256` | Owner-approved public upload certificate fingerprint |
 
 Populate them only in a short-lived trusted build process using local secure
 prompts or a secret manager, not persistent user/machine environment settings.
@@ -75,14 +75,14 @@ needs plaintext values in memory; environment variables are not a substitute
 for an encrypted keystore or host access controls. Never print the environment,
 enable secret-bearing diagnostic logs, or add credentials to gradle.properties.
 
-`signedReleaseBundle -PwindockUploadSigning=true` requires explicit opt-in, all
+`signedReleaseBundle -PtaraUploadSigning=true` requires explicit opt-in, all
 four credential values, an existing keystore, a non-debug valid X.509 certificate
 and a matching owner-approved SHA-256 fingerprint. These checks run before the
 release build can use the key. The script also verifies the resulting AAB with
 jarsigner and rejects Android Debug certificates before copying a candidate.
 
 Ordinary Gradle builds do not load upload keys. `build-play-bundle.ps1 -Unsigned`
-sets `-PwindockUnsigned=true`, ignores inherited signing credentials, and checks
+sets `-PtaraUnsigned=true`, ignores inherited signing credentials, and checks
 that no signature files exist in the inspection AAB. Selecting both unsigned
 and upload-signing modes is an error. No production signing build is authorized
 in this preparation. `.gitignore` is a secondary safeguard, not proof that an

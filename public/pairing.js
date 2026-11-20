@@ -6,7 +6,7 @@ export function pairingError(detail = {}) {
     const unit = seconds >= 60 ? "minute" : "second";
     const wait = count + " " + unit + (count === 1 ? "" : "s");
     return detail.global
-      ? "Pairing is paused for all devices. Try again in " + wait + ", or choose “Allow pairing now” in WinDock on your PC."
+      ? "Pairing is paused for all devices. Try again in " + wait + ", or choose “Allow pairing now” in Tara on your PC."
       : "Too many attempts from this device. Try again in " + wait + ".";
   }
   const messages = {

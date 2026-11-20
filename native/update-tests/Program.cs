@@ -1,12 +1,12 @@
 using System.Net;
 using System.Text.Json;
-using WinDock.Tray;
+using Tara.Tray;
 
 var checks = 0;
 void Check(bool ok, string message) { checks++; if (!ok) throw new Exception(message); }
 string Manifest(string version, string? url = null) => JsonSerializer.Serialize(new {
     version, available = true,
-    windows = new { url = url ?? $"https://github.com/aliihsaad/WinDock/releases/download/v{version}/WinDockSetup.exe" },
+    windows = new { url = url ?? $"https://github.com/aliihsaad/WinDock/releases/download/v{version}/TaraSetup.exe" },
 });
 int Compare(string a, string b) => ReleaseVersion.Parse(a).CompareTo(ReleaseVersion.Parse(b));
 Check(Compare("0.2.2-preview.1", "0.2.1-preview.1") > 0, "new patch is newer");
@@ -29,7 +29,7 @@ foreach (var version in new[] { "0.2.0-preview.1", "0.2.1-preview.1" }) {
     Check(current.Status == UpdateStatus.Current && !current.ShouldNotify(false), "startup stays quiet without a newer release");
     Check(current.ShouldNotify(true), "manual check reports up-to-date status");
 }
-foreach (var invalid in new[] { "{}", "[]", "{\"available\":false}", Manifest("0.2.2", "https://evil.test/installer.exe"), Manifest("0.2.2", "https://github.com/other/repo/releases/download/v0.2.2/WinDockSetup.exe") }) {
+foreach (var invalid in new[] { "{}", "[]", "{\"available\":false}", Manifest("0.2.2", "https://evil.test/installer.exe"), Manifest("0.2.2", "https://github.com/other/repo/releases/download/v0.2.2/TaraSetup.exe") }) {
     try { UpdateChecker.ParseManifest(invalid, "0.2.1-preview.1"); throw new Exception("Accepted unsafe manifest"); }
     catch (InvalidDataException) { checks++; }
 }
@@ -37,7 +37,7 @@ string body = Manifest("0.2.2-preview.1");
 var handler = new FixtureHandler(request => {
     Check(request.RequestUri?.AbsoluteUri == UpdateChecker.ManifestUrl, "checks the fixed HTTPS feed");
     Check(request.Headers.CacheControl?.NoCache == true, "requests fresh metadata");
-    Check(request.Headers.UserAgent.ToString() == "WinDock/0.2.1-preview.1", "identifies installed release");
+    Check(request.Headers.UserAgent.ToString() == "Tara/0.2.1-preview.1", "identifies installed release");
     return new(HttpStatusCode.OK) { Content = new StringContent(body) };
 });
 using var http = new HttpClient(handler) { MaxResponseContentBufferSize = 64 * 1024 };

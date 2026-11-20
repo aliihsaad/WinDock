@@ -2,6 +2,6 @@
 set -e
 # Stop each user's background host before its files go. An upgrade restarts
 # it from postinst instead.
-if [ "$1" = remove ] && [ -x /usr/lib/windock/user-service ]; then
-    /usr/lib/windock/user-service stop
+if [ "$1" = remove ] && [ -x /usr/lib/tara/user-service ]; then
+    /usr/lib/tara/user-service stop
 fi

@@ -1,4 +1,4 @@
-# WinDock — local Play listing preparation
+# Tara — local Play listing preparation
 
 Not submitted. Store identity: AliDevLab. Price: free. No ads or purchases.
 
@@ -7,7 +7,7 @@ PLAY_INTEGRATION.md for validation and remaining gates. Screenshots were refresh
 from this build and remain local review drafts. AliDevLab's personal account exists; no app listing has been
 created. All Console uploads/actions and production deployments remain on hold.
 
-**Name:** WinDock
+**Name:** Tara
 
 **Short description:** Control your Windows PC with a phone dock, touchpad and keyboard.
 
@@ -19,29 +19,29 @@ and keyboard. Draw a signature and save or insert it into a compatible PC app.
 Choose between saved PCs, keep appearance settings for each PC, and view or edit
 recent PC clipboard text before explicitly pasting it into a PC field.
 Take PC screenshots or start and stop silent PC screen recordings. Captures and
-signatures stay in your PC's WinDock folders.
+signatures stay in your PC's Tara folders.
 Send selected photos, videos and documents securely to your paired PC. Choose
-files inside WinDock or use another Android app's Share menu. Review the selection,
-keep WinDock open, and follow progress. Received files go to Downloads/WinDock
+files inside Tara or use another Android app's Share menu. Review the selection,
+keep Tara open, and follow progress. Received files go to Downloads/Tara
 unless you change the folder on the computer. Cancel from either device.
 
-WinDock is free, with no ads, subscriptions or account registration. It requires
-the WinDock Windows companion and a local network connection. The Play version
+Tara is free, with no ads, subscriptions or account registration. It requires
+the Tara Windows companion and a local network connection. The Play version
 requires the updated companion's secure connection. Choose Pair a phone securely
-on the computer and scan its code in WinDock. Camera permission is optional;
+on the computer and scan its code in Tara. Camera permission is optional;
 pairing text is also supported. USB connectivity
 uses Android USB tethering and a data-capable cable. Availability depends on your
 phone, carrier and Windows network configuration. It does not require USB debugging.
 
 Customize the dock, choose a performance mode for older phones, and adjust this
 phone's idle dimming and screen-rest settings. PC hardware and applications may
-limit some controls. WinDock is for your own PC, not internet remote access.
+limit some controls. Tara is for your own PC, not internet remote access.
 
 **Support website:** https://github.com/aliihsaad/WinDock
 
 **Support email:** [alidevlab10@gmail.com](mailto:alidevlab10@gmail.com).
 
-**Privacy page:** `website/privacy.html`, prepared for the existing WinDock site.
+**Privacy page:** `website/privacy.html`, prepared for the existing Tara site.
 Do not publish it yet. Finalize the actual release data flows, then obtain
 deployment approval and verify the real public URL before entering it in Console.
 
@@ -84,7 +84,7 @@ recording from Android or the PC tray. The connection screen's privacy policy
 works without the PC. Provide a working companion download and review support
 contact before submission. Do not expose a personal PC or disable authentication.
 For Files & Media, use a non-sensitive sample photo and document. Test the system
-picker and Gallery/Files → Share → WinDock, including multiple files. Explicitly
+picker and Gallery/Files → Share → Tara, including multiple files. Explicitly
 send and verify progress, completion, duplicate-name handling and cancellation.
 The computer's Files & Media controls can disable receiving or change destination.
 Keep the Android app open; this release intentionally does not transfer in the background.
@@ -93,13 +93,13 @@ Keep the Android app open; this release intentionally does not transfer in the b
 
 `docs/play-assets/` contains a 512x512 store icon, 1024x500 feature graphic and
 three real 1920x1080 release-emulator screenshots. The graphics use the existing
-WinDock vector mark; regenerate them with `scripts/build-play-assets.ps1`.
+Tara vector mark; regenerate them with `scripts/build-play-assets.ps1`.
 The screenshots show the HTTPS smoke fixture with fake apps and no personal data.
 They are local review drafts, not submitted assets. The dock intentionally shows
 fallback icons because the fixture does not extract real installed applications.
 
 Screenshot alt text:
-- `release-dock.png`: "WinDock app dock with five app tiles and a running-app indicator."
+- `release-dock.png`: "Tara app dock with five app tiles and a running-app indicator."
 - `release-touchpad.png`: "Touchpad with mouse buttons, keyboard access, signature shortcut and pointer speed controls."
 - `release-signature.png`: "Blank signature canvas with ink selection, save to PC and insert into PC controls."
 

@@ -17,7 +17,7 @@ function harness(bridge) {
   const keys = names.map(name => { const key = new Element(); key.dataset.pcKey = name; return key; });
   get('pc-keys').querySelectorAll = () => keys;
   globalThis.document = { getElementById: get };
-  globalThis.window = Object.assign(new EventTarget(), { WinDockAndroid: bridge });
+  globalThis.window = Object.assign(new EventTarget(), { TaraAndroid: bridge });
   const sent = []; let ready = true;
   const keyboard = createRemoteKeyboard({ send: message => { sent.push(message); return true; }, isReady: () => ready, onSignature() {}, notify() {} });
   const announce = target => keyboard.message({type:'focus', target, editable:false, password:false});
@@ -79,7 +79,7 @@ function harness(bridge) {
   h.keys[4].click();
   t.deepEqual(calls,[{target:'31',key:'End'}],'native composition is committed by the Android bridge before navigation');
   t.equal(h.sent.length,0,'web code does not race a direct key against native draft commit');
-  const emit = detail => {const event=new Event('windock-keyboard-input');event.detail=detail;window.dispatchEvent(event);};
+  const emit = detail => {const event=new Event('tara-keyboard-input');event.detail=detail;window.dispatchEvent(event);};
   emit({type:'key',key:'End',target:'30'});
   t.equal(h.sent.length,0,'stale native focus events are ignored');
   emit({type:'text',text:'Word',target:'31'});emit({type:'key',key:'End',target:'31'});

@@ -8,9 +8,9 @@ async (page) => {
     await context.route('**/demo/app.js', async route => {
       const response = await route.fetch();
       const source = await response.text();
-      const body = source.replace(/^window\.WinDockAndroid = .*;$/m, `
+      const body = source.replace(/^window\.TaraAndroid = .*;$/m, `
         window.__connectionsOpened = 0; window.__pickersOpened = 0;
-        window.WinDockAndroid = location.search.includes('native') ? {
+        window.TaraAndroid = location.search.includes('native') ? {
           showConnectionSettings() { window.__connectionsOpened++; },
           showPcPicker() { window.__pickersOpened++; }, showKeyboard() {}
         } : location.search.includes('legacy') ? { showPcPicker() { window.__pickersOpened++; } } : undefined;`);

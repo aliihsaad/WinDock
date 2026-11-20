@@ -3,7 +3,7 @@ async (page) => {
   const results=[],check=(value,label)=>{if(!value)throw Error(label);results.push(label);};
   const context=await page.context().browser().newContext({viewport:{width:1100,height:760}});
   try {
-    let enabled=true,destination='Downloads/WinDock',calls=[];
+    let enabled=true,destination='Downloads/Tara',calls=[];
     await context.route('**/api/transfers/local**',async route=>{
       const request=route.request();calls.push({url:request.url(),method:request.method(),body:request.postDataJSON()});
       const body=request.postDataJSON();if(request.url().endsWith('/settings')){if(body.enabled!==undefined)enabled=body.enabled;if(body.destination!==undefined){await route.fulfill({status:400,json:{error:'Choose an absolute receive folder.'}});return;}}
@@ -24,7 +24,7 @@ async (page) => {
     await tab.getByRole('button',{name:'Cancel batch'}).click();check(calls.some(c=>c.url.endsWith('/cancel')&&c.body.id==='a'.repeat(32)),'Desktop batch cancellation');
     await tab.getByRole('button',{name:'Open folder',exact:true}).click();check(calls.some(c=>c.url.endsWith('/open')),'Explicit open-folder action');
     await tab.screenshot({path:'output/playwright/files-desktop.png',fullPage:true});
-    await context.route('**/demo/app.js',async route=>{const response=await route.fetch();const body=(await response.text()).replace('window.WinDockAndroid = { showPcPicker: showPreviewPcPicker };','window.WinDockAndroid = { showPcPicker: showPreviewPcPicker, openFiles: () => { window.filesOpened = (window.filesOpened || 0) + 1; } };');await route.fulfill({response,body});});
+    await context.route('**/demo/app.js',async route=>{const response=await route.fetch();const body=(await response.text()).replace('window.TaraAndroid = { showPcPicker: showPreviewPcPicker };','window.TaraAndroid = { showPcPicker: showPreviewPcPicker, openFiles: () => { window.filesOpened = (window.filesOpened || 0) + 1; } };');await route.fulfill({response,body});});
     await tab.setViewportSize({width:844,height:390});await tab.goto('http://127.0.0.1:4173/demo/index.html');await tab.locator('#app:not([hidden])').waitFor();
     check(await tab.locator('#quick-voice').count()===0,'Dedicated voice control removed');
     await tab.locator('#quick-controls-open').click();check(await tab.locator('#quick-files').isVisible(),'Files action is in the curtain');

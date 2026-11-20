@@ -11,8 +11,8 @@ clipboard and Ctrl+V, preserving multiline text instead of sending Enter keys.
 The selected text becomes the PC's current clipboard content.
 
 Windows uses the existing Windows clipboard history. Enable it on the PC with
-**Windows + V** if it is disabled; WinDock never enables it automatically.
-Linux has no system clipboard history, so WinDock reads the history manager
+**Windows + V** if it is disabled; Tara never enables it automatically.
+Linux has no system clipboard history, so Tara reads the history manager
 the user already runs. It finds managers by their running processes, never by
 distro or desktop, and uses the first one it finds in this order:
 
@@ -32,7 +32,7 @@ the panel offers only the PC's **current clipboard** (`wl-paste`, or `xclip` /
 (`x-kde-passwordManagerHint`) is not read. GPaste is not supported yet; its
 GNOME users get the current clipboard.
 
-WinDock never starts, configures or writes to a clipboard manager, and only
+Tara never starts, configures or writes to a clipboard manager, and only
 reads files and commands that belong to the manager it found. Pasting uses
 **wl-copy**, or `xclip`/`xsel` on an X11 session. Only text is supported;
 images, files and rich formatting are outside this text-input feature.
@@ -43,7 +43,7 @@ notice. Reads have a four-second deadline and a two-MiB process-output limit.
 Opening or refreshing the panel triggers one read; there is no polling or new
 clipboard recorder. Closing, disconnecting, changing PCs or leaving the
 touchpad clears its phone-side contents. History is never stored in browser
-storage, service-worker caches, WinDock files, or logs.
+storage, service-worker caches, Tara files, or logs.
 
 History access requires the existing paired session and rejects cross-origin
 requests. Paste uses the touchpad's single-owner connection and validates the
@@ -60,13 +60,13 @@ hidden there. Update the host helper and frontend together.
 
 - `npm test`: history providers, authorization, output/Unicode bounds, large
   paste transport, concurrent paste rejection and existing host regressions.
-- `dotnet run --project native/input-tests/WinDockInputTests.csproj -c Release`:
+- `dotnet run --project native/input-tests/TaraInputTests.csproj -c Release`:
   simulated clipboard writes and key injection, including focus changes.
 - Linux Docker build: native protocol, Unicode bounds and Ctrl+V regression tests.
 - Run `scripts/clipboard-smoke-host.mjs`, then the Playwright CLI with
   `scripts/clipboard-browser-check.js` for fake clipboard history, phone/tablet
   layout, plain-text rendering, IME suppression and cleanup checks.
-- Disposable Android emulator only: `com.windock.app.PcClipboardTest` against
+- Disposable Android emulator only: `com.tara.app.PcClipboardTest` against
   the same fixture. It uses no real PC clipboard or desktop actions.
 
 Verified locally: all 25 host suites, 48 Windows input assertions, Windows

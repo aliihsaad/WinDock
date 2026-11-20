@@ -17,7 +17,7 @@ internal static class Program
         ApplicationConfiguration.Initialize();
         using var form = new ProbeWindow
         {
-            Text = "WinDock verification window",
+            Text = "Tara verification window",
             ShowInTaskbar = true,
             StartPosition = FormStartPosition.Manual,
             Location = new Point(-10000, -10000),

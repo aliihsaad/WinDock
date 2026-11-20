@@ -6,7 +6,7 @@ The owner confirmed that Linux was absent from nearby PCs, manual attempts could
 
 1. **Secure discovery was missing from the picker.** `PcPicker.kt` used the legacy scanner and normal system-CA health probing. The managed companion advertises v3 discovery and uses its own pinned CA. A real UDP probe of the running Linux host received v1 and v3 replies, but no v2 reply. Its TCP 8620/8621 and UDP 41234 listeners were present. Its clock agreed with this PC. This is an Android discovery integration problem, not evidence that Linux was stopped.
 2. **Manual selection did not resolve another saved secure identity.** `MainActivity.kt` now resolves an entered saved PC address to that PC's trust record. Picker selection uses the discovered route with the existing pinned identity. Scanning must never save/select a different PC as a side effect.
-3. **A failed new pairing could retry the previous selected PC.** The prior `WinDock-connection-navigation-local-test.apk` reproduced this in a negative-control test: after a new, valid invitation targeted an offline fixture, the screen returned to “Reconnecting securely…” instead of retaining the new-PC error. Initial pairing failures now pause automatic retries and retain the previous pairing for an explicit Return action. This is an additional confirmed defect; it does not explain a camera failing to decode a QR.
+3. **A failed new pairing could retry the previous selected PC.** The prior `Tara-connection-navigation-local-test.apk` reproduced this in a negative-control test: after a new, valid invitation targeted an offline fixture, the screen returned to “Reconnecting securely…” instead of retaining the new-PC error. Initial pairing failures now pause automatic retries and retain the previous pairing for an explicit Return action. This is an additional confirmed defect; it does not explain a camera failing to decode a QR.
 4. **Linux's web QR needed a clearer presentation.** Its old inline SVG was constrained by the page. The revised page uses the existing GIF QR endpoint, decodes its bytes into a canvas under the unchanged strict CSP, and displays a focused dialog with integer physical-pixel module scaling. The four-module quiet zone, payload, expiry and single-use semantics are unchanged. Screenshot decoding is verified; the exact camera/monitor cause on the user's hardware is not proven until physical scanning is retested.
 
 ## Implementation and compatibility
@@ -19,11 +19,11 @@ The owner confirmed that Linux was absent from nearby PCs, manual attempts could
 
 ## Linux local-test installation
 
-Only ten public UI files were updated in `/home/alidevlab/windock-local-tests/links-20261101`: app, dock, icons, index, native transport, pairing HTML/CSS/JS, style and service worker. These bring Linux's older shared UI up to the current local testing version as well as improving its QR display.
+Only ten public UI files were updated in `/home/alidevlab/tara-local-tests/links-20261101`: app, dock, icons, index, native transport, pairing HTML/CSS/JS, style and service worker. These bring Linux's older shared UI up to the current local testing version as well as improving its QR display.
 
 Pre/post hashes were checked. The before/after check confirmed **all 9 tiles and the host identity unchanged**. The host was not restarted; configuration, pairing state and private keys were not edited. The actual running local-test companion is `0.3.0-preview.1`; the older installed system package version is not the active service version.
 
-Backup: `/home/alidevlab/windock-local-tests/links-20261101/backup/ui-2026-11-02T11-13-29-423Z`. Its `rollback.mjs` verifies the installed hashes before restoring only the replaced public files. Local evidence: `artifacts/linux-update/ui-install-result.txt`, `ui-update-manifest.json` and `before-20261102/public/`.
+Backup: `/home/alidevlab/tara-local-tests/links-20261101/backup/ui-2026-11-02T11-13-29-423Z`. Its `rollback.mjs` verifies the installed hashes before restoring only the replaced public files. Local evidence: `artifacts/linux-update/ui-install-result.txt`, `ui-update-manifest.json` and `before-20261102/public/`.
 
 ## Automated validation
 
@@ -47,9 +47,9 @@ The first legacy run inherited secure fixture credentials from the release APK r
 
 ## APK for physical testing
 
-`artifacts/WinDock-linux-pairing-local-test.apk`
+`artifacts/Tara-linux-pairing-local-test.apk`
 
-- Package `com.windock.app`; version code **10**; version `0.3.0-preview.1`; min API 24; target API 36.
+- Package `com.tara.app`; version code **10**; version `0.3.0-preview.1`; min API 24; target API 36.
 - HTTPS-only, non-debuggable release configuration, signed with the **existing local Android debug test key**, not a production upload key. The existing key file was verified unchanged.
 - APK SHA-256: `98ECBEDF75CF49F35316C1EA230EA061514EBD280AACDE10C3ABD29BA92A701C`.
 - Install over the existing local test app. Do not uninstall or clear its data. Windows' installed companion and pairings were not changed in this task.
@@ -74,7 +74,7 @@ Read-only checks of the active Linux service found:
 - The service was restarted by the owner at 12:50:36 CET; PID 3086696 still runs the expected local-test root, with 9 tiles.
 - HTTP 8620 and HTTPS 8621 listen on all interfaces; UDP 41234 is present.
 - From Windows over the LAN, HTTP health returns 200; TCP 8621 times out before TLS starts.
-- UFW is active and enabled with default inbound DROP. Its saved WinDock rules allow TCP 8620 and UDP 41234 from `192.168.178.0/24`, but have no TCP 8621 allow rule.
+- UFW is active and enabled with default inbound DROP. Its saved Tara rules allow TCP 8620 and UDP 41234 from `192.168.178.0/24`, but have no TCP 8621 allow rule.
 - A local HTTPS health check with the public CA and correct stable hostname verifies the certificate and host identity. Diagnostic: `artifacts/linux-update/check-local-tls.mjs`; result: `local-tls-check.txt`. No private key or pairing invitation was read or generated.
 
 The missing secure-port firewall rule is the remaining network blocker. The old Windows address in the phone's form is retained until successful pairing; it does not establish that the failed QR attempt targeted Windows.
@@ -82,7 +82,7 @@ The missing secure-port firewall rule is the remaining network blocker. The old 
 The owner must run this administrator command **on Linux** because unattended sudo requires a password. No firewall change was made by the assistant:
 
 ```sh
-sudo ufw allow in on eno1 from 192.168.178.0/24 to any port 8621 proto tcp comment 'WinDock secure LAN'
+sudo ufw allow in on eno1 from 192.168.178.0/24 to any port 8621 proto tcp comment 'Tara secure LAN'
 ```
 
 This is limited to the current wired LAN interface and home subnet. After adding it, verify remote TCP/TLS reachability and scan a newly generated QR. Do not disable UFW, reset pairing, reinstall the APK, install a CA globally, or open router ports. USB tethering may use a different interface/subnet and needs its own scoped check; this LAN rule does not establish USB acceptance.

@@ -17,7 +17,7 @@ try {
 } finally { Pop-Location }
 $outputDir = Join-Path $projectRoot 'artifacts'
 New-Item -ItemType Directory -Force $outputDir | Out-Null
-$apk = Join-Path $outputDir 'WinDock-android-debug.apk'
+$apk = Join-Path $outputDir 'Tara-android-debug.apk'
 Copy-Item -LiteralPath (Join-Path $projectRoot 'android\app\build\outputs\apk\debug\app-debug.apk') -Destination $apk
 $signer = Join-Path $AndroidSdk 'build-tools\36.1.0\apksigner.bat'
 & $signer verify --verbose $apk

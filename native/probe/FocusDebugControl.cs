@@ -41,8 +41,8 @@ internal static class FocusDebugControl
             if (args.Length != 3 || !int.TryParse(args[2], out var targetPid) || targetPid <= 0)
                 throw new ArgumentException("usage: --focus-debug-control <helper path> <owned probe pid>");
             var helper = Path.GetFullPath(args[1]);
-            if (!File.Exists(helper) || !Path.GetFileName(helper).Equals("WinDockHelper.exe", StringComparison.OrdinalIgnoreCase))
-                throw new ArgumentException("A built WinDockHelper.exe is required.");
+            if (!File.Exists(helper) || !Path.GetFileName(helper).Equals("TaraHelper.exe", StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException("A built TaraHelper.exe is required.");
             using var target = Process.GetProcessById(targetPid);
             if (!string.Equals(target.MainModule?.FileName, Environment.ProcessPath, StringComparison.OrdinalIgnoreCase))
                 throw new ArgumentException("The focus target must be another instance of this smoke-test probe.");

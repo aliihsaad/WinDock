@@ -1,4 +1,4 @@
-# WinDock Play preparation: v0.2.6 integration and validation
+# Tara Play preparation: v0.2.6 integration and validation
 
 Reviewed locally on 30 October 2026. **Integration is ready for code review, not
 publication.** The native Windows smoke failure was traced to foreground-policy
@@ -31,11 +31,11 @@ No production Android signing key was generated, replaced or used.
 
 | Area | Integrated behavior and source references |
 | --- | --- |
-| Host protocols | `server.js`, `src/auth.js`, `src/input-hub.js`, `src/sync.js`: optional HTTPS/WSS added beside the released HTTP/WS listener. API routes, payloads, shared dock state, provider, capture worker and input ownership remain compatible. HTTP retains `windock_session`; HTTPS uses `__Host-windock_session`. |
+| Host protocols | `server.js`, `src/auth.js`, `src/input-hub.js`, `src/sync.js`: optional HTTPS/WSS added beside the released HTTP/WS listener. API routes, payloads, shared dock state, provider, capture worker and input ownership remain compatible. HTTP retains `tara_session`; HTTPS uses `__Host-tara_session`. |
 | Pairing/security | Released six-digit PIN, Host validation, auth/CSRF controls, host-wide lockout and PC-local recovery retained. HTTPS has a separate PIN and session store, but shares the failure budget with HTTP. Renaming a cookie cannot cross-authenticate. HTTPS loopback still requires pairing. |
 | Discovery/ports | `src/discovery.js` preserves v1 responses and adds opt-in v2 HTTPS discovery. Released HTTP fallback and saved explicit port remain. HTTPS automatic port selection also falls back; an occupied explicit TLS port fails clearly. Tray/discovery advertise the actual bound endpoint. |
 | Android discovery | `Discovery.kt`, `PcScanner.kt`, `PcPicker.kt`, `HostProbe.kt`: keep multi-PC scanning, saved PCs/Forget, identity matching and source-address rewriting for USB. Play filters insecure endpoints; previews retain v1/HTTP. Existing positional discovery arguments remain compatible. |
-| Android identity/build | `android/app/build.gradle`: `com.windock.app`, minimum API 24, compile/target API 36, version code 10, version name `0.3.0-preview.1`. AGP 8.10.1, Gradle 8.11.1 with distribution checksum, Build Tools 36.1.0. No broad runtime SDK replacement. |
+| Android identity/build | `android/app/build.gradle`: `com.tara.app`, minimum API 24, compile/target API 36, version code 10, version name `0.3.0-preview.1`. AGP 8.10.1, Gradle 8.11.1 with distribution checksum, Build Tools 36.1.0. No broad runtime SDK replacement. |
 | Android lifecycle/security | `MainActivity.kt`, release manifest/network config, `public/app.js`, `public/style.css`: API 36 Back/inset handling, offline privacy entry, origin/bridge restrictions and HTTPS-only release behavior. Released performance heuristics, display preferences, native editor and per-PC appearance behavior retained. |
 | Clipboard | Released `public/clipboard.js`, clipboard API/history and native paste implementations retained. The phone fetches up to 20 text entries on demand, edits locally, and pastes only on explicit action. Draft cleanup and Windows clipboard retention are accurately distinguished in the policy. |
 | Updates | Released desktop update routes, startup/manual checks, trusted download restrictions and tray behavior retained. Preview Android manual updates remain. `AppUpdates.kt` routes Play users to Google Play without the external APK flow. |
@@ -73,7 +73,7 @@ All logs below are local evidence under `artifacts/`; they are not published.
 | Windows build | Bundled companion and installer compiled successfully | `play-integration-windows-build.log`, `play-integration-installer-build.log` |
 | Packaged tray smoke | Passed server startup, URL/PIN readiness and shutdown using isolated test port/config | `play-integration-tray-smoke.log` |
 | Real Windows smoke | Initial focus failure explained by Windows foreground eligibility; updated ordinary smoke passed, plus three explicitly controlled runs. Real phone/application acceptance remains open | `focus-smoke-normal-final.log`, `focus-smoke-controlled-1.log`; details in `WINDOWS_FOCUS_TEST.md` |
-| Installer lifecycle | **BLOCKED**: existing WinDock installation/shortcut; script refused replacement before installing anything | `play-integration-installer-test.log` |
+| Installer lifecycle | **BLOCKED**: existing Tara installation/shortcut; script refused replacement before installing anything | `play-integration-installer-test.log` |
 | Website regression | **64 checks passed**, including actual demo clipboard/picker/capture/signature flows, release downloads and responsive layouts | `play-integration-website-test.log` |
 | Local privacy page | Phone-width layout, support link, zero scripts and policy-text parity with bundled offline asset checked; screenshots reviewed locally | `website/privacy.html`, `output/playwright/play-privacy-mobile.png` |
 | Release checks | Actionlint passed; production npm audit reported **0 advisories**; signing opt-in/conflicting-mode negative checks passed; unsigned build ignored deliberately invalid inherited signing credentials | `play-integration-actionlint.log`, `play-integration-npm-audit.json`, `play-integration-signing-{negative,conflict}.log`, `play-integration-unsigned-build.log` |
@@ -132,11 +132,11 @@ These establish protocol behavior; physical Wi-Fi/USB confirmation remains open.
 
 ### Current inspection artifact
 
-`artifacts/play/WinDock-inspection-only.aab` is **unsigned, inspection only**.
+`artifacts/play/Tara-inspection-only.aab` is **unsigned, inspection only**.
 
 SHA-256: `ad7b6e027abc49c16e4c4861fe34d0a4c1edf2fdb3bb6b2db28aa48bb7265a76`
 
-Package `com.windock.app`; code 10; minimum 24; target 36. Three application network
+Package `com.tara.app`; code 10; minimum 24; target 36. Three application network
 permissions remain: INTERNET, ACCESS_NETWORK_STATE and CHANGE_WIFI_MULTICAST_STATE.
 No camera, microphone, location, broad storage, accessibility or Android screen
 capture permission was added. AndroidX also merges a signature-protected receiver
@@ -182,7 +182,7 @@ remediation, but 16 KB device execution remains a validation item.
    text and host identifiers must be considered; absence of analytics does not
    automatically justify every “no collection” answer. Approve public privacy URL,
    reviewer companion/setup access, category/rating/audience and final screenshots.
-6. **Play account/testing:** AliDevLab personal account exists, but no WinDock
+6. **Play account/testing:** AliDevLab personal account exists, but no Tara
    listing or production access is established. Complete required verification,
    app setup, closed testing and production access only after separate approval
    for Console/upload actions. The account requires at least 12 continuously

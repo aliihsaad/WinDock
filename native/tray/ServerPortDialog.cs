@@ -1,4 +1,4 @@
-namespace WinDock.Tray;
+namespace Tara.Tray;
 
 internal static class ServerPortDialog
 {
@@ -15,7 +15,7 @@ internal static class ServerPortDialog
         if (saved is null && int.TryParse(inherited, out var environmentPort) && environmentPort is >= 1 and <= 65535)
             selectedPort = environmentPort;
 
-        using var form = new Form { Text = "WinDock — Server port", AutoScaleMode = AutoScaleMode.Dpi,
+        using var form = new Form { Text = "Tara — Server port", AutoScaleMode = AutoScaleMode.Dpi,
             ClientSize = new Size(510, 325), FormBorderStyle = FormBorderStyle.FixedDialog,
             StartPosition = FormStartPosition.CenterScreen, MinimizeBox = false, MaximizeBox = false };
         var panel = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(24), ColumnCount = 1, RowCount = 5 };
@@ -29,7 +29,7 @@ internal static class ServerPortDialog
         var details = new Label { AutoSize = true, MaximumSize = new Size(455, 0),
             Text = loadError is not null ? "Saved settings could not be read. Saving will replace them."
                 : saved is null && !string.IsNullOrWhiteSpace(inherited)
-                    ? "A PORT environment setting is present. Saving here overrides it for WinDock."
+                    ? "A PORT environment setting is present. Saving here overrides it for Tara."
                     : "This choice is saved for your Windows account." };
         var options = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.TopDown, WrapContents = false, Dock = DockStyle.Fill };
         options.Controls.Add(automatic); options.Controls.Add(fixedPort); options.Controls.Add(number);
@@ -43,7 +43,7 @@ internal static class ServerPortDialog
                 form.DialogResult = DialogResult.OK;
             }
             catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
-            { MessageBox.Show("Could not save the port setting.\n\n" + ex.Message, "WinDock", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+            { MessageBox.Show("Could not save the port setting.\n\n" + ex.Message, "Tara", MessageBoxButtons.OK, MessageBoxIcon.Error); }
         };
         buttons.Controls.Add(cancel); buttons.Controls.Add(save);
         panel.Controls.Add(description); panel.Controls.Add(options); panel.Controls.Add(details); panel.Controls.Add(buttons);

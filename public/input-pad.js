@@ -2,6 +2,9 @@ import { TouchpadGestures } from "./touchpad-gestures.js";
 import { createTouchpadField } from "./touchpad-field.js";
 import { createRemoteKeyboard } from "./remote-keyboard.js";
 import { createPcClipboard } from "./pc-clipboard.js";
+import { createKeysPane } from "./keys-pane.js";
+import { buzz, hapticsEnabled, setHaptics } from "./haptics.js";
+import { logConn } from "./connlog.js";
 
 export function createInputPad({ api, notify, WebSocketClass = WebSocket, storage = localStorage }) {
   const $ = (id) => document.getElementById(id), dialog = $("input-pad"), canvas = $("signature-canvas");
@@ -13,14 +16,20 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
     if (width > 0) { paper.style.width = width + "px"; paper.style.height = width * 3 / 8 + "px"; }
   }).observe(space);
   let mode = "touchpad", socket = null, ready = false, connecting = false, heartbeat = null, startup = null, generation = 0;
-  let dragging = false, available = false, demo = false, saving = false, strokes = [], activeStroke = null, signaturePointer = null;
+  let latencyTimer = null, dragging = false, available = false, demo = false, saving = false, strokes = [], activeStroke = null, signaturePointer = null;
   let color = "black", frame = null, pending = { move: [0, 0], scroll: [0, 0] }, speed = 1.5;
-  let canInsertSignature = false;
+  let canInsertSignature = false, orbit = false, orbiting = false;
+  const usesPc = (value = mode) => value === "touchpad" || value === "keys";
   // The PC answered and has no touchpad support: retrying cannot change that.
   let unsupported = false;
+  let autoRetries = 0, wantsKeyboard = false;
   const keyboard = createRemoteKeyboard({ send: raw, isReady: () => ready && mode === "touchpad", onSignature: () => select("signature"), notify });
   const clipboard = createPcClipboard({ api, send: raw, isReady: () => ready && mode === "touchpad", keyboard });
-  try { const saved = Number(storage.getItem("windock-pointer-speed")); if (saved >= .5 && saved <= 3) speed = saved; } catch { /* optional preference */ }
+  const keys = createKeysPane({ api, send: raw, isReady: () => ready && mode === "keys", storage });
+  try { orbit = storage.getItem("tara-orbit") === "on"; } catch { /* optional */ }
+  try { const saved = Number(storage.getItem("tara-pointer-speed")); if (saved >= .5 && saved <= 3) speed = saved; } catch { /* optional preference */ }
+  let tapToClick = true, reverseScroll = false, tapHeld = false;
+  try { tapToClick = storage.getItem("tara-tap-click") !== "off"; reverseScroll = storage.getItem("tara-reverse-scroll") === "on"; } catch { /* optional */ }
   $("pointer-speed").value = speed;
   $("pointer-speed-value").value = speed + "×";
   const setStatus = (text) => { $("input-status").textContent = text; };
@@ -53,11 +62,17 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
     dialog.dataset.mode = mode; dialog.dataset.ready = String(ready); dialog.dataset.demo = String(demo); dialog.dataset.connecting = String(connecting);
     $("touchpad-pane").hidden = mode !== "touchpad";
     $("signature-pane").hidden = mode !== "signature";
+    $("keys-pane").hidden = mode !== "keys";
+    $("mod-bar").hidden = !usesPc();
+    $("touchpad-orbit").setAttribute("aria-pressed", String(orbit));
+    $("input-keys-tab").setAttribute("aria-pressed", String(mode === "keys"));
+    for (const b of dialog.querySelectorAll("#mod-bar [data-mod]")) b.disabled = !ready;
+    keys.paint();
     field.update({ open: dialog.open && mode === "touchpad", dragging });
     $("input-touchpad-tab").setAttribute("aria-pressed", String(mode === "touchpad"));
     $("input-signature-tab").setAttribute("aria-pressed", String(mode === "signature"));
     $("touchpad-surface").dataset.ready = String(ready);
-    $("input-reconnect").hidden = mode !== "touchpad" || ready || connecting || unsupported;
+    $("input-reconnect").hidden = !usesPc() || ready || connecting || unsupported;
     for (const id of ["mouse-left", "mouse-right", "mouse-drag"]) $(id).disabled = !ready;
     $("mouse-drag").setAttribute("aria-pressed", String(dragging));
     $("mouse-drag-label").textContent = dragging ? "Release" : "Drag";
@@ -71,6 +86,14 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
     $("signature-clear").disabled = !strokes.length || saving;
     $("signature-color").disabled = saving;
     $("signature-placeholder").hidden = strokes.length > 0;
+  }
+  // A tiny authenticated request every few seconds shows how fast the connection really is.
+  async function measureLatency() {
+    if (!ready || document.hidden) return;
+    const start = performance.now();
+    try { await api("/api/input"); } catch { return; }
+    const ms = Math.round(performance.now() - start), node = $("input-latency");
+    node.hidden = false; node.textContent = ms + " ms"; node.dataset.slow = String(ms > 150);
   }
   function raw(message) {
     if (!ready || !socket || socket.readyState !== WebSocketClass.OPEN) return false;
@@ -94,22 +117,43 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
     if (frame === null) frame = requestAnimationFrame(flush);
   }
   function click(button) { flush(); if (raw({ type: "button", button, down: true })) raw({ type: "button", button, down: false }); }
-  const gestures = new TouchpadGestures({ move: (x, y) => motion("move", x * speed, y * speed), scroll: (x, y) => { field.scroll(x, y); motion("scroll", x * 4, y * 4); }, zoom: (steps) => { field.zoom(steps); raw({ type: "zoom", steps }); }, click: (button) => { field.tap(); click(button); }, dragging: () => dragging });
-  function release() { clearContacts(); gestures.reset(); flush(); raw({ type: "release" }); dragging = false; paint(); }
+  // Three-finger swipes reuse Windows' own shortcuts through the existing chord message.
+  const SWIPES = { up: { mods: ["win"], key: "Tab" }, down: { mods: ["win"], key: "d" }, left: { mods: ["ctrl", "win"], key: "ArrowLeft" }, right: { mods: ["ctrl", "win"], key: "ArrowRight" } };
+  const gestures = new TouchpadGestures({ move: (x, y) => motion("move", x * speed, y * speed), scroll: (x, y) => {
+    if (orbit) { if (!orbiting) { flush(); orbiting = raw({ type: "button", button: "middle", down: true }); } motion("move", x * speed, y * speed); return; }
+    const sign = reverseScroll ? -1 : 1;
+    field.scroll(x, y); motion("scroll", x * 4 * sign, y * 4 * sign);
+  }, zoom: (steps) => { field.zoom(steps); if (orbit) raw({ type: "scroll", dx: 0, dy: steps * 120 }); else raw({ type: "zoom", steps }); },
+  click: (button) => { if (button === "left" && !tapToClick) return; field.tap(); click(button); buzz(8); },
+  swipe: (direction) => { if (orbit) return; if (raw({ type: "chord", ...SWIPES[direction] })) buzz(14); },
+  multiTap: (fingers) => { if (fingers === 3) click("middle"); else raw({ type: "chord", mods: ["win"], key: "a" }); buzz(12); },
+  dragStart: () => { flush(); if (raw({ type: "button", button: "left", down: true })) { tapHeld = true; buzz(18); } },
+  dragEnd: () => { if (!tapHeld) return; tapHeld = false; flush(); raw({ type: "button", button: "left", down: false }); },
+  dragging: () => dragging });
+  function endOrbit() { if (!orbiting) return; flush(); raw({ type: "button", button: "middle", down: false }); orbiting = false; }
+  function release() { clearContacts(); gestures.reset(); tapHeld = false; flush(); orbiting = false; raw({ type: "release" }); dragging = false; keys.cleared(); paint(); }
   function disconnect() {
+    clearInterval(latencyTimer); latencyTimer = null; $("input-latency").hidden = true;
     clearInterval(heartbeat); clearTimeout(startup); heartbeat = startup = null;
     if (frame !== null) cancelAnimationFrame(frame); frame = null;
     pending = { move: [0, 0], scroll: [0, 0] };
+    keys.close(); orbiting = false;
     const previous = socket; socket = null; ready = false; connecting = false; dragging = false; gestures.reset(); clearContacts(); showOptions(false); keyboard.reset();
     clipboard.reset();
     if (previous) { previous.onclose = previous.onmessage = previous.onerror = null; try { if (previous.readyState === WebSocketClass.OPEN) previous.send('{"type":"release"}'); previous.close(); } catch { /* host lease handles disconnect */ } }
     paint();
   }
   async function select(next) {
+    // Touchpad and keys share one PC connection, so switching between them keeps it (and any held modifier).
+    if (socket && ready && usesPc(next) && usesPc(mode)) {
+      mode = next; if (next === "keys") keys.open(); else keys.pause(); paint();
+      setStatus(next === "keys" ? "Tap a key to press it on your PC. Tap Ctrl, Shift or Alt to hold it." : "Tap to click · Two fingers: scroll, tap for right-click · Three fingers: swipe");
+      return;
+    }
     const ticket = ++generation;
     disconnect(); mode = next; available = false; unsupported = false; connecting = true; demo = false; paint();
     $("touchpad-surface").dataset.used = "false";
-    setStatus(next === "touchpad" ? "Connecting to your PC…" : "Draw here. Save a transparent PNG to Pictures / WinDock / Signatures.");
+    setStatus(usesPc(next) ? "Connecting to your PC…" : "Draw here. Save a transparent PNG to Pictures / Tara / Signatures.");
     try {
       const status = await api("/api/input");
       if (ticket !== generation || !dialog.open) return;
@@ -119,25 +163,40 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
       clipboard.configure(status.clipboard);
       demo = Boolean(status.demo);
       if (demo) setStatus("Demo only · No cursor control or files saved.");
-      if (!available) { connecting = false; unsupported = true; setStatus("Touchpad and signature saving need an updated WinDock on your PC."); paint(); return; }
-      if (mode !== "touchpad") connecting = false;
+      if (!available) { connecting = false; unsupported = true; setStatus("Touchpad and signature saving need an updated Tara on your PC."); paint(); return; }
+      if (!usesPc()) connecting = false;
       paint();
-      if (mode !== "touchpad") return;
+      if (!usesPc()) return;
       const ws = new WebSocketClass((location.protocol === "https:" ? "wss:" : "ws:") + "//" + location.host + "/input");
       socket = ws;
       startup = setTimeout(() => { if (socket === ws) { disconnect(); setStatus("PC did not respond. Reopen the touchpad to retry."); } }, 8000);
       ws.onmessage = (event) => {
         if (socket !== ws) return;
         let message; try { message = JSON.parse(event.data); } catch { return; }
-        if (message.type === "error") { disconnect(); setStatus(message.error); return; }
+        if (message.type === "error") {
+          disconnect(); logConn("Touchpad refused", message.error);
+          // Our own dropped link can linger on the PC for a moment; try again instead of giving up.
+          if (/is using the touchpad/.test(message.error) && dialog.open && autoRetries < 8) { autoRetries++; setStatus("Reconnecting…"); setTimeout(() => { if (dialog.open && !socket && !connecting) select(mode); }, 800); return; }
+          setStatus(message.error); return;
+        }
         if (["focus", "input-error", "paste-result"].includes(message.type)) { keyboard.message(message); clipboard.message(message); return; }
         if (message.type === "ready") {
-          clearTimeout(startup); ready = true; connecting = false;
-          heartbeat = setInterval(() => raw({ type: "ping" }), 500);
-          raw({ type: "ping" }); paint(); setStatus(demo ? "Demo only · No cursor control or files saved." : "Tap to click · Two fingers: slide to scroll, tap for right-click · Pinch to zoom");
+          clearTimeout(startup); ready = true; connecting = false; autoRetries = 0;
+          heartbeat = setInterval(() => raw({ type: "ping" }), 1000); // the PC waits 12s of silence
+          raw({ type: "ping" }); measureLatency(); latencyTimer = setInterval(measureLatency, 4000); paint(); if (wantsKeyboard && mode === "touchpad") { wantsKeyboard = false; keyboard.request(); } if (mode === "keys") keys.open(); setStatus(demo ? "Demo only · No cursor control or files saved." : mode === "keys" ? "Tap a key to press it on your PC. Tap Ctrl, Shift or Alt to hold it." : "Tap to click · Two fingers: scroll, tap for right-click · Three fingers: swipe");
         }
       };
-      ws.onclose = ws.onerror = () => { if (socket === ws) { disconnect(); setStatus("Touchpad disconnected. Tap Reconnect to continue."); } };
+      ws.onclose = ws.onerror = () => {
+        if (socket !== ws) return;
+        const wasReady = ready;
+        disconnect();
+        // A brief Wi-Fi stall should not make you tap Reconnect: try again quietly a few times.
+        logConn("Touchpad dropped", wasReady ? "connection lost" : "could not connect");
+        if ((wasReady || autoRetries > 0) && autoRetries < 8 && dialog.open) {
+          autoRetries++; setStatus("Reconnecting…");
+          setTimeout(() => { if (dialog.open && !socket && !connecting) select(mode); }, Math.min(600 * autoRetries, 3000));
+        } else setStatus("Touchpad disconnected. Tap Reconnect to continue.");
+      };
     } catch (error) { if (ticket === generation) { connecting = false; setStatus(error.message); paint(); } }
   }
   const pad = $("touchpad-surface");
@@ -152,7 +211,7 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
     gestures.update(event.pointerId, event.clientX, event.clientY);
     if (gestures.points.size === 2 && frame === null) frame = requestAnimationFrame(flush);
   });
-  pad.addEventListener("pointerup", (event) => { hideContact(event.pointerId); if (ready) { gestures.update(event.pointerId, event.clientX, event.clientY); gestures.up(event.pointerId); } });
+  pad.addEventListener("pointerup", (event) => { hideContact(event.pointerId); if (ready) { gestures.update(event.pointerId, event.clientX, event.clientY); gestures.up(event.pointerId); if (orbiting && gestures.points.size < 2) endOrbit(); } });
   pad.addEventListener("pointercancel", release);
   pad.addEventListener("lostpointercapture", (event) => { if (gestures.points.has(event.pointerId)) release(); });
   pad.addEventListener("contextmenu", (event) => event.preventDefault());
@@ -169,7 +228,29 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
     const value = Number(event.target.value);
     if (!Number.isFinite(value) || value < .5 || value > 3) return;
     speed = value; $("pointer-speed-value").value = speed + "×";
-    try { storage.setItem("windock-pointer-speed", String(speed)); } catch { /* optional preference */ }
+    try { storage.setItem("tara-pointer-speed", String(speed)); } catch { /* optional preference */ }
+  });
+  function paintOptions() {
+    $("opt-tap").setAttribute("aria-pressed", String(tapToClick));
+    $("opt-reverse").setAttribute("aria-pressed", String(reverseScroll));
+    $("opt-haptics").setAttribute("aria-pressed", String(hapticsEnabled(storage)));
+  }
+  const remember = (key, value) => { try { storage.setItem(key, value); } catch { /* optional */ } };
+  $("opt-tap").addEventListener("click", () => { tapToClick = !tapToClick; remember("tara-tap-click", tapToClick ? "on" : "off"); paintOptions(); });
+  $("opt-reverse").addEventListener("click", () => { reverseScroll = !reverseScroll; remember("tara-reverse-scroll", reverseScroll ? "on" : "off"); paintOptions(); });
+  $("opt-haptics").addEventListener("click", () => { setHaptics(!hapticsEnabled(storage), storage); paintOptions(); buzz(10); });
+  paintOptions();
+  // Drop text on the pad to paste it where the PC cursor is.
+  const dropText = (event) => (event.dataTransfer?.getData("text/plain") ?? "").trim();
+  pad.addEventListener("dragover", (event) => { if (ready && Array.from(event.dataTransfer?.types ?? []).includes("text/plain")) { event.preventDefault(); pad.dataset.drop = "true"; } });
+  pad.addEventListener("dragleave", () => { delete pad.dataset.drop; });
+  pad.addEventListener("drop", (event) => {
+    event.preventDefault(); delete pad.dataset.drop;
+    const text = dropText(event), target = keyboard.target();
+    if (!text) { setStatus("Only text can be dropped here. Use Files & Media to send files."); return; }
+    if (text.length > 32768) { setStatus("That text is too long to drop (32,000 characters max)."); return; }
+    if (!target) { setStatus("Tap a text box on your PC first, then drop the text again."); return; }
+    if (raw({ type: "paste", target, text })) { setStatus("Dropped " + text.length + " characters at the PC cursor."); buzz(14); }
   });
   $("pointer-options-toggle").addEventListener("click", () => {
     if (dragging) release();
@@ -179,7 +260,17 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
   $("pc-clipboard-toggle").addEventListener("click", () => showOptions(false));
   dialog.addEventListener("cancel", (event) => { if (!$("pointer-options").hidden) { event.preventDefault(); showOptions(false); $("pointer-options-toggle").focus(); } });
   $("touchpad-signature").addEventListener("click", () => select("signature"));
-  $("input-reconnect").addEventListener("click", () => select("touchpad"));
+  $("touchpad-keys").addEventListener("click", () => select("keys"));
+  $("touchpad-orbit").addEventListener("click", () => {
+    endOrbit(); orbit = !orbit;
+    try { storage.setItem("tara-orbit", orbit ? "on" : "off"); } catch { /* optional */ }
+    paint(); setStatus(orbit ? "3D mode · Two fingers orbit (hold Shift to pan, Ctrl to zoom) · Pinch zooms" : "Tap to click · Two fingers: scroll, tap for right-click · Three fingers: swipe");
+  });
+  $("input-reconnect").addEventListener("click", () => { autoRetries = 0; select(mode === "keys" ? "keys" : "touchpad"); });
+  // Coming back to the app or to Wi-Fi reconnects on its own.
+  const resume = () => { if (dialog.open && usesPc() && !ready && !connecting && !socket && !unsupported) { autoRetries = 0; logConn("Touchpad resumed"); select(mode); } };
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) resume(); });
+  window.addEventListener("online", resume);
 
   function redraw() {
     context.clearRect(0, 0, canvas.width, canvas.height);
@@ -234,10 +325,11 @@ export function createInputPad({ api, notify, WebSocketClass = WebSocket, storag
   $("signature-insert").addEventListener("click", () => saveSignature(true));
   $("input-touchpad-tab").addEventListener("click", () => select("touchpad"));
   $("input-signature-tab").addEventListener("click", () => select("signature"));
+  $("input-keys-tab").addEventListener("click", () => select("keys"));
   dialog.addEventListener("close", () => { generation++; disconnect(); finishStroke(); });
-  document.addEventListener("visibilitychange", () => { if (document.hidden) { generation++; disconnect(); finishStroke(); if (dialog.open && mode === "touchpad") setStatus("Touchpad paused. Tap Reconnect to continue."); } });
+  document.addEventListener("visibilitychange", () => { if (document.hidden) { generation++; disconnect(); finishStroke(); if (dialog.open && usesPc()) setStatus("Touchpad paused. Tap Reconnect to continue."); } });
   window.addEventListener("pagehide", disconnect);
   window.addEventListener("blur", () => { if (ready) release(); });
-  window.addEventListener("resize", () => { release(); finishStroke(); if (matchMedia("(orientation: portrait)").matches) { generation++; disconnect(); setStatus("Touchpad paused. Turn sideways and tap Reconnect."); } });
-  return { open(initialMode = mode) { $("drawer").close(); if (!dialog.open) dialog.showModal(); select(initialMode === "signature" ? "signature" : "touchpad"); }, disconnect };
+  window.addEventListener("resize", () => { release(); finishStroke(); if (matchMedia("(orientation: portrait)").matches && !document.documentElement.hasAttribute("data-rotate-ok")) { generation++; disconnect(); setStatus("Touchpad paused. Turn sideways and tap Reconnect."); } });
+  return { open(initialMode = mode, { keyboard: wantKeyboard = false } = {}) { $("drawer").close(); wantsKeyboard = wantKeyboard; if (!dialog.open) dialog.showModal(); select(["signature", "keys"].includes(initialMode) ? initialMode : "touchpad"); }, disconnect };
 }

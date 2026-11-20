@@ -1,6 +1,6 @@
 const $=id=>document.getElementById(id); let refreshing=false, initialized=false;
 async function request(path='',body) {
-  const response=await fetch('/api/transfers/local'+path,{method:body===undefined?'GET':'POST',headers:{'x-windock-files':'local','content-type':'application/json'},body:body===undefined?undefined:JSON.stringify(body),cache:'no-store'});
+  const response=await fetch('/api/transfers/local'+path,{method:body===undefined?'GET':'POST',headers:{'x-tara-files':'local','content-type':'application/json'},body:body===undefined?undefined:JSON.stringify(body),cache:'no-store'});
   const value=await response.json(); if(!response.ok)throw Error(value.error||'The transfer settings could not be updated.'); return value;
 }
 function size(n){const scale=n>=1024**3?1024**3:n>=1024**2?1024**2:n>=1024?1024:1;return new Intl.NumberFormat(undefined,{maximumFractionDigits:1}).format(n/scale)+' '+({1:'B',1024:'KB',1048576:'MB',1073741824:'GB'}[scale]);}
@@ -24,7 +24,7 @@ async function refresh() {
       if(batch.files.some(f=>['ready','sending','uploaded'].includes(f.status))){const cancel=document.createElement('button');cancel.textContent='Cancel batch';cancel.addEventListener('click',()=>act('/cancel',{id:batch.id}));section.append(cancel);}
       list.append(section);
     }
-    if(!value.batches.length)list.textContent='Choose files in WinDock on your phone, or Share → WinDock from another app.';
+    if(!value.batches.length)list.textContent='Choose files in Tara on your phone, or Share → Tara from another app.';
   }catch(error){$('status').textContent=error.message;}finally{refreshing=false;}
 }
 async function act(path,body){try{await request(path,body);$('status').textContent=path==='/open'?'Receive folder opened.':'Receive settings updated.';await refresh();}catch(error){$('status').textContent=error.message;}}

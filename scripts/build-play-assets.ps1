@@ -1,8 +1,8 @@
-# Render local store drafts from WinDock's existing vector mark. No publishing.
+# Render local store drafts from Tara's existing vector mark. No publishing.
 param([string]$OutputDirectory = (Join-Path $PSScriptRoot '..\docs\play-assets'))
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
-[xml]$mark = Get-Content (Join-Path $PSScriptRoot '..\website\assets\windock.svg') -Raw
+[xml]$mark = Get-Content (Join-Path $PSScriptRoot '..\website\assets\tara.svg') -Raw
 New-Item -ItemType Directory -Force -Path $OutputDirectory | Out-Null
 function Draw-Mark($graphics, [single]$left, [single]$top, [single]$size) {
     foreach ($rect in $mark.svg.rect) {
@@ -46,7 +46,7 @@ foreach ($kind in @('store-icon', 'feature-graphic')) {
             Draw-Mark $graphics 88 88 336
         } else {
             Draw-Mark $graphics 672 138 256
-            Draw-Label $graphics 'WinDock' 68 78 26 '#82E7BF' $true
+            Draw-Label $graphics 'Tara' 68 78 26 '#82E7BF' $true
             Draw-Label $graphics "Your PC.`nWithin reach." 64 130 58 '#F0F5F8' $true
             Draw-Label $graphics 'Dock, touchpad and keyboard' 68 310 25 '#B6C8D6'
             Draw-Label $graphics 'Windows companion required' 68 370 18 '#8EA4B4'

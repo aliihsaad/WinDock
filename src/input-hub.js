@@ -2,8 +2,13 @@ import { WebSocketServer } from "ws";
 import { originAllowed } from "./sync.js";
 import { validateInput } from "./input.js";
 
-/** Only one paired phone can own mouse buttons. Dock sync remains read-only. */
-export function createInputHub({ server, servers = [server], isAuthorized, input, leaseMs = 2000 }) {
+/**
+ * Only one paired phone can own mouse buttons at a time. Dock sync remains read-only.
+ * A second phone is refused while the owner is actively using the touchpad, but if
+ * the owner has been idle for `takeoverIdleMs` the newcomer takes over, so two
+ * phones can share one PC without anyone having to close the other's touchpad.
+ */
+export function createInputHub({ server, servers = [server], isAuthorized, input, leaseMs = 12000, takeoverIdleMs = 1500 }) {
   const wss = new WebSocketServer({ noServer: true, maxPayload: 262144, perMessageDeflate: false });
   let owner = null;
   for (const listener of servers) listener.on("upgrade", (req, socket, head) => {
@@ -13,20 +18,28 @@ export function createInputHub({ server, servers = [server], isAuthorized, input
     }
     wss.handleUpgrade(req, socket, head, (ws) => wss.emit("connection", ws, req));
   });
-  wss.on("connection", (ws, req) => {
+  wss.on("connection", async (ws, req) => {
     ws.on("error", () => {});
     const reply = (value) => { if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(value)); };
-    if (!input || owner) {
-      reply({ type: "error", error: owner ? "Another device is using the touchpad." : "Touchpad needs an updated WinDock on your PC." });
+    if (!input) {
+      reply({ type: "error", error: "Touchpad needs an updated Tara on your PC." });
       ws.close(1008); return;
     }
-    owner = ws;
+    if (owner && Date.now() - owner.active >= takeoverIdleMs) await owner.evict();
+    if (owner || ws.readyState !== ws.OPEN) {
+      reply({ type: "error", error: "Another device is using the touchpad." });
+      ws.close(1008); return;
+    }
+    let release;
+    const released = new Promise((resolve) => { release = resolve; });
+    const claim = { active: Date.now(), evict: () => { reply({ type: "error", error: "Another device took over the touchpad." }); cleanup(); ws.close(1008); return released; } };
+    owner = claim;
     let worker = null, closed = false, started = false, pendingFocus = null, lastSeen = Date.now(), count = 0, windowStart = lastSeen, pasting = false, bytes = 0;
     const cleanup = () => {
       if (closed) return;
       closed = true; clearInterval(timer);
       // Keep the lease until the helper has released its buttons and exited.
-      Promise.resolve(worker?.close()).catch(() => {}).finally(() => { if (owner === ws) owner = null; });
+      Promise.resolve(worker?.close()).catch(() => {}).finally(() => { if (owner === claim) owner = null; release(); });
     };
     const fail = (error) => { reply({ type: "error", error }); cleanup(); ws.close(1008); };
     const timer = setInterval(() => {
@@ -48,6 +61,7 @@ export function createInputHub({ server, servers = [server], isAuthorized, input
         pasting = true;
       }
       lastSeen = Date.now();
+      if (message.type !== "ping" && message.type !== "focus") claim.active = lastSeen;
       if (!worker) return fail("Touchpad is still connecting.");
       try { worker.send(message); } catch { fail("Touchpad connection lost. Open it again to reconnect."); }
     });
@@ -59,7 +73,7 @@ export function createInputHub({ server, servers = [server], isAuthorized, input
         if (started) reply(event);
         else if (event.type === "focus") pendingFocus = event;
       });
-      worker.ready.then(() => { if (!closed) { started = true; lastSeen = Date.now(); reply({ type: "ready" }); if (pendingFocus) reply(pendingFocus); } }).catch(() => fail(input.startupError || "Your PC could not start the touchpad. Update WinDock there and try again."));
+      worker.ready.then(() => { if (!closed) { started = true; lastSeen = Date.now(); reply({ type: "ready" }); if (pendingFocus) reply(pendingFocus); } }).catch(() => fail(input.startupError || "Your PC could not start the touchpad. Update Tara there and try again."));
     } catch { fail("Your PC could not start the touchpad."); }
   });
   return { wss, async close() { for (const ws of wss.clients) ws.terminate(); await new Promise((resolve) => wss.close(resolve)); } };

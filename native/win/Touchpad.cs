@@ -2,7 +2,7 @@ using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 
-namespace WinDock;
+namespace Tara;
 
 internal static class Touchpad
 {
@@ -101,13 +101,14 @@ internal static class Touchpad
     public static int Run() => RunAsync().GetAwaiter().GetResult();
     private static async Task<int> RunAsync()
     {
-        using var single = new Mutex(true, @"Local\WinDock.Touchpad", out var first);
+        using var single = new Mutex(true, @"Local\Tara.Touchpad", out var first);
         if (!first) throw new InvalidOperationException("Another touchpad is active.");
         var zoom = new ZoomInput(Send, () => (GetAsyncKeyState(0x11) & 0x8000) != 0, Marshal.GetLastWin32Error);
         var session = new Session(Inject, zoom.Apply, zoom.Release);
         var outputGate = new object();
         void Emit(object value) { lock (outputGate) { Console.Out.WriteLine(JsonSerializer.Serialize(value)); Console.Out.Flush(); } }
         var keyboard = new RemoteKeyboard(Send, Marshal.GetLastWin32Error);
+        var shortcuts = new Shortcuts(Send, Marshal.GetLastWin32Error, Inject);
         using var focus = new KeyboardFocus(Emit);
         using var input = new StreamReader(Console.OpenStandardInput(), new System.Text.UTF8Encoding(false, true));
         Emit(new { type = "ready" });
@@ -116,20 +117,25 @@ internal static class Touchpad
         {
             while (true)
             {
-                // Also releases buttons if Node crashes or stops forwarding the phone heartbeat.
-                var line = await input.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(2));
+                // Also releases buttons if Node crashes or stops forwarding the phone heartbeat. Longer than the host's own 5s lease, so a brief Wi-Fi stall never ends the session.
+                var line = await input.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(7));
                 if (line is null) break;
                 if (line.Length > 262144) throw new ArgumentException("Input too large.");
                 using var message = JsonDocument.Parse(line);
                 var root = message.RootElement;
                 var type = root.GetProperty("type").GetString();
                 if (type == "focus") { focus.Refresh(); continue; }
+                if (type == "chord") { shortcuts.Chord(root); continue; }
+                if (type == "modifier") { shortcuts.Modifier(root); continue; }
+                if (type == "button" && root.GetProperty("button").GetString() == "middle") { shortcuts.Middle(root.GetProperty("down").GetBoolean()); continue; }
+                if (type == "release") shortcuts.Release();
                 if (type is "text" or "key" or "paste")
                 {
                     try
                     {
                         if (!focus.Accepts(root.GetProperty("target").GetString() ?? "")) throw new InvalidOperationException("Focus changed.");
                         session.Release();
+                        shortcuts.Release();
                         if (type == "text") keyboard.Text(root.GetProperty("text").GetString() ?? "");
                         else if (type == "paste")
                         {
@@ -145,7 +151,7 @@ internal static class Touchpad
             }
         }
         catch (TimeoutException) { return 0; }
-        finally { session.Release(); }
+        finally { try { session.Release(); } finally { shortcuts.Release(); } }
         return 0;
     }
 }

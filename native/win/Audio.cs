@@ -5,7 +5,7 @@
 
 using System.Runtime.InteropServices;
 
-namespace WinDock;
+namespace Tara;
 
 internal static class Audio
 {

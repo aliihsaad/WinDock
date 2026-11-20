@@ -1,0 +1,7 @@
+.phone-layout { display: grid; grid-template-columns: minmax(140px, 220px) 1fr; gap: 1rem; align-items: start; margin-top: 1rem; }
+.phone-pad { aspect-ratio: 9 / 19; border: 2px solid var(--line); border-radius: 22px; background: var(--surface); display: grid; place-items: center; text-align: center; padding: .6rem; color: var(--muted); cursor: crosshair; touch-action: none; user-select: none; position: relative; }
+.phone-pad .dot { position: absolute; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: var(--accent); opacity: .8; pointer-events: none; }
+.phone-keys { display: grid; gap: .5rem; }
+.phone-keys button { min-height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; cursor: pointer; }
+.phone-keys button:hover, .phone-keys button:focus-visible { border-color: var(--accent); }
+@media (max-width: 480px) { .phone-layout { grid-template-columns: 1fr; } .phone-pad { max-width: 220px; } }

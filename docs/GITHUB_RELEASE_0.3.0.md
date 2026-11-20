@@ -77,12 +77,12 @@ commit. A reviewed source commit and matching tag remain part of eventual releas
 
 ## Windows firewall acceptance — completed November 6
 
-Use **WinDock-Play-QA only**, never the host's firewall or installed WinDock.
+Use **Tara-Play-QA only**, never the host's firewall or installed Tara.
 Do not repeat the successful upgrade, reboot, autostart or tile checklist.
 
 1. Keep the existing guest accounts and saved dock. For an unambiguous fresh
    install trace, use a new disposable standard guest account, with other guest
-   WinDock instances signed out. Install the final candidate under that account.
+   Tara instances signed out. Install the final candidate under that account.
    Record installer prompts separately from a Microsoft Windows Firewall prompt.
 2. If Windows asks to allow the bundled runtime, decline/cancel for this test.
    Record that choice. Verify local first use works and open **Pair a phone
@@ -103,25 +103,25 @@ Do not repeat the successful upgrade, reboot, autostart or tile checklist.
 
 ### November 6 VM firewall progress
 
-The owner installed the final WINDOCK_030 DVD candidate under the fresh standard
-guest account WinDockFirewall, cancelled the Node.js Windows Firewall prompt,
+The owner installed the final TARA_030 DVD candidate under the fresh standard
+guest account TaraFirewall, cancelled the Node.js Windows Firewall prompt,
 and opened local pairing/help successfully. The VM address is 172.19.130.151;
 the main PC has an on-link route through 172.19.128.1/20. Initial main-PC TCP
 checks to 8620 and 8621 timed out.
 
 Screenshots confirm the guest Ethernet profile was Public, then changed to
-Private using the guest WinDockTest administrator. The four listed enabled
+Private using the guest TaraTest administrator. The four listed enabled
 node.exe block rules apply to Public only and were left intact. The owner copied
 the generated secure-port command from the help page and applied it in the guest:
 Private inbound Allow, TCP 8621, guest address 172.19.130.151, remote subnet
 172.19.128.0/20, executable
-`C:\Users\WinDockFirewall\AppData\Local\Programs\WinDock\node.exe`.
+`C:\Users\TaraFirewall\AppData\Local\Programs\Tara\node.exe`.
 The resulting rule is enabled and stored persistently.
 
 After that change, a native main-PC TCP check connected to 8621 successfully;
 8620 still timed out. An initial sandbox check was denied by the tool sandbox
 and is not VM evidence; the native retry supplied the result above. No host
-firewall or installed WinDock changes were made.
+firewall or installed Tara changes were made.
 
 Firewall denial/help/scoped administrator recovery and remote secure-port
 reachability are verified. A native Node HTTPS client on the main PC then decoded
@@ -133,7 +133,7 @@ and were not logged. Evidence: `artifacts/github-0.3.0/vm-firewall-remote-result
 This is an actual host-to-guest secure protocol/action check, not an Android UI
 test; retain the prior physical Android evidence separately. The QR reader and
 client needed tooling fixes (QR decoder and DER-to-PEM CA conversion); those
-failures were not WinDock failures. The first invitation expired before use.
+failures were not Tara failures. The first invitation expired before use.
 
 The owner then explicitly confirmed Calculator appeared in the guest. Record
 this final-candidate fresh standard-account/firewall denial/help/scoped guest

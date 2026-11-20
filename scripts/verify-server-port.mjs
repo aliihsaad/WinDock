@@ -93,7 +93,7 @@ try {
 }
 
 // Inject only the Windows denial; use the real host, TCP listener and UDP discovery afterwards.
-const directory = await mkdtemp(join(tmpdir(), "windock-port-"));
+const directory = await mkdtemp(join(tmpdir(), "tara-port-"));
 const previousPort = process.env.PORT;
 const previousListen = Server.prototype.listen;
 let app;
@@ -147,8 +147,8 @@ try {
 }
 // Regression: a custom HTTP PORT must never become either HTTPS listener's default.
 // Use temporary identity/config and a mock provider; no installed companion state is read.
-const customDirectory = await mkdtemp(join(tmpdir(), "windock-custom-port-"));
-const environmentNames = ["PORT", "WINDOCK_TLS_PORT", "WINDOCK_MANAGED_TLS_PORT", "WINDOCK_TLS_CERT", "WINDOCK_TLS_KEY"];
+const customDirectory = await mkdtemp(join(tmpdir(), "tara-custom-port-"));
+const environmentNames = ["PORT", "TARA_TLS_PORT", "TARA_MANAGED_TLS_PORT", "TARA_TLS_CERT", "TARA_TLS_KEY"];
 const originalEnvironment = Object.fromEntries(environmentNames.map(name => [name, process.env[name]]));
 for (const name of environmentNames) delete process.env[name];
 const fixture = {
@@ -207,14 +207,14 @@ try {
     t.equal(await secureHealth(customHost, customHost.securePort), 200, "external HTTPS retains certificate validation");
     await closeHost(customHost); customHost = null;
     process.env.PORT = String(await unusedPort());
-    process.env.WINDOCK_TLS_PORT = String(await unusedPort());
-    process.env.WINDOCK_MANAGED_TLS_PORT = String(await unusedPort());
+    process.env.TARA_TLS_PORT = String(await unusedPort());
+    process.env.TARA_MANAGED_TLS_PORT = String(await unusedPort());
     customHost = await start({ ...fixture, tls });
-    t.equal(customHost.securePort, Number(process.env.WINDOCK_TLS_PORT), "explicit external HTTPS port is preserved");
-    t.equal(customHost.managedPort, Number(process.env.WINDOCK_MANAGED_TLS_PORT), "explicit managed HTTPS port is preserved");
+    t.equal(customHost.securePort, Number(process.env.TARA_TLS_PORT), "explicit external HTTPS port is preserved");
+    t.equal(customHost.managedPort, Number(process.env.TARA_MANAGED_TLS_PORT), "explicit managed HTTPS port is preserved");
     await closeHost(customHost); customHost = null;
     // A genuinely conflicting explicit setting must still fail, not silently move.
-    process.env.WINDOCK_MANAGED_TLS_PORT = process.env.PORT;
+    process.env.TARA_MANAGED_TLS_PORT = process.env.PORT;
     await t.rejects(() => start({ ...fixture, tls }), "explicitly colliding listener ports still fail");
   }
 } finally {

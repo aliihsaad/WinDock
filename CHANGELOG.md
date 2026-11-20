@@ -43,7 +43,7 @@
 
 ## 0.3.1 — November 7, 2026
 
-- Update actions open the WinDock website download section on Android, Windows
+- Update actions open the Tara website download section on Android, Windows
   and the shared dock. Package URLs remain restricted to official GitHub assets.
 - Optional PC keys: toggle Esc, Tab and Delete on the left, with Home, End and
   arrows on the right. Subtle glass keys dim and disable while touching the pad.
@@ -63,7 +63,7 @@
 ## 0.3.0 — November 6, 2026
 
 - Secure QR pairing, remembered computer identities and connection recovery.
-- Files & Media transfers through Android pickers and Share to WinDock.
+- Files & Media transfers through Android pickers and Share to Tara.
 - Windows folder tiles, Windows/Linux website tiles, quick controls and HDR guidance.
 - Scoped Windows/Linux firewall help with actual listener ports.
 - Android 7 resource fix and Windows HTTP/HTTPS port-selection fixes.
@@ -88,14 +88,14 @@
   guidance, and a clipboard demo using fictional text. Simulated paste changes
   only the page's demo output. Downloads now point to the verified 0.2.5 installers.
 
-- Linux: WinDock keeps running in the background after you close its window, as
-  the systemd user service `windock.service`, so the phone stays connected.
-  Opening WinDock from the menu shows the address and PIN, and so does
-  `windock status`. Press **S** in that window or run `windock stop` to stop it;
-  it also stops at logout. Apps opened from the phone keep running when WinDock
-  stops. Upgrading the package restarts a background WinDock with a new PIN, and
+- Linux: Tara keeps running in the background after you close its window, as
+  the systemd user service `tara.service`, so the phone stays connected.
+  Opening Tara from the menu shows the address and PIN, and so does
+  `tara status`. Press **S** in that window or run `tara stop` to stop it;
+  it also stops at logout. Apps opened from the phone keep running when Tara
+  stops. Upgrading the package restarts a background Tara with a new PIN, and
   removing the package stops it. Without a systemd user session, the window runs
-  WinDock as before; `windock --foreground` does so on request.
+  Tara as before; `tara --foreground` does so on request.
 - Touchpad: add a collapsed **PC clipboard** panel for recent text history on
   Windows and Linux. Review or edit an item before explicitly pasting it into the
   selected PC field. History is fetched on demand and is cleared from the phone
@@ -125,7 +125,7 @@
 
 - Security: refuse HTTP and WebSocket requests whose Host header isn't an IP
   address, `localhost`, this PC's own name (plain or `.local`), or a name listed
-  in `WINDOCK_ALLOWED_HOSTS`. This closes a DNS rebinding hole where a web page
+  in `TARA_ALLOWED_HOSTS`. This closes a DNS rebinding hole where a web page
   could point its domain at 127.0.0.1 and use the loopback trust to drive the PC.
 - Security: loopback connections skip pairing only when the Host is also a
   loopback name.
@@ -176,7 +176,7 @@ manually. Linux package updates preserve the PC configuration.
   into collapsible rows. The download section offers the Linux packages with
   their checksums and counts Linux downloads alongside Windows and Android.
 
-Quit WinDock from the Windows tray and run the new installer; your dock settings
+Quit Tara from the Windows tray and run the new installer; your dock settings
 are kept. Reconnect the phone app to load the updated dock. No new Android APK is
 needed: this release includes the 0.2.2-preview.1 APK (version code 4) for new
 users. Public Android previews older than 0.2.2 use a different signing key and
@@ -197,7 +197,7 @@ must be uninstalled first. Linux install, update and removal steps are in the
   were verified on a Huawei Mate 10 Pro with the phone’s Wi-Fi off.
 - Add **Appearance → This phone · screen & sleep** in the dock for Android.
 
-Update both apps. Quit WinDock from the Windows tray and run the new installer;
+Update both apps. Quit Tara from the Windows tray and run the new installer;
 your PC dock settings are preserved. The new Android APK is version code 4 and
 uses a different debug signing key from the previous public previews. Uninstall
 the old Android app, install this APK, and pair again. Phone-only preferences
@@ -225,7 +225,7 @@ display exposure but do not guarantee prevention of burn-in.
   a newer published Windows release is available. Notifications and the download
   menu open the release page; installation remains manual.
 
-Quit WinDock from the PC tray and run the new Windows installer. Dock settings
+Quit Tara from the PC tray and run the new Windows installer. Dock settings
 are preserved. Reconnect the phone app to load the updated interface. **No Android
 update is needed for this fix**: the APK is the unchanged 0.2.0-preview.1 build
 (version code 3). Older Windows installations need this one manual update before

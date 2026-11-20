@@ -8,7 +8,7 @@ import { createApp } from "../server.js";
 import { TouchpadGestures } from "../public/touchpad-gestures.js";
 
 const t = createChecker("input");
-for (const bad of [null, [], {}, { type: "move", dx: 0.5, dy: 0 }, { type: "move", dx: 2049, dy: 0 }, { type: "move", dx: NaN, dy: 0 }, { type: "button", button: "middle", down: true }, { type: "button", button: "left", down: 1 }, { type: "release", path: "unsafe" }, { type: "launch" }]) t.equal(validateInput(bad), null, "invalid input rejected");
+for (const bad of [null, [], {}, { type: "move", dx: 0.5, dy: 0 }, { type: "move", dx: 2049, dy: 0 }, { type: "move", dx: NaN, dy: 0 }, { type: "button", button: "back", down: true }, { type: "button", button: "left", down: 1 }, { type: "release", path: "unsafe" }, { type: "launch" }]) t.equal(validateInput(bad), null, "invalid input rejected");
 for (const message of [{ type: "move", dx: -2048, dy: 2048 }, { type: "scroll", dx: 0, dy: -120 }, { type: "button", button: "left", down: false }, { type: "release" }, { type: "ping" }]) t.deepEqual(validateInput(message), message, "valid event preserved");
 for (const steps of [-8, -1, 1, 8]) t.deepEqual(validateInput({ type: "zoom", steps }), { type: "zoom", steps }, "bounded zoom accepted");
 for (const steps of [0, -9, 9, .5, "1", null, NaN, Infinity]) t.equal(validateInput({ type: "zoom", steps }), null, "invalid zoom rejected");
@@ -58,6 +58,38 @@ gesture.update(1, -15, 50); gesture.update(2, 115, 50); gesture.flush(); gesture
 t.deepEqual(events.splice(0), [["zoom", 2]], "recognized pinch stays zoom when fingers subsequently translate");
 gesture.down(1, 10, 10); gesture.up(1, true);
 t.deepEqual(events.splice(0), [], "cancel never clicks");
+// Three- and four-finger gestures, and tap-then-drag.
+{
+  const out = []; let now = 0;
+  const g = new TouchpadGestures({ now: () => now, move: (...xy) => out.push(["move", ...xy]), scroll: () => out.push(["scroll"]), zoom: () => out.push(["zoom"]), click: (b) => out.push(["click", b]), swipe: (d, n) => out.push(["swipe", d, n]), multiTap: (n) => out.push(["tap", n]), dragStart: () => out.push(["dragStart"]), dragEnd: () => out.push(["dragEnd"]) });
+  const fingers = (n, x0 = 100) => { for (let i = 1; i <= n; i++) g.down(i, x0 + i * 30, 100); };
+  const lift = (n) => { for (let i = 1; i <= n; i++) g.up(i); };
+  fingers(3); for (let i = 1; i <= 3; i++) g.update(i, 100 + i * 30 + 60, 102); lift(3);
+  t.deepEqual(out.splice(0), [["swipe", "right", 3]], "three fingers swipe right once");
+  fingers(3); for (let i = 1; i <= 3; i++) g.update(i, 100 + i * 30, 30); lift(3);
+  t.deepEqual(out.splice(0), [["swipe", "up", 3]], "three fingers swipe up");
+  fingers(3); for (let i = 1; i <= 3; i++) { g.update(i, 100 + i * 30 - 80, 100); g.update(i, 100 + i * 30 - 160, 100); } lift(3);
+  t.deepEqual(out.splice(0), [["swipe", "left", 3]], "a long three-finger swipe fires only once");
+  fingers(3); lift(3);
+  t.deepEqual(out.splice(0), [["tap", 3]], "three-finger tap");
+  fingers(4); lift(4);
+  t.deepEqual(out.splice(0), [["tap", 4]], "four-finger tap");
+  fingers(3); now += 600; lift(3);
+  t.deepEqual(out.splice(0), [], "a long three-finger press does nothing");
+  g.down(1, 50, 50); now += 80; g.up(1); out.splice(0);
+  now += 100; g.down(1, 52, 51); g.update(1, 90, 51); g.up(1);
+  t.deepEqual(out.splice(0), [["dragStart"], ["move", 38, 0], ["dragEnd"]], "tap then touch and move drags");
+  now += 1000; g.down(1, 50, 50); now += 80; g.up(1); out.splice(0);
+  now += 100; g.down(1, 51, 50); now += 50; g.up(1);
+  t.deepEqual(out.splice(0), [["click", "left"]], "tap then quick tap is a plain second click");
+  now += 1000; g.down(1, 50, 50); now += 80; g.up(1); out.splice(0);
+  now += 900; g.down(1, 50, 50); g.update(1, 70, 50); g.up(1);
+  t.deepEqual(out.splice(0), [["move", 20, 0]], "a slow second touch is an ordinary move");
+  now += 1000; g.down(1, 50, 50); now += 80; g.up(1); out.splice(0);
+  now += 100; g.down(1, 51, 50); g.update(1, 70, 50); g.down(2, 200, 50); g.reset();
+  t.equal(out.filter((e) => e[0] === "dragEnd").length, 1, "a drag ends exactly once when a second finger joins or the pad resets");
+}
+
 gesture.down(1, 10, 10); gesture.down(2, 20, 10); gesture.up(1, true); gesture.up(2);
 t.deepEqual(events.splice(0), [], "cancel of either finger prevents right click");
 dragging = true; gesture.down(1, 10, 10); gesture.up(1);
@@ -98,7 +130,7 @@ const save = native.saveSignature(signature); const image = children.at(-1);
 t.deepEqual(image.args, ["signature"], "signature cannot choose a destination or argv");
 t.deepEqual(JSON.parse(image.child.stdin.read().toString()), signature, "only validated stroke data enters helper");
 await t.rejects(() => native.saveSignature(signature), "concurrent save is refused");
-image.child.message({ type: "saved", path: "C:\\Pictures\\WinDock\\Signatures\\test.png" }); image.child.emit("close", 0);
+image.child.message({ type: "saved", path: "C:\\Pictures\\Tara\\Signatures\\test.png" }); image.child.emit("close", 0);
 t.ok((await save).path.endsWith("test.png"), "save waits for native success");
 const insert = native.saveSignature(signature, true); const pasted = children.at(-1);
 t.deepEqual(pasted.args, ["signature-insert"], "insertion uses a fixed helper verb");
@@ -111,7 +143,7 @@ t.ok(children.at(-1).child.killed, "unresponsive helper is bounded"); native.dis
 
 const received = [], sessions = [], provider = { id: "test", displayName: "Test", listRunningApps: async () => [], input: {
   open(_fail, emit) { emit({ type: "focus", target: "1", editable: true, password: false }); const session = { closed: false, ready: Promise.resolve(), send: (value) => received.push(value), close() { session.closed = true; } }; sessions.push(session); return session; },
-  saveSignature: async () => ({ type: "saved", path: "Pictures/WinDock/Signatures/example.png" }), dispose() {},
+  saveSignature: async () => ({ type: "saved", path: "Pictures/Tara/Signatures/example.png" }), dispose() {},
 } };
 const app = await createApp({ provider, pin: "432187", trustLoopback: false, configStore: { load: async () => ({ tiles: [] }) } });
 await new Promise((resolve) => app.server.listen(0, "127.0.0.1", resolve));
@@ -180,14 +212,14 @@ try {
   t.equal(signatureReply.code, 501, "a host without input refuses signatures as unsupported");
   t.equal(captureReply.code, 501, "a host without capture refuses captures as unsupported");
   for (const [name, error] of [["touchpad", touchpad.error], ["signature", signatureReply.error], ["capture", captureReply.error]]) {
-    t.ok(/WinDock on your PC/.test(error) && !/windows/i.test(error), `missing ${name} support names no operating system`);
+    t.ok(/Tara on your PC/.test(error) && !/windows/i.test(error), `missing ${name} support names no operating system`);
   }
 } finally {
   await bare.inputHub.close(); await bare.hub.close(); bare.server.closeAllConnections(); await new Promise((resolve) => bare.server.close(resolve));
 }
 
 // A helper that exits before `ready` is reported with the platform's own advice.
-t.ok(/Update WinDock/.test(createWindowsInput({ helperPath: "H.exe" }).startupError), "Windows startup failures still suggest updating the host");
+t.ok(/Update Tara/.test(createWindowsInput({ helperPath: "H.exe" }).startupError), "Windows startup failures still suggest updating the host");
 const stalled = await createApp({ provider: { id: "test", displayName: "Test", listRunningApps: async () => [], input: {
   startupError: "platform specific startup advice",
   open() { const ready = Promise.reject(new Error("helper exited")); ready.catch(() => {}); return { ready, send() {}, close: async () => {} }; },
