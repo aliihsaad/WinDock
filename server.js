@@ -34,6 +34,7 @@ import { createTransfers, transferError } from "./src/transfers.js";
 import { openReceiveDirectory, notifyTransfer } from "./src/transfer-desktop.js";
 import { createHash } from "node:crypto";
 import { validateSignature } from "./src/input.js";
+import { createClipboardText } from "./src/clipboard-text.js";
 import { createIconCache, iconType, FALLBACK_ICON } from "./src/icons.js";
 import { startDiscovery, primaryAddress, DISCOVERY_PORT } from "./src/discovery.js";
 import {
@@ -143,6 +144,7 @@ export function resolveStatic(urlPath, root = PUBLIC_DIR) {
 
 export async function createApp({
   provider = createProvider(),
+  clipboardText = createClipboardText(),
   configStore = createConfigStore(),
   pin = newPin(),
   sessions = createSessionStore(),
@@ -729,6 +731,13 @@ export async function createApp({
         if (!sameOrigin(req)) return sendJson(res, 403, { error: "bad origin" });
         if (!provider.clipboard) return sendJson(res, 501, { error: "PC clipboard history needs an updated Tara host." });
         return sendJson(res, 200, await provider.clipboard.history(), { "cache-control": "no-store", "pragma": "no-cache" });
+      }
+      if (path === "/api/share" && ["GET", "POST"].includes(req.method)) {
+        if (!sameOrigin(req)) return sendJson(res, 403, { error: "bad origin" });
+        try {
+          if (req.method === "GET") return sendJson(res, 200, await clipboardText.get(), { "cache-control": "no-store" });
+          return sendJson(res, 200, await clipboardText.set((await readJsonBody(req))?.text));
+        } catch (error) { return sendJson(res, error.status || 500, { error: error.status ? error.message : "Could not share text." }); }
       }
       if (["/api/signature", "/api/signature/insert"].includes(path) && req.method === "POST") {
         const signature = validateSignature(await readJsonBody(req));

@@ -314,6 +314,23 @@
   <button id="tara-orb-core" class="tara-orb__core" type="button" aria-label="Dismiss Tara"><span class="tara-orb__ring"></span><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 4C54 32 68 46 96 50 68 54 54 68 50 96 46 68 32 54 4 50 32 46 46 32 50 4Z"/></svg></button>
   <p id="tara-orb-reply" class="tara-orb__reply"></p>
 </div>
+<dialog id="phone-control" class="sheet" aria-labelledby="phone-control-title">
+  <div class="sheet-handle"></div>
+  <div class="sheet__heading"><div><p class="eyebrow">PC CONTROL ON PHONE</p><h2 id="phone-control-title">Share text</h2></div><button class="icon-button" type="button" data-close="phone-control" aria-label="Close"><span data-icon="close"></span></button></div>
+  <div class="updates-content">
+    <section class="settings__card">
+      <label class="field-label" for="share-text">Text to move between your phone and PC</label>
+      <textarea id="share-text" class="share-text" rows="6" maxlength="32768" placeholder="Type, paste, or pull from the PC"></textarea>
+      <div class="share-actions">
+        <button id="share-to-pc" class="primary" type="button">Send to PC clipboard</button>
+        <button id="share-from-pc" type="button">Get from PC clipboard</button>
+        <button id="share-copy-here" type="button">Copy on phone</button>
+        <button id="share-clear" type="button">Clear</button>
+      </div>
+      <p id="share-status" class="settings__note" aria-live="polite"></p>
+    </section>
+  </div>
+</dialog>
 <dialog id="voice" class="sheet" aria-labelledby="voice-title">
   <div class="sheet-handle"></div>
   <div class="sheet__heading"><div><p class="eyebrow">VOICE</p><h2 id="voice-title">Assistant</h2></div><button class="icon-button" type="button" data-close="voice" aria-label="Close"><span data-icon="close"></span></button></div>

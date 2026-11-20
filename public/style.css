@@ -894,3 +894,7 @@ html.perf .status-strip { background: #17252d; backdrop-filter: none; -webkit-ba
 .conn-log { margin: 8px 0 0; max-height: 140px; overflow: auto; padding: 8px 10px; border-radius: 10px; background: #0006; font: 11px/1.45 ui-monospace, monospace; white-space: pre-wrap; user-select: text; }
 .conn-log__clear { margin-top: 8px; padding: 6px 10px; border: 1px solid #ffffff22; border-radius: 10px; background: transparent; color: inherit; font: inherit; font-size: 11px; }
 @media (max-height: 450px) { .tara-fab { width: 44px; height: 44px; } }
+
+.share-text { width: 100%; box-sizing: border-box; min-height: 8rem; resize: vertical; font: inherit; padding: .7rem .8rem; border-radius: 14px; border: 1px solid var(--line, rgba(255,255,255,.14)); background: rgba(255,255,255,.06); color: inherit; }
+.share-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: .5rem; margin-top: .7rem; }
+.share-actions button { min-height: 44px; }

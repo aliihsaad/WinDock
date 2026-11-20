@@ -1,6 +1,6 @@
 import { renderNowPlaying, renderControlPicker, renderAppIcon, renderPowerControls, renderTile, escapeHtml } from "./dock.js";
 import { icon, controlIcon } from "./icons.js";
-import { addAppTile, addControlTile, addMacroTile, addWakeTile, groupTiles, ungroupTile, removeFromGroup, removeTile, moveTile, toWireTiles, availableControls, tileKey, CONTROL_CATALOG } from "./tiles.js";
+import { addAppTile, addControlTile, addMacroTile, addWakeTile, addPhoneControlTile, groupTiles, ungroupTile, removeFromGroup, removeTile, moveTile, toWireTiles, availableControls, tileKey, CONTROL_CATALOG } from "./tiles.js";
 import { buzz, hapticsEnabled, setHaptics } from "./haptics.js";
 import { createTapCounter, isBackgroundTarget, quickInputEnabled, setQuickInput } from "./quick-access.js";
 import { applyRotation, getRotation } from "./orientation.js";
@@ -9,6 +9,7 @@ import { createInputPad } from "./input-pad.js";
 import { pairingError } from "./pairing.js";
 import { createUpdates } from "./updates.js";
 import { createNowPlayingPoller } from "./now-playing.js";
+import { createPhoneControl } from "./phone-control.js";
 import { dockFetch, DockWebSocket, nativeTransport } from "./native-transport.js";
 import { startGlass } from "./glass.js";
 import { enhanceSelects } from "./glass-select.js";
@@ -364,6 +365,8 @@ async function activate(button) {
       const title = allTiles().find((item) => item.id === key)?.label || "Macro";
       await api("/api/macros/run", { method: "POST", body: JSON.stringify({ id: key }) });
       notify(title + " finished");
+    } else if (action === "tool") {
+      phoneControl.open();
     } else if (action === "wake") {
       await api("/api/wake", { method: "POST", body: JSON.stringify({ id: key }) });
       notify("Wake signal sent. The PC can take a minute to start.");
@@ -378,7 +381,7 @@ function openTileOptions(key) {
   const tile = state.tiles[index];
   if (!tile) return;
   $("tile-options-title").textContent = tile.label;
-  const kindIcon = { macro: "bolt", wake: "wake", group: "group" }[tile.kind];
+  const kindIcon = { macro: "bolt", wake: "wake", group: "group", tool: "phone" }[tile.kind];
   $("tile-options-icon").innerHTML = tile.kind === "app" ? renderAppIcon(tile) : kindIcon ? icon(kindIcon) : controlIcon(tile.verb);
   $("tile-ungroup").hidden = tile.kind !== "group";
   $("tile-earlier").disabled = index === 0;
@@ -807,6 +810,7 @@ document.addEventListener("tara-toast", (e) => notify(e.detail.message, e.detail
 const statusBar = createStatusBar({ gate: idleGate(), api, isReady: () => paired && online && !document.hidden, notify, buzz, storage: localStorage });
 statusBar.start();
 const voice = createVoice({ api, notify, buzz });
+const phoneControl = createPhoneControl({ api, notify });
 // The recogniser listens for the names of apps on this dock first, which makes "open Blender" far more reliable.
 let vocabularySent = "";
 function pushVoiceVocabulary() {
@@ -981,8 +985,17 @@ if (!nativeTransport && "serviceWorker" in navigator) {
   navigator.serviceWorker.register("/sw.js").catch(() => { /* The shell also works without a service worker. */ });
 }
 syncLayout();
+/** Put the "PC control on phone Tara" tile on the dock once; removing it later sticks. */
+async function ensurePhoneControlTile() {
+  try {
+    if (localStorage.getItem("tara-phone-tile") === "1") return;
+    const next = addPhoneControlTile(state.tiles);
+    if (next.length !== state.tiles.length) await commitTiles(next);
+    localStorage.setItem("tara-phone-tile", "1");
+  } catch { /* try again next launch */ }
+}
 (async function boot() {
-  try { await refresh(); showApp(); connect(); }
+  try { await refresh(); showApp(); connect(); await ensurePhoneControlTile(); }
   catch (error) { showPair(error.message === "unauthorized" ? "" : "Start Tara on your PC, then connect with its PIN."); }
 })();
 // Refresh when returning to the dock. No background native polling while hidden.

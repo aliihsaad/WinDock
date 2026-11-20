@@ -58,16 +58,16 @@ export function renderTile(tile, { editing = false, first = false, last = false,
   const classes = ["tile", `tile--${tile.kind}`];
   if (running) classes.push("is-running");
   if (editing) classes.push("is-editing");
-  const action = { control: "control", macro: "macro", wake: "wake", group: "group" }[tile.kind] || "launch";
+  const action = { control: "control", macro: "macro", wake: "wake", group: "group", tool: "tool" }[tile.kind] || "launch";
   const hasValue = tile.kind === "control" && tile.value !== undefined && tile.value !== null;
-  const prefixed = ["macro", "wake", "group"].includes(tile.kind);
+  const prefixed = ["macro", "wake", "group", "tool"].includes(tile.kind);
   const key =
     tile.kind === "control"
       ? `control:${tile.verb}${hasValue ? `:${tile.value}` : ""}`
       : prefixed ? tile.id : `app:${tile.id}`;
   const actionKey = tile.kind === "control" ? tile.verb : tile.id;
-  const KIND_ICON = { macro: "bolt", wake: "wake", group: "group" };
-  const KIND_HINT = { macro: "Run macro", wake: "Wake PC", group: `${(tile.items || []).length} in folder` };
+  const KIND_ICON = { macro: "bolt", wake: "wake", group: "group", tool: "phone" };
+  const KIND_HINT = { macro: "Run macro", wake: "Wake PC", tool: "Share text", group: `${(tile.items || []).length} in folder` };
   // A valued verb carries its value on the element; tapping a tile with no
   // value would send an incomplete request the host correctly rejects.
   const valueAttr = hasValue ? ` data-value="${escapeHtml(String(tile.value))}"` : "";

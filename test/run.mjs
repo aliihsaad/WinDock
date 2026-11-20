@@ -59,6 +59,7 @@ const EXPECTED = {
   "verify-bench.mjs": "bench verification passed",
   "verify-assistant.mjs": "assistant verification passed",
   "verify-voice-ui.mjs": "voice-ui verification passed",
+  "verify-share.mjs": "share verification passed",
   "verify-site.mjs": "site verification passed",
 };
 

@@ -18,6 +18,7 @@ const paths = {
   bolt: '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
   group: '<rect x="3" y="3" width="18" height="18" rx="5"/><rect x="7" y="7" width="4" height="4" rx="1"/><rect x="13" y="7" width="4" height="4" rx="1"/><rect x="7" y="13" width="4" height="4" rx="1"/><rect x="13" y="13" width="4" height="4" rx="1"/>',
   wake: '<path d="M12 3v8"/><path d="M6.3 7a8 8 0 1 0 11.4 0"/><path d="M9 21h6"/>',
+  phone: '<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
   close: '<path d="m6 6 12 12M18 6 6 18"/>',
   search: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>',

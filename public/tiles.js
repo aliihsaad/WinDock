@@ -17,7 +17,7 @@
 export function tileKey(tile) {
   if (!tile || typeof tile !== "object") return "";
   // Macro, folder and wake ids already carry their own prefix ("macro:…").
-  if (["macro", "group", "wake"].includes(tile.kind)) return tile.id;
+  if (["macro", "group", "wake", "tool"].includes(tile.kind)) return tile.id;
   if (tile.kind !== "control") return `app:${tile.id}`;
   return tile.value === undefined || tile.value === null
     ? `control:${tile.verb}`
@@ -35,6 +35,7 @@ export function toWireTiles(tiles) {
     .map((tile) => {
       if (!tile || typeof tile !== "object") return null;
       if (tile.kind === "macro") return { kind: "macro", id: tile.id, label: tile.label, steps: tile.steps };
+      if (tile.kind === "tool") return { kind: "tool", id: tile.id, label: tile.label };
       if (tile.kind === "wake") return { kind: "wake", id: tile.id, mac: tile.mac, label: tile.label };
       if (tile.kind === "group") return { kind: "group", id: tile.id, label: tile.label, items: toWireTiles(tile.items) };
       if (tile.kind === "control") {
@@ -245,4 +246,11 @@ export function removeFromGroup(tiles, groupKey, itemKey) {
   out.splice(at, 1, ...(items.length ? [{ ...group, items }] : []));
   if (!out.some((t) => tileKey(t) === tileKey(item))) out.splice(at + (items.length ? 1 : 0), 0, item);
   return out;
+}
+
+/** The built-in "PC control on phone Tara" tile; added once, not duplicated. */
+export function addPhoneControlTile(tiles) {
+  const list = toWireTiles(tiles);
+  const tile = { kind: "tool", id: "tool:phone-control", label: "PC control on phone Tara" };
+  return hasTile(list, tileKey(tile)) ? list : [tile, ...list];
 }
