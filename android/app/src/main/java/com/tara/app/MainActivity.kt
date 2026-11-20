@@ -516,6 +516,20 @@ class MainActivity : Activity() {
         @JavascriptInterface fun wakeNames(): String = voice.wakeNames()
         @JavascriptInterface fun wakeStrict(): Boolean = voice.wakeStrict()
         @JavascriptInterface fun setVoiceVocabulary(json: String) { runOnUiThread { if (trustedKeyboardPage()) try { val a = org.json.JSONArray(json); voice.setVocabulary((0 until minOf(a.length(), 400)).map { a.getString(it).take(60) }) } catch (_: Exception) {} } }
+        @JavascriptInterface fun phoneControlState(): String = "{\"enabled\":" + (TaraAccessibilityService.instance != null) + ",\"allowed\":" + getSharedPreferences("phone-control", MODE_PRIVATE).getBoolean("allowed", false) + "}"
+        @JavascriptInterface fun setPhoneControlAllowed(on: Boolean) { runOnUiThread { if (trustedKeyboardPage()) getSharedPreferences("phone-control", MODE_PRIVATE).edit().putBoolean("allowed", on).apply() } }
+        @JavascriptInterface fun openAccessibilitySettings() { runOnUiThread { if (trustedKeyboardPage()) try { startActivity(Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (_: Exception) {} } }
+        /** The PC's command, only run when the user has allowed it here and turned the accessibility service on. */
+        @JavascriptInterface fun phoneControl(json: String) {
+            runOnUiThread {
+                if (!trustedKeyboardPage() || !getSharedPreferences("phone-control", MODE_PRIVATE).getBoolean("allowed", false)) return@runOnUiThread
+                val service = TaraAccessibilityService.instance ?: return@runOnUiThread
+                try {
+                    val o = org.json.JSONObject(json.take(400))
+                    service.perform(PhoneAction(o.optString("type"), o.optDouble("x1", 0.0).toFloat(), o.optDouble("y1", 0.0).toFloat(), o.optDouble("x2", 0.0).toFloat(), o.optDouble("y2", 0.0).toFloat(), o.optLong("ms", 0L)))
+                } catch (_: Exception) { }
+            }
+        }
         @JavascriptInterface fun setWakeStrict(on: Boolean) { runOnUiThread { if (trustedKeyboardPage()) voice.setWakeStrict(on) } }
         @JavascriptInterface fun setWakeNames(names: String) { runOnUiThread { if (trustedKeyboardPage()) voice.setWakeNames(names.take(120)) } }
         @JavascriptInterface fun pauseListening(on: Boolean) { runOnUiThread { voice.pauseListening(on) } }

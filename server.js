@@ -34,6 +34,7 @@ import { createTransfers, transferError } from "./src/transfers.js";
 import { openReceiveDirectory, notifyTransfer } from "./src/transfer-desktop.js";
 import { createHash } from "node:crypto";
 import { validateSignature } from "./src/input.js";
+import { validatePhoneCommand } from "./src/phone-control.js";
 import { createClipboardText } from "./src/clipboard-text.js";
 import { createIconCache, iconType, FALLBACK_ICON } from "./src/icons.js";
 import { startDiscovery, primaryAddress, DISCOVERY_PORT } from "./src/discovery.js";
@@ -222,6 +223,7 @@ export async function createApp({
   let macroRunning = false, statsCache = null;
   // Last video sent from the PC. The phone picks it up once and never replays an old one.
   let cast = { id: 0, url: "", at: 0 };
+  let phoneCmd = { id: 0, cmd: null, at: 0 };
   // PowerShell is costly; phones poll, so every caller shares one reading for a few seconds.
   const readStats = () => {
     if (!statsCache || Date.now() - statsCache.at > 4000) statsCache = { at: Date.now(), value: provider.systemStats().catch(() => ({})) };
@@ -309,6 +311,7 @@ export async function createApp({
       platformName: provider.displayName,
       hostName,
       tiles: config.tiles.map((tile) => markRunning(tile, runningIds)),
+      phoneCmd: phoneCmd.id ? { id: phoneCmd.id, cmd: phoneCmd.cmd, ageMs: Date.now() - phoneCmd.at } : { id: 0 },
       running,
       verbs: CONTROL_VERBS,
       allowDestructive,
@@ -337,6 +340,20 @@ export async function createApp({
         res.writeHead(200,{"content-type":MIME[".html"],"cache-control":"no-store","x-frame-options":"DENY",
           "content-security-policy":"default-src 'self'; script-src 'self'; style-src 'self'; frame-ancestors 'none'; base-uri 'none'"});
         return res.end(body);
+      }
+      if (path === "/phone" || path === "/phone.html") {
+        if (!local) return sendJson(res, 403, { error: "Open Phone control on the computer itself." });
+        res.writeHead(200, { "content-type": MIME[".html"], "cache-control": "no-store", "x-frame-options": "DENY", "referrer-policy": "no-referrer",
+          "content-security-policy": "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'" });
+        return res.end(await readFile(join(PUBLIC_DIR, "phone.html")));
+      }
+      if (path === "/api/phone/send" && req.method === "POST") {
+        if (!local || !sameOrigin(req) || req.headers["x-tara-phone"] !== "local") return sendJson(res, 403, { error: "Control the phone from the computer itself." });
+        const cmd = validatePhoneCommand(await readJsonBody(req));
+        if (!cmd) return sendJson(res, 400, { error: "That phone action is not supported." });
+        phoneCmd = { id: phoneCmd.id + 1, cmd, at: Date.now() };
+        await hub.broadcast();
+        return sendJson(res, 200, { ok: true, phones: hub.clientCount });
       }
       if (path === "/cast" || path === "/cast.html") {
         if (!local) return sendJson(res, 403, { error: "Open Send to phone on the computer itself." });

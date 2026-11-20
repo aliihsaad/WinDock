@@ -82,4 +82,5 @@
     <string name="android_update_install">Download the APK and open it to install. A matching signing key keeps your phone settings. Updates are installed manually.</string>
     <string name="update_browser_missing">Open the Tara downloads page (yeshwanthkumardomala.github.io/tara) in a browser to download the update.</string>
     <string name="close">Close</string>
+    <string name="phone_control_service_description">Lets your paired PC press Back, Home and Recents and tap or swipe on this phone. Tara never reads your screen. You can turn this off in Tara at any time.</string>
 </resources>

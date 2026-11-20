@@ -279,6 +279,7 @@ function connect() {
     try {
       const msg = JSON.parse(event.data);
       if (msg.type !== "snapshot") return;
+      phoneControl.onSnapshot(msg.phoneCmd);
       state = { ...msg, tiles: editing || saving || gesture?.dragging ? state.tiles : msg.tiles };
       if (!gesture?.dragging) paint();
     } catch { /* Ignore malformed frames. */ }
