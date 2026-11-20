@@ -1,3 +1,5 @@
+import { MODIFIERS, validateChord } from "./chords.js";
+
 /** Bounded input protocol shared by the HTTP/WS boundaries and Windows bridge. */
 export function validateInput(message) {
   if (!message || typeof message !== "object" || Array.isArray(message)) return null;
@@ -20,7 +22,12 @@ export function validateInput(message) {
   if (message.type === "zoom" && exact("type", "steps") && Number.isInteger(message.steps) && Math.abs(message.steps) >= 1 && Math.abs(message.steps) <= 8) {
     return { type: "zoom", steps: message.steps };
   }
-  if (message.type === "button" && exact("type", "button", "down") && ["left", "right"].includes(message.button) && typeof message.down === "boolean") {
+  if (message.type === "chord") return validateChord(message);
+  // A held modifier lets the touchpad do Shift+drag or Ctrl+drag; the helper releases it on disconnect.
+  if (message.type === "modifier" && exact("type", "key", "down") && MODIFIERS.includes(message.key) && typeof message.down === "boolean") {
+    return { type: "modifier", key: message.key, down: message.down };
+  }
+  if (message.type === "button" && exact("type", "button", "down") && ["left", "right", "middle"].includes(message.button) && typeof message.down === "boolean") {
     return { type: "button", button: message.button, down: message.down };
   }
   return null;

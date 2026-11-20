@@ -2,7 +2,7 @@
  * Provider selection and the single real `exec`.
  *
  * `execFile` is used with an argv array and `shell: false` (the default).
- * Nothing in WinDock ever builds a command string, so a malicious app name or
+ * Nothing in Tara ever builds a command string, so a malicious app name or
  * path cannot introduce a second command.
  */
 

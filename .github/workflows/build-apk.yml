@@ -1,0 +1,168 @@
+name: Build upgraded apps
+
+# Builds the Android APK and the Windows installer for the `upgrades` branch and
+# publishes both, plus latest.json, to the rolling `upgrades-latest` pre-release.
+# The apps read latest.json to offer one-tap updates.
+on:
+  push:
+    branches: [upgrades, 'ci-check/**']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  meta:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      code: ${{ steps.v.outputs.code }}
+    steps:
+      - id: v
+        # Every build is newer than the last: 0.4.<run> and Android versionCode 1000+<run>.
+        run: |
+          echo "version=0.4.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+          echo "code=$((1000 + GITHUB_RUN_NUMBER))" >> "$GITHUB_OUTPUT"
+
+  web-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - run: npm ci
+      - run: npm test
+
+  android:
+    needs: meta
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Prepare Android SDK
+        run: '"$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.1.0"'
+      - name: Use the shared debug key so each build can update the previous one
+        run: |
+          mkdir -p ~/.android
+          cp android/ci-debug.keystore ~/.android/debug.keystore
+      - name: Build APK and run unit tests
+        working-directory: android
+        run: bash ./gradlew assembleDebug testDebugUnitTest -PtaraVersionName=${{ needs.meta.outputs.version }} -PtaraVersionCode=${{ needs.meta.outputs.code }} --no-daemon --console=plain
+      - name: Verify APK and give it a stable name
+        run: |
+          "$ANDROID_HOME/build-tools/36.1.0/apksigner" verify --verbose --print-certs android/app/build/outputs/apk/debug/app-debug.apk
+          mkdir -p artifacts
+          cp android/app/build/outputs/apk/debug/app-debug.apk artifacts/Tara-android-debug.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-upgraded
+          path: artifacts/Tara-android-debug.apk
+          if-no-files-found: error
+
+  windows:
+    needs: meta
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '8.0.x'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Stamp this build's version
+        shell: bash
+        run: |
+          node -e "const fs=require('fs');const v=process.argv[1];const p=JSON.parse(fs.readFileSync('package.json','utf8'));p.version=v;p.releaseVersion=v;fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n');const c='native/tray/TaraTray.csproj';fs.writeFileSync(c,fs.readFileSync(c,'utf8').replace(/<InformationalVersion>[^<]+<\/InformationalVersion>/,'<InformationalVersion>'+v+'</InformationalVersion>'))" "${{ needs.meta.outputs.version }}"
+      - name: Build bundled Windows app
+        shell: pwsh
+        run: ./scripts/build-windows.ps1
+      - name: Install verified installer compiler
+        shell: pwsh
+        run: ./scripts/install-inno.ps1
+      - name: Build setup program
+        shell: pwsh
+        run: ./scripts/build-installer.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: artifacts/installer/TaraSetup.exe
+          if-no-files-found: error
+
+  release:
+    needs: [meta, web-tests, android, windows]
+    # Scratch branches (ci-check/**) compile and test everything but never publish.
+    if: github.ref == 'refs/heads/upgrades' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: android-upgraded
+          path: out
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-installer
+          path: out
+      - name: Write the update feed
+        env:
+          VERSION: ${{ needs.meta.outputs.version }}
+          CODE: ${{ needs.meta.outputs.code }}
+        run: |
+          cd out
+          BASE="https://github.com/${GITHUB_REPOSITORY}/releases/download/upgrades-latest"
+          APK_SHA=$(sha256sum Tara-android-debug.apk | cut -d' ' -f1)
+          EXE_SHA=$(sha256sum TaraSetup.exe | cut -d' ' -f1)
+          cat > latest.json <<JSON
+          {
+            "available": true,
+            "version": "${VERSION}",
+            "android": { "url": "${BASE}/Tara-android-debug.apk", "versionName": "${VERSION}", "versionCode": ${CODE}, "sha256": "${APK_SHA}" },
+            "windows": { "url": "${BASE}/TaraSetup.exe", "sha256": "${EXE_SHA}" }
+          }
+          JSON
+          sha256sum Tara-android-debug.apk TaraSetup.exe > SHA256SUMS.txt
+          cat latest.json
+      - name: Publish pre-release with stable download links
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.meta.outputs.version }}
+        run: |
+          TAG=upgrades-latest
+          gh release delete "$TAG" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes || true
+          gh release create "$TAG" out/Tara-android-debug.apk out/TaraSetup.exe out/latest.json out/SHA256SUMS.txt \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
+            --title "Tara ${VERSION}" \
+            --notes "Build ${VERSION} from the upgrades branch. TaraSetup.exe installs the PC app; Tara-android-debug.apk is the phone app. The apps update themselves from latest.json."
+      - name: Publish the phone voice model (once)
+        # The app downloads this 40 MB model on demand. It is published only when missing, so builds stay fast.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          # Skip only when the published manifest already points at this repo (a renamed repo needs a fresh one).
+          if curl -fsL "https://github.com/${GITHUB_REPOSITORY}/releases/download/voicepack-v1/vosk-model.json" 2>/dev/null | grep -q "/${GITHUB_REPOSITORY}/releases/download/voicepack-v1/"; then
+            echo "Voice model already published for this repo."; exit 0
+          fi
+          curl -fL --retry 4 --retry-delay 5 -o vosk-model.zip https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip
+          test -s vosk-model.zip
+          unzip -tq vosk-model.zip > /dev/null
+          SHA=$(sha256sum vosk-model.zip | cut -d' ' -f1); SIZE=$(stat -c %s vosk-model.zip)
+          BASE="https://github.com/${GITHUB_REPOSITORY}/releases/download/voicepack-v1"
+          printf '{"version":"1","url":"%s/vosk-model.zip","sha256":"%s","size":%s}\n' "$BASE" "$SHA" "$SIZE" > vosk-model.json
+          cat vosk-model.json
+          gh release delete voicepack-v1 --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes || true
+          gh release create voicepack-v1 vosk-model.zip vosk-model.json --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
+            --title "Tara phone voice model" --notes "Offline speech model the phone app downloads once for hands-free voice. Checked by SHA-256."

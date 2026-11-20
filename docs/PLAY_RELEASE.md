@@ -19,7 +19,7 @@ Preparation is not approval to publish. Account ownership, signing, actual devic
 acceptance and listing declarations remain release gates.
 
 Owner-confirmed: support email `alidevlab10@gmail.com`; AliDevLab personal account
-created, dashboard accessible, no WinDock listing created. Production access and
+created, dashboard accessible, no Tara listing created. Production access and
 remaining verification tasks are not established by the enabled Create App button.
 The current managed pairing build has user-confirmed Huawei passes for native
 QR pairing, app and device restart reconnection with retained tiles, Wi-Fi/USB
@@ -39,7 +39,7 @@ own artifacts and do not replace final-candidate or Play-distribution checks.
 
 ## Compatibility and transport
 
-`com.windock.app` and Android 7/API 24 support are retained. Compile/target SDK is
+`com.tara.app` and Android 7/API 24 support are retained. Compile/target SDK is
 36; version code 10 exceeds public 0.2.6's code 9. Debug builds keep v1
 UDP discovery, HTTP connections and the released manual update behavior.
 Release builds require HTTPS. Managed pairing adds v3 discovery; v2 remains for
@@ -48,7 +48,7 @@ existing manually provisioned HTTPS. There is no release HTTP fallback.
 ### Recommended setup: scan once
 
 Start the updated companion. On Windows choose **Pair a phone securely** from
-the tray menu; on Linux open the local pairing link displayed by `windock`.
+the tray menu; on Linux open the local pairing link displayed by `tara`.
 On Android choose **Scan computer code** and scan the code shown on that PC.
 Camera permission is optional; **Enter pairing text** provides an alternative.
 Certificate setup and routine renewal are automatic. No Android system CA
@@ -57,13 +57,13 @@ for identity preservation, session revocation, migration and real-device checks.
 
 Managed HTTPS uses automatic TCP/8621, or TCP/8622 alongside an explicitly
 configured external certificate. Automatic port fallback remains supported;
-`WINDOCK_MANAGED_TLS_PORT` selects an explicit port. Keep firewall rules limited
+`TARA_MANAGED_TLS_PORT` selects an explicit port. Keep firewall rules limited
 to trusted local networks. The application does not change firewall rules.
 
 The updated desktop keeps HTTP/8620 and UDP/41234. The released automatic fallback
 and saved explicit HTTP port are retained. When configured, it also serves
 HTTPS/8621; automatic HTTPS also falls back if that port is unavailable, while an
-explicit WINDOCK_TLS_PORT fails with a diagnostic if occupied. Discovery and the
+explicit TARA_TLS_PORT fails with a diagnostic if occupied. Discovery and the
 tray show actual bound ports. Both transports use the same dock state, input lease,
 capture worker and API routes. They use different PINs, token stores and cookie
 names, with one shared host-wide pairing failure budget and PC-local recovery.
@@ -77,8 +77,8 @@ the helper is included explicitly in the installer, never generated private keys
 
 Preferred for managed networks: provision an RSA/ECDSA server certificate with
 the LAN and USB IP addresses in its subjectAltName and a chain Android trusts.
-Set `WINDOCK_TLS_CERT` (PEM leaf/chain), `WINDOCK_TLS_KEY` (PEM private key), and
-optionally `WINDOCK_TLS_PORT` before starting WinDock. TLS >= 1.2 is required.
+Set `TARA_TLS_CERT` (PEM leaf/chain), `TARA_TLS_KEY` (PEM private key), and
+optionally `TARA_TLS_PORT` before starting Tara. TLS >= 1.2 is required.
 Missing/invalid partial configuration fails host startup, rather than pretending
 that HTTPS is enabled. Never commit or distribute private keys.
 
@@ -86,17 +86,17 @@ For a private local installation, PowerShell 7.2+ can run:
 
 ```powershell
 pwsh -File scripts/create-local-tls.ps1
-$env:WINDOCK_TLS_CERT = "$env:LOCALAPPDATA\WinDock\tls\host.crt"
-$env:WINDOCK_TLS_KEY = "$env:LOCALAPPDATA\WinDock\tls\host.key"
-# Start WinDock from this environment (or configure these variables for its user).
+$env:TARA_TLS_CERT = "$env:LOCALAPPDATA\Tara\tls\host.crt"
+$env:TARA_TLS_KEY = "$env:LOCALAPPDATA\Tara\tls\host.key"
+# Start Tara from this environment (or configure these variables for its user).
 ```
 
 The helper creates an owner/SYSTEM-only directory, a per-PC CA, and a one-year
 server certificate. It does not install trust or change firewall rules. Transfer
-only `windock-ca.crt` over a trusted channel, verify its SHA-256 with the PC owner,
+only `tara-ca.crt` over a trusted channel, verify its SHA-256 with the PC owner,
 and explicitly install it as a CA certificate in Android settings. Android will
 warn about this trust; a user CA can affect other connections, so understand the
-scope before installation. Never send `windock-ca.key` or `host.key` to the phone.
+scope before installation. Never send `tara-ca.key` or `host.key` to the phone.
 The release app accepts system and explicitly installed user CAs, validates the
 certificate and IP, and never overrides TLS errors. Remove the CA when no longer
 needed. Enable USB tethering before issuing the certificate so its IP is included.
@@ -121,14 +121,14 @@ pwsh -File scripts/build-play-bundle.ps1 -Unsigned
 pwsh -File scripts/build-play-bundle.ps1
 ```
 
-Signing inputs: `WINDOCK_UPLOAD_STORE_FILE`, `WINDOCK_UPLOAD_STORE_PASSWORD`,
-`WINDOCK_UPLOAD_KEY_ALIAS`, `WINDOCK_UPLOAD_KEY_PASSWORD`, and owner-approved public
-`WINDOCK_UPLOAD_CERT_SHA256`. Never put passwords in
+Signing inputs: `TARA_UPLOAD_STORE_FILE`, `TARA_UPLOAD_STORE_PASSWORD`,
+`TARA_UPLOAD_KEY_ALIAS`, `TARA_UPLOAD_KEY_PASSWORD`, and owner-approved public
+`TARA_UPLOAD_CERT_SHA256`. Never put passwords in
 command arguments, source files, logs or a PR. Use a dedicated upload key, not an
-Android Debug certificate. `signedReleaseBundle -PwindockUploadSigning=true` fails
+Android Debug certificate. `signedReleaseBundle -PtaraUploadSigning=true` fails
 if signing is incomplete, expired, debug-signed or mismatches that fingerprint.
 Ordinary builds do not open upload keys. `-Unsigned` passes
-`-PwindockUnsigned=true` and rejects signatures in its output, even if upload
+`-PtaraUnsigned=true` and rejects signatures in its output, even if upload
 variables are inherited. Conflicting signing modes fail immediately.
 The existing GitHub workflow still distributes debug previews and now also checks
 release lint and bundle generation; it does not distribute a production bundle.
@@ -182,7 +182,7 @@ No upload or publishing action is authorized by this document.
 Use an isolated emulator and the non-debuggable release APK signed with a
 test-only key matching the instrumentation APK, never production credentials.
 Generate a CA/leaf into an ignored test folder with `create-local-tls.ps1`, then
-set `WINDOCK_SMOKE_TLS_CERT` and `WINDOCK_SMOKE_TLS_KEY` to the leaf PEM files.
+set `TARA_SMOKE_TLS_CERT` and `TARA_SMOKE_TLS_KEY` to the leaf PEM files.
 Start `node scripts/android-smoke-host.mjs`; it exposes only a mock PC on loopback
 HTTP/18622 and HTTPS/18623. On the emulator, install only that CA's public `.crt`
 through Android Settings after comparing its fingerprint. Reverse TCP/18623
@@ -232,7 +232,7 @@ are exclusively in PLAY_INTEGRATION.md; do not distribute these historical artif
   three actual 1920x1080 24-bit PNG release screenshots using fake fixture data.
 - The initial code-9 selection exceeded the code-8 emulator build. The later
   compatibility review found public 0.2.6 already uses code 9; this is not a
-  valid next release code. No WinDock listing has been created in Console.
+  valid next release code. No Tara listing has been created in Console.
 
 Current remaining gates are in PLAY_INTEGRATION.md. Before upload approval:
 finalize and approve public policy hosting, AliDevLab Console setup/verification,

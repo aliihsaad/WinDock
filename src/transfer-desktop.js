@@ -15,6 +15,6 @@ export function openReceiveDirectory(path, platform = process.platform, launch =
 export function notifyTransfer(event) {
   if (process.platform !== "linux" || !["incoming","completed","failed"].includes(event.phase)) return;
   const label = { incoming: "Receiving files", completed: "Files received", failed: "Transfer interrupted" }[event.phase];
-  const child = spawn("notify-send", ["--app-name=WinDock", "--expire-time=6000", label, `${event.count} selected file(s). Open WinDock Files & Media to view progress or open the folder.`], { stdio:"ignore", shell:false });
+  const child = spawn("notify-send", ["--app-name=Tara", "--expire-time=6000", label, `${event.count} selected file(s). Open Tara Files & Media to view progress or open the folder.`], { stdio:"ignore", shell:false });
   child.on("error",()=>{}); child.unref();
 }

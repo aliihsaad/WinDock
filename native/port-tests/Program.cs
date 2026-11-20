@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using WinDock.Tray;
+using Tara.Tray;
 
 var checks = 0;
 void Check(bool ok, string message) { checks++; if (!ok) throw new Exception(message); }
@@ -10,7 +10,7 @@ void Reject(Action action, string message)
     catch (Exception ex) when (ex is IOException or InvalidDataException or System.Text.Json.JsonException) { rejected = true; }
     Check(rejected, message);
 }
-var directory = Path.Combine(Path.GetTempPath(), "windock-port-tests-" + Guid.NewGuid().ToString("N"));
+var directory = Path.Combine(Path.GetTempPath(), "tara-port-tests-" + Guid.NewGuid().ToString("N"));
 var path = Path.Combine(directory, "server-port.json");
 try
 {

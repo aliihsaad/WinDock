@@ -16,7 +16,7 @@ async (page) => {
       check(geometry.n<=185 && geometry.n>21,'QR preserves the bounded native bitmap format');
       await tab.locator('#qr canvas').screenshot({path:`artifacts/pairing-qr-${width}-${ratio}.png`});
       const first=await tab.locator('#invitation').inputValue();
-      check(first.startsWith('windock-pair:'),'Camera and text use the same invitation format');
+      check(first.startsWith('tara-pair:'),'Camera and text use the same invitation format');
       await tab.locator('#refresh-qr').click();
       await tab.waitForFunction(previous=>document.getElementById('invitation').value && document.getElementById('invitation').value!==previous,first);
       check(await tab.locator('#qr-dialog').isVisible(),'Refreshing keeps the large code visible');

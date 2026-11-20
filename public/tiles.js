@@ -16,6 +16,8 @@
  */
 export function tileKey(tile) {
   if (!tile || typeof tile !== "object") return "";
+  // Macro, folder and wake ids already carry their own prefix ("macro:…").
+  if (["macro", "group", "wake", "tool"].includes(tile.kind)) return tile.id;
   if (tile.kind !== "control") return `app:${tile.id}`;
   return tile.value === undefined || tile.value === null
     ? `control:${tile.verb}`
@@ -32,6 +34,10 @@ export function toWireTiles(tiles) {
   return tiles
     .map((tile) => {
       if (!tile || typeof tile !== "object") return null;
+      if (tile.kind === "macro") return { kind: "macro", id: tile.id, label: tile.label, steps: tile.steps };
+      if (tile.kind === "tool") return { kind: "tool", id: tile.id, label: tile.label };
+      if (tile.kind === "wake") return { kind: "wake", id: tile.id, mac: tile.mac, label: tile.label };
+      if (tile.kind === "group") return { kind: "group", id: tile.id, label: tile.label, items: toWireTiles(tile.items) };
       if (tile.kind === "control") {
         const out = { kind: "control", verb: tile.verb, label: tile.label };
         if (tile.value !== undefined && tile.value !== null) out.value = tile.value;
@@ -177,4 +183,74 @@ export function availableControls(advertised, tiles) {
         pinned: hasTile(list, tileKey({ kind: "control", verb: item.verb, value: item.value })),
       })),
   })).filter((group) => group.items.length > 0);
+}
+
+/** Random id for a new macro or dock folder, matching the host's id pattern. */
+export function newTileId(prefix, random = () => Math.random().toString(36).slice(2, 10)) {
+  return `${prefix}:${random().replace(/[^a-z0-9]/g, "").slice(0, 12).padEnd(6, "0")}`;
+}
+
+/** Append a macro made of {type: "app"|"control"|"wait"} steps. Empty step lists are ignored. */
+export function addMacroTile(tiles, label, steps, id = newTileId("macro")) {
+  const list = toWireTiles(tiles);
+  if (!Array.isArray(steps) || steps.length === 0) return list;
+  const tile = { kind: "macro", id, label: String(label || "").trim() || "Macro", steps };
+  return hasTile(list, tileKey(tile)) ? list : [...list, tile];
+}
+
+/** Append a Wake-on-LAN tile for a MAC address typed as aa:bb:cc:dd:ee:ff or aa-bb-... */
+export function addWakeTile(tiles, label, mac) {
+  const list = toWireTiles(tiles);
+  const hex = String(mac || "").trim().replace(/[:-]/g, "").toLowerCase();
+  if (!/^[0-9a-f]{12}$/.test(hex) || /^0+$/.test(hex) || /^f+$/.test(hex)) return list;
+  const tile = { kind: "wake", id: `wake:${hex}`, mac: hex.match(/../g).join(":").toUpperCase(), label: String(label || "").trim() || "Wake PC" };
+  return hasTile(list, tileKey(tile)) ? list : [...list, tile];
+}
+
+/**
+ * Move the tiles named by `keys` into a new dock folder at the first one's position.
+ * Folders cannot contain folders; fewer than one eligible tile changes nothing.
+ */
+export function groupTiles(tiles, keys, label, id = newTileId("group")) {
+  const list = toWireTiles(tiles);
+  const wanted = new Set(keys || []);
+  const picked = list.filter((t) => wanted.has(tileKey(t)) && t.kind !== "group");
+  if (!picked.length) return list;
+  const group = { kind: "group", id, label: String(label || "").trim() || "Folder", items: picked };
+  const first = list.findIndex((t) => wanted.has(tileKey(t)) && t.kind !== "group");
+  const rest = list.filter((t) => !picked.includes(t));
+  rest.splice(Math.min(first, rest.length), 0, group);
+  return rest;
+}
+
+/** Dissolve a dock folder back into its tiles at the same position. */
+export function ungroupTile(tiles, key) {
+  const list = toWireTiles(tiles);
+  const at = list.findIndex((t) => tileKey(t) === key && t.kind === "group");
+  if (at === -1) return list;
+  const have = new Set(list.map(tileKey));
+  const items = list[at].items.filter((item) => !have.has(tileKey(item)));
+  return [...list.slice(0, at), ...items, ...list.slice(at + 1)];
+}
+
+/** Take one tile out of a dock folder and put it on the dock after the folder. An emptied folder is removed. */
+export function removeFromGroup(tiles, groupKey, itemKey) {
+  const list = toWireTiles(tiles);
+  const at = list.findIndex((t) => tileKey(t) === groupKey && t.kind === "group");
+  if (at === -1) return list;
+  const group = list[at];
+  const item = group.items.find((i) => tileKey(i) === itemKey);
+  if (!item) return list;
+  const items = group.items.filter((i) => i !== item);
+  const out = [...list];
+  out.splice(at, 1, ...(items.length ? [{ ...group, items }] : []));
+  if (!out.some((t) => tileKey(t) === tileKey(item))) out.splice(at + (items.length ? 1 : 0), 0, item);
+  return out;
+}
+
+/** The built-in "PC control on phone Tara" tile; added once, not duplicated. */
+export function addPhoneControlTile(tiles) {
+  const list = toWireTiles(tiles);
+  const tile = { kind: "tool", id: "tool:phone-control", label: "PC control on phone Tara" };
+  return hasTile(list, tileKey(tile)) ? list : [tile, ...list];
 }

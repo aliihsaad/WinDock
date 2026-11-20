@@ -8,7 +8,7 @@ export function pairingInvites({ now = Date.now } = {}) {
     issue(details, format = "svg") {
       const secret = randomBytes(32).toString("base64url"), expires = now() + 2 * 60000;
       active = { hash: hash(secret), expires };
-      const invitation = "windock-pair:" + Buffer.from(JSON.stringify({ v: 1, ...details, secret, expires })).toString("base64url");
+      const invitation = "tara-pair:" + Buffer.from(JSON.stringify({ v: 1, ...details, secret, expires })).toString("base64url");
       const qr = qrcode(0, "M"); qr.addData(invitation, "Byte"); qr.make();
       return { invitation, ...(format === "gif"
         ? { image: qr.createDataURL(1, 4) }

@@ -8,7 +8,7 @@ import { createWindowsProvider } from '../src/platform/windows.js';
 
 const { values } = parseArgs({ options: { helper: { type: 'string' }, 'base-url': { type: 'string' } } });
 assert.equal(process.platform, 'win32', 'This check requires a physical Windows display.');
-const helper = resolve(values.helper || 'artifacts/WinDock-win-x64/WinDockHelper.exe');
+const helper = resolve(values.helper || 'artifacts/Tara-win-x64/TaraHelper.exe');
 const exec = createExec();
 const provider = createWindowsProvider({ exec, helperPath: helper });
 const read = async () => JSON.parse((await exec(helper, ['brightness'])).stdout).displays;

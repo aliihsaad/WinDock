@@ -24,7 +24,7 @@ finish, or select **Stop listening**. A first-use disclosure and Android permiss
 request precede microphone use. Normal final results are inserted automatically.
 **Review before sending** makes Send explicit. Text containing line breaks or tabs
 always requires review because some receiving apps, particularly terminals, can
-interpret pasted multiline content as commands. WinDock never appends Enter or
+interpret pasted multiline content as commands. Tara never appends Enter or
 sends an Enter key command for dictation. Cancel discards unsent speech. Once a
 send is in flight, closing the dialog cannot undo it.
 
@@ -76,7 +76,7 @@ clients connected to an old host keep existing controls, with dictation absent
 or an update-required message. Old native helpers never receive `dictate` from
 the hub. Legacy HTTP control remains supported, but dictation is HTTPS-only.
 
-Application ID `com.windock.app`, version code **10**, current version name,
+Application ID `com.tara.app`, version code **10**, current version name,
 minimum API **24** and target/compile API **36** are unchanged. Updates from the
 existing locally signed test APK should retain saved PCs and settings. This local
 debug APK is not a Play upload candidate. No production signing keys were opened.
@@ -88,14 +88,14 @@ mode is initially preferred on API 31+ devices reporting support; the setting is
 remembered. Unsupported/missing language models produce a useful error; there is
 no silent online fallback. The user may turn off On-device only and retry with
 the configured default service. API 24–30 devices use that default service.
-WinDock omits EXTRA_LANGUAGE so the service's configured language applies.
+Tara omits EXTRA_LANGUAGE so the service's configured language applies.
 Punctuation is preserved when supplied; API 33+ requests formatting, which a
 provider may ignore. Language availability, accents, silence detection, voice
 commands and recognition quality remain provider-dependent.
 
 There is no paid API, subscription, custom AI backend, downloaded model or audio
 file. The provider may process audio remotely when on-device-only mode is off.
-WinDock does not control provider retention. Microphone access is foreground-only;
+Tara does not control provider retention. Microphone access is foreground-only;
 there is no microphone foreground service or background recording permission.
 Incoming calls may stop recognition through lifecycle/audio errors; a physical
 call test is still required on the Huawei device.
@@ -196,7 +196,7 @@ Our native implementation ends on the first final recognition result and also
 has a 60-second watchdog; it is not a continuous keyboard-dictation replacement.
 Android documents SpeechRecognizer as unsuitable for continuous recognition.
 Keyboard speech availability alone does not prove that the public recognition
-service path used by WinDock will work on that device.
+service path used by Tara will work on that device.
 
 Recommendation pending the owner's decision: omit the dedicated native voice
 feature from the upcoming Play release and use the existing keyboard microphone
@@ -209,17 +209,17 @@ existing keyboard, HTTPS, pairing, clipboard and desktop compatibility behavior.
 
 Files are under the repository's `artifacts` directory:
 
-- Android: `WinDock-voice-local-test.apk` (debug/local testing only).
-- Windows: `WinDock-voice-local-test/Start-SecureTest.ps1` beside the rebuilt helper.
-- The launcher reuses `%LOCALAPPDATA%/WinDock-LocalTest-20261031/config.json` and its
+- Android: `Tara-voice-local-test.apk` (debug/local testing only).
+- Windows: `Tara-voice-local-test/Start-SecureTest.ps1` beside the rebuilt helper.
+- The launcher reuses `%LOCALAPPDATA%/Tara-LocalTest-20261031/config.json` and its
   existing secure identity. Do not delete that state, reinstall a CA, or scan a
   new QR unless the application explicitly requires it. The launcher refuses to
   stop another tray instance; your currently running companion was not replaced.
 
 1. Install the APK as an update on the same Huawei phone. Do not uninstall the
    existing app or clear its data. Confirm existing tiles and saved pairing remain.
-2. Quit WinDock using its current tray menu, then run the new kit's launcher.
-   Open WinDock on the phone and allow it to reconnect over Wi-Fi.
+2. Quit Tara using its current tray menu, then run the new kit's launcher.
+   Open Tara on the phone and allow it to reconnect over Wi-Fi.
 3. Confirm the top island does not cover any icons in your chosen grid, scale,
    orientation and label settings. Tap/pull it; confirm the swipe-up drawer has
    no Controls, Capture or Touch & sign duplicates. Verify those actions in the
@@ -257,7 +257,7 @@ Files are under the repository's `artifacts` directory:
 
 For Linux, run `cargo test --locked --manifest-path native/linux/Cargo.toml`, then
 test on the supported desktop with AT-SPI focus reporting, `wtype` and the usual
-WinDock uinput permissions. Validate single-line text, focus changes, Unicode,
+Tara uinput permissions. Validate single-line text, focus changes, Unicode,
 formatted clipboard paste, failed clipboard tools, disconnects, and preservation
 of existing touchpad/keyboard/signature/clipboard actions. No Linux physical pass
 has been claimed.
@@ -275,7 +275,7 @@ has been claimed.
   input due to integrity isolation; some browser/editor/Linux applications need
   accessibility enabled. Existing manual keyboard behavior remains available.
 - Linux formatted text can remain in clipboard/history. A target may submit pasted
-  lines; review is mandatory. WinDock never adds a submission key.
+  lines; review is mandatory. Tara never adds a submission key.
 - Continuous/live insertion and press-and-hold are intentionally deferred: partial
   recognition results can change, and touch cancellation would add gesture conflicts.
 - Linux native compilation/tests and physical insertion require a working Linux

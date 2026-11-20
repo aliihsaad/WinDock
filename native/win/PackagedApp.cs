@@ -4,7 +4,7 @@ using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
-namespace WinDock;
+namespace Tara;
 
 internal static partial class PackagedApp
 {

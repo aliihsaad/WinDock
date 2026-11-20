@@ -14,9 +14,9 @@ try {
     $capture = Join-Path $output 'pairing-window.png'
     & node native\pairing-tests\fixture.mjs $fixture
     if ($LASTEXITCODE -ne 0) { throw 'Synthetic pairing fixture generation failed' }
-    & $dotnetPath build native\pairing-tests\WinDockPairingTests.csproj -c Release --nologo
+    & $dotnetPath build native\pairing-tests\TaraPairingTests.csproj -c Release --nologo
     if ($LASTEXITCODE -ne 0) { throw 'Native pairing tests failed to build' }
-    $testArgs = @('native\pairing-tests\bin\Release\net8.0-windows\WinDockPairingTests.dll', $fixture, $capture)
+    $testArgs = @('native\pairing-tests\bin\Release\net8.0-windows\TaraPairingTests.dll', $fixture, $capture)
     if ($Preview) { $testArgs += '--preview' }
     & $dotnetPath @testArgs
     if ($LASTEXITCODE -ne 0) { throw 'Native pairing verification failed' }

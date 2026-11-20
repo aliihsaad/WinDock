@@ -55,15 +55,15 @@ jobs:
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npm test
       - name: Verify native touchpad protocol and transparent signature rendering
-        run: dotnet run --project native/input-tests/WinDockInputTests.csproj -c Release
+        run: dotnet run --project native/input-tests/TaraInputTests.csproj -c Release
       - name: Verify update checks and startup notification policy
-        run: dotnet run --project native/update-tests/WinDockUpdateTests.csproj -c Release
+        run: dotnet run --project native/update-tests/TaraUpdateTests.csproj -c Release
       - name: Verify saved server port settings
-        run: dotnet run --project native/port-tests/WinDockPortTests.csproj -c Release
+        run: dotnet run --project native/port-tests/TaraPortTests.csproj -c Release
       - name: Verify media artwork decoding and size limits
-        run: dotnet run --project native/media-tests/WinDockMediaTests.csproj -c Release
+        run: dotnet run --project native/media-tests/TaraMediaTests.csproj -c Release
       - name: Build the Windows tray
-        run: dotnet build native/tray/WinDockTray.csproj -c Release
+        run: dotnet build native/tray/TaraTray.csproj -c Release
 
   macos:
     name: macOS tests

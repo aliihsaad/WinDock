@@ -1,5 +1,5 @@
 /**
- * WinDock service worker.
+ * Tara service worker.
  *
  * Purpose is installability and a fast, resilient shell — never stale control.
  *
@@ -9,7 +9,7 @@
  *    worse, replay a control action from cache. Neither is acceptable.
  */
 
-const VERSION = "windock-v37-media-artwork";
+const VERSION = "tara-v55-upgrades";
 const SHELL = [
   "/",
   "/index.html",
@@ -23,6 +23,18 @@ const SHELL = [
   "/now-playing.js",
   "/dock.js",
   "/tiles.js",
+  "/haptics.js",
+  "/live-bg.js",
+  "/phone-control.js",
+  "/connlog.js",
+  "/quick-access.js",
+  "/orientation.js",
+  "/idle.js",
+  "/voice.js",
+  "/decks.js",
+  "/keys-pane.js",
+  "/status-bar.js",
+  "/mini-player.js",
   "/icons.js",
   "/folder.svg",
   "/link.svg",

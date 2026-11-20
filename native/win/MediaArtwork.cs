@@ -1,7 +1,7 @@
 using System.Windows.Media.Imaging;
 using Windows.Storage.Streams;
 
-namespace WinDock;
+namespace Tara;
 
 internal static class MediaArtwork
 {

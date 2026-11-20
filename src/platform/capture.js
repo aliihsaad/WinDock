@@ -64,14 +64,14 @@ export function createWindowsCapture({ helperPath, spawn = spawnProcess, startup
   return {
     status,
     async screenshot() {
-      if (closed) throw failure("WinDock is shutting down.");
+      if (closed) throw failure("Tara is shutting down.");
       if (!pendingScreenshot) {
         pendingScreenshot = run("screenshot").done.finally(() => { pendingScreenshot = null; });
       }
       return pendingScreenshot;
     },
     async start() {
-      if (closed) throw failure("WinDock is shutting down.");
+      if (closed) throw failure("Tara is shutting down.");
       if (worker) {
         if (phase === "stopping") throw Object.assign(new Error("The previous recording is still saving."), { status: 409 });
         return worker.ready;

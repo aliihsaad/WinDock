@@ -73,7 +73,7 @@ const provider = createWindowsProvider({ helperPath: "H.exe", exec: async (file,
   if (file === "H.exe") { nativeCalls.push(args); return { stdout: JSON.stringify({ png: args[1].includes("missing") ? null : png.toString("base64") }) }; }
   return { stdout: args.at(-1).includes("WScript.Shell") ? JSON.stringify([{ name: "App", target: "C:\\Apps\\real.exe", icon: "C:\\Icons\\app.dll,-4" }, { name: "Missing icon", target: "C:\\Apps\\missing.exe" }]) : "[]" };
 } });
-const dir = await mkdtemp(join(tmpdir(), "windock-icons-"));
+const dir = await mkdtemp(join(tmpdir(), "tara-icons-"));
 const app = await createApp({ provider, configStore: createConfigStore({ path: join(dir, "config.json") }), trustLoopback: false, pin: "643291" });
 await new Promise((r) => app.server.listen(0, "127.0.0.1", r));
 const base = `http://127.0.0.1:${app.server.address().port}`;

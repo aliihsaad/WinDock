@@ -1,0 +1,30 @@
+import { createChecker } from "./lib/assert.mjs";
+import { validatePhoneCommand as v } from "../src/phone-control.js";
+import { createPhoneControl } from "../public/phone-control.js";
+const t = createChecker("phone-control");
+t.deepEqual(v({ type: "home" }), { type: "home" }, "home button");
+t.deepEqual(v({ type: "back", x1: 5, evil: "x" }), { type: "back" }, "extra fields are dropped");
+t.deepEqual(v({ type: "tap", x1: 2, y1: -1 }), { type: "tap", x1: 1, y1: 0 }, "tap is clamped to the screen");
+t.equal(v({ type: "tap", x1: "a", y1: 0 }), null, "tap needs numbers");
+t.deepEqual(v({ type: "swipe", x1: .5, y1: .8, x2: .5, y2: .2, ms: 99999 }), { type: "swipe", x1: .5, y1: .8, x2: .5, y2: .2, ms: 1500 }, "swipe duration is capped");
+t.equal(v({ type: "swipe", x1: 0, y1: 0, x2: 0 }), null, "incomplete swipe refused");
+t.deepEqual([v({ type: "shell" }), v(null), v({})], [null, null, null], "unknown actions refused");
+
+// The phone side: a stale command never replays, a fresh one reaches the Android bridge, and the bridge is optional.
+const el = () => ({ addEventListener() {}, hidden: false, value: "", checked: false, textContent: "", open: false, showModal() { this.open = true; }, focus() {}, select() {} });
+const ids = {}; const get = (id) => ids[id] ??= el();
+globalThis.document = { addEventListener() {}, hidden: false };
+const sent = [];
+const android = { phoneControl: (j) => sent.push(JSON.parse(j)), phoneControlState: () => '{"enabled":true,"allowed":true}', setPhoneControlAllowed() {}, openAccessibilitySettings() {} };
+const pc = createPhoneControl({ api: async () => ({}), notify() {}, get, android });
+pc.onSnapshot({ id: 7, cmd: { type: "home" }, ageMs: 10 });
+t.equal(sent.length, 0, "the first snapshot never replays an old command");
+pc.onSnapshot({ id: 8, cmd: { type: "back" }, ageMs: 100 });
+pc.onSnapshot({ id: 8, cmd: { type: "back" }, ageMs: 100 });
+t.deepEqual(sent, [{ type: "back" }], "a new command runs exactly once");
+pc.onSnapshot({ id: 9, cmd: { type: "home" }, ageMs: 9000 });
+t.equal(sent.length, 1, "a command older than four seconds is ignored");
+const plain = createPhoneControl({ api: async () => ({}), notify() {}, get, android: undefined });
+plain.onSnapshot({ id: 1 }); plain.onSnapshot({ id: 2, cmd: { type: "home" }, ageMs: 1 });
+t.ok(true, "a browser without the Android bridge ignores commands");
+t.done("phone-control verification passed");

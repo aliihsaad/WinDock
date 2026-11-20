@@ -1,0 +1,14 @@
+{
+  "name": "Tara Downloads",
+  "short_name": "Tara Get",
+  "description": "Always the latest Tara for your phone and PC.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#051a40",
+  "theme_color": "#051a40",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

@@ -4,35 +4,38 @@ plugins {
 }
 
 // Signing is opt-in. Ordinary builds never open an inherited production keystore.
-def signingNames = ['WINDOCK_UPLOAD_STORE_FILE', 'WINDOCK_UPLOAD_STORE_PASSWORD',
-                    'WINDOCK_UPLOAD_KEY_ALIAS', 'WINDOCK_UPLOAD_KEY_PASSWORD']
+def signingNames = ['TARA_UPLOAD_STORE_FILE', 'TARA_UPLOAD_STORE_PASSWORD',
+                    'TARA_UPLOAD_KEY_ALIAS', 'TARA_UPLOAD_KEY_PASSWORD']
 def signingValues = signingNames.collectEntries { [(it): System.getenv(it)] }
-def uploadSigning = providers.gradleProperty('windockUploadSigning').orNull == 'true'
-def unsignedInspection = providers.gradleProperty('windockUnsigned').orNull == 'true'
+def uploadSigning = providers.gradleProperty('taraUploadSigning').orNull == 'true'
+def unsignedInspection = providers.gradleProperty('taraUnsigned').orNull == 'true'
 if (uploadSigning && unsignedInspection) throw new GradleException('Unsigned inspection cannot enable upload signing.')
 def hasUploadKey = uploadSigning && signingValues.values().every { it }
 
 android {
-    namespace 'com.windock.app'
+    namespace 'com.tara.app'
     compileSdk 36
     buildToolsVersion '36.1.0'
 
     defaultConfig {
-        applicationId 'com.windock.app'
+        applicationId 'com.tara.app'
         minSdk 24
         targetSdk 36
-        versionCode 12
-        versionName '0.3.2'
+        // CI passes -PtaraVersionCode/-PtaraVersionName so every build is newer than the last.
+        versionCode((project.findProperty('taraVersionCode') ?: '12') as Integer)
+        versionName((project.findProperty('taraVersionName') ?: '0.3.2') as String)
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+        // Offline speech ships native code for real phones only; this keeps the APK from growing for emulators.
+        ndk { abiFilters 'arm64-v8a', 'armeabi-v7a' }
     }
 
     signingConfigs {
         if (hasUploadKey) {
             release {
-                storeFile file(signingValues.WINDOCK_UPLOAD_STORE_FILE)
-                storePassword signingValues.WINDOCK_UPLOAD_STORE_PASSWORD
-                keyAlias signingValues.WINDOCK_UPLOAD_KEY_ALIAS
-                keyPassword signingValues.WINDOCK_UPLOAD_KEY_PASSWORD
+                storeFile file(signingValues.TARA_UPLOAD_STORE_FILE)
+                storePassword signingValues.TARA_UPLOAD_STORE_PASSWORD
+                keyAlias signingValues.TARA_UPLOAD_KEY_ALIAS
+                keyPassword signingValues.TARA_UPLOAD_KEY_PASSWORD
             }
         }
     }
@@ -61,13 +64,13 @@ android {
 // Unsigned bundles may be inspected locally/CI; signed publication candidates fail closed.
 tasks.register('verifyUploadSigning') {
     doLast {
-        if (!hasUploadKey) throw new GradleException('Upload signing requires explicit -PwindockUploadSigning=true and all WINDOCK_UPLOAD_* credentials. See docs/PLAY_SIGNING.md.')
-        if (!file(signingValues.WINDOCK_UPLOAD_STORE_FILE).isFile()) throw new GradleException('Upload keystore does not exist.')
-        if (signingValues.WINDOCK_UPLOAD_KEY_ALIAS == 'androiddebugkey') throw new GradleException('A debug key cannot be used for publication.')
-        def expected = (System.getenv('WINDOCK_UPLOAD_CERT_SHA256') ?: '').replaceAll('[:\\s]', '').toUpperCase(Locale.ROOT)
-        if (!(expected ==~ /[0-9A-F]{64}/)) throw new GradleException('Set the owner-approved public WINDOCK_UPLOAD_CERT_SHA256 fingerprint.')
-        def store = java.security.KeyStore.getInstance(file(signingValues.WINDOCK_UPLOAD_STORE_FILE), signingValues.WINDOCK_UPLOAD_STORE_PASSWORD.toCharArray())
-        def cert = store.getCertificate(signingValues.WINDOCK_UPLOAD_KEY_ALIAS)
+        if (!hasUploadKey) throw new GradleException('Upload signing requires explicit -PtaraUploadSigning=true and all TARA_UPLOAD_* credentials. See docs/PLAY_SIGNING.md.')
+        if (!file(signingValues.TARA_UPLOAD_STORE_FILE).isFile()) throw new GradleException('Upload keystore does not exist.')
+        if (signingValues.TARA_UPLOAD_KEY_ALIAS == 'androiddebugkey') throw new GradleException('A debug key cannot be used for publication.')
+        def expected = (System.getenv('TARA_UPLOAD_CERT_SHA256') ?: '').replaceAll('[:\\s]', '').toUpperCase(Locale.ROOT)
+        if (!(expected ==~ /[0-9A-F]{64}/)) throw new GradleException('Set the owner-approved public TARA_UPLOAD_CERT_SHA256 fingerprint.')
+        def store = java.security.KeyStore.getInstance(file(signingValues.TARA_UPLOAD_STORE_FILE), signingValues.TARA_UPLOAD_STORE_PASSWORD.toCharArray())
+        def cert = store.getCertificate(signingValues.TARA_UPLOAD_KEY_ALIAS)
         if (!(cert instanceof java.security.cert.X509Certificate) || cert.subjectX500Principal.name.contains('CN=Android Debug'))
             throw new GradleException('A non-debug X.509 upload certificate is required.')
         cert.checkValidity()
@@ -85,6 +88,8 @@ dependencies {
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
     implementation 'com.journeyapps:zxing-android-embedded:4.3.0'
     implementation 'androidx.core:core-ktx:1.13.1'
+    implementation 'net.java.dev.jna:jna:5.13.0@aar'
+    implementation 'com.alphacephei:vosk-android:0.3.47'
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test:runner:1.6.2'
     androidTestImplementation 'androidx.test:core:1.6.1'

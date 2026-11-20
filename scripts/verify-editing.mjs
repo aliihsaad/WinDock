@@ -209,7 +209,7 @@ const provider = createWindowsProvider({
     return { stdout: "{}" };
   },
 });
-const dir = await mkdtemp(join(tmpdir(), "windock-edit-"));
+const dir = await mkdtemp(join(tmpdir(), "tara-edit-"));
 const configStore = createConfigStore({ path: join(dir, "config.json") });
 const app = await createApp({ provider, configStore, pin: "111111", trustLoopback: true });
 await new Promise((r) => app.server.listen(0, "127.0.0.1", r));

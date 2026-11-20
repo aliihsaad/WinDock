@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#051a40">
+<title>Tara Downloads</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <header>
+    <img src="icon-192.png" alt="" width="56" height="56">
+    <div><h1>Tara</h1><p id="status" role="status">Checking for the latest version…</p></div>
+  </header>
+
+  <section id="latest" class="card" hidden aria-labelledby="latest-title">
+    <p class="eyebrow">LATEST</p>
+    <h2 id="latest-title"></h2>
+    <p id="latest-meta" class="muted"></p>
+    <div class="buttons">
+      <a id="get-apk" class="button primary" hidden>Download for phone (APK)</a>
+      <a id="get-exe" class="button" hidden>Download for PC (installer)</a>
+    </div>
+    <p class="muted small">On the phone, open the downloaded file to update. Android asks you to confirm. If it says the app conflicts with the old one, uninstall the old Tara once, then install.</p>
+  </section>
+
+  <section id="older" class="card" hidden aria-labelledby="older-title">
+    <h2 id="older-title" class="small-title">Earlier releases</h2>
+    <ul id="older-list"></ul>
+  </section>
+
+  <p class="foot"><button id="refresh" class="link" type="button">Check again</button> · <a href="https://github.com/yeshwanthkumardomala/tara/releases">All releases on GitHub</a></p>
+</main>
+<script type="module" src="app.js"></script>
+</body>
+</html>

@@ -11,13 +11,13 @@ import { createServer } from "node:net";
 
 assert.equal(process.platform, "win32", "run this hardware check on Windows");
 const root = resolve(import.meta.dirname, "..");
-const packageDir = join(root, "artifacts", "WinDock-win-x64");
-const helperPath = join(packageDir, "WinDockHelper.exe");
-const fixturePath = join(root, "artifacts", "probe", "WinDockProbe.exe");
+const packageDir = join(root, "artifacts", "Tara-win-x64");
+const helperPath = join(packageDir, "TaraHelper.exe");
+const fixturePath = join(root, "artifacts", "probe", "TaraProbe.exe");
 const focusDebugControl = process.argv.includes("--focus-debug-control");
 const exec = createExec();
 const provider = createWindowsProvider({ exec, helperPath });
-const temp = await mkdtemp(join(tmpdir(), "windock-native-"));
+const temp = await mkdtemp(join(tmpdir(), "tara-native-"));
 const signal = join(temp, "probe.json");
 async function testPort() {
   const listener = createServer();
@@ -75,10 +75,10 @@ try {
   await provider.nowPlaying();
   console.log("PASS now-playing command (an active media session is optional)");
 
-  const result = await promisify(execFile)(join(packageDir, "WinDockTray.exe"), ["--smoke-test"], {
+  const result = await promisify(execFile)(join(packageDir, "TaraTray.exe"), ["--smoke-test"], {
     cwd: temp, windowsHide: true, timeout: 30000,
     // Let the OS choose test ports; a fixed port can collide with another local fixture.
-    env: { ...process.env, PORT: await testPort(), WINDOCK_MANAGED_TLS_PORT: await testPort(), WINDOCK_CONFIG: join(temp, "config.json") },
+    env: { ...process.env, PORT: await testPort(), TARA_MANAGED_TLS_PORT: await testPort(), TARA_CONFIG: join(temp, "config.json") },
   });
   assert.match(result.stdout, /TRAY OK/);
   console.log("PASS packaged tray starts bundled Node from a different working directory and stops its server");

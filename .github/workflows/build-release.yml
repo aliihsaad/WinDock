@@ -1,4 +1,4 @@
-name: Build WinDock downloads
+name: Build Tara downloads
 
 on:
   workflow_dispatch:
@@ -47,13 +47,13 @@ jobs:
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npm test
       - name: Verify native touchpad protocol and transparent signature rendering
-        run: dotnet run --project native/input-tests/WinDockInputTests.csproj -c Release
+        run: dotnet run --project native/input-tests/TaraInputTests.csproj -c Release
       - name: Verify update checks and startup notification policy
-        run: dotnet run --project native/update-tests/WinDockUpdateTests.csproj -c Release
+        run: dotnet run --project native/update-tests/TaraUpdateTests.csproj -c Release
       - name: Verify saved server port policy
-        run: dotnet run --project native/port-tests/WinDockPortTests.csproj -c Release
+        run: dotnet run --project native/port-tests/TaraPortTests.csproj -c Release
       - name: Verify media artwork decoding and size limits
-        run: dotnet run --project native/media-tests/WinDockMediaTests.csproj -c Release
+        run: dotnet run --project native/media-tests/TaraMediaTests.csproj -c Release
       - name: Build bundled Windows app
         shell: pwsh
         run: ./scripts/build-windows.ps1
@@ -69,7 +69,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: windows-installer
-          path: artifacts/installer/WinDockSetup.exe
+          path: artifacts/installer/TaraSetup.exe
           if-no-files-found: error
 
   android:
@@ -90,11 +90,11 @@ jobs:
         run: |
           "$ANDROID_HOME/build-tools/36.1.0/apksigner" verify --verbose android/app/build/outputs/apk/debug/app-debug.apk
           mkdir -p artifacts
-          cp android/app/build/outputs/apk/debug/app-debug.apk artifacts/WinDock-android-debug.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk artifacts/Tara-android-debug.apk
       - uses: actions/upload-artifact@v4
         with:
           name: android-preview
-          path: artifacts/WinDock-android-debug.apk
+          path: artifacts/Tara-android-debug.apk
           if-no-files-found: error
 
   draft-release:
@@ -135,5 +135,5 @@ jobs:
           [IO.File]::WriteAllText($notes, $combined, [Text.UTF8Encoding]::new($false))
           $releaseKind = @()
           if ($env:RELEASE_TAG.Contains('-')) { $releaseKind += '--prerelease' }
-          gh release create $env:RELEASE_TAG artifacts/website-downloads/WinDockSetup.exe artifacts/website-downloads/WinDock-android-debug.apk artifacts/website-downloads/SHA256SUMS.txt artifacts/website-downloads/downloads.json artifacts/linux/WinDock-linux-amd64.deb artifacts/linux/WinDock-linux-x64.pkg.tar.zst artifacts/linux/SHA256SUMS-linux.txt artifacts/linux/build-info.json --repo $env:RELEASE_REPO --target $env:RELEASE_SHA --draft @releaseKind --title "WinDock $env:RELEASE_TAG" --notes-file $notes
+          gh release create $env:RELEASE_TAG artifacts/website-downloads/TaraSetup.exe artifacts/website-downloads/Tara-android-debug.apk artifacts/website-downloads/SHA256SUMS.txt artifacts/website-downloads/downloads.json artifacts/linux/Tara-linux-amd64.deb artifacts/linux/Tara-linux-x64.pkg.tar.zst artifacts/linux/SHA256SUMS-linux.txt artifacts/linux/build-info.json --repo $env:RELEASE_REPO --target $env:RELEASE_SHA --draft @releaseKind --title "Tara $env:RELEASE_TAG" --notes-file $notes
           if ($LASTEXITCODE -ne 0) { throw 'Draft release creation failed' }

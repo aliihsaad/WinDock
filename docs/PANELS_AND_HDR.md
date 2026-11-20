@@ -29,7 +29,7 @@ startup preference are preserved. The current phone APK can remain installed.
 ## Implementation and compatibility
 
 Shared UI: `public/app.js`, `dock.js`, `index.html`, `icons.js`, `style.css`;
-browser shell cache bumped to `windock-v26-quick-controls` in `public/sw.js`.
+browser shell cache bumped to `tara-v26-quick-controls` in `public/sw.js`.
 Android loads this UI from the companion: **no new APK is required** for this change.
 
 `native/win/DisplayColor.cs` reads active display paths with Windows DisplayConfig.
@@ -82,7 +82,7 @@ API references:
   the package. The installed companion was left running during build validation;
   the owner subsequently approved the local update recorded above.
 - Local installer compilation succeeded; output copied to
-  `artifacts/WinDock-panels-local-test-Setup.exe`. Subsequent installation over the
+  `artifacts/Tara-panels-local-test-Setup.exe`. Subsequent installation over the
   live app succeeded without a Windows restart. Logs:
   `artifacts/panels-installer-build.txt`, `artifacts/panels-local-install.log`.
 - Post-install checks: 18 installed runtime files match the built package;
@@ -92,7 +92,7 @@ API references:
   at validation. Results: `artifacts/panels-install-result.json` and
   `artifacts/panels-install-live-check.json`.
 - Private rollback backup:
-  `C:\Users\Mini\AppData\Local\WinDockBackups\before-panels-20261101-231307`.
+  `C:\Users\Mini\AppData\Local\TaraBackups\before-panels-20261101-231307`.
   Contains the old installed app and exact live state, restricted to the current
   user and SYSTEM. A redirected tool view showed an older 15-tile dock/different
   CA; this was caught before stopping the host. Backup/install were executed via
@@ -118,10 +118,10 @@ testing, not an additional automated run. No phone model was specified in this
 confirmation; it does not establish Windows 10, mixed-monitor, or Linux coverage.
 
 On this PC, the update is already installed: close and reopen the Android app.
-For another local installation, use `artifacts/WinDock-win-x64` or the prepared local
-installer `artifacts/WinDock-panels-local-test-Setup.exe`. Quit the existing tray
+For another local installation, use `artifacts/Tara-win-x64` or the prepared local
+installer `artifacts/Tara-panels-local-test-Setup.exe`. Quit the existing tray
 app before updating it; retain its existing app data and paired identity. Reopen
-WinDock on the phone after the companion restarts. Keep the existing APK.
+Tara on the phone after the companion restarts. Keep the existing APK.
 
 1. Check both swipe directions, Edit dock/Done, Updates, and Appearance. Native
    Android must not show Fullscreen; browser Appearance must still offer it.
@@ -151,7 +151,7 @@ signing/listing/device-test gates remain separate from these passing local check
 
 ### Reporter follow-up reviewed on 3 November 2026
 
-Read [the reporter's reply](https://github.com/aliihsaad/WinDock/issues/52#issuecomment-6569837098) using GitHub CLI. They report desktop `0.2.6-preview.1`, an Omen 16 with Ryzen 7840HS/RTX 4050, and only the built-in screen. Crucially, they clarify that **WinDock changes the laptop brightness successfully, but the phone displays the error afterward**. Their settings screenshot shows HDR games/apps unsupported; HDR video streaming is a separate setting and does not establish the external-monitor HDR problem seen on the owner's PC.
+Read [the reporter's reply](https://github.com/aliihsaad/WinDock/issues/52#issuecomment-6569837098) using GitHub CLI. They report desktop `0.2.6-preview.1`, an Omen 16 with Ryzen 7840HS/RTX 4050, and only the built-in screen. Crucially, they clarify that **Tara changes the laptop brightness successfully, but the phone displays the error afterward**. Their settings screenshot shows HDR games/apps unsupported; HDR video streaming is a separate setting and does not establish the external-monitor HDR problem seen on the owner's PC.
 
 The supplied helper diagnostic lists one WMI-controlled display at 50 percent and exit code 0. That command was `brightness` (read-only), not `control brightness-set`, so it does not establish the setter's return code or elapsed time. The report now concerns erroneous failure feedback after an observed brightness change, rather than absent WMI support.
 

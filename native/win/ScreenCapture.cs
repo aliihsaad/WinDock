@@ -9,7 +9,7 @@ using Windows.Media.MediaProperties;
 using Windows.Media.Transcoding;
 using Windows.Storage;
 
-namespace WinDock;
+namespace Tara;
 
 // PNG screenshots and silent H.264 MP4 recordings; no extra encoder install.
 // The recording worker owns its file. EOF on stdin (host exit) ends the stream
@@ -34,9 +34,9 @@ internal static class ScreenCapture
     {
         var root = Environment.GetFolderPath(video ? Environment.SpecialFolder.MyVideos : Environment.SpecialFolder.MyPictures);
         if (string.IsNullOrEmpty(root)) throw new IOException("Your capture folder is unavailable.");
-        var folder = Path.Combine(root, "WinDock");
+        var folder = Path.Combine(root, "Tara");
         Directory.CreateDirectory(folder);
-        return Path.Combine(folder, $"WinDock-{DateTime.Now:yyyy-MM-dd-HHmmss-fff}-{Guid.NewGuid().ToString("N")[..6]}.{(video ? "mp4" : "png")}");
+        return Path.Combine(folder, $"Tara-{DateTime.Now:yyyy-MM-dd-HHmmss-fff}-{Guid.NewGuid().ToString("N")[..6]}.{(video ? "mp4" : "png")}");
     }
     private static void CopyScreen(Graphics graphics, Rectangle bounds) =>
         graphics.CopyFromScreen(bounds.Location, Point.Empty, bounds.Size, CopyPixelOperation.SourceCopy);
@@ -74,8 +74,8 @@ internal static class ScreenCapture
     }
     private static async Task<int> Record()
     {
-        using var single = new Mutex(true, @"Local\WinDock.ScreenRecording", out var first);
-        if (!first) throw new InvalidOperationException("A WinDock recording is already running.");
+        using var single = new Mutex(true, @"Local\Tara.ScreenRecording", out var first);
+        if (!first) throw new InvalidOperationException("A Tara recording is already running.");
         var bounds = MainScreen();
         // Preserve aspect ratio and fit inside 1920x1080; H.264 needs even sizes.
         var scale = Math.Min(1, Math.Min(1920d / bounds.Width, 1080d / bounds.Height));

@@ -10,7 +10,7 @@ const read = (f) => readFileSync(join(PUBLIC, f), "utf8");
 
 // ---- manifest ----
 const manifest = JSON.parse(read("manifest.webmanifest"));
-t.equal(manifest.name, "WinDock", "manifest declares the app name");
+t.equal(manifest.name, "Tara", "manifest declares the app name");
 t.ok(typeof manifest.short_name === "string" && manifest.short_name.length <= 12, "short_name is set and short");
 t.equal(manifest.start_url, "/", "manifest declares a start_url");
 t.equal(manifest.display, "standalone", "manifest requests standalone display");

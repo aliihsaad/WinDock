@@ -1,4 +1,4 @@
-# WinDock Android companion
+# Tara Android companion
 
 The Android app displays the PC's existing dock in a fullscreen landscape
 WebView. Keep the Windows tray running; this app needs a connection to the PC.
@@ -12,7 +12,7 @@ override them. Java 21, Gradle 8.11.1 and SDK 36 are used for Play preparation.
 The wrapper can also be run directly with `bash android/gradlew -p android
 assembleDebug` on Linux with those prerequisites.
 
-Output: `artifacts/WinDock-android-debug.apk`. It supports Android 7/API 24 and
+Output: `artifacts/Tara-android-debug.apk`. It supports Android 7/API 24 and
 newer, targets API 36, and uses a local debug signing key. Updating requires the
 same signing key. Production signing and Play Store preparation are separate.
 The dock also needs an updated WebView provider. Install the latest compatible
@@ -32,7 +32,7 @@ Transfer the APK to the phone, open it and allow installation from the chosen
 browser/file manager if Android asks. Alternatively, enable USB debugging,
 approve the PC on the phone, then use the SDK's `adb install -r` with the APK.
 
-Open WinDock, use the same LAN as the PC, and enter the PIN from the PC tray.
+Open Tara, use the same LAN as the PC, and enter the PIN from the PC tray.
 If discovery misses the PC, enter its full tray URL or IPv4 address/port and tap
 Connect. A bare IP defaults to port 8620. Back closes an open sheet; a second
 Back returns to the connection screen. Android's first fullscreen prompt needs
@@ -58,9 +58,9 @@ Development Android builds accept numeric addresses in Tailscale's
 `100.64.0.0/10` range. The published `0.2.4-preview.1` APK still rejects these
 addresses; this fix needs a new Android build.
 
-1. Connect the phone and PC to your Tailscale network and keep WinDock running
+1. Connect the phone and PC to your Tailscale network and keep Tara running
    on the PC. Tailscale access rules and the PC firewall must allow the phone
-   to reach WinDock's TCP port (8620 by default).
+   to reach Tara's TCP port (8620 by default).
 2. On the Android connection screen, use **Connect by Wi-Fi** if USB mode is
    selected. Enter the PC's Tailscale IPv4 address, such as `100.101.102.103`
    or `100.101.102.103:8620`, then tap **Use this address**.
@@ -70,9 +70,9 @@ addresses; this fix needs a new Android build.
 Automatic discovery remains LAN broadcast discovery; it does not find peers
 across Tailscale. Use the numeric address, not a MagicDNS hostname or IPv6
 address. Tailscale provides the encrypted VPN connection; entering a CGNAT
-address alone does not establish a VPN or make a host trusted. WinDock's
+address alone does not establish a VPN or make a host trusted. Tara's
 health check, PIN pairing and same-origin restrictions still apply. Do not
-expose WinDock's port directly to the public internet.
+expose Tara's port directly to the public internet.
 
 See [Tailscale's address documentation](https://tailscale.com/docs/concepts/tailscale-ip-addresses)
 for the shared address range.
@@ -85,18 +85,18 @@ options are not required. A charging-only cable will not work.
 
 1. Connect the phone to the PC with a data-capable USB cable.
 2. Enable **USB tethering** in Android Settings (often under Hotspot & tethering).
-3. Keep WinDock running on Windows. In the Android connection screen, select
+3. Keep Tara running on Windows. In the Android connection screen, select
    **Connect by USB → Find USB PC**. Back from the dock returns to that screen.
 4. Pair using the PIN in the Windows tray. If discovery is blocked, enter the
    PC's IPv4 address on its USB network adapter, rather than its Wi-Fi address.
 
-Allow WinDock through Windows Firewall on the trusted USB connection when
+Allow Tara through Windows Firewall on the trusted USB connection when
 prompted. Tethering may also share mobile data with Windows; turn mobile data
 off if that is unwanted. Some phones or carrier configurations restrict USB
 tethering. The USB choice is remembered and only searches wired interfaces;
 it does not silently fall back to Wi-Fi during an explicit USB attempt.
 **Connect by Wi-Fi** returns to wireless, using its own remembered PC address.
-On startup, if the wired link is gone, WinDock returns to Wi-Fi automatically.
+On startup, if the wired link is gone, Tara returns to Wi-Fi automatically.
 The connection screen always shows which mode is selected. If you unplug while
 the dock is open, return to this screen and choose Wi-Fi, or reopen the app.
 
@@ -147,7 +147,7 @@ cd android
 .\gradlew.bat assembleDebug assembleDebugAndroidTest
 adb install -r app\build\outputs\apk\debug\app-debug.apk
 adb install -r app\build\outputs\apk\androidTest\debug\app-debug-androidTest.apk
-adb shell am instrument -w -e class com.windock.app.DockSmokeTest com.windock.app.test/androidx.test.runner.AndroidJUnitRunner
+adb shell am instrument -w -e class com.tara.app.DockSmokeTest com.tara.app.test/androidx.test.runner.AndroidJUnitRunner
 ```
 
 Expected: `OK (1 test)`. The test targets the emulator's host alias
@@ -172,7 +172,7 @@ With the smoke host above running, install the app and instrumentation APKs,
 then run on the emulator:
 
 ```powershell
-adb -s emulator-5554 shell am instrument -w -e class com.windock.app.PhoneOptionsTest com.windock.app.test/androidx.test.runner.AndroidJUnitRunner
+adb -s emulator-5554 shell am instrument -w -e class com.tara.app.PhoneOptionsTest com.tara.app.test/androidx.test.runner.AndroidJUnitRunner
 ```
 
 The two tests cover native settings through the WebView bridge, saved preferences
@@ -199,7 +199,7 @@ test so its background polling count is isolated. After building/installing the
 debug and instrumentation APKs as above, run:
 
 ```powershell
-adb shell am instrument -w -e class com.windock.app.NowPlayingSmokeTest com.windock.app.test/androidx.test.runner.AndroidJUnitRunner
+adb shell am instrument -w -e class com.tara.app.NowPlayingSmokeTest com.tara.app.test/androidx.test.runner.AndroidJUnitRunner
 ```
 
 Expected: `OK (1 test)`. The test changes the host's simulated track, artist,
@@ -220,7 +220,7 @@ Android's network security XML matches domains, not private IP subnets. The
 transport allows HTTP, while `EndpointPolicy` limits selected hosts to private,
 loopback or shared CGNAT IPv4 addresses (plus localhost). Health checks reject
 redirects,
-limit response size/time and require WinDock's identity. The WebView permits
+limit response size/time and require Tara's identity. The WebView permits
 only the selected origin, disables file/content access, and never overrides
 TLS certificate errors. PIN/session handling stays in the shared web UI.
 This is LAN HTTP, not encrypted transport. Android HTTP does not enable the
@@ -244,7 +244,7 @@ On an isolated emulator, run the native regression after installing the debug
 and instrumentation APKs:
 
 ```powershell
-adb -s emulator-5556 shell am instrument -w -e class com.windock.app.UpdatesTest com.windock.app.test/androidx.test.runner.AndroidJUnitRunner
+adb -s emulator-5556 shell am instrument -w -e class com.tara.app.UpdatesTest com.tara.app.test/androidx.test.runner.AndroidJUnitRunner
 ```
 
 Expected: OK (4 tests). Start scripts/android-smoke-host.mjs for the connected
@@ -255,7 +255,7 @@ cases use deterministic metadata and a simulated offline request.
 The current Play preparation build adds **Scan computer code** and **Enter pairing
 text**. In the updated desktop companion, choose **Pair a phone securely**; Linux
 prints the local pairing-page link. The phone trusts only that computer inside
-WinDock. Normal restarts, updates and IP changes retain the pairing. Existing
+Tara. Normal restarts, updates and IP changes retain the pairing. Existing
 manual HTTPS and preview HTTP connections remain available under their prior
 build policies. See [secure connection details](../docs/SECURE_CONNECTIONS.md).
 
@@ -266,8 +266,8 @@ No background service or new wake lock is introduced.
 ## Files & Media (preparation branch)
 
 Open Files & Media in the controls curtain or connection screen, or select files
-in another application and use Share → WinDock. Review the selection and explicitly
-send to the securely paired PC. Keep WinDock open; backgrounding stops the transfer.
+in another application and use Share → Tara. Review the selection and explicitly
+send to the securely paired PC. Keep Tara open; backgrounding stops the transfer.
 Retry checks the existing receipt before sending again. The existing keyboard's
 microphone/voice typing remains supported; dedicated Voice to PC was removed.
 

@@ -2,7 +2,7 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Text.Json;
 
-namespace WinDock;
+namespace Tara;
 
 internal static class Signature
 {
@@ -62,7 +62,7 @@ internal static class Signature
         using var image = Render(document.RootElement);
         var folder = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
         if (string.IsNullOrEmpty(folder)) folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Pictures");
-        folder = Path.Combine(folder, "WinDock", "Signatures");
+        folder = Path.Combine(folder, "Tara", "Signatures");
         Directory.CreateDirectory(folder);
         var path = Path.Combine(folder, $"Signature-{DateTime.Now:yyyy-MM-dd-HHmmss}-{Guid.NewGuid():N}.png");
         using (var file = new FileStream(path, FileMode.CreateNew)) image.Save(file, ImageFormat.Png);

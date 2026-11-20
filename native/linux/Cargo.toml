@@ -1,9 +1,9 @@
 [package]
-name = "windock-input"
+name = "tara-input"
 version = "0.2.4"
 edition = "2024"
 license = "MIT"
-description = "WinDock Linux touchpad, phone keyboard and signature helper"
+description = "Tara Linux touchpad, phone keyboard and signature helper"
 publish = false
 
 [dependencies]

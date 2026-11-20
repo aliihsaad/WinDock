@@ -1,5 +1,5 @@
 #!/bin/sh
-# Package scripts run as root, while each user's WinDock runs in that user's
+# Package scripts run as root, while each user's Tara runs in that user's
 # own systemd manager. Restart (after an upgrade) or stop (before removal)
 # every running one. A host in a terminal window is left alone.
 set -u
@@ -21,12 +21,12 @@ for dir in /run/user/*; do
     if [ "$action" = restart ]; then
         # Load the new unit file before restarting with it.
         as_user daemon-reload || true
-        as_user is-active --quiet windock.service || continue
-        as_user try-restart windock.service \
-            && echo "Restarted WinDock for $user. Open WinDock to see its new PIN."
+        as_user is-active --quiet tara.service || continue
+        as_user try-restart tara.service \
+            && echo "Restarted Tara for $user. Open Tara to see its new PIN."
     else
-        as_user is-active --quiet windock.service || continue
-        as_user stop windock.service && echo "Stopped WinDock for $user."
+        as_user is-active --quiet tara.service || continue
+        as_user stop tara.service && echo "Stopped Tara for $user."
     fi
 done
 exit 0

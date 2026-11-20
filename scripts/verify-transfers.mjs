@@ -20,7 +20,7 @@ const rejects=async(fn,pattern)=>{await assert.rejects(fn,pattern);checks++;};
 const id=()=>randomBytes(16).toString('hex'), owner='a'.repeat(64), other='b'.repeat(64);
 const metadata=(name,size=null)=>({id:id(),files:[{id:id(),name,size,mime:'application/octet-stream'}]});
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
-const directory=await mkdtemp(join(tmpdir(),'windock-files-test-'));
+const directory=await mkdtemp(join(tmpdir(),'tara-files-test-'));
 const receivers=[];let app;
 async function receiver(options={}) { const r=await createTransfers({destination:join(directory,id()),...options});receivers.push(r);return r; }
 async function deliver(r,batch,bytes) { await r.begin(owner,batch);const uploaded=await r.upload(owner,batch.id,batch.files[0].id,Readable.from([bytes]));equal(uploaded.sha256,hash(bytes));return r.complete(owner,batch.id,batch.files[0].id,{bytes:bytes.length,sha256:hash(bytes)}); }
@@ -57,7 +57,7 @@ try {
   const completed=await deliver(r,batch,bytes);equal(completed.files[0].status,'completed');
   equal(await readFile(join(r.local().destination,completed.files[0].savedName)),bytes);
   equal(await r.complete(owner,batch.id,batch.files[0].id,{bytes:bytes.length,sha256:hash(bytes)}),completed);
-  equal((await readdir(r.local().destination)).filter(n=>n!=='.windock-incoming').length,1);
+  equal((await readdir(r.local().destination)).filter(n=>n!=='.tara-incoming').length,1);
   await rejects(()=>r.begin(other,batch),/identifier/);
   assert.throws(()=>r.status(other,batch.id),/not found/);checks++;
   await rejects(()=>r.upload(owner,batch.id,batch.files[0].id,Readable.from([bytes])),/already been received/);
@@ -123,7 +123,7 @@ try {
   await large.complete(owner,largeBatch.id,largeBatch.files[0].id,{bytes:largeBytes,sha256:uploaded.sha256});equal(large.status(owner,largeBatch.id).completed,true);
   console.log(`64 MiB streamed through receiver and disk verification in ${((performance.now()-started)/1000).toFixed(2)}s (local synthetic test, not phone throughput).`);
   const openssl=process.platform==='win32'&&existsSync('C:/Program Files/Git/usr/bin/openssl.exe')?'C:/Program Files/Git/usr/bin/openssl.exe':'openssl';
-  const generated=spawnSync(openssl,['req','-x509','-newkey','rsa:2048','-nodes','-days','1','-subj','/CN=WinDock transfer test only','-addext','subjectAltName=IP:127.0.0.1','-keyout',join(directory,'test.key'),'-out',join(directory,'test.crt')],{encoding:'utf8'});equal(generated.status,0);
+  const generated=spawnSync(openssl,['req','-x509','-newkey','rsa:2048','-nodes','-days','1','-subj','/CN=Tara transfer test only','-addext','subjectAltName=IP:127.0.0.1','-keyout',join(directory,'test.key'),'-out',join(directory,'test.crt')],{encoding:'utf8'});equal(generated.status,0);
   const cert=await readFile(join(directory,'test.crt')), key=await readFile(join(directory,'test.key'));
   const network=await receiver();
   app=await createApp({provider:{id:'test',displayName:'Test',listRunningApps:async()=>[]},configStore:{load:async()=>({tiles:[]})},pin:'123456',securePin:'567890',tls:{cert,key},transfers:network,trustLoopback:false,updates:{state:()=>({})}});
@@ -142,7 +142,7 @@ try {
   const wire=metadata('../network.bin',bytes.length);equal((await call(secure,'/api/transfers',{cookie,method:'POST',body:wire})).status,200);
   const wireUpload=await call(secure,`/api/transfers/${wire.id}/${wire.files[0].id}/content`,{cookie,method:'PUT',body:bytes});equal(wireUpload.status,200);equal(wireUpload.data.sha256,hash(bytes));
   equal((await call(secure,`/api/transfers/${wire.id}/${wire.files[0].id}/complete`,{cookie,method:'POST',body:{bytes:bytes.length,sha256:hash(bytes)}})).data.completed,true);
-  equal((await call(plain,'/api/transfers/local',{headers:{'x-windock-files':'local'}})).status,200);
+  equal((await call(plain,'/api/transfers/local',{headers:{'x-tara-files':'local'}})).status,200);
   await rejects(()=>call(secure,'/api/transfers/info',{cookie,ca:[]}),/certificate|self.signed/);
   console.log(`${checks} assertions\ntransfers verification passed`);
 } finally {

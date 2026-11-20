@@ -82,7 +82,7 @@ const provider = createWindowsProvider({
     return { stdout: "{}" };
   },
 });
-const dir = await mkdtemp(join(tmpdir(), "windock-offline-"));
+const dir = await mkdtemp(join(tmpdir(), "tara-offline-"));
 const app = await createApp({
   provider,
   configStore: createConfigStore({ path: join(dir, "config.json") }),

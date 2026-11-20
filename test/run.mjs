@@ -34,7 +34,6 @@ const EXPECTED = {
   "verify-appearance.mjs": "appearance verification passed",
   "verify-updates.mjs": "updates verification passed",
   "verify-now-playing.mjs": "now-playing verification passed",
-  "verify-download-stats.mjs": "download-stats verification passed",
   "verify-editing.mjs": "editing verification passed",
   "verify-offline.mjs": "offline verification passed",
   "verify-android.mjs": "android verification passed",
@@ -56,6 +55,13 @@ const EXPECTED = {
   "verify-network-setup.mjs": "network-setup verification passed",
   "verify-linux-input.mjs": "linux-input verification passed",
   "verify-linux-downloads.mjs": "linux-downloads verification passed",
+  "verify-upgrades.mjs": "upgrades verification passed",
+  "verify-bench.mjs": "bench verification passed",
+  "verify-assistant.mjs": "assistant verification passed",
+  "verify-voice-ui.mjs": "voice-ui verification passed",
+  "verify-share.mjs": "share verification passed",
+  "verify-phone-control.mjs": "phone-control verification passed",
+  "verify-site.mjs": "site verification passed",
 };
 
 // Guard against an oracle being added to scripts/ but never wired in here.

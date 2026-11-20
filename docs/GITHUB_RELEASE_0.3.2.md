@@ -46,10 +46,10 @@ certificate, not the disposable CI debug APK.
 
 | Asset | Bytes | SHA-256 |
 | --- | ---: | --- |
-| WinDockSetup.exe | 124177673 | `97c0122792c916e4612121a6437e1c3ccbd021de03bd8b5e57c160a1187815fe` |
-| WinDock-android-debug.apk | 3110218 | `9cde96449b12171ec2f66d1b14fdcb8114f85d317f439a7e4ab97a35951aaf61` |
-| WinDock-linux-amd64.deb | 31891084 | `02ca601a68b212de113349c72d8ded396a3b3bcbac22bdf7b6f169e76a7a5d04` |
-| WinDock-linux-x64.pkg.tar.zst | 44855182 | `fc6d1c8eaefd720fb79341a2d85e380940f2b72ae41e6017c3ba770810c5d66b` |
+| TaraSetup.exe | 124177673 | `97c0122792c916e4612121a6437e1c3ccbd021de03bd8b5e57c160a1187815fe` |
+| Tara-android-debug.apk | 3110218 | `9cde96449b12171ec2f66d1b14fdcb8114f85d317f439a7e4ab97a35951aaf61` |
+| Tara-linux-amd64.deb | 31891084 | `02ca601a68b212de113349c72d8ded396a3b3bcbac22bdf7b6f169e76a7a5d04` |
+| Tara-linux-x64.pkg.tar.zst | 44855182 | `fc6d1c8eaefd720fb79341a2d85e380940f2b72ae41e6017c3ba770810c5d66b` |
 
 ## Publication
 

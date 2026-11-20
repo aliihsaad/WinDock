@@ -1,5 +1,5 @@
 /**
- * Refraction for WinDock's floating glass.
+ * Refraction for Tara's floating glass.
  *
  * style.css draws the rim and reflection in every browser. This module adds the
  * part CSS cannot: bending what sits behind the glass at its curved edge. It fits

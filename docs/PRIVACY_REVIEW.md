@@ -17,7 +17,7 @@ and update checks. Runtime source references below were inspected during integra
 | Signature strokes sent on save/insert, PNG persisted and clipboard/paste on insert | `public/input-pad.js`, `src/platform/input.js`, `native/win/Signature.cs`. |
 | PC screenshot/recording, no phone MediaProjection, local files and metadata returned | `src/platform/capture.js`, `native/win/ScreenCapture.cs`, `server.js`; app manifest has no projection service. |
 | Phone-local settings/WebView storage and backup exclusions | `ServerUrl.kt`, `PhonePreferences.kt`, WebView settings; manifest and `res/xml/data_extraction_rules.xml`. |
-| PC dock configuration persisted locally | `src/config.js`; default under APPDATA or configured WINDOCK_CONFIG. |
+| PC dock configuration persisted locally | `src/config.js`; default under APPDATA or configured TARA_CONFIG. |
 | Selected folder name/path sent to paired phone and saved as a dock tile; no file-content transfer or separate folder registry | `native/win/FolderShortcut.cs`, `src/folders.js`, authenticated `server.js` picker/launch routes and existing `src/config.js`; removing the tile removes its saved path. Added October 31, 2026; Windows recent locations and phone cache have separate retention. |
 | Automatic desktop startup update check and manual checks, installed version in user-agent | `native/tray/Program.cs` 8-second startup timer and menu; `UpdateChecker.cs` HTTPS downloads.json request. This was missing from the first policy draft. |
 | Optional main-site analytics, consent storage, URL query/fragment removal | `website/analytics.js`. The standalone privacy page imports no analytics script. |
@@ -28,7 +28,7 @@ and update checks. Runtime source references below were inspected during integra
 - `public/pc-clipboard.js`, `src/platform/clipboard.js`, `native/win/ClipboardHistory.cs`,
   `/api/clipboard/history` and input `paste` messages retain on-demand text history
   (up to 20 items), local draft editing, explicit paste, and clearing panel state on
-  close/reset. Windows controls history retention; WinDock does not erase it.
+  close/reset. Windows controls history retention; Tara does not erase it.
 - `src/host-identity.js`, `KnownHosts.kt`, `ServerUrl.kt` and `AppearancePreferences.kt`
   retain random public host identity, remembered/forgotten PCs, connection times
   and per-PC appearance persistence. Forget deletes that PC's managed Android
@@ -51,7 +51,7 @@ phone-to-PC transfers; absence of a developer relay alone is insufficient.
 
 Dedicated NativeVoice/SpeechRecognizer, its bridge/UI/protocol, and RECORD_AUDIO
 permission were removed after owner testing. Keyboard voice typing remains an
-IME feature; WinDock receives committed text without accessing the microphone.
+IME feature; Tara receives committed text without accessing the microphone.
 
 Files & Media uses system Photo Picker on API33+ and ACTION_OPEN_DOCUMENT
 otherwise, including documents/general files on every supported API24+ device.
@@ -73,7 +73,7 @@ Data Safety review must consider user-selected Photos, Videos, Files and docs
 recipient retention and the user-initiated transfer exceptions. Do not assert a
 blanket no-data answer from the absence of an AliDevLab backend. Assess the actual
 Console definitions and app scope before final owner-approved declarations.
-Keyboard/provider audio processing is separate from WinDock microphone access.
+Keyboard/provider audio processing is separate from Tara microphone access.
 The two privacy-policy drafts reflect these distinctions; neither is published.
 
 References: [Photo picker](https://developer.android.com/training/data-storage/shared/photo-picker),

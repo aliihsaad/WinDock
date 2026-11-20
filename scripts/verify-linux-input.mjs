@@ -1,4 +1,4 @@
-/** Linux touchpad, phone keyboard and signatures: the windock-input bridge. */
+/** Linux touchpad, phone keyboard and signatures: the tara-input bridge. */
 import { spawnSync } from "node:child_process";
 import { EventEmitter } from "node:events";
 import { existsSync } from "node:fs";
@@ -11,7 +11,7 @@ import { createLinuxInput, INPUT_HELPER, signatureDir } from "../src/platform/li
 import { createLinuxProvider } from "../src/platform/linux.js";
 
 const t = createChecker("linux-input");
-const tmp = await mkdtemp(join(tmpdir(), "windock-linux-input-"));
+const tmp = await mkdtemp(join(tmpdir(), "tara-linux-input-"));
 const signature = { strokes: [[[0.1, 0.5], [0.9, 0.5]], [[0.5, 0.9]]], color: "blue" };
 
 const tick = () => new Promise((resolve) => setImmediate(resolve));
@@ -24,14 +24,14 @@ function spawn(file, args, options) {
   return child;
 }
 const logs = [];
-const dir = join(tmp, "Pictures", "WinDock", "Signatures");
-const input = createLinuxInput({ helperPath: "/opt/win dock/windock-input", spawn, startupMs: 100, stopMs: 30, signatures: async () => dir, log: (line) => logs.push(line) });
+const dir = join(tmp, "Pictures", "Tara", "Signatures");
+const input = createLinuxInput({ helperPath: "/opt/win dock/tara-input", spawn, startupMs: 100, stopMs: 30, signatures: async () => dir, log: (line) => logs.push(line) });
 
 // ---- touchpad: same protocol as the Windows helper ----
 const events = [];
 const worker = input.open(undefined, (event) => events.push(event));
 const pad = children.at(-1);
-t.equal(pad.file, "/opt/win dock/windock-input", "the helper path is used as-is, never through a shell");
+t.equal(pad.file, "/opt/win dock/tara-input", "the helper path is used as-is, never through a shell");
 t.deepEqual(pad.args, ["touchpad"], "touchpad has fixed argv");
 t.equal(pad.options.shell, false, "no shell interpolation");
 pad.child.message({ type: "ready" });
@@ -67,11 +67,11 @@ await missing.close();
 logs.length = 0;
 const denied = input.open(() => {});
 const deniedChild = children.at(-1).child;
-deniedChild.stderr.write("/dev/uinput is not writable by this user, so the touchpad cannot move the pointer. Install native/linux/70-windock-uinput.rules (docs/DEVELOPMENT.md, Linux host).\n");
+deniedChild.stderr.write("/dev/uinput is not writable by this user, so the touchpad cannot move the pointer. Install native/linux/70-tara-uinput.rules (docs/DEVELOPMENT.md, Linux host).\n");
 await tick();
 deniedChild.emit("close", 2);
 await t.rejects(() => denied.ready, "uinput permission failure fails startup");
-t.ok(logs[0]?.includes("70-windock-uinput.rules"), "uinput permission failure names the udev rule");
+t.ok(logs[0]?.includes("70-tara-uinput.rules"), "uinput permission failure names the udev rule");
 
 // ---- signatures: fixed verbs, host-chosen folder ----
 const save = input.saveSignature(signature);
@@ -103,8 +103,8 @@ input.dispose();
 const home = join(tmp, "home");
 await mkdir(join(home, ".config"), { recursive: true });
 await writeFile(join(home, ".config", "user-dirs.dirs"), 'XDG_PICTURES_DIR="$HOME/Bilder"\n');
-t.equal(await signatureDir({ env: {}, home }), join(home, "Bilder", "WinDock", "Signatures"), "localized Pictures folder is honoured");
-t.equal(await signatureDir({ env: {}, home: join(tmp, "nobody") }), join(tmp, "nobody", "Pictures", "WinDock", "Signatures"), "English default without user-dirs.dirs");
+t.equal(await signatureDir({ env: {}, home }), join(home, "Bilder", "Tara", "Signatures"), "localized Pictures folder is honoured");
+t.equal(await signatureDir({ env: {}, home: join(tmp, "nobody") }), join(tmp, "nobody", "Pictures", "Tara", "Signatures"), "English default without user-dirs.dirs");
 
 // ---- the provider exposes it ----
 const provider = createLinuxProvider({ exec: async () => ({ stdout: "" }), appDirs: [], capture: {} });
@@ -112,7 +112,7 @@ t.ok(["open", "saveSignature", "dispose"].every((m) => typeof provider.input?.[m
 t.equal(createLinuxProvider({ exec: async () => ({ stdout: "" }), appDirs: [], capture: {}, input: null }).input, null, "input can be injected");
 
 // ---- the udev rule grants injection to the seat user only ----
-const rule = await readFile(new URL("../native/linux/70-windock-uinput.rules", import.meta.url), "utf8");
+const rule = await readFile(new URL("../native/linux/70-tara-uinput.rules", import.meta.url), "utf8");
 const active = rule.split("\n").filter((line) => line.trim() && !line.startsWith("#"));
 t.equal(active.length, 1, "one udev rule");
 t.ok(/KERNEL=="uinput"/.test(active[0]) && /TAG\+="uaccess"/.test(active[0]), "uinput is granted to the active seat user");
@@ -146,7 +146,7 @@ if (existsSync(INPUT_HELPER)) {
   process.stdout.write(`native helper not built (${INPUT_HELPER}); run npm run build:linux to test it here\n`);
 }
 
-t.ok(/WinDock's output on the PC/.test(input.startupError) && !/update/i.test(input.startupError),
+t.ok(/Tara's output on the PC/.test(input.startupError) && !/update/i.test(input.startupError),
   "a Linux startup failure points at the logged cause (udev rule, uinput, build), not at updating");
 
 await rm(tmp, { recursive: true, force: true });

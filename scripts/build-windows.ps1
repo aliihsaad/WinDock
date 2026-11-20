@@ -1,4 +1,4 @@
-param([string]$Dotnet = '', [string]$OutputDirectory = 'artifacts\WinDock-win-x64', [switch]$SkipCheckoutHelper)
+param([string]$Dotnet = '', [string]$OutputDirectory = 'artifacts\Tara-win-x64', [switch]$SkipCheckoutHelper)
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $outputPath = Join-Path $projectRoot $OutputDirectory
@@ -13,7 +13,7 @@ $env:NUGET_PACKAGES = Join-Path $projectRoot '.tools\nuget'
 
 Push-Location $projectRoot
 try {
-    foreach ($project in @('native\win\WinDockHelper.csproj', 'native\tray\WinDockTray.csproj')) {
+    foreach ($project in @('native\win\TaraHelper.csproj', 'native\tray\TaraTray.csproj')) {
         & $Dotnet publish $project -c Release -r win-x64 --self-contained true -p:IncludeNativeLibrariesForSelfExtract=true -o $outputPath --nologo
         if ($LASTEXITCODE -ne 0) { throw "Publish failed: $project" }
     }
@@ -34,7 +34,7 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Packaged dependency installation failed' }
     Copy-Item -LiteralPath (Get-Command node.exe -ErrorAction Stop).Source -Destination (Join-Path $outputPath 'node.exe') -Force
     # Also enable npm start in the development checkout.
-    if (-not $SkipCheckoutHelper) { Copy-Item -LiteralPath (Join-Path $outputPath 'WinDockHelper.exe') -Destination $projectRoot -Force }
-    Write-Output "WINDOWS BUILD OK: $outputPath\WinDockTray.exe"
+    if (-not $SkipCheckoutHelper) { Copy-Item -LiteralPath (Join-Path $outputPath 'TaraHelper.exe') -Destination $projectRoot -Force }
+    Write-Output "WINDOWS BUILD OK: $outputPath\TaraTray.exe"
 }
 finally { Pop-Location }

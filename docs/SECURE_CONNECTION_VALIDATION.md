@@ -83,7 +83,7 @@ and unrelated user images; they were not discarded.
 | Discovery and live authentication | `src/discovery.js`, `src/sync.js` |
 | Local desktop pairing UI | `public/pair.html`, `public/pair.css`, `public/pair.js`, `native/tray/Program.cs` |
 | Linux status and instructions | `src/platform/linux-cli.js`, `src/platform/linux-service.js` |
-| Android private trust/transport | `SecurePairing.kt`, `SecureTransport.kt`, `SecureWebBridge.kt`, `ManagedDiscovery.kt`, `ReconnectPolicy.kt` under `android/app/src/main/java/com/windock/app/` |
+| Android private trust/transport | `SecurePairing.kt`, `SecureTransport.kt`, `SecureWebBridge.kt`, `ManagedDiscovery.kt`, `ReconnectPolicy.kt` under `android/app/src/main/java/com/tara/app/` |
 | Android lifecycle and UI | `MainActivity.kt`, `ServerUrl.kt`, `android/app/src/main/AndroidManifest.xml`, `res/layout/activity_main.xml`, `res/values/strings.xml`, `android/app/build.gradle` |
 | Shared web transport | `public/native-transport.js`, `public/app.js`, `public/sw.js`, `scripts/build-website-demo.mjs` |
 | Packaging and dependencies | `package.json`, `package-lock.json`, `scripts/build-windows.ps1`, `scripts/build-installer.ps1` |
@@ -114,7 +114,7 @@ desktop providers where stated; they do not prove physical Wi-Fi/USB behavior.
 | Native unit checks | **111 assertions passed**: 48 input/signature, 21 port settings, 42 updates. `secure-connection-{input,port,update}-tests.log` |
 | Website | **64 checks passed** against the local demo, including existing clipboard/picker/capture/signature flows. `secure-connection-website-test.log` |
 | Production npm dependencies | Audit reported **0 known advisories** at validation time. This is not a security certification. `secure-connection-npm-audit.json` |
-| AAB inspection | bundletool validation passed; **zero signatures, zero native `.so` libraries**. App ID `com.windock.app`, code **10**, min **24**, target **36**, release non-debuggable, cleartext/backup disabled. `secure-connection-bundle-validation.log`, `secure-connection-aab-manifest.xml` |
+| AAB inspection | bundletool validation passed; **zero signatures, zero native `.so` libraries**. App ID `com.tara.app`, code **10**, min **24**, target **36**, release non-debuggable, cleartext/backup disabled. `secure-connection-bundle-validation.log`, `secure-connection-aab-manifest.xml` |
 
 The final full Android instrumentation run passed **21 executed tests**, with
 **8 opt-in cases skipped** and zero failures (`secure-connection-all-instrumentation-final.log`).
@@ -132,12 +132,12 @@ native installers. Evidence: `secure-connection-public-apk-matrix.log` and
 
 Final local artifacts:
 
-* `artifacts/secure-connection/WinDock-secure-local-test.apk`: release behavior,
+* `artifacts/secure-connection/Tara-secure-local-test.apk`: release behavior,
   debug test signature; SHA-256
   `654EA4E6DD2BF7EFEA1F152B20AED3EA3ABAD00200E35781BFF675650EF06E00`.
-* `artifacts/play/WinDock-inspection-only.aab`: unsigned inspection bundle;
+* `artifacts/play/Tara-inspection-only.aab`: unsigned inspection bundle;
   SHA-256 `CAB7C1F30B944706A76C7E1773B06ECABEF54D832CDD4B9CC7C7BA1E225D9EBD`.
-* `artifacts/WinDock-win-x64/`: rebuilt Windows companion, not installed or
+* `artifacts/Tara-win-x64/`: rebuilt Windows companion, not installed or
   substituted for the user's running folder-test companion.
 
 ### Issues discovered and corrected during validation
@@ -267,20 +267,20 @@ Validation completed on the updated source:
 | Packaged tray smoke | Bundled Node startup from a different working directory, banner receipt and child shutdown passed with disposable state and separate ports |
 | Local launcher/package | Existing local-test configuration found; no private keys, signing stores or secure identity/session files bundled |
 
-The first isolated tray fixture supplied `WINDOCK_HOST=127.0.0.1`, which the
+The first isolated tray fixture supplied `TARA_HOST=127.0.0.1`, which the
 existing LAN-adapter validation intentionally rejects. The fixture was corrected
 to use the normal host binding; the rerun passed. No application networking
 restriction was weakened. A sandboxed launcher preflight also could not see the
 real local app-data directory; the same read-only preflight passed with access
 to that directory.
 
-The prepared folder is `artifacts/WinDock-native-pairing`. Its
-`Start-SecureTest.ps1` reuses `%LOCALAPPDATA%\WinDock-LocalTest-20261031\config.json`
+The prepared folder is `artifacts/Tara-native-pairing`. Its
+`Start-SecureTest.ps1` reuses `%LOCALAPPDATA%\Tara-LocalTest-20261031\config.json`
 and the existing certificate identity. It refuses to start while another
-WinDock tray is running. The user's current `artifacts/WinDock-win-x64` process
+Tara tray is running. The user's current `artifacts/Tara-win-x64` process
 was left running; no binaries in that folder were replaced.
 
-New `WinDockTray.exe` SHA-256:
+New `TaraTray.exe` SHA-256:
 `AB57E9FCFE7E7463D4023D1F19239B74D13CB6AE1F0FAF6A217804E2EB9101C6`.
 The last installed Android APK remains unchanged. Test-window captures contain
 synthetic, unusable pairing credentials, not an invitation from the user's host.
@@ -301,7 +301,7 @@ this as user-reported network-switching acceptance in both directions. Physical
 USB cable unplug/replug was not part of that walkthrough and remains separate.
 
 Further user acceptance, 31 October 2026: the user explicitly confirmed both
-the two-minute and ten-minute phone-lock checks. In each case, WinDock connected
+the two-minute and ten-minute phone-lock checks. In each case, Tara connected
 automatically after unlocking the phone and opening the app. This passes
 foreground recovery after those lock durations; it does not measure background
 network activity, battery usage or wake locks.
@@ -349,7 +349,7 @@ opening its primary socket. This explains why the native path could repeatedly
 fail while web/PIN clients, whose media polling allows 25 seconds, could connect.
 
 An isolated emulator fixture reproduced the failure on the unchanged
-`WinDock-files-reconnect-local-test.apk`. A longer test also exposed a subsequent
+`Tara-files-reconnect-local-test.apk`. A longer test also exposed a subsequent
 `/api/capture` read failing with `unexpected end of stream` when a pooled HTTPS
 connection had closed. All automatic connection recovery had been disabled to
 avoid replaying actions, so that safe read unnecessarily restarted the dock too.
@@ -368,7 +368,7 @@ The fix is limited to the existing transport and startup flow:
   file transfers retain their no-replay behavior. A fault-injection test asserts
   that a lost read response is recovered and a lost control response produces
   exactly one control request.
-- Bump the browser shell cache to `windock-v27-media-reconnect`. No protocol,
+- Bump the browser shell cache to `tara-v27-media-reconnect`. No protocol,
   package ID, permission, desktop binary, pairing storage or certificate changes.
 
 The real reason Windows' media API is slow on this PC is not established. Disposable
@@ -378,16 +378,16 @@ may remain empty while the OS/provider is unresponsive, but it must not prevent
 use of the dock. The existing 20-second desktop limit is retained.
 
 Local companion update: backed up and atomically replaced only `public/app.js`,
-`public/native-transport.js`, and `public/sw.js` under the installed WinDock folder.
+`public/native-transport.js`, and `public/sw.js` under the installed Tara folder.
 Backup: `artifacts/media-reconnect-ui-backup-20261102-100716`. No host restart was
 needed; exact contents/order of all **19 tiles** and the live host identity were
 verified unchanged. Pairing/configuration files were not touched.
 
-Android test APK: `artifacts/WinDock-connection-stability-local-test.apk`, SHA-256
+Android test APK: `artifacts/Tara-connection-stability-local-test.apk`, SHA-256
 `7C5B378BB6445C5124A884A42A22E5DAE2BD802FE96AFDFA31C556212403740F`.
 This is the non-debuggable HTTPS release configuration signed with the same
 existing **debug test certificate** as the owner's previous local APK. Package
-`com.windock.app`, code 10, min API 24 and target API 36 are unchanged. Install it
+`com.tara.app`, code 10, min API 24 and target API 36 are unchanged. Install it
 over the current app without uninstalling; no new QR scan should be necessary.
 No production signing keys were generated, read or changed.
 

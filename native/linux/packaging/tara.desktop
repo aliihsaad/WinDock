@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Name=Tara
+Comment=Connect your phone to your Hyprland desktop
+Exec=tara
+Icon=tara
+Terminal=true
+Categories=Network;RemoteAccess;
+Keywords=phone;remote;dock;Hyprland;
+StartupNotify=false
+Actions=stop;
+
+[Desktop Action stop]
+Name=Stop Tara
+Exec=tara stop

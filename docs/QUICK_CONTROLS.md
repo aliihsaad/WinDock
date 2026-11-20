@@ -15,7 +15,7 @@ signing operations. This extends the already tested managed HTTPS/QR companion.
 ## Behavior
 
 - Swipe down on the main dock to open Quick controls directly. Begin inside
-  WinDock rather than Android's status-bar edge. The existing swipe-up drawer
+  Tara rather than Android's status-bar edge. The existing swipe-up drawer
   and sideways page navigation remain available.
 - In immersive mode, tap or pull the small integrated island at the top.
   The trigger is hidden while arranging tiles and before pairing. Standard
@@ -41,7 +41,7 @@ Five shared UI files changed: `public/app.js`, `public/dock.js`,
 `public/index.html`, `public/style.css`, `public/sw.js`. Control rendering still
 filters the host's advertised verbs and destructive-action setting. Actions
 use the same `activate()` flow and API payloads. The web shell cache version is
-bumped to `windock-v22-quick-controls` for browser clients. Managed Android
+bumped to `tara-v22-quick-controls` for browser clients. Managed Android
 already loads host assets without a service worker.
 
 The native tray/helper, server protocol, pairing/session identity, TLS lifecycle,
@@ -78,17 +78,17 @@ Repeat the browser checks with the local preview running:
 ```powershell
 node scripts/website-server.mjs
 # In another terminal, with the existing Playwright CLI available:
-npx --no-install --package @playwright/cli playwright-cli -s=windock-curtain open http://127.0.0.1:4173/demo/index.html
-npx --no-install --package @playwright/cli playwright-cli -s=windock-curtain run-code --filename=scripts/quick-controls-browser-check.js
+npx --no-install --package @playwright/cli playwright-cli -s=tara-curtain open http://127.0.0.1:4173/demo/index.html
+npx --no-install --package @playwright/cli playwright-cli -s=tara-curtain run-code --filename=scripts/quick-controls-browser-check.js
 ```
 
 ## Local phone acceptance
 
-Prepared separately in `artifacts/WinDock-quick-controls`; the running
-`artifacts/WinDock-native-pairing` package is not overwritten. Quit the current
+Prepared separately in `artifacts/Tara-quick-controls`; the running
+`artifacts/Tara-native-pairing` package is not overwritten. Quit the current
 tray, then run the new folder's `Start-SecureTest.ps1`. It reuses the existing
-`%LOCALAPPDATA%\WinDock-LocalTest-20261031\config.json` and private identity.
-Close/reopen WinDock on the phone to load the new UI; do not reset pairing.
+`%LOCALAPPDATA%\Tara-LocalTest-20261031\config.json` and private identity.
+Close/reopen Tara on the phone to load the new UI; do not reset pairing.
 
 Pending physical checks: swipe down from the dock, tap the top Controls button,
 adjust volume/playback, dismiss with the handle and Android Back, and open

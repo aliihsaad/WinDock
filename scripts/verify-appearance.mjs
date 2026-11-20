@@ -1,17 +1,16 @@
 import { readFileSync } from "node:fs";
 import { runInNewContext } from "node:vm";
 import { createChecker } from "./lib/assert.mjs";
-import { buildWebsiteDemo } from "./build-website-demo.mjs";
 
 const t = createChecker("appearance");
 const read = path => readFileSync(new URL("../" + path, import.meta.url), "utf8");
 const source = read("public/appearance.js");
 const performance = read("public/performance.js");
-const modeKey = "windock-performance", layoutKey = "windock-layout";
+const modeKey = "tara-performance", layoutKey = "tara-layout";
 function boot({ saved = {}, native, blocked = false, memoryOnly = false } = {}) {
   const data = new Map(Object.entries(saved)), classes = new Set();
   let accesses = 0;
-  const window = { WinDockAndroid: native, matchMedia: () => ({ matches: false }) };
+  const window = { TaraAndroid: native, matchMedia: () => ({ matches: false }) };
   const context = {
     window, URLSearchParams, location: { origin: "http://10.0.2.2:18622", search: "?perf=1" },
     document: { currentScript: { hasAttribute: () => memoryOnly }, documentElement: {
@@ -25,7 +24,7 @@ function boot({ saved = {}, native, blocked = false, memoryOnly = false } = {}) 
   };
   runInNewContext(source, context);
   runInNewContext(performance, context);
-  return { prefs: window.WinDockPreferences, mode: window.WinDockPerformance, data, classes, get accesses() { return accesses; } };
+  return { prefs: window.TaraPreferences, mode: window.TaraPerformance, data, classes, get accesses() { return accesses; } };
 }
 
 const layout = JSON.stringify({ perPage: 8, showLabels: true, theme: "frost" });
@@ -110,7 +109,4 @@ t.equal(calls, beforeUnknown, "unrelated keys never cross the bridge");
 const html = read("public/index.html");
 t.ok(html.indexOf('src="/appearance.js"') < html.indexOf('src="/performance.js"'), "appearance restores before performance first paint");
 t.ok(read("public/sw.js").includes('"/appearance.js"'), "offline shell includes appearance adapter");
-await buildWebsiteDemo();
-t.ok(read("website/demo/index.html").includes('src="./appearance.js" data-memory-only'), "preview uses memory-only adapter");
-t.equal(read("website/demo/appearance.js"), source, "preview uses shipping adapter");
 t.done("appearance verification passed");

@@ -58,21 +58,24 @@ export function renderTile(tile, { editing = false, first = false, last = false,
   const classes = ["tile", `tile--${tile.kind}`];
   if (running) classes.push("is-running");
   if (editing) classes.push("is-editing");
-  const action = tile.kind === "control" ? "control" : "launch";
+  const action = { control: "control", macro: "macro", wake: "wake", group: "group", tool: "tool" }[tile.kind] || "launch";
   const hasValue = tile.kind === "control" && tile.value !== undefined && tile.value !== null;
+  const prefixed = ["macro", "wake", "group", "tool"].includes(tile.kind);
   const key =
     tile.kind === "control"
       ? `control:${tile.verb}${hasValue ? `:${tile.value}` : ""}`
-      : `app:${tile.id}`;
+      : prefixed ? tile.id : `app:${tile.id}`;
   const actionKey = tile.kind === "control" ? tile.verb : tile.id;
+  const KIND_ICON = { macro: "bolt", wake: "wake", group: "group", tool: "phone" };
+  const KIND_HINT = { macro: "Run macro", wake: "Wake PC", tool: "Share text", group: `${(tile.items || []).length} in folder` };
   // A valued verb carries its value on the element; tapping a tile with no
   // value would send an incomplete request the host correctly rejects.
   const valueAttr = hasValue ? ` data-value="${escapeHtml(String(tile.value))}"` : "";
 
   const body = [
-    `<span class="tile__glyph" aria-hidden="true">${tile.kind === "app" ? renderAppIcon(tile) : controlIcon(tile.verb)}</span>`,
+    `<span class="tile__glyph" aria-hidden="true">${tile.kind === "app" ? renderAppIcon(tile) : KIND_ICON[tile.kind] ? icon(KIND_ICON[tile.kind]) : controlIcon(tile.verb)}</span>`,
     `<span class="tile__label">${escapeHtml(tile.label)}</span>`,
-    !editing ? `<span class="tile__hint">${tile.kind === "app" ? running ? "Running" : String(tile.id).startsWith("link:") ? "Open website" : String(tile.id).startsWith("folder:") ? "Open folder" : "Open app" : "Quick action"}</span>` : "",
+    !editing ? `<span class="tile__hint">${KIND_HINT[tile.kind] ? KIND_HINT[tile.kind] : tile.kind === "app" ? running ? "Running" : String(tile.id).startsWith("link:") ? "Open website" : String(tile.id).startsWith("folder:") ? "Open folder" : "Open app" : "Quick action"}</span>` : "",
     running && !editing ? '<span class="tile__dot" aria-hidden="true"></span>' : "",
   ].join("");
 

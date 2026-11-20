@@ -18,12 +18,12 @@ COPY server.js LICENSE ./
 COPY src src
 COPY public public
 COPY scripts scripts
-COPY native/linux/70-windock-uinput.rules native/linux/
+COPY native/linux/70-tara-uinput.rules native/linux/
 COPY native/linux/packaging native/linux/packaging
 ARG PACKAGE_VERSION
 ARG PACKAGE_RELEASE=1
-RUN shellcheck native/linux/packaging/windock native/linux/packaging/user-service native/linux/packaging/postinst native/linux/packaging/prerm native/linux/packaging/postrm scripts/package-linux.sh scripts/test-linux-package.sh \
-    && desktop-file-validate native/linux/packaging/windock.desktop \
+RUN shellcheck native/linux/packaging/tara native/linux/packaging/user-service native/linux/packaging/postinst native/linux/packaging/prerm native/linux/packaging/postrm scripts/package-linux.sh scripts/test-linux-package.sh \
+    && desktop-file-validate native/linux/packaging/tara.desktop \
     && sh -n native/linux/packaging/arch.install \
     && NODE_LICENSE=/opt/node-LICENSE bash scripts/package-linux.sh "$PACKAGE_VERSION" "$PACKAGE_RELEASE"
 FROM scratch AS packages

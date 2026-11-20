@@ -6,7 +6,7 @@
 
 using Windows.Media.Control;
 
-namespace WinDock;
+namespace Tara;
 
 internal static class MediaSession
 {

@@ -5,7 +5,7 @@ Implemented locally on `play-store-integration-v0.2.6`. Publication and producti
 ## Audit before implementation — 31 October 2026
 
 * `scripts/create-local-tls.ps1` manually creates a five-year RSA CA, preserves that CA on reruns, but generates a new one-year leaf/key on every invocation. The leaf contains the current private IPv4 addresses. New addresses require another invocation and host restart. Missing half of a CA pair is rejected; upcoming CA expiry is rejected. No scheduled renewal exists. The dedicated directory receives a current-user/SYSTEM Windows ACL.
-* `server.js` only enables HTTPS when both `WINDOCK_TLS_CERT` and `WINDOCK_TLS_KEY` are supplied. It reads the files once, uses TLS 1.2 or later, and serves HTTP and HTTPS with separate PINs/session stores and a shared failure budget. There is no certificate reload or expiration check. Explicit user-managed certificates must remain supported and untouched.
+* `server.js` only enables HTTPS when both `TARA_TLS_CERT` and `TARA_TLS_KEY` are supplied. It reads the files once, uses TLS 1.2 or later, and serves HTTP and HTTPS with separate PINs/session stores and a shared failure budget. There is no certificate reload or expiration check. Explicit user-managed certificates must remain supported and untouched.
 * `src/auth.js` stores opaque sessions in memory for up to 180 days. Every desktop restart loses them. Browser cookies are scoped to an IP origin, so an address change also loses access to an otherwise valid session.
 * `src/host-identity.js` persists a public UUID beside the dock configuration. This is a discovery label, not cryptographic proof. Its fallback to a new in-memory UUID on read errors is unsuitable as the root of secure trust.
 * Android `HostProbe.kt` and `MainActivity.kt` use platform HTTPS/WebView trust. Release `network_security_config.xml` trusts system and explicitly installed user CAs. No per-host certificate trust record exists. Certificate installation and IP subject-alternative-name matching explain the difficult phone setup. TLS verification is currently not bypassed.
@@ -26,11 +26,11 @@ References used: [Android WebViewClient SSL handling](https://developer.android.
 
 ## Pairing and everyday use
 
-1. Start the updated companion on your computer. On Windows open its tray menu and choose **Pair a phone securely**, or use that button in **Show connection info**. The QR appears directly in a WinDock window. On Linux open the local pairing link shown by `windock`.
+1. Start the updated companion on your computer. On Windows open its tray menu and choose **Pair a phone securely**, or use that button in **Show connection info**. The QR appears directly in a Tara window. On Linux open the local pairing link shown by `tara`.
 2. Put the phone and computer on the same Wi-Fi, or connect USB and enable USB tethering.
-3. Windows creates a code when the pairing window opens; use **Show a new code** after expiration. On Linux click **Show pairing code** in the local page. In Android WinDock choose **Scan computer code**. Allow camera access if desired; alternatively use **Copy pairing text** on Windows and **Enter pairing text** on Android. Only use a code displayed on your own computer.
-4. WinDock remembers this computer. Normal restarts and updates do not require pairing again. A code expires after two minutes and can pair only one device.
-5. If disconnected, foreground WinDock and allow it to reconnect. To change computers or enter an address, tap **Connection** at the top-left of the dock. The native page offers **Saved & nearby PCs**, **Scan computer code**, Wi-Fi/USB and a visible address field. **Change connection** cancels a pending attempt; automatic reconnection pauses while intentionally editing this page. **Return to saved PC** keeps the saved identity. **More options → Enter pairing text** remains available without camera permission. Older Android clients retain their drawer's **Switch PC** action.
+3. Windows creates a code when the pairing window opens; use **Show a new code** after expiration. On Linux click **Show pairing code** in the local page. In Android Tara choose **Scan computer code**. Allow camera access if desired; alternatively use **Copy pairing text** on Windows and **Enter pairing text** on Android. Only use a code displayed on your own computer.
+4. Tara remembers this computer. Normal restarts and updates do not require pairing again. A code expires after two minutes and can pair only one device.
+5. If disconnected, foreground Tara and allow it to reconnect. To change computers or enter an address, tap **Connection** at the top-left of the dock. The native page offers **Saved & nearby PCs**, **Scan computer code**, Wi-Fi/USB and a visible address field. **Change connection** cancels a pending attempt; automatic reconnection pauses while intentionally editing this page. **Return to saved PC** keeps the saved identity. **More options → Enter pairing text** remains available without camera permission. Older Android clients retain their drawer's **Switch PC** action.
 
 No private key or system CA installation is involved in this setup. No cloud account, fee or relay is introduced.
 
@@ -40,9 +40,9 @@ The Windows pairing window renders the host's QR as a bitmap without an embedded
 
 The shared Node host handles this on Windows and Linux. `src/managed-tls.js` creates ECDSA P-256 keys and a per-installation CA using WebCrypto and X.509 certificate generation. Its leaf certificate is valid for 90 days and renews with 30 days remaining. A ten-year CA certificate renews with 180 days remaining using the **same CA key**. Renewal checks run at startup and every six hours while the host is running; they do not scan the network. `setSecureContext` updates future TLS handshakes without closing established connections.
 
-The identity is the CA public key plus the stable host ID and signed DNS name `host-<UUID>.windock.invalid`. This name is resolved only by the Android per-computer transport to the discovered private address; it does not use public DNS. Normal PKIX chain and hostname verification remain enabled. Authenticated health responses may update a stored CA certificate only if its public key and subject remain identical. A phone offline beyond an entire CA lifetime may require explicit pairing again if its platform rejects the expired trust anchor.
+The identity is the CA public key plus the stable host ID and signed DNS name `host-<UUID>.tara.invalid`. This name is resolved only by the Android per-computer transport to the discovered private address; it does not use public DNS. Normal PKIX chain and hostname verification remain enabled. Authenticated health responses may update a stored CA certificate only if its public key and subject remain identical. A phone offline beyond an entire CA lifetime may require explicit pairing again if its platform rejects the expired trust anchor.
 
-State follows the desktop configuration path (`WINDOCK_CONFIG`, otherwise the existing per-user default):
+State follows the desktop configuration path (`TARA_CONFIG`, otherwise the existing per-user default):
 
 | File | Contents / protection |
 | --- | --- |
@@ -67,9 +67,9 @@ An exhausted/expired session needs a fresh pairing invitation; host-side expiry 
 
 ## Compatibility and migration
 
-* `com.windock.app`, minimum API 24, target API 36 and unpublished version code 10 are retained. The debug/GitHub path still supports legacy HTTP; Play requires HTTPS.
+* `com.tara.app`, minimum API 24, target API 36 and unpublished version code 10 are retained. The debug/GitHub path still supports legacy HTTP; Play requires HTTPS.
 * HTTP PIN authentication, API routes, v1 discovery and legacy cookies are preserved. Existing explicit TLS files, secure PINs and v2 discovery remain supported without modification.
-* Managed pairing adds v3 discovery on the same UDP port 41234 and HTTPS on automatic TCP 8621. With externally configured HTTPS, managed pairing uses automatic TCP 8622 instead; both listeners share the same controls and HTTPS session store. Explicit managed-port configuration uses `WINDOCK_MANAGED_TLS_PORT`. Automatic port fallback is preserved.
+* Managed pairing adds v3 discovery on the same UDP port 41234 and HTTPS on automatic TCP 8621. With externally configured HTTPS, managed pairing uses automatic TCP 8622 instead; both listeners share the same controls and HTTPS session store. Explicit managed-port configuration uses `TARA_MANAGED_TLS_PORT`. Automatic port fallback is preserved.
 * Android's native adapter transports the same shared UI, JSON API and two WebSocket channels. It keeps credentials out of page JavaScript, checks origin, bounds queues/messages, and preserves remote input, composition, clipboard, app/folder launching, capture and per-PC appearance storage. The website demo keeps its simulated transport.
 * Windows and Linux use the same identity, session and renewal implementation. Linux prints a local pairing link and keeps PINs out of the system journal. Firewall acceptance, Linux/Hyprland runtime behavior and actual USB routing still require platform testing.
 * Users of the earlier manual certificate test can scan once into managed pairing while their existing manual HTTPS continues to work. Remove the old Android user CA only after confirming nothing still needs it. If any private test CA key was copied to the phone during earlier setup, remove that copy and retire that manual test CA; it is not reused by managed pairing.
@@ -83,7 +83,7 @@ An exhausted/expired session needs a fresh pairing invitation; host-side expiry 
 - [ ] Complete extended physical checks for composition edge cases, folder add/remove and per-PC appearance preferences on the managed transport.
 - [x] Restart the companion through the same local-test launcher and force-stop/reopen Android: user confirmed automatic reconnection without scanning the QR again on 31 October 2026.
 - [x] Full phone and Windows restarts: user explicitly confirmed automatic reconnection without rescanning and retained tiles on 31 October 2026.
-- [x] Phone locked for two minutes and ten minutes: user explicitly confirmed automatic reconnection after unlocking and opening WinDock for both durations on 31 October 2026.
+- [x] Phone locked for two minutes and ten minutes: user explicitly confirmed automatic reconnection after unlocking and opening Tara for both durations on 31 October 2026.
 - [ ] Measure background network/service/wake-lock behavior on the physical phone; successful foreground recovery alone does not verify resource usage.
 - [x] Wi-Fi to USB tethering with phone Wi-Fi disabled, then back to Wi-Fi: user reported the walkthrough works on 31 October 2026, including automatic reconnection without another QR or PIN.
 - [ ] Physically unplug/replug the USB cable and verify recovery.

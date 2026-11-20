@@ -3,7 +3,7 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 
-namespace WinDock.Tray;
+namespace Tara.Tray;
 
 internal sealed class PairingCode : IDisposable
 {
@@ -23,7 +23,7 @@ internal sealed class PairingCode : IDisposable
         var image = root.GetProperty("image").GetString() ?? "";
         var expires = DateTimeOffset.FromUnixTimeMilliseconds(root.GetProperty("expires").GetInt64());
         const string prefix = "data:image/gif;base64,";
-        if (!invitation.StartsWith("windock-pair:", StringComparison.Ordinal) || invitation.Length is < 20 or > 8192 ||
+        if (!invitation.StartsWith("tara-pair:", StringComparison.Ordinal) || invitation.Length is < 20 or > 8192 ||
             !image.StartsWith(prefix, StringComparison.Ordinal) || image.Length > 64 * 1024 ||
             expires > DateTimeOffset.UtcNow.AddMinutes(3))
             throw new InvalidDataException("Invalid pairing response.");
@@ -64,7 +64,7 @@ internal sealed class PairingClient : IDisposable
     public async Task<PairingCode> CreateAsync(CancellationToken cancellationToken)
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, _endpoint);
-        request.Headers.Add("X-WinDock-Pair", "local");
+        request.Headers.Add("X-Tara-Pair", "local");
         request.Content = new StringContent("{\"format\":\"gif\"}", Encoding.UTF8, "application/json");
         using var response = await _http.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();

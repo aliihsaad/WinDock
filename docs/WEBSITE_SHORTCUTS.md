@@ -67,10 +67,10 @@ No production signing keys, uploads or deployments are involved.
 
 Installed a reversible per-user test build on the owner's Omarchy x86_64 PC via
 fingerprint-verified SSH. The system package remains 0.2.5-2. Its user service
-and app-menu entry now use `/home/alidevlab/windock-local-tests/links-20261101`.
+and app-menu entry now use `/home/alidevlab/tara-local-tests/links-20261101`.
 The previous configuration is backed up there under `backup/config`; all eight
 existing tiles and the configuration checksum were preserved. Roll back using
-`bash ~/windock-local-tests/links-20261101/rollback.sh` on Omarchy.
+`bash ~/tara-local-tests/links-20261101/rollback.sh` on Omarchy.
 
 On that actual Linux machine, all 35 repository suites and all 23 native Rust
 tests passed. Native checks in the desktop session confirmed Hyprland, AT-SPI,

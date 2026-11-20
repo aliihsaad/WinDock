@@ -53,7 +53,7 @@ await provider.openFolder(folder);
 t.deepEqual(nativeCalls.at(-1).args, ["open-folder", folder.target], "exact directory remains one native argv entry");
 await t.rejects(() => provider.openFolder({ ...folder, args: "cmd" }), "folder arguments rejected before native launch");
 
-const dir = await mkdtemp(join(tmpdir(), "windock-folders-"));
+const dir = await mkdtemp(join(tmpdir(), "tara-folders-"));
 const store = createConfigStore({ path: join(dir, "config.json") });
 const app = await createApp({ provider, configStore: store, pin: "572864", trustLoopback: false });
 await new Promise(resolve => app.server.listen(0, "127.0.0.1", resolve));

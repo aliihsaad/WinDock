@@ -13,12 +13,12 @@ import { networkInterfaces } from "node:os";
 import { isIPv4 } from "node:net";
 
 export const DISCOVERY_PORT = 41234;
-export const PROBE = "windock:discover:v1";
-export const REPLY_PREFIX = "windock:here:v1:";
-export const SECURE_PROBE = "windock:discover:v2";
-export const SECURE_REPLY_PREFIX = "windock:here:v2:";
-export const MANAGED_PROBE = "windock:discover:v3";
-export const MANAGED_REPLY_PREFIX = "windock:here:v3:";
+export const PROBE = "tara:discover:v1";
+export const REPLY_PREFIX = "tara:here:v1:";
+export const SECURE_PROBE = "tara:discover:v2";
+export const SECURE_REPLY_PREFIX = "tara:here:v2:";
+export const MANAGED_PROBE = "tara:discover:v3";
+export const MANAGED_REPLY_PREFIX = "tara:here:v3:";
 export const MAX_PROBE_BYTES = 64;
 
 /** Prefer a physical LAN adapter over VPNs and VM/container networks. */
@@ -37,7 +37,7 @@ export function primaryAddress(interfaces = networkInterfaces(), preferred = "")
   }
   if (preferred) {
     if (!isIPv4(preferred) || !candidates.some((entry) => entry.address === preferred)) {
-      throw new Error("WINDOCK_HOST must be an IPv4 address assigned to this computer");
+      throw new Error("TARA_HOST must be an IPv4 address assigned to this computer");
     }
     return preferred;
   }

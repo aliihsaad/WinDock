@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Renders WinDock's bundled backgrounds into public/wallpapers.
+"""Renders Tara's bundled backgrounds into public/wallpapers.
 
 Each scene is a small procedural render of something physical, so the art stays
 free of licensing questions and can be regenerated at any size. The output is

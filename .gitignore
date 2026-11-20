@@ -22,8 +22,8 @@ config.json
 artifacts/
 website/demo/
 .vercel/
-WinDockHelper.exe
-/windock-input
+TaraHelper.exe
+/tara-input
 native/linux/target/
 android/.gradle/
 android/local.properties
@@ -35,6 +35,6 @@ android/**/build/
 *.key
 *.pem
 android/keystore.properties
-ios/WinDock.xcodeproj/
+ios/Tara.xcodeproj/
 ios/build/
 ios/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png
