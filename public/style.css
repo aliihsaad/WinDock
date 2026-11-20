@@ -286,7 +286,7 @@ body.is-immersive .page-dot[aria-current="page"]::before { width: 12px; backgrou
 body.is-immersive .empty > h3, body.is-immersive .empty > p, body.is-immersive .empty__icon { display: none; }
 body.is-immersive .empty .button { position: relative; font-size: 0; width: 108px; height: 108px; border-radius: 28px; padding: 0; background: #ffffff0a; color: #eaf4f0; border-color: transparent; backdrop-filter: blur(24px); }
 body.is-immersive .empty .button .icon { width: 36px; height: 36px; }
-.drawer-trigger { position: fixed; z-index: 4; left: 25%; right: 25%; bottom: 0; height: max(24px, env(safe-area-inset-bottom)); padding: 0; border: 0; background: transparent; color: transparent; touch-action: none; }
+.drawer-trigger { position: fixed; z-index: 4; left: 12%; right: 12%; bottom: 0; height: max(44px, env(safe-area-inset-bottom)); padding: 0; border: 0; background: transparent; color: transparent; touch-action: none; }
 .drawer-trigger > span { display: block; width: 35px; height: 3px; margin: auto; border-radius: 5px; background: #ebf7f370; opacity: 0; transition: opacity .2s; }
 .drawer-trigger:focus-visible > span, .drawer-trigger:hover > span { opacity: 1; }
 .quick-controls-trigger { position: fixed; z-index: 4; top: env(safe-area-inset-top); left: 50%; transform: translateX(-50%); display: flex; align-items: flex-start; justify-content: center; width: 128px; height: 44px; padding: 0 4px 10px; border: 0; background: transparent; color: #d1eee5; touch-action: none; }
@@ -382,7 +382,7 @@ body.is-immersive .empty .button .icon { width: 36px; height: 36px; }
 .glass-menu__option:active { background: #ffffff24; }
 .glass-drawer { padding: 0 20px; width: min(92vw, 640px); margin: auto auto max(14px, env(safe-area-inset-bottom)); border-radius: 29px; overflow: hidden; }
 .glass-drawer[open] { animation: drawer-in .25s cubic-bezier(.2,.7,.2,1); }
-.drawer-grip { display: block; width: 100%; min-height: 29px; padding: 10px; background: none; border: 0; touch-action: none; }
+.drawer-grip { display: block; width: 100%; min-height: 44px; padding: 10px; background: none; border: 0; touch-action: none; }
 .drawer-grip > span { display: block; width: 33px; height: 3px; margin: auto; border-radius: 3px; background: #ebf5f44d; }
 .drawer-actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; padding: 6px 0 16px; }
 .drawer-actions button { display: flex; flex-direction: column; align-items: center; gap: 12px; border: 0; border-radius: 18px; padding: 15px 6px 13px; min-height: 88px; background: #ffffff06; box-shadow: inset 0 1px 0 #ffffff12; font-size: 11px; color: #eef6f5; transition: background-color .15s, transform .15s; }
@@ -898,3 +898,6 @@ html.perf .status-strip { background: #17252d; backdrop-filter: none; -webkit-ba
 .share-text { width: 100%; box-sizing: border-box; min-height: 8rem; resize: vertical; font: inherit; padding: .7rem .8rem; border-radius: 14px; border: 1px solid var(--line, rgba(255,255,255,.14)); background: rgba(255,255,255,.06); color: inherit; }
 .share-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: .5rem; margin-top: .7rem; }
 .share-actions button { min-height: 44px; }
+
+.foot, .swipe-hint { touch-action: none; }
+.swipe-hint { min-height: 40px; }

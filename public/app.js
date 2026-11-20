@@ -919,9 +919,10 @@ setInterval(() => { if (paired && captureActive() && !document.hidden) paintCapt
 // The invisible lower edge is also a keyboard-accessible button. Track swipes
 // at document level so lifting above the original hit area still opens it.
 let edgeGesture = null;
-$("drawer-open").addEventListener("pointerdown", (event) => { edgeGesture = { id: event.pointerId, y: event.clientY }; });
+// The bottom strip, the "Swipe up for drawer" hint and the footer all start the swipe, so it works with or without immersive mode.
+for (const handle of [$("drawer-open"), $("gesture-area")]) handle.addEventListener("pointerdown", (event) => { if (event.isPrimary && paired && !editing) edgeGesture = { id: event.pointerId, y: event.clientY, x: event.clientX }; });
 document.addEventListener("pointerup", (event) => {
-  if (edgeGesture?.id === event.pointerId && edgeGesture.y - event.clientY > 25) { suppressClickUntil = Date.now() + 500; openDrawer(); }
+  if (edgeGesture?.id === event.pointerId && edgeGesture.y - event.clientY > 25 && edgeGesture.y - event.clientY > Math.abs(event.clientX - edgeGesture.x)) { suppressClickUntil = Date.now() + 500; openDrawer(); }
   edgeGesture = null;
 });
 document.addEventListener("pointercancel", () => { edgeGesture = null; });
